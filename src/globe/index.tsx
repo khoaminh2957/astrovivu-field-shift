@@ -1,35 +1,20 @@
 /**
- * Tier 4 (map): 3D globe, fly-in, base layers, NASA overlays, parcel drawing and highlight.
- * PLACEHOLDER IMPLEMENTATION (owner: Agent 3). Keeps the app running without a map and publishes
- * a fake screen anchor so the HUD can be laid out before the real globe exists.
+ * Tier 4 (map): the 3D globe. One MapLibre GL map carries the experience from orbit to a
+ * two-hectare field: hero globe, explore, parcel lock, time-synced colouring and NASA overlays.
+ * See docs/GLOBE.md for the decisions and the measured performance.
+ *
+ * The mission UI talks to the map through the mission store only. What is exported here beyond
+ * the two components is data and pure helpers: the overlay catalogue for the layer panel, the
+ * draft helpers for the dock, the colour functions for legends, and the status of what the map
+ * is really showing.
  */
-import { useEffect } from 'react';
-import { useMission } from '@/state/mission';
+import './strings';
 
-export function GlobeCanvas() {
-  const parcel = useMission((s) => s.parcel);
-  const setAnchor = useMission((s) => s.setAnchor);
-
-  useEffect(() => {
-    if (!parcel) {
-      setAnchor(null);
-      return;
-    }
-    const update = () => setAnchor({ x: window.innerWidth / 2, y: window.innerHeight * 0.42, w: 180, h: 120, visible: true });
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, [parcel, setAnchor]);
-
-  return (
-    <div
-      data-placeholder="globe"
-      style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 42%, #16324a 0, #0a1420 38%, #05070b 70%)' }}
-    />
-  );
-}
-
-/** Isolated bench for the map at `#/globe-lab`. */
-export function GlobeLab() {
-  return <GlobeCanvas />;
-}
+export { GlobeCanvas, flyToPlace, refocusParcel, type GlobeCanvasProps } from './GlobeCanvas';
+export { GlobeLab } from './GlobeLab';
+export { OVERLAYS, getOverlay, overlayLegendCss, type GlobeOverlayInfo, type LegendStop } from './overlays';
+export { draftToParcel, squareDraft, makeDraft, isLockable, draftAreaHa } from './draft';
+export { paintForSeries, colorForValue, rampCss, rampPosition, parcelReadingAt, type MetricPaint, type ParcelReading } from './ramps';
+export { useGlobeStatus, type GlobeStatus, type OverlayStatus, type ImagerySource } from './status';
+export { MIN_DRAW_ZOOM } from './draw';
+export type { MotionPref } from './engine';

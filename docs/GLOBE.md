@@ -1,0 +1,98 @@
+# Globe (Tier 4, map side)
+
+`src/globe` is the map canvas: hero globe, explore, parcel drawing, lock fly-in, time-synced parcel colour and NASA overlays. Buttons, panels and the HUD belong to the UI; they talk to the map through the mission store only.
+
+## 1. Architecture decision
+
+**One renderer: MapLibre GL JS 6.18 with the `globe` projection, `raster-dem` terrain and two small custom WebGL layers.** The architect's leaning is confirmed.
+
+| Family | Why not |
+|---|---|
+| CesiumJS | Best built-in atmosphere and time-dynamic imagery, but key-free terrain needs a third-party Terrarium mesh provider, the bundle is three times larger, and polygon editing has to be written by hand. |
+| 3DTilesRendererJS + three.js / R3F + takram atmosphere | The showcase path uses Google Photorealistic Tiles or Cesium ion terrain: both need a key. Without them there is no field-scale terrain. |
+| iTowns, openglobus | Capable globes with thin documentation and no native Terrarium terrain; too much risk for the gain. |
+| globe.gl / plain three.js | Good hero, no field-scale imagery or terrain. It would need a second renderer and a hand-off; a seam between two cameras is what the brief forbids. |
+| deck.gl interleaved, PMTiles | Not needed: four beacons, one polygon, raster base maps. |
+
+What MapLibre gives for free: the `globe` projection turns into mercator between zoom 11 and 12 inside one camera, so the flight from orbit to a two-hectare field is one `flyTo`; AWS Terrarium tiles are a native terrain source; GIBS WMTS is a plain raster source.
+
+Checked against the installed 6.18 typings and source, not older examples:
+
+- ESM only, no default export, worker in a separate file. Under a bundler the worker URL must be set: `setWorkerUrl(workerUrl)` with Vite's `?url` import (`engine.ts`).
+- `Map` composes a `Camera`; `map.transform` is gone. Only public API is used.
+- The sky is drawn in globe view since 6.10 and fades with altitude; the scattering atmosphere fades out below about 1,000 km.
+- Layers draped on terrain are cached in textures. Any `setPaintProperty` releases the whole cache and a running paint transition does not refresh it. Two consequences below (parcel as SVG, frame-driven fades).
+
+**Where MapLibre's sky was not enough.** Its atmosphere either veils the whole disc in white (sun behind the camera) or cuts it with a hard terminator (sun to the side), over imagery that is evenly lit. It is kept at a blend of 0.24 for the thin blue line; `halo.ts` adds the glow outside the limb, the haze inside it and the shading that makes the disc read as a sphere (one full-screen triangle, a ray per pixel against the unit sphere, using the globe matrix MapLibre hands to custom layers). `stars.ts` draws 2,600 points on a celestial sphere that turns with the camera. Both fade out by zoom 6.4.
+
+## 2. Layer stack
+
+Bottom to top. Ids are in `style.ts`.
+
+| Layer | Source | Notes |
+|---|---|---|
+| `stars` | custom WebGL | Canvas is transparent outside the planet; CSS gradient behind it. |
+| `ocean` | background | A globe with no tile yet is still a planet. |
+| `blue-marble` | GIBS `BlueMarble_ShadedRelief_Bathymetry`, level 8 | The view from orbit. Subdued in the hero (backdrop for the title), full contrast from explore on. Greyed and darkened when satellite is switched off. |
+| `sat-fallback` | EOX Sentinel-2 cloudless, level 14 | Added only if Esri fails six times in a row. |
+| `sat` | Esri World Imagery, level 19 | Not requested below zoom 4; fades in between zoom 4.2 and 6.2. |
+| `relief` | hillshade, second DEM source | Only with satellite off. |
+| `overlay-a`, `overlay-b` | GIBS, date in the URL | Front and back buffer of the NASA overlay. |
+| `parcel-dim` | GeoJSON, world polygon with the parcel cut out | Dims the surroundings from zoom 9.5 (52 % at zoom 13). |
+| `halo` | custom WebGL | Atmosphere from orbit. |
+| labels | OpenFreeMap vector tiles, Esri reference raster as fallback | Loaded on first use, in the interface language. |
+| SVG overlay | DOM, inside the canvas container | Locked parcel (glow, fill, texture, casing, outline), reticle during the descent, draft outline. |
+| Markers | DOM | Demo-field beacons (buttons), draft handles. |
+
+Terrain: AWS Terrarium, level 12, exaggeration 1.25, switched on at zoom 9.5 and off below 8.6. From orbit relief is sub-pixel and would cost the terrain texture cache.
+
+**Why the parcel is SVG.** A fill draped on terrain lives in the texture cache; recolouring it would redraw the cache for the whole view on every timeline step. The outline, fill and anchor are instead computed from one projected ring inside MapLibre's `render` event (`map.project` follows the terrain; edges are split every 30 m so the outline hugs relief). Recolouring is one style write. Fill textures follow the design system: dotted for simulated data, hatched when the reading is missing or held past its hold window.
+
+**Network (`net.ts`).** Every tile goes through one `astro://` protocol: four requests per host, 15 s timeout, two retries on network or 5xx errors, failure streaks per host. It rejects Esri's 2,521-byte "Map data not yet available" placeholder (returned with HTTP 200 wherever a zoom has no imagery), so MapLibre keeps the level below instead of painting the label.
+
+## 3. Behaviour
+
+| State | What happens |
+|---|---|
+| Hero | Globe radius about a third of the viewport height, turning 2.8°/s by elapsed time. Rotation pauses on pointer, wheel or key and resumes 3.5 s later; rAF stops with a hidden tab. |
+| Explore | Camera steps in, bottom padding lifts the centre for the dock, Blue Marble comes up to full contrast, beacons appear (hidden while drawing). |
+| Draw | `quad`: four taps, ordered into a simple ring. A tap from above zoom 12.5 flies to field scale instead of placing a corner. `coords` / `gps`: the UI writes a square draft (`squareDraft`), the map frames it. All modes: drag corners, drag a midpoint to add a corner, double-click or Delete removes one, centre handle moves the shape, arrow keys nudge. Every change goes back through `makeDraft`; `areaHa` is `null` while the ring is open or crosses itself, and that is the "can lock" test (`isLockable`). |
+| Locked | One `flyTo`. A camera-update hook holds pitch and bearing back until the second half of a descent. Padding comes from `--topbar-h`, `--timeline-h`, `--hud-gutter`, `--hud-callout-w`, so the parcel lands in the free area, a little above centre; the long axis is laid across the screen; pitch 54°. |
+| Time | Fill = design-system ramp (`RAMPS`) of the series at the cursor via `sampleAt`. `focusBranch` wins over `layers.parcelMetric` when its headline series has a ramp. Overlay date = newest date at or before the cursor from GIBS DescribeDomains (fallback: cadence and usual delay); hidden when older than 10 / 24 / 48 days (daily / 8-day / 16-day). A new date loads in the hidden buffer, then cross-fades (320 ms, opacity written per frame). |
+
+`anchor` is `{x, y}` = **centre** of the parcel's screen bounding box, `{w, h}` its size, CSS pixels, published at most once per rendered frame and only when it changes by half a pixel. `visible` is false when the parcel is off screen or behind the planet.
+
+Reduced motion (`prefers-reduced-motion`, or `?motion=reduced`): no rotation, flights become cuts under a 120 ms fade. `?motion=full` forces motion for demos.
+
+## 4. Exports of `@/globe`
+
+`GlobeCanvas`, `GlobeLab`, `OVERLAYS` (+ `getOverlay`, `overlayLegendCss`), `draftToParcel`, `squareDraft`, `makeDraft`, `isLockable`, `draftAreaHa`, `paintForSeries`, `colorForValue`, `rampCss`, `parcelReadingAt`, `useGlobeStatus` (imagery in use, real overlay date and state, terrain, flying, reduced motion, credits text, notice key), `flyToPlace(lngLat, zoom?)`, `refocusParcel()`, `MIN_DRAW_ZOOM`.
+
+Overlay choices that differ from the brief: land surface temperature uses `MODIS_Terra_L3_Land_Surface_Temp_8Day_Day` (the product the thermal branch samples, without the cloud gaps of the daily swath); GIBS tiles are declared 512 px so a date change needs a quarter of the requests.
+
+## 5. Measured performance
+
+Bench: `#/globe-lab`, or `src/globe/lab.html` on the dev server (same bench without the app shell). `window.__globeLab.flyIn(id)`, `.scrub()`, `.hero()`, `.play()`, `.idle()` return frame-interval statistics.
+
+One machine, 2026-11-14: AMD Radeon integrated graphics, 1440 x 900 CSS px at DPR 1.25 (1800 x 1125 canvas), Chromium 156, dev server, tiles warm in the HTTP cache.
+
+| Run | fps | p50 / p95 / max (ms) | Frames over 25 ms |
+|---|---|---|---|
+| Locked, at rest, 2 s | 60.0 | 16.7 / 17.1 / 17.2 | 0 |
+| Scrub the year, one cursor write per frame, 4 s | 60.1 | 16.7 / 17.0 / 17.2 | 0 |
+| Same with the SMAP overlay and terrain on, 6 s | 60.0 | 16.7 / 17.0 / 17.1 | 0 |
+| Fly-in, explore to Đắk Lắk, 6.4 s | 59.7 | 16.7 / 17.0 / 49.9 | 1 |
+| 2.5 s after arrival | 60.0 | 16.6 / 17.0 / 17.2 | 0 |
+
+The one long frame in the fly-in is consistent with terrain being switched on mid-descent; it was not isolated. Not measured: the hero rotation (the run was cut by a dev-server reload), a cold tile cache, a production build, other GPUs, phones, displays above 1440 x 900. Pixel ratio is capped at 2 and at 5.2 M canvas pixels.
+
+## 6. Known limits
+
+- **Demo polygons are still the provisional rectangles and circle** in `src/data/samples.ts`; they were not aligned to field edges.
+- Seen working in the browser: hero, explore, beacons, lock fly-in from explore and from a deep link, parcel fill and textures, anchor, quad taps, corner drag, coords draft, lock from a draft, NDVI / SMAP / IMERG / LST overlays, terrain toggle. The composed app was checked once with `/?sample=daklak-coffee`: parcel between the HUD columns, hub on the anchor, credits above the timeline. Written but not exercised: midpoint insert, corner delete, keyboard nudging, GPS with a real fix, labels, satellite off, the Sentinel-2 fallback, the no-WebGL message, the reduced-motion cut, and `/?phase=explore` in the composed app (explore was checked in the bench only).
+- No unit tests yet for the pure modules (`overlays`, `draft`, `ramps`, `camera`).
+- With the camera at rest after a deep link, MapLibre once left the raster layers out of the last frame; the engine now repaints once after loading settles. The cause was not found.
+- A product switch at globe scale fills tile by tile (GIBS answers in about 300 ms per tile, four at a time).
+- The newest 16-day NDVI composite on GIBS is 28 days old today, so NDVI shows as stale at the right end of the timeline. That is the latency gap, shown on purpose.
+- The credits line sits bottom-left (above `--timeline-h` when locked). If the UI covers it, render `useGlobeStatus().credits` in the chrome and set `--globe-credits-display: none`.
+- Terrain exaggeration is 1.25: slopes look a quarter steeper than they are.

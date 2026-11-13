@@ -1,0 +1,549 @@
+/*
+ * The map canvas and everything drawn on it. Colours come from the design tokens (the literal
+ * after each var() only covers a page that loaded without them). The selection is drawn in the
+ * signal colour: light is the operator, hue is reserved for data.
+ */
+
+.globe-root {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-globe, 0);
+  /* Our own stacking context: nothing in here can climb above the mission UI. */
+  isolation: isolate;
+  overflow: hidden;
+  /* Space. The canvas is transparent outside the planet; stars are drawn into it by WebGL. */
+  background: radial-gradient(ellipse 72% 62% at 50% 46%, #0c1830 0%, #070d1a 44%, var(--color-void, #03050b) 78%);
+}
+
+.globe-host,
+.globe-map {
+  position: absolute;
+  inset: 0;
+}
+
+/* Reduced motion: the camera cuts, softened by the one fade the design system keeps. */
+.globe-map {
+  transition: opacity var(--dur-fade, 120ms) linear;
+}
+
+.globe-map.is-cutting {
+  opacity: 0;
+  transition: none;
+}
+
+.globe-map .maplibregl-canvas:focus-visible {
+  outline: 2px solid var(--color-signal, #fbfaf6);
+  outline-offset: -2px;
+}
+
+.globe-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* --- Locked parcel ---------------------------------------------------------------------------- */
+
+.globe-parcel__glow {
+  fill: none;
+  stroke: var(--color-signal, #fbfaf6);
+  stroke-width: 9;
+  stroke-linejoin: round;
+  opacity: 0.5;
+}
+
+.globe-parcel__fill {
+  stroke: none;
+  transition: fill 140ms linear;
+}
+
+.globe-parcel__texture {
+  stroke: none;
+}
+
+/* Dark edge under the bright one, so the outline holds on pale ground (desert, bare soil). */
+.globe-parcel__casing {
+  fill: none;
+  stroke: rgb(3 5 11 / 0.78);
+  stroke-width: 4.75;
+  stroke-linejoin: round;
+}
+
+.globe-parcel__line {
+  fill: none;
+  stroke: var(--color-signal, #fbfaf6);
+  stroke-width: 2.25;
+  stroke-linejoin: round;
+}
+
+/* Honesty textures laid over the fill: dotted = simulated, hatched = not received or held too long. */
+.globe-parcel__ink {
+  fill: var(--color-simulated, #baaac7);
+  opacity: 0.92;
+}
+
+.globe-parcel__ink-line {
+  stroke: var(--color-stale, #92a8b9);
+  stroke-width: 1.1;
+  opacity: 0.85;
+}
+
+.globe-parcel.is-arriving .globe-parcel__glow {
+  animation: globe-arrive 1100ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+@keyframes globe-arrive {
+  from {
+    stroke-width: 30;
+    opacity: 0.9;
+  }
+  to {
+    stroke-width: 9;
+    opacity: 0.5;
+  }
+}
+
+/* While the parcel is still a speck during the descent. */
+.globe-reticle__ring {
+  fill: none;
+  stroke: var(--color-signal, #fbfaf6);
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: globe-ping 1.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) infinite;
+}
+
+.globe-reticle__dot {
+  fill: var(--color-signal, #fbfaf6);
+  stroke: rgb(3 5 11 / 0.8);
+  stroke-width: 1.5;
+}
+
+@keyframes globe-ping {
+  from {
+    transform: scale(0.45);
+    opacity: 0.95;
+  }
+  to {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+/* --- Boundary being drawn --------------------------------------------------------------------- */
+
+.globe-draft__fill {
+  fill: rgb(251 250 246 / 0.14);
+  stroke: none;
+}
+
+.globe-draft__line {
+  fill: none;
+  stroke: var(--color-signal, #fbfaf6);
+  stroke-width: 2;
+  stroke-dasharray: 8 5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 1.2px rgb(3 5 11 / 0.95)) drop-shadow(0 0 1.2px rgb(3 5 11 / 0.95));
+}
+
+.globe-draft__rubber {
+  fill: none;
+  stroke: var(--color-signal, #fbfaf6);
+  stroke-width: 1.25;
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 1px rgb(3 5 11 / 0.95));
+}
+
+/* Edges cross: there is no area to lock. */
+.globe-draft.is-invalid .globe-draft__line {
+  stroke: var(--color-alert, #ff5a50);
+}
+
+.globe-draft.is-invalid .globe-draft__fill {
+  fill: rgb(255 90 80 / 0.16);
+}
+
+/* Handles: a small mark inside a thumb-sized hit area. */
+.globe-handle {
+  display: grid;
+  place-items: center;
+  width: var(--touch, 44px);
+  height: var(--touch, 44px);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.globe-handle > span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-signal, #fbfaf6);
+  box-shadow:
+    0 0 0 2px rgb(3 5 11 / 0.85),
+    0 1px 5px rgb(0 0 0 / 0.6);
+  transition: transform var(--dur-instant, 80ms) var(--ease-out, ease-out);
+}
+
+.globe-handle:hover > span,
+.globe-handle.is-dragging > span {
+  transform: scale(1.3);
+}
+
+.globe-handle.is-dragging {
+  cursor: grabbing;
+}
+
+.globe-handle:focus-visible {
+  outline: none;
+}
+
+.globe-handle:focus-visible > span {
+  outline: 2px solid var(--color-signal, #fbfaf6);
+  outline-offset: 4px;
+}
+
+.globe-handle--mid {
+  width: 30px;
+  height: 30px;
+}
+
+.globe-handle--mid > span {
+  width: 9px;
+  height: 9px;
+  background: rgb(3 5 11 / 0.72);
+  box-shadow: 0 0 0 1.5px var(--color-signal, #fbfaf6);
+}
+
+.globe-handle--move {
+  cursor: move;
+}
+
+.globe-handle--move > span {
+  width: 24px;
+  height: 24px;
+  background:
+    linear-gradient(var(--color-signal, #fbfaf6), var(--color-signal, #fbfaf6)) center / 12px 1.5px no-repeat,
+    linear-gradient(var(--color-signal, #fbfaf6), var(--color-signal, #fbfaf6)) center / 1.5px 12px no-repeat,
+    rgb(3 5 11 / 0.72);
+  box-shadow: 0 0 0 1.5px var(--color-signal, #fbfaf6);
+}
+
+/* --- Demo-field beacons ----------------------------------------------------------------------- */
+
+.globe-beacon {
+  display: grid;
+  place-items: center;
+  width: var(--touch, 44px);
+  height: var(--touch, 44px);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.globe-beacon.maplibregl-marker-covered {
+  pointer-events: none;
+}
+
+.globe-beacon__dot {
+  grid-area: 1 / 1;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--color-signal, #fbfaf6);
+  box-shadow: 0 0 0 2px rgb(3 5 11 / 0.82);
+  transition: transform var(--dur-fast, 140ms) var(--ease-out, ease-out);
+}
+
+.globe-beacon__pulse {
+  grid-area: 1 / 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--color-signal, #fbfaf6);
+  animation: globe-ping 2.4s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) infinite;
+}
+
+.globe-beacon:nth-of-type(2n) .globe-beacon__pulse {
+  animation-delay: 0.8s;
+}
+
+.globe-beacon:hover .globe-beacon__dot,
+.globe-beacon:focus-visible .globe-beacon__dot {
+  transform: scale(1.4);
+}
+
+.globe-beacon:focus-visible {
+  outline: none;
+}
+
+.globe-beacon:focus-visible .globe-beacon__dot {
+  outline: 2px solid var(--color-signal, #fbfaf6);
+  outline-offset: 5px;
+}
+
+.globe-beacon__label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% + 16px);
+  display: grid;
+  gap: 1px;
+  padding: 6px 10px;
+  transform: translate(-50%, 4px);
+  background: var(--plate, rgb(11 19 30 / 0.94));
+  border: 1px solid var(--color-line-2, #3a4656);
+  border-radius: var(--radius-sm, 2px);
+  box-shadow: var(--shadow-md, 0 6px 16px -6px rgb(0 0 0 / 0.65));
+  color: var(--color-ink-1, #edebe4);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  text-align: left;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-fast, 140ms) linear,
+    transform var(--dur-fast, 140ms) var(--ease-out, ease-out);
+}
+
+.globe-beacon:hover .globe-beacon__label,
+.globe-beacon:focus-visible .globe-beacon__label {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.globe-beacon:hover,
+.globe-beacon:focus-visible {
+  z-index: 2;
+}
+
+.globe-beacon__title {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.globe-beacon__subtitle {
+  font-size: var(--text-2xs, 0.6875rem);
+  line-height: 1.3;
+  color: var(--color-ink-3, #959faf);
+}
+
+/* --- Credits and the no-WebGL fallback -------------------------------------------------------- */
+
+.globe-credits {
+  position: absolute;
+  left: 10px;
+  bottom: 6px;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 10px;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  color: rgb(237 235 228 / 0.62);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.95);
+  pointer-events: none;
+  /* The mission UI may host the credits itself (useGlobeStatus().credits) and switch these off. */
+  display: var(--globe-credits-display, block);
+}
+
+/* Above the timeline once a parcel is locked, so the bar does not sit on top of them. */
+.globe-host[data-view='parcel'] .globe-credits {
+  bottom: calc(var(--timeline-h, 132px) + 6px);
+}
+
+.globe-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--color-ink-1, #edebe4);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.globe-fallback h2 {
+  margin: 0;
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: 600;
+}
+
+.globe-fallback p {
+  margin: 0 auto;
+  max-width: 56ch;
+  font-size: var(--text-base, 0.875rem);
+  line-height: 1.5;
+  color: var(--color-ink-2, #bdc5d0);
+}
+
+/* --- Bench (#/globe-lab) ---------------------------------------------------------------------- */
+
+.globe-lab {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.globe-lab__panel {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  bottom: 8px;
+  z-index: 20;
+  width: 292px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow-y: auto;
+  background: var(--plate, rgb(11 19 30 / 0.94));
+  border: 1px solid var(--color-line-1, #242e3d);
+  border-radius: var(--radius-sm, 2px);
+  box-shadow: var(--shadow-md, 0 6px 16px -6px rgb(0 0 0 / 0.65));
+  color: var(--color-ink-1, #edebe4);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.globe-lab__panel[hidden] {
+  display: none;
+}
+
+.globe-lab__toggle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 21;
+}
+
+.globe-lab__panel .globe-lab__toggle {
+  position: static;
+  align-self: flex-end;
+}
+
+.globe-lab h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.globe-lab fieldset {
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--color-line-1, #242e3d);
+  border-radius: var(--radius-sm, 2px);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.globe-lab legend {
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink-3, #959faf);
+}
+
+.globe-lab__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.globe-lab__panel button,
+.globe-lab__toggle {
+  padding: 4px 8px;
+  border: 1px solid var(--color-line-3, #5d6a7d);
+  border-radius: var(--radius-sm, 2px);
+  background: var(--color-surface-2, #131c2a);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.globe-lab__panel button:hover,
+.globe-lab__toggle:hover {
+  background: var(--color-surface-3, #1c2737);
+}
+
+.globe-lab__panel button[aria-pressed='true'] {
+  background: var(--color-signal, #fbfaf6);
+  border-color: var(--color-signal, #fbfaf6);
+  color: var(--color-on-signal, #060b14);
+}
+
+.globe-lab select,
+.globe-lab input[type='number'] {
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--color-line-3, #5d6a7d);
+  border-radius: var(--radius-sm, 2px);
+  background: var(--color-inset, #04070f);
+  color: inherit;
+  font: inherit;
+}
+
+.globe-lab input[type='number'] {
+  width: 78px;
+}
+
+.globe-lab input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--color-signal, #fbfaf6);
+}
+
+.globe-lab label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.globe-lab__mono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-ink-2, #bdc5d0);
+}
+
+.globe-lab__fps {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.globe-lab__spark {
+  display: block;
+  width: 100%;
+  height: 44px;
+  background: var(--color-inset, #04070f);
+  border: 1px solid var(--color-line-1, #242e3d);
+}
+
+.globe-lab__anchor {
+  position: absolute;
+  z-index: 10;
+  border: 1px dashed var(--color-watch, #f8bd40);
+  pointer-events: none;
+}

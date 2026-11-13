@@ -1,0 +1,20 @@
+<!doctype html>
+<!--
+  Stand-alone entry for the globe bench, dev server only:
+    http://localhost:5181/src/globe/lab.html?motion=full
+  Same bench as #/globe-lab, but it does not load the rest of the app, so it keeps working while
+  another area's work in progress stops App.tsx from compiling. Deep links work the same way
+  (?sample=daklak-coffee, ?phase=explore, ?lang=vi).
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#03050b" />
+    <title>Astrovivu - globe bench</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/globe/lab-main.tsx"></script>
+  </body>
+</html>
