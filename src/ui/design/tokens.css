@@ -1,1 +1,481 @@
-/* PLACEHOLDER (owner: Design Director agent). Design tokens for the mission-control UI go here. */
+/*
+ * Astrovivu design tokens. Single source of truth for colour, type, space, elevation and motion.
+ * Rules of the system (see docs/DESIGN.md):
+ *   - Light is the operator: the brightest solid marks are what the user controls or measured.
+ *   - Hue is never decoration: it is either a state of the land or a data channel.
+ *   - Texture is honesty: dashed = forecast, dotted = simulated, hatched = not yet received.
+ * `src/ui/design/tokens.ts` mirrors the values that canvas / WebGL code needs as literals.
+ */
+@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource-variable/chivo-mono/index.css';
+
+@theme {
+  /* The default Tailwind palette, radii and shadows are removed on purpose: only system tokens exist. */
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --tracking-*: initial;
+  --breakpoint-*: initial;
+
+  /* Surfaces: night-side navy, hue 258. Each step is one elevation level. */
+  --color-void: #03050b;
+  --color-surface-0: #060b14;
+  --color-surface-1: #0b131e;
+  --color-surface-2: #131c2a;
+  --color-surface-3: #1c2737;
+  --color-inset: #04070f;
+  --color-scrim: rgb(3 5 11 / 0.72);
+
+  /* Lines. line-3 is the only one that reaches 3:1 and is therefore the control boundary. */
+  --color-line-1: #242e3d;
+  --color-line-2: #3a4656;
+  --color-line-3: #5d6a7d;
+
+  /* Ink. ink-1..3 pass 4.5:1 on every surface; ink-4 is for disabled and non-text marks only. */
+  --color-ink-1: #edebe4;
+  --color-ink-2: #bdc5d0;
+  --color-ink-3: #959faf;
+  --color-ink-4: #6a7586;
+
+  /* Signal: the operator. Solid fills for primary actions, selection, the timeline cursor, ground truth. */
+  --color-signal: #fbfaf6;
+  --color-on-signal: #060b14;
+
+  /* States of the land or of the data. Always paired with a shape and a word. */
+  --color-nominal: #58da98;
+  --color-watch: #f8bd40;
+  --color-alert: #ff5a50;
+  --color-stale: #92a8b9;
+  --color-simulated: #baaac7;
+  --color-truth: #fbfaf6;
+
+  /* Data ink, one per telemetry branch (Okabe-Ito hues relit for a dark ground). */
+  --color-branch-soil-moisture: #4dc3dd;
+  --color-branch-vegetation: #8add6c;
+  --color-branch-thermal: #ff8350;
+  --color-branch-rainfall: #87b1fd;
+  --color-branch-agromet: #f5db59;
+  --color-branch-terrain: #c8bca5;
+  --color-branch-soil: #d69459;
+  --color-branch-risk: #f180b5;
+
+  --color-black: #000;
+  --color-white: #fff;
+
+  /* Type. One grotesque in three widths plus its monospaced sibling; both carry full Vietnamese. */
+  --font-sans: 'Archivo Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-mono: 'Chivo Mono Variable', 'Cascadia Mono', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  --font-display: 'Archivo Variable', 'Segoe UI', system-ui, sans-serif;
+
+  /* Fixed rem scale, ratio about 1.2. `base` is the product default; `md` is for reading and phones. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-md: 1rem;
+  --text-md--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 3rem;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+  --tracking-widest: 0.22em;
+
+  /* Corners are machined, not soft. `full` is for dots, switch thumbs and the hub only. */
+  --radius-none: 0px;
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-full: 9999px;
+
+  /* Elevation: offset + blur, never a glow. Lifts plates off imagery, not off each other. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-md: 0 6px 16px -6px rgb(0 0 0 / 0.65), 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 20px 44px -14px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.5);
+
+  /* 1440 x 900 is the reference; 1280 x 720 must work; below `lg` the HUD stacks. */
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 90rem;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --default-transition-duration: 140ms;
+  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-skeleton: skeleton-sweep 1.6s linear infinite;
+  --animate-leader-draw: leader-draw var(--dur-slow) var(--ease-out) both;
+  --animate-fade-in: fade-in var(--dur-fade) ease-out both;
+
+  @keyframes skeleton-sweep {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes leader-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+}
+
+:root {
+  color-scheme: dark;
+
+  /* Width axis of the sans: engineering lettering in narrow, medium and wide. */
+  --stretch-condensed: 80%;
+  --stretch-semi: 90%;
+  --stretch-normal: 100%;
+  --stretch-expanded: 125%;
+
+  /* Motion. One response curve; durations name what they are for. */
+  --dur-instant: 80ms; /* press and hover feedback */
+  --dur-fast: 140ms; /* controls: toggles, tabs, tooltips */
+  --dur-base: 220ms; /* popovers, value and state changes */
+  --dur-slow: 420ms; /* sheets, leader lines drawing on, hub sweep */
+  --dur-camera: 1600ms; /* globe fly-in */
+  --dur-fade: 120ms; /* the only motion kept under reduced motion */
+
+  /* Layers, bottom to top. */
+  --z-globe: 0;
+  --z-map-ui: 10;
+  --z-leader: 20;
+  --z-hud: 30;
+  --z-panel: 40;
+  --z-dock: 50;
+  --z-chrome: 60;
+  --z-assistant: 70;
+  --z-overlay: 80;
+  --z-popover: 90;
+  --z-toast: 100;
+
+  /* Layout of the mission screens at the 1440 x 900 reference. */
+  --topbar-h: 48px;
+  --timeline-h: 132px;
+  --hud-gutter: 24px;
+  --hud-callout-w: 264px;
+  --hud-callout-gap: 12px;
+  --hud-hub: 148px;
+  --hud-shelf: 28px;
+  --panel-pad: 16px;
+  --touch: 44px;
+
+  /* Plates sit on imagery: nearly opaque, no blur (the globe owns the GPU). */
+  --plate: color-mix(in srgb, var(--color-surface-1) 94%, transparent);
+  --plate-raised: color-mix(in srgb, var(--color-surface-2) 96%, transparent);
+
+  /* Texture vocabulary. */
+  --hatch-pending: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-stale) 50%, transparent) 0 1px, transparent 1px 5px);
+  --hatch-simulated: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-simulated) 60%, transparent) 0 1px, transparent 1px 4px);
+
+  /* Map metric ramps, nine stops each (ColorBrewer, colour-blind safe). Low to high. */
+  --ramp-vegetation: linear-gradient(90deg, #ffffe5, #f7fcb9, #d9f0a3, #addd8e, #78c679, #41ab5d, #238443, #006837, #004529);
+  --ramp-moisture: linear-gradient(90deg, #ffffd9, #edf8b1, #c7e9b4, #7fcdbb, #41b6c4, #1d91c0, #225ea8, #253494, #081d58);
+  --ramp-heat: linear-gradient(90deg, #ffffcc, #ffeda0, #fed976, #feb24c, #fd8d3c, #fc4e2a, #e31a1c, #bd0026, #800026);
+  --ramp-rain: linear-gradient(90deg, #f7fbff, #deebf7, #c6dbef, #9ecae1, #6baed6, #4292c6, #2171b5, #08519c, #08306b);
+  /* Diverging, below normal to above normal. Dry-wet serves vegetation, moisture and rain. */
+  --ramp-anomaly-wet: linear-gradient(90deg, #8c510a, #bf812d, #dfc27d, #f6e8c3, #f5f5f5, #c7eae5, #80cdc1, #35978f, #01665e);
+  --ramp-anomaly-heat: linear-gradient(90deg, #2166ac, #4393c3, #92c5de, #d1e5f0, #f7f7f7, #fddbc7, #f4a582, #d6604d, #b2182b);
+}
+
+/*
+ * Density variants, matching the media queries below and `useHudDensity()`:
+ * `compact:` = 1280 x 720 class screens, `stacked:` = below 1024 px wide (phones, small tablets).
+ */
+@custom-variant compact {
+  @media (max-width: 89.99rem), (max-height: 50rem) {
+    @slot;
+  }
+}
+
+@custom-variant stacked {
+  @media (max-width: 63.99rem) {
+    @slot;
+  }
+}
+
+/* 1280 x 720: the same instruments, tighter. */
+@media (max-width: 89.99rem), (max-height: 50rem) {
+  :root {
+    --timeline-h: 112px;
+    --hud-gutter: 16px;
+    --hud-callout-w: 232px;
+    --hud-callout-gap: 8px;
+    --hud-hub: 128px;
+    --hud-shelf: 20px;
+    --panel-pad: 12px;
+  }
+}
+
+/* Phones and small tablets: no radial layout, thumbs need room. */
+@media (max-width: 63.99rem) {
+  :root {
+    --topbar-h: 52px;
+    --timeline-h: 96px;
+    --hud-gutter: 12px;
+    --hud-callout-w: 100%;
+    --hud-hub: 112px;
+    --panel-pad: 16px;
+  }
+}
+
+/*
+ * Reduced motion: nothing travels, sweeps or draws on. State changes are immediate; only a short
+ * opacity fade (--dur-fade) survives. Timeline playback is user-initiated data, so it still runs.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-camera: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-void);
+    color: var(--color-ink-1);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-stretch: var(--stretch-normal);
+  }
+
+  /* The parts the browser draws still belong to the system. */
+  ::selection {
+    background: var(--color-signal);
+    color: var(--color-on-signal);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-3) transparent;
+  }
+
+  input,
+  textarea,
+  [contenteditable] {
+    caret-color: var(--color-signal);
+  }
+
+  ::placeholder {
+    color: var(--color-ink-3);
+    opacity: 1;
+  }
+
+  a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Type roles. Use these instead of composing size + weight + width by hand.
+ * ------------------------------------------------------------------------------------------- */
+
+/* The wordmark and the hero. Wide cut, generous tracking; never used for UI text. */
+@utility t-display {
+  font-family: var(--font-display);
+  font-stretch: var(--stretch-expanded);
+  font-weight: 600;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+/* Screen and panel titles. */
+@utility t-title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+/* Section headings inside a panel. */
+@utility t-heading {
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+/* Default UI text. */
+@utility t-body {
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  font-weight: 400;
+}
+
+/* Explanations people actually read: advisory text, the assistant, phone screens. Keep to 68ch. */
+@utility t-reading {
+  font-size: var(--text-md);
+  line-height: var(--text-md--line-height);
+  font-weight: 400;
+  text-wrap: pretty;
+}
+
+/* Field and instrument labels: sentence case, semi-condensed. Not all-caps (stacked Vietnamese marks). */
+@utility t-label {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 500;
+  font-stretch: var(--stretch-semi);
+  letter-spacing: 0.01em;
+  color: var(--color-ink-2);
+}
+
+/* Secondary lines under a value or control. */
+@utility t-caption {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 400;
+  color: var(--color-ink-3);
+}
+
+/* One or two status words: NOMINAL, WATCH, SIM. The only all-caps text besides the wordmark. */
+@utility t-status {
+  font-size: var(--text-2xs);
+  line-height: var(--text-2xs--line-height);
+  font-weight: 600;
+  font-stretch: var(--stretch-semi);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+/* Measurements. Monospace is for numbers, units, dates and coordinates, never for prose or labels. */
+@utility t-value {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@utility t-unit {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 400;
+  color: var(--color-ink-3);
+}
+
+/* Source strings: "SMAP L4 · 9 km · 2 d". */
+@utility t-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: var(--text-2xs--line-height);
+  font-weight: 400;
+  color: var(--color-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Surfaces and textures.
+ * ------------------------------------------------------------------------------------------- */
+
+/* A plate over imagery. */
+@utility plate {
+  background: var(--plate);
+  border: 1px solid var(--color-line-1);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+@utility plate-raised {
+  background: var(--plate-raised);
+  border: 1px solid var(--color-line-2);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Data not received yet (latency gap). */
+@utility hatch-pending {
+  background-image: var(--hatch-pending);
+}
+
+/* Anything simulated. */
+@utility hatch-simulated {
+  background-image: var(--hatch-simulated);
+}
+
+@utility skeleton {
+  background-image: linear-gradient(90deg, var(--color-surface-2) 0%, var(--color-surface-3) 50%, var(--color-surface-2) 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-skeleton);
+  border-radius: var(--radius-xs);
+}
+
+/* Keeps a fixed-position screen inside the safe area on phones. */
+@utility safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
