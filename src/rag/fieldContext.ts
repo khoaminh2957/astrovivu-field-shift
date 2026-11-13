@@ -1,0 +1,222 @@
+/**
+ * Turns the locked parcel + telemetry + score at the cursor date into the compact `FieldContext`
+ * handed to the assistant. Pure: no fetch, no clock. Each fact is a string that starts with the
+ * value and unit and then says where it comes from, e.g.
+ *   `sm_root: "0.21 m³/m³ (SMAP L4, 9 km pixel, 2026-11-10; 9% below normal; confidence medium)"`.
+ * The leading number is what `parseFact` reads back for deterministic comparisons.
+ */
+import type {
+  BranchTelemetry,
+  FieldContext,
+  FieldTelemetry,
+  GroundTruth,
+  ISODate,
+  Parcel,
+  ScoreTimeline,
+  Series,
+  SourceRef,
+} from '@/contracts';
+import { pick } from '@/contracts';
+import { sampleAt, scoreAt } from '@/lib/series';
+import { addDays, dayOfYear, diffDays } from '@/lib/time';
+
+export interface FieldContextInput {
+  parcel: Parcel;
+  telemetry: FieldTelemetry | null;
+  score: ScoreTimeline | null;
+  cursor: ISODate;
+  cropId: string | null;
+  groundTruth?: GroundTruth;
+}
+
+const KEY_SERIES = ['sm_root', 'sm_surface', 'ndvi', 'evi', 'lst_day', 'esi', 'et', 'et0', 't2m', 't2m_max', 't2m_min', 'rh', 'par', 'wind'];
+const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function fmt(v: number): string {
+  const a = Math.abs(v);
+  return String(a >= 100 ? Math.round(v) : a >= 10 ? Number(v.toFixed(1)) : Number(v.toFixed(2)));
+}
+
+function pixel(src: SourceRef | undefined): string {
+  if (!src?.resolutionM) return '';
+  return src.resolutionM >= 1000 ? `${fmt(src.resolutionM / 1000)} km pixel` : `${Math.round(src.resolutionM)} m pixel`;
+}
+
+function srcLabel(src: SourceRef | undefined, sourceId: string): string {
+  const name = src?.name ?? sourceId;
+  const bits = [name, pixel(src)].filter(Boolean);
+  if (src && src.provenance !== 'observed') bits.push(src.provenance);
+  return bits.join(', ');
+}
+
+function anomalyText(series: Series, v: number, t: ISODate): string | null {
+  if (!series.baseline?.length) return null;
+  const d = dayOfYear(t);
+  const b = series.baseline.reduce((best, p) => (Math.abs(p.doy - d) < Math.abs(best.doy - d) ? p : best), series.baseline[0]);
+  if (!Number.isFinite(b.mean) || b.mean === 0) return null;
+  const pct = ((v - b.mean) / Math.abs(b.mean)) * 100;
+  const band = v < b.p10 ? 'below the 10th percentile' : v > b.p90 ? 'above the 90th percentile' : 'within the normal band';
+  return `${Math.abs(pct) < 1 ? 'about normal' : `${Math.round(Math.abs(pct))}% ${pct < 0 ? 'below' : 'above'} normal`} (${band}, normal ${fmt(b.mean)})`;
+}
+
+function allSeries(t: FieldTelemetry): Series[] {
+  return Object.values(t.branches).flatMap((b: BranchTelemetry) => b.series);
+}
+
+function sumWindow(s: Series, end: ISODate, days: number): { total: number; n: number } {
+  const start = addDays(end, -days + 1);
+  let total = 0;
+  let n = 0;
+  for (const x of s.samples) if (x.t >= start && x.t <= end && x.v != null) {
+    total += x.v;
+    n++;
+  }
+  return { total, n };
+}
+
+export function buildFieldContext(input: FieldContextInput): FieldContext {
+  const { parcel, telemetry, score, cursor, cropId, groundTruth: gt = {} } = input;
+  const facts: Record<string, string> = {};
+  const sources = telemetry?.sources ?? {};
+
+  if (telemetry) {
+    if (telemetry.mode !== 'live') facts.data_mode = telemetry.mode === 'mock' ? 'simulated telemetry (all sources unreachable or mock mode)' : 'cached demo telemetry';
+    const series = allSeries(telemetry);
+    for (const key of KEY_SERIES) {
+      const s = series.find((x) => x.key === key);
+      if (!s) continue;
+      const at = sampleAt(s, cursor);
+      if (!at.sample || at.sample.v == null) continue;
+      const src = sources[s.sourceId];
+      const extra: string[] = [];
+      const anom = anomalyText(s, at.sample.v, at.sample.t);
+      if (anom) extra.push(anom);
+      if (at.stale) extra.push(`stale: ${at.ageDays} days old`);
+      facts[key] = `${fmt(at.sample.v)} ${s.unit}`.trim() + ` (${srcLabel(src, s.sourceId)}, ${at.sample.t}${extra.length ? `; ${extra.join('; ')}` : ''})`;
+    }
+    const rain = series.find((x) => x.key === 'rain');
+    if (rain) {
+      const src = srcLabel(sources[rain.sourceId], rain.sourceId);
+      for (const days of [30, 90]) {
+        const w = sumWindow(rain, cursor, days);
+        if (w.n >= days * 0.7) facts[`rain_${days}d`] = `${fmt(w.total)} mm over the ${days} days to ${cursor} (${src})`;
+      }
+    }
+    for (const b of Object.values(telemetry.branches)) {
+      for (const f of b.facts) {
+        if (f.value == null) continue;
+        const src = sources[f.sourceId];
+        const unc = f.uncertainty ? `; 5-95%: ${f.uncertainty[0]}-${f.uncertainty[1]}` : '';
+        facts[f.key] = `${typeof f.value === 'number' ? fmt(f.value) : f.value}${f.unit ? ` ${f.unit}` : ''} (${srcLabel(src, f.sourceId)}${unc})`;
+      }
+      const lowConf = b.confidence.level === 'low' ? `low confidence: ${b.confidence.reasons.map((r) => pick(r, 'en')).join('; ')}` : '';
+      const notes = (b.notes ?? []).map((n) => pick(n, 'en'));
+      if (lowConf || notes.length) facts[`note_${b.id}`] = [lowConf, ...notes].filter(Boolean).join(' | ');
+      for (const e of b.events ?? []) {
+        if (e.end < cursor || diffDays(e.start, cursor) > 16) continue;
+        facts[`risk_${e.kind}_${e.start}`] = `${pick(e.title, 'en')}: ${pick(e.detail, 'en')} (${e.start} to ${e.end}, severity ${e.severity}/3, ${srcLabel(sources[e.sourceId], e.sourceId)})`;
+      }
+    }
+    // Climate normals from the multi-year history: annual and monthly.
+    const hist = telemetry.climateHistory ?? [];
+    if (hist.length >= 3) {
+      const src = telemetry.climateSourceId ? srcLabel(sources[telemetry.climateSourceId], telemetry.climateSourceId) : 'climate history';
+      const years = `${hist[0].year}-${hist[hist.length - 1].year}`;
+      const monthT: (number | null)[] = [];
+      const monthR: (number | null)[] = [];
+      for (let m = 1; m <= 12; m++) {
+        const ts = hist.map((y) => y.months.find((x) => x.month === m)?.tMean).filter((v): v is number => v != null);
+        const rs = hist.map((y) => y.months.find((x) => x.month === m)?.rainMm).filter((v): v is number => v != null);
+        monthT.push(ts.length ? ts.reduce((a, b) => a + b, 0) / ts.length : null);
+        monthR.push(rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null);
+      }
+      const tVals = monthT.filter((v): v is number => v != null);
+      if (tVals.length === 12) {
+        facts.climate_t_mean = `${fmt(tVals.reduce((a, b) => a + b, 0) / 12)} °C mean annual air temperature (${src}, ${years})`;
+        facts.climate_monthly_t = `${monthT.map((v, i) => `${MONTH[i]} ${fmt(v!)}`).join(', ')} °C (monthly means, ${src}, ${years})`;
+      }
+      const rVals = monthR.filter((v): v is number => v != null);
+      if (rVals.length === 12) {
+        facts.climate_rain_annual = `${fmt(rVals.reduce((a, b) => a + b, 0))} mm mean annual rainfall (${src}, ${years})`;
+        facts.climate_monthly_rain = `${monthR.map((v, i) => `${MONTH[i]} ${fmt(v!)}`).join(', ')} mm (monthly means, ${src}, ${years})`;
+      }
+    }
+  }
+  if (parcel.elevationM != null && facts.elevation_m == null) facts.elevation_m = `${Math.round(parcel.elevationM)} m (parcel elevation)`;
+
+  // Ground truth wins: replace the estimate and keep the estimate visible once.
+  const override = (key: string, value: string | number | undefined, unit = '') => {
+    if (value == null) return;
+    const prev = facts[key];
+    facts[key] = `${value}${unit ? ` ${unit}` : ''} (measured by the farmer${prev ? `; satellite/model estimate was ${prev}` : ''})`;
+  };
+  override('ph', gt.ph);
+  override('ec_dsm', gt.ecDsM, 'dS/m');
+  override('texture_class', gt.texture);
+  override('drainage_class', gt.drainage);
+  override('depth_cm', gt.soilDepthCm, 'cm');
+  if (gt.irrigation) facts.irrigation = `${gt.irrigation} (entered by the farmer${gt.waterSource ? `, source ${gt.waterSource}` : ''}${gt.waterReliability ? `, ${gt.waterReliability}` : ''})`;
+  if (gt.sowingDate) facts.sowing_date = `${gt.sowingDate} (entered by the farmer)`;
+  if (gt.variety) facts.variety = `${gt.variety} (entered by the farmer)`;
+  if (gt.issues?.length) facts.issues = `${gt.issues.join(', ')} (reported by the farmer)`;
+  if (gt.lastYieldTHa != null) facts.last_yield = `${gt.lastYieldTHa} t/ha (entered by the farmer)`;
+
+  // Score at the cursor and month by month.
+  let limitingFactor: string | undefined;
+  let productivity: number | undefined;
+  const snap = scoreAt(score, cursor);
+  if (score && snap) {
+    productivity = Math.round(snap.productivity);
+    facts.score_now = `${productivity}/100 productivity on ${snap.t} (condition ${Math.round(snap.condition)}${snap.compatibility != null ? `, compatibility ${Math.round(snap.compatibility)}` : ''}; score confidence ${fmt(snap.confidence)})`;
+    const lim = snap.factors.find((f) => f.key === snap.limiting);
+    if (lim) {
+      limitingFactor = `${pick(lim.label, 'en')} (score ${fmt(lim.score ?? 0)}; actual ${lim.actual ?? 'n/a'}${lim.unit ? ` ${lim.unit}` : ''}; ideal ${lim.ideal})`;
+    }
+    for (const f of snap.factors) {
+      facts[`factor_${f.key}`] = `${f.score == null ? 'missing' : fmt(f.score)} (actual ${f.actual ?? 'n/a'}${f.unit ? ` ${f.unit}` : ''}; ideal ${f.ideal}; ${f.kind}${f.limiting ? '; limiting' : ''})`;
+    }
+    const s = score.summary;
+    if (s.reliability) facts.reliability = `suitable in ${s.reliability.yearsOk} of ${s.reliability.yearsTotal} analysed years`;
+    if (s.expectedYieldFraction != null) facts.expected_yield_fraction = `${Math.round(s.expectedYieldFraction * 100)}% of attainable yield`;
+    // One snapshot per month (the 15th, or the last before it).
+    const seenMonth = new Set<string>();
+    for (const x of score.snapshots) {
+      const ym = x.t.slice(0, 7);
+      if (seenMonth.has(ym) || x.t > cursor) continue;
+      const mid = scoreAt(score, `${ym}-15`);
+      if (!mid || mid.t.slice(0, 7) !== ym) continue;
+      seenMonth.add(ym);
+      const l = mid.factors.find((f) => f.key === mid.limiting);
+      facts[`score_${ym}`] = `${Math.round(mid.productivity)}/100${l ? `; limiting ${pick(l.label, 'en')} ${fmt(l.score ?? 0)}` : ''}`;
+    }
+  }
+
+  return {
+    parcelName: parcel.name,
+    place: parcel.place?.label,
+    location: parcel.centroid,
+    areaHa: Number(parcel.areaHa.toFixed(2)),
+    cropId,
+    date: cursor,
+    facts,
+    limitingFactor,
+    productivity,
+  };
+}
+
+/** Leading number of a fact string ("5.6 (SoilGrids…)" -> 5.6); null when it does not start with one. */
+export function parseFact(s: string | undefined): number | null {
+  if (!s) return null;
+  const m = s.match(/^\s*(-?\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) : null;
+}
+
+/** Monthly values of a `climate_monthly_*` fact, Jan..Dec. */
+export function parseMonthly(s: string | undefined): (number | null)[] | null {
+  if (!s) return null;
+  const vals = MONTH.map((m) => {
+    const r = s.match(new RegExp(`${m} (-?\\d+(?:\\.\\d+)?)`));
+    return r ? Number(r[1]) : null;
+  });
+  return vals.some((v) => v != null) ? vals : null;
+}

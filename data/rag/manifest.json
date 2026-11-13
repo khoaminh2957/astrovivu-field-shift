@@ -1,0 +1,1512 @@
+{
+ "builtAt": "2026-11-13T20:17:19.775Z",
+ "sources": {
+  "ecocrop": {
+   "license": "FAO EcoCrop (attribution, non-commercial)",
+   "documents": 2568,
+   "chunks": 4845,
+   "factSheets": 2642,
+   "cleanedRows": 693
+  },
+  "wikipedia-en": {
+   "license": "CC BY-SA 4.0",
+   "documents": 98,
+   "chunks": 830
+  },
+  "wikipedia-vi": {
+   "license": "CC BY-SA 4.0",
+   "documents": 82,
+   "chunks": 377
+  },
+  "glossary-en": {
+   "license": "CC BY 4.0 (Astrovivu team)",
+   "documents": 28,
+   "chunks": 28
+  },
+  "glossary-vi": {
+   "license": "CC BY 4.0 (Astrovivu team)",
+   "documents": 28,
+   "chunks": 28
+  }
+ },
+ "chunks": {
+  "core": 1559,
+  "total": 6108,
+  "wordsMedian": 155,
+  "wordsP10": 50,
+  "wordsP90": 231
+ },
+ "aliases": {
+  "core": 1660,
+  "full": 15318
+ },
+ "artifacts": {
+  "public/rag/core.json": {
+   "bytes": 4229368,
+   "gzip": 1039796
+  },
+  "public/rag/full.json": {
+   "bytes": 16656684,
+   "gzip": 3033583
+  }
+ },
+ "wikipedia": [
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Rice",
+   "revid": 1384744435,
+   "url": "https://en.wikipedia.org/wiki/Rice",
+   "chunks": 16
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Gạo",
+   "revid": 75354463,
+   "url": "https://vi.wikipedia.org/wiki/G%E1%BA%A1o",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Maize",
+   "revid": 1383485160,
+   "url": "https://en.wikipedia.org/wiki/Maize",
+   "chunks": 16
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Ngô",
+   "revid": 75653657,
+   "url": "https://vi.wikipedia.org/wiki/Ng%C3%B4",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Wheat",
+   "revid": 1383635584,
+   "url": "https://en.wikipedia.org/wiki/Wheat",
+   "chunks": 14
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Lúa mì",
+   "revid": 75387014,
+   "url": "https://vi.wikipedia.org/wiki/L%C3%BAa_m%C3%AC",
+   "chunks": 13
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Sorghum",
+   "revid": 1383739350,
+   "url": "https://en.wikipedia.org/wiki/Sorghum",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cao lương",
+   "revid": 74989793,
+   "url": "https://vi.wikipedia.org/wiki/Cao_l%C6%B0%C6%A1ng",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Barley",
+   "revid": 1382936684,
+   "url": "https://en.wikipedia.org/wiki/Barley",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đại mạch",
+   "revid": 74822516,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%A1i_m%E1%BA%A1ch",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Pearl millet",
+   "revid": 1383401951,
+   "url": "https://en.wikipedia.org/wiki/Pearl_millet",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Pennisetum glaucum",
+   "revid": 69616228,
+   "url": "https://vi.wikipedia.org/wiki/Pennisetum_glaucum",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Oat",
+   "revid": 1385199432,
+   "url": "https://en.wikipedia.org/wiki/Oat",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Yến mạch",
+   "revid": 75101296,
+   "url": "https://vi.wikipedia.org/wiki/Y%E1%BA%BFn_m%E1%BA%A1ch",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Soybean",
+   "revid": 1384861380,
+   "url": "https://en.wikipedia.org/wiki/Soybean",
+   "chunks": 19
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu tương",
+   "revid": 75006396,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_t%C6%B0%C6%A1ng",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Peanut",
+   "revid": 1384400974,
+   "url": "https://en.wikipedia.org/wiki/Peanut",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Lạc",
+   "revid": 75689795,
+   "url": "https://vi.wikipedia.org/wiki/L%E1%BA%A1c",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Mung bean",
+   "revid": 1376337437,
+   "url": "https://en.wikipedia.org/wiki/Mung_bean",
+   "chunks": 14
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu xanh",
+   "revid": 75626769,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_xanh",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cowpea",
+   "revid": 1382950060,
+   "url": "https://en.wikipedia.org/wiki/Cowpea",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu dải",
+   "revid": 71018994,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_d%E1%BA%A3i",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Phaseolus vulgaris",
+   "revid": 1381249768,
+   "url": "https://en.wikipedia.org/wiki/Phaseolus_vulgaris",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Phaseolus vulgaris",
+   "revid": 75670270,
+   "url": "https://vi.wikipedia.org/wiki/Phaseolus_vulgaris",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Chickpea",
+   "revid": 1383890522,
+   "url": "https://en.wikipedia.org/wiki/Chickpea",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu hồi",
+   "revid": 71480884,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_h%E1%BB%93i",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Pigeon pea",
+   "revid": 1383661353,
+   "url": "https://en.wikipedia.org/wiki/Pigeon_pea",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu triều",
+   "revid": 74464889,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_tri%E1%BB%81u",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Lentil",
+   "revid": 1383890563,
+   "url": "https://en.wikipedia.org/wiki/Lentil",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Thiết đậu",
+   "revid": 71528363,
+   "url": "https://vi.wikipedia.org/wiki/Thi%E1%BA%BFt_%C4%91%E1%BA%ADu",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Pea",
+   "revid": 1383660270,
+   "url": "https://en.wikipedia.org/wiki/Pea",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu Hà Lan",
+   "revid": 75074782,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_H%C3%A0_Lan",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Sesame",
+   "revid": 1383737693,
+   "url": "https://en.wikipedia.org/wiki/Sesame",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Vừng",
+   "revid": 71530197,
+   "url": "https://vi.wikipedia.org/wiki/V%E1%BB%ABng",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Common sunflower",
+   "revid": 1383621123,
+   "url": "https://en.wikipedia.org/wiki/Common_sunflower",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Hướng dương",
+   "revid": 75289447,
+   "url": "https://vi.wikipedia.org/wiki/H%C6%B0%E1%BB%9Bng_d%C6%B0%C6%A1ng",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Rapeseed",
+   "revid": 1383734223,
+   "url": "https://en.wikipedia.org/wiki/Rapeseed",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cải dầu",
+   "revid": 75283184,
+   "url": "https://vi.wikipedia.org/wiki/C%E1%BA%A3i_d%E1%BA%A7u",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Elaeis guineensis",
+   "revid": 1366714968,
+   "url": "https://en.wikipedia.org/wiki/Elaeis_guineensis",
+   "chunks": 17
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cọ dầu",
+   "revid": 74755018,
+   "url": "https://vi.wikipedia.org/wiki/C%E1%BB%8D_d%E1%BA%A7u",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cassava",
+   "revid": 1384658657,
+   "url": "https://en.wikipedia.org/wiki/Cassava",
+   "chunks": 13
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Sắn",
+   "revid": 75678146,
+   "url": "https://vi.wikipedia.org/wiki/S%E1%BA%AFn",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Sweet potato",
+   "revid": 1384588876,
+   "url": "https://en.wikipedia.org/wiki/Sweet_potato",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Khoai lang",
+   "revid": 75518250,
+   "url": "https://vi.wikipedia.org/wiki/Khoai_lang",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Potato",
+   "revid": 1383735624,
+   "url": "https://en.wikipedia.org/wiki/Potato",
+   "chunks": 16
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Khoai tây",
+   "revid": 75554725,
+   "url": "https://vi.wikipedia.org/wiki/Khoai_t%C3%A2y",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Taro",
+   "revid": 1384898108,
+   "url": "https://en.wikipedia.org/wiki/Taro",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Khoai môn",
+   "revid": 75623467,
+   "url": "https://vi.wikipedia.org/wiki/Khoai_m%C3%B4n",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Dioscorea alata",
+   "revid": 1383411351,
+   "url": "https://en.wikipedia.org/wiki/Dioscorea_alata",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Khoai mỡ",
+   "revid": 75057557,
+   "url": "https://vi.wikipedia.org/wiki/Khoai_m%E1%BB%A1",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Coffea canephora",
+   "revid": 1378382669,
+   "url": "https://en.wikipedia.org/wiki/Coffea_canephora",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cà phê vối",
+   "revid": 74907073,
+   "url": "https://vi.wikipedia.org/wiki/C%C3%A0_ph%C3%AA_v%E1%BB%91i",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Coffea arabica",
+   "revid": 1382932294,
+   "url": "https://en.wikipedia.org/wiki/Coffea_arabica",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cà phê chè",
+   "revid": 75384291,
+   "url": "https://vi.wikipedia.org/wiki/C%C3%A0_ph%C3%AA_ch%C3%A8",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Black pepper",
+   "revid": 1382449756,
+   "url": "https://en.wikipedia.org/wiki/Black_pepper",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Hồ tiêu",
+   "revid": 74944576,
+   "url": "https://vi.wikipedia.org/wiki/H%E1%BB%93_ti%C3%AAu",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Camellia sinensis",
+   "revid": 1381463041,
+   "url": "https://en.wikipedia.org/wiki/Camellia_sinensis",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Trà (thực vật)",
+   "revid": 75530181,
+   "url": "https://vi.wikipedia.org/wiki/Tr%C3%A0_(th%E1%BB%B1c_v%E1%BA%ADt)",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Theobroma cacao",
+   "revid": 1385522018,
+   "url": "https://en.wikipedia.org/wiki/Theobroma_cacao",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cacao",
+   "revid": 75645794,
+   "url": "https://vi.wikipedia.org/wiki/Cacao",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Hevea brasiliensis",
+   "revid": 1382233260,
+   "url": "https://en.wikipedia.org/wiki/Hevea_brasiliensis",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cao su (cây)",
+   "revid": 75019768,
+   "url": "https://vi.wikipedia.org/wiki/Cao_su_(c%C3%A2y)",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Sugarcane",
+   "revid": 1383743230,
+   "url": "https://en.wikipedia.org/wiki/Sugarcane",
+   "chunks": 17
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Mía",
+   "revid": 74716160,
+   "url": "https://vi.wikipedia.org/wiki/M%C3%ADa",
+   "chunks": 15
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Gossypium hirsutum",
+   "revid": 1377313662,
+   "url": "https://en.wikipedia.org/wiki/Gossypium_hirsutum",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Gossypium hirsutum",
+   "revid": 69494098,
+   "url": "https://vi.wikipedia.org/wiki/Gossypium_hirsutum",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cashew",
+   "revid": 1385319519,
+   "url": "https://en.wikipedia.org/wiki/Cashew",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Điều",
+   "revid": 75279505,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90i%E1%BB%81u",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Macadamia integrifolia",
+   "revid": 1359886197,
+   "url": "https://en.wikipedia.org/wiki/Macadamia_integrifolia",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Mắc ca lá nhẵn",
+   "revid": 73517510,
+   "url": "https://vi.wikipedia.org/wiki/M%E1%BA%AFc_ca_l%C3%A1_nh%E1%BA%B5n",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Banana",
+   "revid": 1385011100,
+   "url": "https://en.wikipedia.org/wiki/Banana",
+   "chunks": 19
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Chuối",
+   "revid": 75599461,
+   "url": "https://vi.wikipedia.org/wiki/Chu%E1%BB%91i",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Durio zibethinus",
+   "revid": 1368025803,
+   "url": "https://en.wikipedia.org/wiki/Durio_zibethinus",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Durio zibethinus",
+   "revid": 75588473,
+   "url": "https://vi.wikipedia.org/wiki/Durio_zibethinus",
+   "chunks": 0
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Avocado",
+   "revid": 1382935995,
+   "url": "https://en.wikipedia.org/wiki/Avocado",
+   "chunks": 18
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Bơ (thực vật)",
+   "revid": 75236998,
+   "url": "https://vi.wikipedia.org/wiki/B%C6%A1_(th%E1%BB%B1c_v%E1%BA%ADt)",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Mango",
+   "revid": 1383739864,
+   "url": "https://en.wikipedia.org/wiki/Mango",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Xoài",
+   "revid": 74602472,
+   "url": "https://vi.wikipedia.org/wiki/Xo%C3%A0i",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Papaya",
+   "revid": 1383654418,
+   "url": "https://en.wikipedia.org/wiki/Papaya",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đu đủ",
+   "revid": 74210742,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90u_%C4%91%E1%BB%A7",
+   "chunks": 15
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Orange (fruit)",
+   "revid": 1383653253,
+   "url": "https://en.wikipedia.org/wiki/Orange_(fruit)",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cam",
+   "revid": 75551056,
+   "url": "https://vi.wikipedia.org/wiki/Cam",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Watermelon",
+   "revid": 1385318453,
+   "url": "https://en.wikipedia.org/wiki/Watermelon",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Dưa hấu",
+   "revid": 75454845,
+   "url": "https://vi.wikipedia.org/wiki/D%C6%B0a_h%E1%BA%A5u",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Alfalfa",
+   "revid": 1385515667,
+   "url": "https://en.wikipedia.org/wiki/Alfalfa",
+   "chunks": 14
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cỏ linh lăng",
+   "revid": 67993186,
+   "url": "https://vi.wikipedia.org/wiki/C%E1%BB%8F_linh_l%C4%83ng",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Trifolium repens",
+   "revid": 1376551191,
+   "url": "https://en.wikipedia.org/wiki/Trifolium_repens",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu chẽ ba hoa trắng",
+   "revid": 71194143,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_ch%E1%BA%BD_ba_hoa_tr%E1%BA%AFng",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Trifolium pratense",
+   "revid": 1371055360,
+   "url": "https://en.wikipedia.org/wiki/Trifolium_pratense",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Chẽ ba đỏ",
+   "revid": 74627762,
+   "url": "https://vi.wikipedia.org/wiki/Ch%E1%BA%BD_ba_%C4%91%E1%BB%8F",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Vicia villosa",
+   "revid": 1304388952,
+   "url": "https://en.wikipedia.org/wiki/Vicia_villosa",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Vicia villosa",
+   "revid": 75281395,
+   "url": "https://vi.wikipedia.org/wiki/Vicia_villosa",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Rye",
+   "revid": 1383735922,
+   "url": "https://en.wikipedia.org/wiki/Rye",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Lúa mạch đen",
+   "revid": 75387016,
+   "url": "https://vi.wikipedia.org/wiki/L%C3%BAa_m%E1%BA%A1ch_%C4%91en",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Crotalaria juncea",
+   "revid": 1375768727,
+   "url": "https://en.wikipedia.org/wiki/Crotalaria_juncea",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Lục lạc sợi",
+   "revid": 69889957,
+   "url": "https://vi.wikipedia.org/wiki/L%E1%BB%A5c_l%E1%BA%A1c_s%E1%BB%A3i",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Mucuna pruriens",
+   "revid": 1382513471,
+   "url": "https://en.wikipedia.org/wiki/Mucuna_pruriens",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu mèo rừng",
+   "revid": 70936840,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_m%C3%A8o_r%E1%BB%ABng",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Stylosanthes guianensis",
+   "revid": 1357923316,
+   "url": "https://en.wikipedia.org/wiki/Stylosanthes_guianensis",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Ti lô mảnh",
+   "revid": 70019718,
+   "url": "https://vi.wikipedia.org/wiki/Ti_l%C3%B4_m%E1%BA%A3nh",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Lablab",
+   "revid": 1375448947,
+   "url": "https://en.wikipedia.org/wiki/Lablab",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Chi Đậu ván",
+   "revid": 74920127,
+   "url": "https://vi.wikipedia.org/wiki/Chi_%C4%90%E1%BA%ADu_v%C3%A1n",
+   "chunks": 0
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Buckwheat",
+   "revid": 1384222416,
+   "url": "https://en.wikipedia.org/wiki/Buckwheat",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Mạch ba góc",
+   "revid": 75223963,
+   "url": "https://vi.wikipedia.org/wiki/M%E1%BA%A1ch_ba_g%C3%B3c",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Radish",
+   "revid": 1375183622,
+   "url": "https://en.wikipedia.org/wiki/Radish",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cải củ",
+   "revid": 70033215,
+   "url": "https://vi.wikipedia.org/wiki/C%E1%BA%A3i_c%E1%BB%A7",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Tomato",
+   "revid": 1384241377,
+   "url": "https://en.wikipedia.org/wiki/Tomato",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cà chua",
+   "revid": 75565537,
+   "url": "https://vi.wikipedia.org/wiki/C%C3%A0_chua",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Capsicum annuum",
+   "revid": 1375091647,
+   "url": "https://en.wikipedia.org/wiki/Capsicum_annuum",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Capsicum annuum",
+   "revid": 74386839,
+   "url": "https://vi.wikipedia.org/wiki/Capsicum_annuum",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cabbage",
+   "revid": 1384003797,
+   "url": "https://en.wikipedia.org/wiki/Cabbage",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cải bắp",
+   "revid": 75633530,
+   "url": "https://vi.wikipedia.org/wiki/C%E1%BA%A3i_b%E1%BA%AFp",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Bok choy",
+   "revid": 1381186731,
+   "url": "https://en.wikipedia.org/wiki/Bok_choy",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cải thìa",
+   "revid": 72079190,
+   "url": "https://vi.wikipedia.org/wiki/C%E1%BA%A3i_th%C3%ACa",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Lettuce",
+   "revid": 1383446612,
+   "url": "https://en.wikipedia.org/wiki/Lettuce",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Xà lách",
+   "revid": 74932566,
+   "url": "https://vi.wikipedia.org/wiki/X%C3%A0_l%C3%A1ch",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cucumber",
+   "revid": 1384250413,
+   "url": "https://en.wikipedia.org/wiki/Cucumber",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Dưa chuột",
+   "revid": 75653820,
+   "url": "https://vi.wikipedia.org/wiki/D%C6%B0a_chu%E1%BB%99t",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cucurbita moschata",
+   "revid": 1370182256,
+   "url": "https://en.wikipedia.org/wiki/Cucurbita_moschata",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Bí rợ",
+   "revid": 68333456,
+   "url": "https://vi.wikipedia.org/wiki/B%C3%AD_r%E1%BB%A3",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Okra",
+   "revid": 1384480256,
+   "url": "https://en.wikipedia.org/wiki/Okra",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Đậu bắp",
+   "revid": 75633553,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_b%E1%BA%AFp",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Onion",
+   "revid": 1383660076,
+   "url": "https://en.wikipedia.org/wiki/Onion",
+   "chunks": 13
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Hành tây",
+   "revid": 75569807,
+   "url": "https://vi.wikipedia.org/wiki/H%C3%A0nh_t%C3%A2y",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Garlic",
+   "revid": 1383089471,
+   "url": "https://en.wikipedia.org/wiki/Garlic",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Tỏi",
+   "revid": 75430922,
+   "url": "https://vi.wikipedia.org/wiki/T%E1%BB%8Fi",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Carrot",
+   "revid": 1382940760,
+   "url": "https://en.wikipedia.org/wiki/Carrot",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cà rốt",
+   "revid": 75240554,
+   "url": "https://vi.wikipedia.org/wiki/C%C3%A0_r%E1%BB%91t",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Ipomoea aquatica",
+   "revid": 1383412303,
+   "url": "https://en.wikipedia.org/wiki/Ipomoea_aquatica",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Rau muống",
+   "revid": 73756767,
+   "url": "https://vi.wikipedia.org/wiki/Rau_mu%E1%BB%91ng",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Eggplant",
+   "revid": 1384608579,
+   "url": "https://en.wikipedia.org/wiki/Eggplant",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cà tím",
+   "revid": 74353170,
+   "url": "https://vi.wikipedia.org/wiki/C%C3%A0_t%C3%ADm",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Spinach",
+   "revid": 1383884784,
+   "url": "https://en.wikipedia.org/wiki/Spinach",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Rau chân vịt",
+   "revid": 73748415,
+   "url": "https://vi.wikipedia.org/wiki/Rau_ch%C3%A2n_v%E1%BB%8Bt",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Basil",
+   "revid": 1375753314,
+   "url": "https://en.wikipedia.org/wiki/Basil",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Húng tây",
+   "revid": 75576727,
+   "url": "https://vi.wikipedia.org/wiki/H%C3%BAng_t%C3%A2y",
+   "chunks": 14
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Coriander",
+   "revid": 1385201599,
+   "url": "https://en.wikipedia.org/wiki/Coriander",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Rau mùi",
+   "revid": 75299823,
+   "url": "https://vi.wikipedia.org/wiki/Rau_m%C3%B9i",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Spearmint",
+   "revid": 1375239769,
+   "url": "https://en.wikipedia.org/wiki/Spearmint",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Bạc hà lục",
+   "revid": 73457958,
+   "url": "https://vi.wikipedia.org/wiki/B%E1%BA%A1c_h%C3%A0_l%E1%BB%A5c",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cymbopogon citratus",
+   "revid": 1365355224,
+   "url": "https://en.wikipedia.org/wiki/Cymbopogon_citratus",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Sả chanh",
+   "revid": 73701994,
+   "url": "https://vi.wikipedia.org/wiki/S%E1%BA%A3_chanh",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Ginger",
+   "revid": 1375500055,
+   "url": "https://en.wikipedia.org/wiki/Ginger",
+   "chunks": 7
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Gừng",
+   "revid": 75116952,
+   "url": "https://vi.wikipedia.org/wiki/G%E1%BB%ABng",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Turmeric",
+   "revid": 1383649109,
+   "url": "https://en.wikipedia.org/wiki/Turmeric",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Nghệ",
+   "revid": 75367532,
+   "url": "https://vi.wikipedia.org/wiki/Ngh%E1%BB%87",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Perilla frutescens",
+   "revid": 1381475285,
+   "url": "https://en.wikipedia.org/wiki/Perilla_frutescens",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Perilla frutescens",
+   "revid": 74924276,
+   "url": "https://vi.wikipedia.org/wiki/Perilla_frutescens",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Evapotranspiration",
+   "revid": 1374675323,
+   "url": "https://en.wikipedia.org/wiki/Evapotranspiration",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Normalized difference vegetation index",
+   "revid": 1370999071,
+   "url": "https://en.wikipedia.org/wiki/Normalized_difference_vegetation_index",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Enhanced vegetation index",
+   "revid": 1335518303,
+   "url": "https://en.wikipedia.org/wiki/Enhanced_vegetation_index",
+   "chunks": 4
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Soil moisture",
+   "revid": 1379027994,
+   "url": "https://en.wikipedia.org/wiki/Soil_moisture",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Soil Moisture Active Passive",
+   "revid": 1378437267,
+   "url": "https://en.wikipedia.org/wiki/Soil_Moisture_Active_Passive",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Moderate Resolution Imaging Spectroradiometer",
+   "revid": 1371064337,
+   "url": "https://en.wikipedia.org/wiki/Moderate_Resolution_Imaging_Spectroradiometer",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Global Precipitation Measurement",
+   "revid": 1369962081,
+   "url": "https://en.wikipedia.org/wiki/Global_Precipitation_Measurement",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Shuttle Radar Topography Mission",
+   "revid": 1373943502,
+   "url": "https://en.wikipedia.org/wiki/Shuttle_Radar_Topography_Mission",
+   "chunks": 9
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Remote sensing",
+   "revid": 1383451494,
+   "url": "https://en.wikipedia.org/wiki/Remote_sensing",
+   "chunks": 13
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Viễn thám",
+   "revid": 75208398,
+   "url": "https://vi.wikipedia.org/wiki/Vi%E1%BB%85n_th%C3%A1m",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Crop rotation",
+   "revid": 1382035952,
+   "url": "https://en.wikipedia.org/wiki/Crop_rotation",
+   "chunks": 14
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Luân canh",
+   "revid": 71424755,
+   "url": "https://vi.wikipedia.org/wiki/Lu%C3%A2n_canh",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Cover crop",
+   "revid": 1383370005,
+   "url": "https://en.wikipedia.org/wiki/Cover_crop",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Green manure",
+   "revid": 1382970964,
+   "url": "https://en.wikipedia.org/wiki/Green_manure",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Phân xanh",
+   "revid": 69288494,
+   "url": "https://vi.wikipedia.org/wiki/Ph%C3%A2n_xanh",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Intercropping",
+   "revid": 1360692020,
+   "url": "https://en.wikipedia.org/wiki/Intercropping",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Nitrogen fixation",
+   "revid": 1375800692,
+   "url": "https://en.wikipedia.org/wiki/Nitrogen_fixation",
+   "chunks": 14
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Cố định đạm",
+   "revid": 74986978,
+   "url": "https://vi.wikipedia.org/wiki/C%E1%BB%91_%C4%91%E1%BB%8Bnh_%C4%91%E1%BA%A1m",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Soil pH",
+   "revid": 1377219732,
+   "url": "https://en.wikipedia.org/wiki/Soil_pH",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Độ pH của đất",
+   "revid": 75579015,
+   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BB%99_pH_c%E1%BB%A7a_%C4%91%E1%BA%A5t",
+   "chunks": 6
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Liming (soil)",
+   "revid": 1319486540,
+   "url": "https://en.wikipedia.org/wiki/Liming_(soil)",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Soil texture",
+   "revid": 1384162768,
+   "url": "https://en.wikipedia.org/wiki/Soil_texture",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Growing degree-day",
+   "revid": 1369136787,
+   "url": "https://en.wikipedia.org/wiki/Growing_degree-day",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Frost",
+   "revid": 1372151439,
+   "url": "https://en.wikipedia.org/wiki/Frost",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Sương muối",
+   "revid": 75142452,
+   "url": "https://vi.wikipedia.org/wiki/S%C6%B0%C6%A1ng_mu%E1%BB%91i",
+   "chunks": 3
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Water balance",
+   "revid": 1186300792,
+   "url": "https://en.wikipedia.org/wiki/Water_balance",
+   "chunks": 5
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Irrigation",
+   "revid": 1385385231,
+   "url": "https://en.wikipedia.org/wiki/Irrigation",
+   "chunks": 11
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Thủy lợi",
+   "revid": 75227750,
+   "url": "https://vi.wikipedia.org/wiki/Th%E1%BB%A7y_l%E1%BB%A3i",
+   "chunks": 1
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Drip irrigation",
+   "revid": 1375186568,
+   "url": "https://en.wikipedia.org/wiki/Drip_irrigation",
+   "chunks": 10
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Tưới nhỏ giọt",
+   "revid": 72009844,
+   "url": "https://vi.wikipedia.org/wiki/T%C6%B0%E1%BB%9Bi_nh%E1%BB%8F_gi%E1%BB%8Dt",
+   "chunks": 2
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Agroforestry",
+   "revid": 1385035730,
+   "url": "https://en.wikipedia.org/wiki/Agroforestry",
+   "chunks": 13
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Nông lâm kết hợp",
+   "revid": 75266610,
+   "url": "https://vi.wikipedia.org/wiki/N%C3%B4ng_l%C3%A2m_k%E1%BA%BFt_h%E1%BB%A3p",
+   "chunks": 8
+  },
+  {
+   "source": "wikipedia-en",
+   "lang": "en",
+   "title": "Drought",
+   "revid": 1378555067,
+   "url": "https://en.wikipedia.org/wiki/Drought",
+   "chunks": 12
+  },
+  {
+   "source": "wikipedia-vi",
+   "lang": "vi",
+   "title": "Hạn hán",
+   "revid": 75082853,
+   "url": "https://vi.wikipedia.org/wiki/H%E1%BA%A1n_h%C3%A1n",
+   "chunks": 9
+  }
+ ],
+ "missingVietnamese": []
+}
