@@ -102,6 +102,11 @@ export interface RotationSeason {
   label: I18nText;
   startMonth: number;
   endMonth: number;
+  /**
+   * 0-based year of the rotation in which the season starts. Optional: without it the UI lays
+   * seasons out in order, treating a 12-month season as standing across every year (a perennial).
+   */
+  year?: number;
 }
 
 export type RotationKind = 'current' | 'soil-health' | 'water-saver' | 'income' | 'resilience';

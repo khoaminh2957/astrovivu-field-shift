@@ -34,6 +34,8 @@ export interface CropRequirements {
   fertility?: { opt: FertilityClass; abs: FertilityClass };
   /** Temperature that kills the plant in early growth, °C. */
   killTempC?: number | null;
+  /** Temperature that kills the plant while it rests (winter dormancy), °C. Used for perennials. */
+  killTempRestC?: number | null;
   altitudeMaxM?: number | null;
   /** Absolute latitude limits [south, north] in degrees, as published by EcoCrop. */
   latitudeAbs?: [number, number] | null;
@@ -99,4 +101,9 @@ export interface CropProfile {
   summary?: I18nText;
   /** True when agronomy and economics were hand-curated with sources (not only EcoCrop thresholds). */
   curated: boolean;
+  /**
+   * Data-quality flags set by the catalogue build, e.g. `cycle-assumed`, `ph-missing`,
+   * `quad-repaired`, `not-in-ecocrop`, `water-model-assumed`. The scorer turns them into caveats.
+   */
+  flags?: string[];
 }
