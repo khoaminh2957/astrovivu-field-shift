@@ -1,0 +1,37 @@
+import { registerStrings } from '@/i18n';
+
+registerStrings(
+  'chrome',
+  {
+    'nav.label': 'Mission views',
+    'nav.field': 'Field',
+    'nav.advisory': 'Advisory',
+    'nav.tracking': 'Tracking',
+    change: 'Change field',
+    urban: 'Urban grower',
+    urbanBack: 'Back to the field',
+    urbanBackExplore: 'Back to the globe',
+    lang: 'Language',
+    groundTruth: 'Ground truth',
+    groundTruthCount: '{n} values you entered',
+    home: 'Astrovivu home: back to the globe',
+    area: '{a} ha',
+    choose: 'Choose a field to begin',
+  },
+  {
+    'nav.label': 'Các màn hình',
+    'nav.field': 'Thửa ruộng',
+    'nav.advisory': 'Khuyến nghị',
+    'nav.tracking': 'Theo dõi',
+    change: 'Đổi thửa',
+    urban: 'Trồng rau đô thị',
+    urbanBack: 'Về thửa ruộng',
+    urbanBackExplore: 'Về quả địa cầu',
+    lang: 'Ngôn ngữ',
+    groundTruth: 'Số liệu thực địa',
+    groundTruthCount: '{n} giá trị bạn đã nhập',
+    home: 'Trang đầu Astrovivu: về quả địa cầu',
+    area: '{a} ha',
+    choose: 'Chọn một thửa ruộng để bắt đầu',
+  },
+);
