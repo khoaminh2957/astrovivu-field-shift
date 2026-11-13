@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.cache/
+.agent-locks/
+.vite/
+coverage/
+*.log
+.env
+.env.local
+.DS_Store
+Thumbs.db
+.claude/worktrees/
+.claude/settings.local.json

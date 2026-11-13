@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiêu đề cột – ecocrop_2568_plants</title>
+<style>
+:root {
+  --bg:#fafaf7; --fg:#1f2a24; --muted:#5d6b62; --line:#dfe4dc; --card:#fff;
+  --id:#e7eefb; --desc:#eaf5e4; --eco:#fdf3dc; --clim:#e6f4f6; --cult:#f6e9f3; --use:#fbe9e2; --meta:#eeeeea;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap { max-width:1100px; margin:0 auto; padding:28px 20px 60px; }
+h1 { font-size:24px; margin:0 0 4px; }
+.sub { color:var(--muted); margin:0 0 18px; }
+.legend { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:18px; }
+.legend h2 { font-size:14px; margin:0 0 8px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+.legend ul { margin:0; padding-left:18px; }
+.legend code { background:#f0f2ee; padding:1px 5px; border-radius:4px; }
+.tools { position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:3; }
+#q { width:100%; padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+th { position:sticky; top:56px; background:#2b3a31; color:#fff; text-align:left; font-weight:600; padding:9px 10px; font-size:13px; z-index:2; }
+td { padding:8px 10px; border-top:1px solid var(--line); vertical-align:top; }
+td.n { color:var(--muted); width:38px; text-align:right; }
+td.c { width:46px; font-weight:600; }
+td.h code { font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; word-break:break-all; }
+td.h { width:28%; }
+td.vi { width:30%; }
+td.note { color:var(--muted); font-size:14px; }
+.chip { display:inline-block; margin-left:6px; padding:0 7px; font-size:11px; border-radius:9px; background:#eef0ea; color:var(--muted); vertical-align:middle; }
+tr.sec td { border-top:2px solid var(--line); padding:10px; font-size:14px; }
+tr.sec .span { color:var(--muted); font-weight:400; margin-left:6px; }
+.sec-id td { background:var(--id); } .sec-desc td { background:var(--desc); } .sec-eco td { background:var(--eco); }
+.sec-clim td { background:var(--clim); } .sec-cult td { background:var(--cult); } .sec-use td { background:var(--use); } .sec-meta td { background:var(--meta); }
+.warn { margin-top:22px; background:#fff7e6; border:1px solid #f0d9a8; border-radius:10px; padding:14px 16px; }
+.warn h2 { font-size:15px; margin:0 0 6px; }
+.hidden { display:none; }
+@media (max-width:720px) { td.note { display:none; } th:nth-child(5) { display:none; } th { top:56px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tiêu đề các cột – <code>ecocrop_2568_plants</code></h1>
+  <p class="sub">70 cột (A → BR), 2.568 dòng dữ liệu. Bản dịch nghĩa sang tiếng Việt.</p>
+
+  <div class="legend">
+    <h2>Cách đọc tên cột</h2>
+    <ul>
+      <li><code>opt</code> = <em>optimal</em> – mức <strong>tối ưu</strong> cho cây sinh trưởng tốt nhất.</li>
+      <li><code>abs</code> = <em>absolute</em> – mức <strong>tuyệt đối</strong>, tức ngưỡng cây còn chịu được; vượt ra ngoài là cây không sống/phát triển được.</li>
+      <li><code>min</code> / <code>max</code> = giá trị <strong>thấp nhất</strong> / <strong>cao nhất</strong> của khoảng.</li>
+      <li>Tiền tố: <code>desc_</code> mô tả, <code>eco_</code> yêu cầu sinh thái, <code>clim_</code> khí hậu, <code>cult_</code> canh tác, <code>uses</code> công dụng.</li>
+    </ul>
+  </div>
+
+  <div class="tools"><input id="q" type="search" placeholder="Tìm theo tên cột hoặc nghĩa tiếng Việt…"></div>
+
+  <table id="t">
+    <thead><tr><th>#</th><th>Cột</th><th>Tiêu đề (gốc)</th><th>Nghĩa tiếng Việt</th><th>Giải thích</th></tr></thead>
+    <tbody>
+<tr class="sec sec-id"><td colspan="5"><strong>Nhận dạng &amp; phân loại</strong> <span class="span">Cột A–G</span></td></tr>
+<tr class="r-id"><td class="n">1</td><td class="c">A</td><td class="h"><code>ecocrop_id</code></td><td class="vi"><strong>Mã ID EcoCrop</strong><span class="chip">Định danh</span></td><td class="note">Số định danh bản ghi của loài trong cơ sở dữ liệu EcoCrop.</td></tr>
+<tr class="r-id"><td class="n">2</td><td class="c">B</td><td class="h"><code>ecocrop_code</code></td><td class="vi"><strong>Mã code EcoCrop</strong><span class="chip">Định danh</span></td><td class="note">Mã code của loài trên EcoCrop (ở dòng đầu trùng với ID).</td></tr>
+<tr class="r-id"><td class="n">3</td><td class="c">C</td><td class="h"><code>name</code></td><td class="vi"><strong>Tên khoa học</strong><span class="chip">Phân loại</span></td><td class="note">Tên loài theo danh pháp hai phần, vd. Abelmoschus esculentus (đậu bắp).</td></tr>
+<tr class="r-id"><td class="n">4</td><td class="c">D</td><td class="h"><code>authority</code></td><td class="vi"><strong>Tác giả danh pháp</strong><span class="chip">Phân loại</span></td><td class="note">Tên/viết tắt của tác giả công bố tên khoa học, vd. (L.) Moench.</td></tr>
+<tr class="r-id"><td class="n">5</td><td class="c">E</td><td class="h"><code>family</code></td><td class="vi"><strong>Phân loại / Họ thực vật</strong><span class="chip">Phân loại</span></td><td class="note">Chuỗi phân loại học (lớp : phân lớp : bộ : họ).</td></tr>
+<tr class="r-id"><td class="n">6</td><td class="c">F</td><td class="h"><code>synonyms</code></td><td class="vi"><strong>Tên đồng nghĩa</strong><span class="chip">Phân loại</span></td><td class="note">Các tên khoa học khác (synonym) của cùng một loài.</td></tr>
+<tr class="r-id"><td class="n">7</td><td class="c">G</td><td class="h"><code>common_names</code></td><td class="vi"><strong>Tên thông thường</strong><span class="chip">Phân loại</span></td><td class="note">Tên gọi dân gian bằng nhiều ngôn ngữ, ngăn cách bằng dấu phẩy.</td></tr>
+<tr class="sec sec-desc"><td colspan="5"><strong>Mô tả cây (desc_)</strong> <span class="span">Cột H–M</span></td></tr>
+<tr class="r-desc"><td class="n">8</td><td class="c">H</td><td class="h"><code>desc_life_form</code></td><td class="vi"><strong>Dạng sống</strong><span class="chip">Mô tả</span></td><td class="note">Vd. herb = cây thân thảo; tree = cây gỗ; shrub = cây bụi.</td></tr>
+<tr class="r-desc"><td class="n">9</td><td class="c">I</td><td class="h"><code>desc_physiology</code></td><td class="vi"><strong>Đặc điểm sinh lý / cấu trúc thân</strong><span class="chip">Mô tả</span></td><td class="note">Vd. single stem = một thân đơn.</td></tr>
+<tr class="r-desc"><td class="n">10</td><td class="c">J</td><td class="h"><code>desc_habit</code></td><td class="vi"><strong>Dạng sinh trưởng</strong><span class="chip">Mô tả</span></td><td class="note">Vd. erect = mọc thẳng đứng.</td></tr>
+<tr class="r-desc"><td class="n">11</td><td class="c">K</td><td class="h"><code>desc_category</code></td><td class="vi"><strong>Nhóm cây trồng</strong><span class="chip">Mô tả</span></td><td class="note">Vd. vegetables = rau; cereals = ngũ cốc.</td></tr>
+<tr class="r-desc"><td class="n">12</td><td class="c">L</td><td class="h"><code>desc_life_span</code></td><td class="vi"><strong>Vòng đời</strong><span class="chip">Mô tả</span></td><td class="note">Vd. annual = một năm; perennial = lâu năm.</td></tr>
+<tr class="r-desc"><td class="n">13</td><td class="c">M</td><td class="h"><code>desc_plant_attributes</code></td><td class="vi"><strong>Thuộc tính cây trồng</strong><span class="chip">Mô tả</span></td><td class="note">Vd. grown on large scale = được trồng quy mô lớn.</td></tr>
+<tr class="sec sec-eco"><td colspan="5"><strong>Yêu cầu sinh thái (eco_)</strong> <span class="span">Cột N–AW</span></td></tr>
+<tr class="r-eco"><td class="n">14</td><td class="c">N</td><td class="h"><code>eco_soil_depth_opt</code></td><td class="vi"><strong>Độ sâu tầng đất – tối ưu</strong><span class="chip">Đất</span></td><td class="note">Vd. shallow (20-50 cm) = nông.</td></tr>
+<tr class="r-eco"><td class="n">15</td><td class="c">O</td><td class="h"><code>eco_soil_depth_abs</code></td><td class="vi"><strong>Độ sâu tầng đất – tuyệt đối (ngưỡng chịu được)</strong><span class="chip">Đất</span></td><td class="note">Khoảng độ sâu đất mà cây vẫn chịu được.</td></tr>
+<tr class="r-eco"><td class="n">16</td><td class="c">P</td><td class="h"><code>eco_temperat_requir_opt_min</code></td><td class="vi"><strong>Nhiệt độ yêu cầu – tối ưu (thấp nhất)</strong><span class="chip">Nhiệt độ</span></td><td class="note">Đơn vị °C.</td></tr>
+<tr class="r-eco"><td class="n">17</td><td class="c">Q</td><td class="h"><code>eco_temperat_requir_opt_max</code></td><td class="vi"><strong>Nhiệt độ yêu cầu – tối ưu (cao nhất)</strong><span class="chip">Nhiệt độ</span></td><td class="note">Đơn vị °C.</td></tr>
+<tr class="r-eco"><td class="n">18</td><td class="c">R</td><td class="h"><code>eco_temperat_requir_abs_min</code></td><td class="vi"><strong>Nhiệt độ yêu cầu – tuyệt đối (ngưỡng chịu được) (thấp nhất)</strong><span class="chip">Nhiệt độ</span></td><td class="note">Đơn vị °C.</td></tr>
+<tr class="r-eco"><td class="n">19</td><td class="c">S</td><td class="h"><code>eco_temperat_requir_abs_max</code></td><td class="vi"><strong>Nhiệt độ yêu cầu – tuyệt đối (ngưỡng chịu được) (cao nhất)</strong><span class="chip">Nhiệt độ</span></td><td class="note">Đơn vị °C.</td></tr>
+<tr class="r-eco"><td class="n">20</td><td class="c">T</td><td class="h"><code>eco_soil_texture_opt</code></td><td class="vi"><strong>Kết cấu / thành phần cơ giới đất – tối ưu</strong><span class="chip">Đất</span></td><td class="note">Vd. heavy = nặng (sét), medium = trung bình, light = nhẹ (cát), organic = hữu cơ.</td></tr>
+<tr class="r-eco"><td class="n">21</td><td class="c">U</td><td class="h"><code>eco_soil_texture_abs</code></td><td class="vi"><strong>Kết cấu / thành phần cơ giới đất – tuyệt đối (ngưỡng chịu được)</strong><span class="chip">Đất</span></td><td class="note">Các loại đất mà cây vẫn chịu được.</td></tr>
+<tr class="r-eco"><td class="n">22</td><td class="c">V</td><td class="h"><code>eco_rainfall_annual_opt_min</code></td><td class="vi"><strong>Lượng mưa hằng năm – tối ưu (thấp nhất)</strong><span class="chip">Lượng mưa</span></td><td class="note">Đơn vị mm/năm.</td></tr>
+<tr class="r-eco"><td class="n">23</td><td class="c">W</td><td class="h"><code>eco_rainfall_annual_opt_max</code></td><td class="vi"><strong>Lượng mưa hằng năm – tối ưu (cao nhất)</strong><span class="chip">Lượng mưa</span></td><td class="note">Đơn vị mm/năm.</td></tr>
+<tr class="r-eco"><td class="n">24</td><td class="c">X</td><td class="h"><code>eco_rainfall_annual_abs_min</code></td><td class="vi"><strong>Lượng mưa hằng năm – tuyệt đối (ngưỡng chịu được) (thấp nhất)</strong><span class="chip">Lượng mưa</span></td><td class="note">Đơn vị mm/năm.</td></tr>
+<tr class="r-eco"><td class="n">25</td><td class="c">Y</td><td class="h"><code>eco_rainfall_annual_abs_max</code></td><td class="vi"><strong>Lượng mưa hằng năm – tuyệt đối (ngưỡng chịu được) (cao nhất)</strong><span class="chip">Lượng mưa</span></td><td class="note">Đơn vị mm/năm.</td></tr>
+<tr class="r-eco"><td class="n">26</td><td class="c">Z</td><td class="h"><code>eco_soil_fertility_opt</code></td><td class="vi"><strong>Độ phì nhiêu của đất – tối ưu</strong><span class="chip">Đất</span></td><td class="note">Vd. high = cao; moderate = trung bình; low = thấp.</td></tr>
+<tr class="r-eco"><td class="n">27</td><td class="c">AA</td><td class="h"><code>eco_soil_fertility_abs</code></td><td class="vi"><strong>Độ phì nhiêu của đất – tuyệt đối (ngưỡng chịu được)</strong><span class="chip">Đất</span></td><td class="note">Mức phì nhiêu tối thiểu mà cây vẫn chịu được.</td></tr>
+<tr class="r-eco"><td class="n">28</td><td class="c">AB</td><td class="h"><code>eco_latitude_opt_min</code></td><td class="vi"><strong>Vĩ độ – tối ưu (thấp nhất)</strong><span class="chip">Vĩ độ</span></td><td class="note">Đơn vị độ vĩ; dấu &quot;-&quot; nghĩa là không có dữ liệu.</td></tr>
+<tr class="r-eco"><td class="n">29</td><td class="c">AC</td><td class="h"><code>eco_latitude_opt_max</code></td><td class="vi"><strong>Vĩ độ – tối ưu (cao nhất)</strong><span class="chip">Vĩ độ</span></td><td class="note">Đơn vị độ vĩ; dấu &quot;-&quot; nghĩa là không có dữ liệu.</td></tr>
+<tr class="r-eco"><td class="n">30</td><td class="c">AD</td><td class="h"><code>eco_latitude_abs_min</code></td><td class="vi"><strong>Vĩ độ – tuyệt đối (ngưỡng chịu được) (thấp nhất)</strong><span class="chip">Vĩ độ</span></td><td class="note">Đơn vị độ vĩ.</td></tr>
+<tr class="r-eco"><td class="n">31</td><td class="c">AE</td><td class="h"><code>eco_latitude_abs_max</code></td><td class="vi"><strong>Vĩ độ – tuyệt đối (ngưỡng chịu được) (cao nhất)</strong><span class="chip">Vĩ độ</span></td><td class="note">Đơn vị độ vĩ.</td></tr>
+<tr class="r-eco"><td class="n">32</td><td class="c">AF</td><td class="h"><code>eco_soil_al_tox_opt</code></td><td class="vi"><strong>Độc tính nhôm (Al) trong đất – tối ưu</strong><span class="chip">Đất</span></td><td class="note">Mức nhôm trong đất cây chịu tốt nhất (Al gây độc ở đất chua).</td></tr>
+<tr class="r-eco"><td class="n">33</td><td class="c">AG</td><td class="h"><code>eco_soil_al_tox_abs</code></td><td class="vi"><strong>Độc tính nhôm (Al) trong đất – tuyệt đối (ngưỡng chịu được)</strong><span class="chip">Đất</span></td><td class="note">Mức nhôm tối đa cây còn chịu được.</td></tr>
+<tr class="r-eco"><td class="n">34</td><td class="c">AH</td><td class="h"><code>eco_altitude_opt_min</code></td><td class="vi"><strong>Độ cao so với mực nước biển – tối ưu (thấp nhất)</strong><span class="chip">Độ cao</span></td><td class="note">Đơn vị mét; &quot;---&quot; nghĩa là không có dữ liệu.</td></tr>
+<tr class="r-eco"><td class="n">35</td><td class="c">AI</td><td class="h"><code>eco_altitude_opt_max</code></td><td class="vi"><strong>Độ cao so với mực nước biển – tối ưu (cao nhất)</strong><span class="chip">Độ cao</span></td><td class="note">Đơn vị mét; &quot;---&quot; nghĩa là không có dữ liệu.</td></tr>
+<tr class="r-eco"><td class="n">36</td><td class="c">AJ</td><td class="h"><code>eco_altitude_abs_min</code></td><td class="vi"><strong>Độ cao so với mực nước biển – tuyệt đối (ngưỡng chịu được) (thấp nhất)</strong><span class="chip">Độ cao</span></td><td class="note">Đơn vị mét.</td></tr>
+<tr class="r-eco"><td class="n">37</td><td class="c">AK</td><td class="h"><code>eco_altitude_abs_max</code></td><td class="vi"><strong>Độ cao so với mực nước biển – tuyệt đối (ngưỡng chịu được) (cao nhất)</strong><span class="chip">Độ cao</span></td><td class="note">Đơn vị mét.</td></tr>
+<tr class="r-eco"><td class="n">38</td><td class="c">AL</td><td class="h"><code>eco_soil_salinity_opt</code></td><td class="vi"><strong>Độ mặn của đất – tối ưu</strong><span class="chip">Đất</span></td><td class="note">Vd. low (&lt;4 dS/m) = thấp; medium (4-10 dS/m) = trung bình; high (&gt;10 dS/m) = cao.</td></tr>
+<tr class="r-eco"><td class="n">39</td><td class="c">AM</td><td class="h"><code>eco_soil_salinity_abs</code></td><td class="vi"><strong>Độ mặn của đất – tuyệt đối (ngưỡng chịu được)</strong><span class="chip">Đất</span></td><td class="note">Mức mặn tối đa cây còn chịu được.</td></tr>
+<tr class="r-eco"><td class="n">40</td><td class="c">AN</td><td class="h"><code>eco_soil_ph_opt_min</code></td><td class="vi"><strong>Độ pH của đất – tối ưu (thấp nhất)</strong><span class="chip">pH đất</span></td><td class="note">Xem lưu ý về lỗi định dạng ngày ở cuối trang.</td></tr>
+<tr class="r-eco"><td class="n">41</td><td class="c">AO</td><td class="h"><code>eco_soil_ph_opt_max</code></td><td class="vi"><strong>Độ pH của đất – tối ưu (cao nhất)</strong><span class="chip">pH đất</span></td><td class="note">Xem lưu ý về lỗi định dạng ngày ở cuối trang.</td></tr>
+<tr class="r-eco"><td class="n">42</td><td class="c">AP</td><td class="h"><code>eco_soil_ph_abs_min</code></td><td class="vi"><strong>Độ pH của đất – tuyệt đối (ngưỡng chịu được) (thấp nhất)</strong><span class="chip">pH đất</span></td><td class="note">Xem lưu ý về lỗi định dạng ngày ở cuối trang.</td></tr>
+<tr class="r-eco"><td class="n">43</td><td class="c">AQ</td><td class="h"><code>eco_soil_ph_abs_max</code></td><td class="vi"><strong>Độ pH của đất – tuyệt đối (ngưỡng chịu được) (cao nhất)</strong><span class="chip">pH đất</span></td><td class="note">Xem lưu ý về lỗi định dạng ngày ở cuối trang.</td></tr>
+<tr class="r-eco"><td class="n">44</td><td class="c">AR</td><td class="h"><code>eco_soil_drainage_opt</code></td><td class="vi"><strong>Khả năng thoát nước của đất – tối ưu</strong><span class="chip">Đất</span></td><td class="note">Vd. well (dry spells) = thoát nước tốt (có giai đoạn khô).</td></tr>
+<tr class="r-eco"><td class="n">45</td><td class="c">AS</td><td class="h"><code>eco_soil_drainage_abs</code></td><td class="vi"><strong>Khả năng thoát nước của đất – tuyệt đối (ngưỡng chịu được)</strong><span class="chip">Đất</span></td><td class="note">Các mức thoát nước mà cây vẫn chịu được.</td></tr>
+<tr class="r-eco"><td class="n">46</td><td class="c">AT</td><td class="h"><code>eco_light_intensity_opt_min</code></td><td class="vi"><strong>Cường độ ánh sáng – tối ưu (thấp nhất)</strong><span class="chip">Ánh sáng</span></td><td class="note">Giá trị dạng chữ, vd. clear skies = trời quang.</td></tr>
+<tr class="r-eco"><td class="n">47</td><td class="c">AU</td><td class="h"><code>eco_light_intensity_opt_max</code></td><td class="vi"><strong>Cường độ ánh sáng – tối ưu (cao nhất)</strong><span class="chip">Ánh sáng</span></td><td class="note">Giá trị dạng chữ, vd. very bright = rất sáng.</td></tr>
+<tr class="r-eco"><td class="n">48</td><td class="c">AV</td><td class="h"><code>eco_light_intensity_abs_min</code></td><td class="vi"><strong>Cường độ ánh sáng – tuyệt đối (ngưỡng chịu được) (thấp nhất)</strong><span class="chip">Ánh sáng</span></td><td class="note">Giá trị dạng chữ, vd. cloudy skies = trời nhiều mây.</td></tr>
+<tr class="r-eco"><td class="n">49</td><td class="c">AW</td><td class="h"><code>eco_light_intensity_abs_max</code></td><td class="vi"><strong>Cường độ ánh sáng – tuyệt đối (ngưỡng chịu được) (cao nhất)</strong><span class="chip">Ánh sáng</span></td><td class="note">Giá trị dạng chữ.</td></tr>
+<tr class="sec sec-clim"><td colspan="5"><strong>Khí hậu (clim_)</strong> <span class="span">Cột AX–BD</span></td></tr>
+<tr class="r-clim"><td class="n">50</td><td class="c">AX</td><td class="h"><code>clim_climate_zone</code></td><td class="vi"><strong>Vùng khí hậu</strong><span class="chip">Khí hậu</span></td><td class="note">Phân vùng theo hệ Köppen, vd. tropical wet &amp; dry (Aw) = nhiệt đới ẩm – khô xen kẽ.</td></tr>
+<tr class="r-clim"><td class="n">51</td><td class="c">AY</td><td class="h"><code>clim_photoperiod</code></td><td class="vi"><strong>Quang chu kỳ (độ dài ngày)</strong><span class="chip">Khí hậu</span></td><td class="note">Vd. short day (&lt;12 hours) = cây ngày ngắn (dưới 12 giờ sáng).</td></tr>
+<tr class="r-clim"><td class="n">52</td><td class="c">AZ</td><td class="h"><code>clim_killing_temp_during_rest</code></td><td class="vi"><strong>Nhiệt độ gây chết trong thời kỳ nghỉ</strong><span class="chip">Khí hậu</span></td><td class="note">Mức nhiệt thấp làm chết cây khi đang ngủ nghỉ (vd. mùa đông).</td></tr>
+<tr class="r-clim"><td class="n">53</td><td class="c">BA</td><td class="h"><code>clim_killing_temp_early_growth</code></td><td class="vi"><strong>Nhiệt độ gây chết ở giai đoạn sinh trưởng đầu</strong><span class="chip">Khí hậu</span></td><td class="note">Mức nhiệt làm chết cây ở giai đoạn cây con / mới sinh trưởng.</td></tr>
+<tr class="r-clim"><td class="n">54</td><td class="c">BB</td><td class="h"><code>clim_abiotic_toler</code></td><td class="vi"><strong>Khả năng chịu stress phi sinh học</strong><span class="chip">Khí hậu</span></td><td class="note">Cây chịu được các yếu tố không phải sinh vật như hạn, úng, mặn, gió, lửa...</td></tr>
+<tr class="r-clim"><td class="n">55</td><td class="c">BC</td><td class="h"><code>clim_abiotic_suscept</code></td><td class="vi"><strong>Mức nhạy cảm với yếu tố phi sinh học</strong><span class="chip">Khí hậu</span></td><td class="note">Cây dễ bị tổn hại bởi hạn, úng, sương giá, gió... (ngược với cột trên).</td></tr>
+<tr class="r-clim"><td class="n">56</td><td class="c">BD</td><td class="h"><code>clim_introduction_risks</code></td><td class="vi"><strong>Rủi ro khi du nhập</strong><span class="chip">Khí hậu</span></td><td class="note">Nguy cơ khi đưa loài vào vùng mới, vd. trở thành loài xâm lấn.</td></tr>
+<tr class="sec sec-cult"><td colspan="5"><strong>Canh tác (cult_)</strong> <span class="span">Cột BE–BK</span></td></tr>
+<tr class="r-cult"><td class="n">57</td><td class="c">BE</td><td class="h"><code>cult_product_system</code></td><td class="vi"><strong>Hệ thống sản xuất</strong><span class="chip">Canh tác</span></td><td class="note">Cách sản xuất cây, vd. trồng thuần, trồng xen, nông lâm kết hợp...</td></tr>
+<tr class="r-cult"><td class="n">58</td><td class="c">BF</td><td class="h"><code>cult_cycle_min</code></td><td class="vi"><strong>Chu kỳ cây trồng – ngắn nhất</strong><span class="chip">Canh tác</span></td><td class="note">Thời gian từ gieo đến thu hoạch; đơn vị ngày (suy ra từ dữ liệu: 50).</td></tr>
+<tr class="r-cult"><td class="n">59</td><td class="c">BG</td><td class="h"><code>cult_cycle_max</code></td><td class="vi"><strong>Chu kỳ cây trồng – dài nhất</strong><span class="chip">Canh tác</span></td><td class="note">Thời gian từ gieo đến thu hoạch; đơn vị ngày (suy ra từ dữ liệu: 180).</td></tr>
+<tr class="r-cult"><td class="n">60</td><td class="c">BH</td><td class="h"><code>cult_subsystem</code></td><td class="vi"><strong>Hệ thống canh tác phụ</strong><span class="chip">Canh tác</span></td><td class="note">Tiểu hệ thống canh tác đi kèm, vd. trồng nhờ mưa hay có tưới.</td></tr>
+<tr class="r-cult"><td class="n">61</td><td class="c">BI</td><td class="h"><code>cult_companion_species</code></td><td class="vi"><strong>Loài trồng xen / cây đồng hành</strong><span class="chip">Canh tác</span></td><td class="note">Các loài thường trồng cùng.</td></tr>
+<tr class="r-cult"><td class="n">62</td><td class="c">BJ</td><td class="h"><code>cult_level_of_mechanization</code></td><td class="vi"><strong>Mức độ cơ giới hóa</strong><span class="chip">Canh tác</span></td><td class="note">Mức dùng máy móc trong canh tác (thủ công, bán cơ giới, cơ giới hóa).</td></tr>
+<tr class="r-cult"><td class="n">63</td><td class="c">BK</td><td class="h"><code>cult_labour_intensity</code></td><td class="vi"><strong>Cường độ lao động</strong><span class="chip">Canh tác</span></td><td class="note">Mức độ cần nhiều hay ít nhân công.</td></tr>
+<tr class="sec sec-use"><td colspan="5"><strong>Công dụng (uses)</strong> <span class="span">Cột BL–BN</span></td></tr>
+<tr class="r-use"><td class="n">64</td><td class="c">BL</td><td class="h"><code>uses</code></td><td class="vi"><strong>Công dụng (chi tiết)</strong><span class="chip">Công dụng</span></td><td class="note">Danh sách công dụng, vd. food &amp; beverage = thực phẩm &amp; đồ uống.</td></tr>
+<tr class="r-use"><td class="n">65</td><td class="c">BM</td><td class="h"><code>uses_main</code></td><td class="vi"><strong>Công dụng chính</strong><span class="chip">Công dụng</span></td><td class="note">Nhóm công dụng quan trọng nhất của loài.</td></tr>
+<tr class="r-use"><td class="n">66</td><td class="c">BN</td><td class="h"><code>uses_parts</code></td><td class="vi"><strong>Bộ phận sử dụng</strong><span class="chip">Công dụng</span></td><td class="note">Phần của cây được dùng: quả, lá, rễ, hạt, thân...</td></tr>
+<tr class="sec sec-meta"><td colspan="5"><strong>Ghi chú &amp; dữ liệu hệ thống</strong> <span class="span">Cột BO–BR</span></td></tr>
+<tr class="r-meta"><td class="n">67</td><td class="c">BO</td><td class="h"><code>notes</code></td><td class="vi"><strong>Ghi chú</strong><span class="chip">Khác</span></td><td class="note">Ghi chú bổ sung về loài.</td></tr>
+<tr class="r-meta"><td class="n">68</td><td class="c">BP</td><td class="h"><code>sources</code></td><td class="vi"><strong>Nguồn tham khảo</strong><span class="chip">Khác</span></td><td class="note">Tài liệu / nguồn dữ liệu của bản ghi.</td></tr>
+<tr class="r-meta"><td class="n">69</td><td class="c">BQ</td><td class="h"><code>editor</code></td><td class="vi"><strong>Người biên tập</strong><span class="chip">Khác</span></td><td class="note">Người nhập/sửa bản ghi. Trong sheet cột này đang trống ở cả 2568 dòng.</td></tr>
+<tr class="r-meta"><td class="n">70</td><td class="c">BR</td><td class="h"><code>view_error</code></td><td class="vi"><strong>Lỗi khi xem trang cây trồng</strong><span class="chip">Khác</span></td><td class="note">Ghi lỗi khi lấy dữ liệu, vd. &quot;cropView returned HTTP 500 on server&quot; (trang nguồn trả lỗi 500). Có vẻ là cột log lỗi khi thu thập dữ liệu.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn">
+    <h2>Lưu ý về dữ liệu</h2>
+    <p style="margin:0">Các cột pH (<code>eco_soil_ph_opt_min</code>, <code>opt_max</code>, <code>abs_min</code>, <code>abs_max</code> – cột AN đến AQ) có hơn 1.100 ô đang bị Google Sheets tự chuyển thành <strong>định dạng ngày</strong> (vd. một giá trị pH bị hiểu thành ngày 5 tháng 5). Những ô này cần sửa lại thành số trước khi dùng để phân tích.</p>
+  </div>
+</div>
+<script>
+const q = document.getElementById('q');
+q.addEventListener('input', () => {
+  const v = q.value.trim().toLowerCase();
+  const rows = document.querySelectorAll('#t tbody tr');
+  rows.forEach(tr => {
+    if (tr.classList.contains('sec')) return;
+    tr.classList.toggle('hidden', v && !tr.textContent.toLowerCase().includes(v));
+  });
+  // ẩn dòng nhóm nếu không còn dòng con nào hiển thị
+  let sec = null, any = false;
+  const flush = () => { if (sec) sec.classList.toggle('hidden', !!v && !any); };
+  rows.forEach(tr => {
+    if (tr.classList.contains('sec')) { flush(); sec = tr; any = false; }
+    else if (!tr.classList.contains('hidden')) any = true;
+  });
+  flush();
+});
+</script>
+</body>
+</html>
