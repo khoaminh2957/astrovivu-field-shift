@@ -194,6 +194,29 @@ export interface TelemetryWindow {
 
 export type TelemetryMode = 'live' | 'cached' | 'mock';
 
+export interface MonthClimate {
+  month: number;
+  rainMm: number | null;
+  tMean: number | null;
+  tMin: number | null;
+  tMax: number | null;
+  et0Mm?: number | null;
+}
+
+/** One calendar year of monthly climate at the parcel. */
+export interface YearClimate {
+  year: number;
+  months: MonthClimate[];
+}
+
+/** US only: the crop grown in a given year according to the Cropland Data Layer. */
+export interface CropHistoryYear {
+  year: number;
+  crop: string;
+  code?: number;
+  sourceId: string;
+}
+
 export interface FieldTelemetry {
   parcelId: string;
   generatedAt: string;
@@ -201,4 +224,13 @@ export interface FieldTelemetry {
   branches: Record<BranchId, BranchTelemetry>;
   sources: Record<string, SourceRef>;
   mode: TelemetryMode;
+  /**
+   * Monthly climate for each of the last ~20 years (lapse-rate adjusted to the parcel). The
+   * scorer uses it for the crop-season climatology and to score every year separately, which
+   * gives the reliability figure ("suitable in 17 of 20 years").
+   */
+  climateHistory?: YearClimate[];
+  climateSourceId?: string;
+  /** The rotation actually practised, when a land-cover source can tell (US: Cropland Data Layer). */
+  cropHistory?: CropHistoryYear[];
 }

@@ -174,6 +174,20 @@ export function mockTelemetry(parcel: Parcel, today: ISODate = todayISO()): Fiel
     },
   ];
 
+  const thisYear = Number(today.slice(0, 4));
+  const climateHistory = Array.from({ length: 10 }, (_, k) => {
+    const year = thisYear - 10 + k;
+    return {
+      year,
+      months: Array.from({ length: 12 }, (_, m) => {
+        const mid = `${year}-${String(m + 1).padStart(2, '0')}-15`;
+        const tMax = round(tempBase + 3 - 3 * season(mid, 30) + noise(0.8), 1);
+        const tMin = round(tempBase - 9 + 2 * season(mid, 30) + noise(0.8), 1);
+        return { month: m + 1, rainMm: Math.round((8 + 250 * season(mid)) * (0.7 + 0.6 * rand())), tMean: round((tMax + tMin) / 2, 1), tMin, tMax };
+      }),
+    };
+  });
+
   return {
     parcelId: parcel.id,
     generatedAt: new Date().toISOString(),
@@ -181,5 +195,7 @@ export function mockTelemetry(parcel: Parcel, today: ISODate = todayISO()): Fiel
     branches,
     sources: { [SIM.id]: SIM },
     mode: 'mock',
+    climateHistory,
+    climateSourceId: SIM.id,
   };
 }
