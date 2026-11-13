@@ -9,7 +9,7 @@ Names in **bold** are the names used on the challenge Resources page.
 ### NASA POWER — **NASA POWER**
 - Daily: `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=...&community=AG&longitude=..&latitude=..&start=YYYYMMDD&end=YYYYMMDD&format=JSON`
 - Monthly: `.../temporal/monthly/point?...&start=YYYY&end=YYYY` (key `YYYY13` is the annual mean). Climatology: `.../temporal/climatology/point`.
-- Parameters confirmed: `T2M`, `T2M_MAX`, `T2M_MIN`, `T2MDEW`, `T2MWET`, `TS`, `RH2M`, `WS2M`, `ALLSKY_SFC_SW_DWN`, `PRECTOTCORR`, `GWETTOP`, `GWETROOT`, `GWETPROF`, `EVPTRNS`, `EVLAND`, `FROST_DAYS`. Not yet tested: `ALLSKY_SFC_PAR_TOT` (PAR).
+- Parameters confirmed: `T2M`, `T2M_MAX`, `T2M_MIN`, `T2MDEW`, `T2MWET`, `TS`, `RH2M`, `WS2M`, `ALLSKY_SFC_SW_DWN`, `PRECTOTCORR`, `GWETTOP`, `GWETROOT`, `GWETPROF`, `EVPTRNS`, `EVLAND`, `FROST_DAYS`. `ALLSKY_SFC_PAR_TOT` (PAR, MJ/m²/day) verified 2026-11-14, ~2.5-month latency (see §1b).
 - 1-2 s, `Access-Control-Allow-Origin: *`, fill value `-999`. Source grid MERRA-2 (~50 km), solar from CERES (~100 km). The response header gives the cell's mean elevation (398 m at the test point vs 602 m SRTM): apply a lapse-rate correction to temperatures.
 - **Rainfall defect.** `PRECTOTCORR` annual totals jump between 2015 and 2016 at both Vietnamese test points while ERA5 stays level. Đắk Lắk: 250-650 mm/yr for 2005-2015, then 1,870-2,250 mm/yr for 2016-2024 (ERA5: 1,070-2,050 throughout). Cần Thơ: 960-1,380 then 1,780-2,920. Iowa shows no jump. Do not use POWER rainfall for baselines or trends that cross 2016 in SE Asia; the 2001-2025 POWER climatology mixes both regimes.
 - `IMERG_PRECTOT` exists as a parameter but returned the fill value for every day and month tried at Đắk Lắk.
@@ -62,9 +62,42 @@ Names in **bold** are the names used on the challenge Resources page.
 - **USGS NLCD** WMS: `https://www.mrlc.gov/geoserver/mrlc_display/wms`.
 - Crop-CASMA (SMAP-derived soil moisture for US cropland): `https://nassgeo.csiss.gmu.edu/CropCASMA/` loads; its data API has not been explored.
 
+## 1b. Findings from building the adapters (2026-11-14)
+
+| Question | Finding |
+|---|---|
+| POWER `ALLSKY_SFC_PAR_TOT` | Works, unit **MJ/m²/day** (from the response `parameters` block). Latency ~2.5 months: at Đắk Lắk the last value was 2026-08-30 on 2026-11-14, while `ALLSKY_SFC_SW_DWN` (FLASHFlux) reached 2026-11-03. PAR/SW ratio 0.45-0.49. The adapter fills later days with SW × the ratio observed at that point, flagged `q: 'filled'` and noted. |
+| Open-Meteo daily soil moisture | `daily=soil_moisture_0_to_7cm_mean,soil_moisture_7_to_28cm_mean,soil_moisture_28_to_100cm_mean` works on the archive API (m³/m³) up to yesterday. Root zone 0-100 cm = (7·L1 + 21·L2 + 72·L3)/100. |
+| ORNL `SPL3SMP_E`, `SPL4CMDL` | `/dates` answers "No … data available for <lat> <lon> location" at Đắk Lắk and at Iowa. ORNL serves SMAP only at a few sites. The adapter checks `/dates` and writes a note. |
+| ORNL `VNP13A1` bands | `500_m_16_days_NDVI`, `500_m_16_days_EVI` (fill −15000, scale 0.0001). `MOD16A2` band `ET_500m` (fill 32767). A one-pixel MOD13Q1 request took 18 s. |
+| ClimateSERV ids | `0` CHIRPS: data to 2026-09-30 (~45 d latency). `29` ESI 4-week and `33` ESI 12-week: last values July 2025. `26` IMERG late / `91` IMERG early / `90` CHIRP: empty for 2025-2026 (26 returned one stray value in June 2024). `31`/`32`: values that look like CHIRPS-GEFS forecast anomaly / mean (not used). `37-41` USDA SMAP: documented to end August 2022, empty here. `35`, `36`: HTTP 500. Five or more simultaneous submissions return 503; the adapter keeps two in flight. |
+| GPM IMERG | No key-free point route found (ClimateSERV empty, POWER `IMERG_PRECTOT` fill, AppEEARS does not offer it). Rainfall uses CHIRPS, with ERA5 to fill the latency gap and for the anomaly. |
+| SoilGrids | On 2026-11-14 three consecutive 100 s attempts timed out for southern France while Kenya answered in ~90 s: the soil branch can end `unavailable` live. The WMS `GetFeatureInfo` route (maps.isric.org, CORS *, 1 s) answers but returns an empty feature for point queries, so it is not a usable fallback. Up to 78 s for one point; adapter timeout 100 s, 2 retries. Uses `d_factor` from the response. Q0.05/Q0.95 are depth-weighted like the mean (an approximation: quantiles do not add). |
+| CORS | Send `Access-Control-Allow-Origin: *`: Soil Data Access (also on the OPTIONS preflight), Nominatim, Photon, BigDataCloud reverse-geocode-client, Open-Meteo geocoding, Terrarium tiles, SoilGrids, POWER, ClimateSERV. **No CORS**: CropScape `GetCDLValue` and OpenTopoData, so CDL crop history and SRTM-by-point are cache-script only. |
+| Geocoding | Forward: Nominatim (1 req/s, limiter = 1), Photon fallback. Open-Meteo geocoding was rejected: "Dak Lak" returns nothing. Reverse: BigDataCloud client endpoint in the browser (Vietnamese names), Nominatim in Node and as fallback. |
+
+### Branch implementation (src/data/live)
+
+| Branch | Delivered by (in order) | Notes written |
+|---|---|---|
+| soilMoisture | ERA5-Land volumetric (`sm_surface`, `sm_root`, 20-year DOY baseline) + POWER GWETTOP/GWETROOT as `gwet_top`/`gwet_root` (% sat). SMAP L4 via AppEEARS (Node + `EARTHDATA_TOKEN`) or ORNL SPL3 take over the canonical keys when present; ERA5 then moves to `*_era5`. | regional model, SMAP availability |
+| vegetation | MOD13Q1 NDVI/EVI (chunks of ≤10 composites, 2 in flight), fallback VNP13A1. Parcel larger than a pixel → mean of pixels whose centre is inside (S1). Cache script adds a 5-year DOY baseline. | mixed pixel, failed chunks |
+| thermal | MOD11A2 `LST_Day_1km` (×0.02 K → °C); ESI ClimateSERV 29. Cache script adds `lst_night`, MOD16A2 `et` (mm/day) and a 5-year LST baseline. | ESI stalled since 2025-07 |
+| rainfall | ERA5 first (fast), then CHIRPS replaces `rain`; ERA5 stays as `rain_era5`. `rain_anom` = trailing 30-day ERA5 total as % of ERA5's own 2006-2025 normal for that day of year (±3 days pooled; null where the normal is < 5 mm). | IMERG unavailable, CHIRPS latency |
+| agromet | POWER T2M/T2M_MAX/T2M_MIN (lapse-adjusted from the POWER cell elevation to the parcel), RH2M, WS2M, PAR; ERA5 ET0. Second report adds 10-year POWER DOY baselines. ERA5 temperatures if POWER fails. | PAR fill, lapse correction |
+| terrain | Terrarium tiles at zoom ≤ 13 (≤ 4 tiles), zonal Horn slope, mean-gradient aspect, D8 mode, relief. Cache script prefers OpenTopoData SRTM 30 m grid. Fallback Open-Meteo Copernicus DEM elevation only. Resolves `parcel.elevationM`. | < 4 cells |
+| soil | US: SSURGO dominant component (0-30 cm weighted) first, SoilGrids merged after (SSURGO wins, SoilGrids value in `detail`). Elsewhere SoilGrids 0-30 cm, neighbours 300 m N/E/S/W when masked. `texture_class` + `usda_texture`. | masked pixel, CDL browser limit |
+| risk | Open-Meteo 16-day forecast, lapse-adjusted; threshold events (below). | generic thresholds only |
+
+Texture → EcoCrop class: organic if SOC ≥ 120 g/kg; heavy if clay ≥ 35 %; light if sand ≥ 52 % and clay < 20 %; otherwise medium. Generic risk thresholds: heat Tmax ≥ 35 °C on ≥ 2 consecutive days (warning ≥ 38, severe ≥ 41); frost Tmin ≤ 2 / 0 / −3 °C; heavy rain ≥ 30 / 50 / 100 mm/day; dry spell ≥ 10 / 14 days < 1 mm; wind ≥ 50 / 70 km/h.
+
+`climateHistory`: ERA5 monthly rain, ET0, mean/min/max temperature for the 20 complete years before the current one, lapse-adjusted from Open-Meteo's DEM elevation to the parcel. `cropHistory`: CDL for the 8 years before the current one (Node only).
+
+Open-Meteo quota: the 20-year archive request weighs a few hundred "calls" of the 10,000/day free allowance; it is cached for a day (IndexedDB / `.cache/`) keyed to ~110 m.
+
 ## 2. Needs a credential
 
-- **NASA AppEEARS** (`https://appeears.earthdatacloud.nasa.gov/api/`): product list is public; sampling needs an Earthdata Login bearer token (`EARTHDATA_TOKEN`) and runs as an asynchronous task. Products relevant here: `SPL4SMGP.008` and `SPL3SMP_E.006` (**SMAP**, 9 km daily), `ECO_L2T_LSTE.002`, `ECO_L3T_JET.002`, `ECO_L4T_ESI.002` (**ECOSTRESS**, 70 m), `MOD13Q1.061`, `MOD11A2.061`, `VNP13A1.002`, `HLSS30.020` / `HLSL30.020` and their `_VI` products (**Landsat** + Sentinel-2, 30 m), `SRTMGL1_NC.003`, `DAYMET.004`. GPM IMERG is not offered by AppEEARS.
+- **NASA AppEEARS** (`https://appeears.earthdatacloud.nasa.gov/api/`): product list is public; sampling needs an Earthdata Login bearer token (`EARTHDATA_TOKEN`) and runs as an asynchronous task. Products relevant here: `SPL4SMGP.008` and `SPL3SMP_E.006` (**SMAP**, 9 km daily), `ECO_L2T_LSTE.002`, `ECO_L3T_JET.002`, `ECO_L4T_ESI.002` (**ECOSTRESS**, 70 m), `MOD13Q1.061`, `MOD11A2.061`, `VNP13A1.002`, `HLSS30.020` / `HLSL30.020` and their `_VI` products (**Landsat** + Sentinel-2, 30 m), `SRTMGL1_NC.003`, `DAYMET.004`. GPM IMERG is not offered by AppEEARS. `src/data/adapters/appeears.ts` implements the SPL4SMGP point task (layers `Geophysical_Data_sm_surface`, `Geophysical_Data_sm_rootzone`, 3-hourly → daily means) for the cache script; it has **not been run end-to-end** because no token was available.
 - **USDA NASS QuickStats**, **USDA AMS Market News**, **OpenET**: free keys; not tested.
 
 ## 3. Not usable
