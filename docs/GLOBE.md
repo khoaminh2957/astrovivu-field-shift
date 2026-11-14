@@ -38,10 +38,11 @@ Bottom to top. Ids are in `style.ts`.
 | `sat` | Esri World Imagery, level 19 | Not requested below zoom 4; fades in between zoom 4.2 and 6.2. |
 | `relief` | hillshade, second DEM source | Only with satellite off. |
 | `overlay-a`, `overlay-b` | GIBS, date in the URL | Front and back buffer of the NASA overlay. |
-| `parcel-dim` | GeoJSON, world polygon with the parcel cut out | Dims the surroundings from zoom 9.5 (52 % at zoom 13). |
+| `parcel-dim` | GeoJSON, world polygon with the parcel cut out | Faint dimming of the surroundings from zoom 9.5 (14 % at zoom 13). |
 | `halo` | custom WebGL | Atmosphere from orbit. |
 | labels | OpenFreeMap vector tiles, Esri reference raster as fallback | Loaded on first use, in the interface language. |
-| SVG overlay | DOM, inside the canvas container | Locked parcel (glow, fill, texture, casing, outline), reticle during the descent, draft outline. |
+| Field raster | DOM canvas, `fieldRaster.ts` | Within-field picture of the selected metric, clipped to the parcel, placed by a CSS `matrix3d` homography from its four projected corners. |
+| SVG overlay | DOM, inside the canvas container | Locked parcel (single-colour fill when there is no raster, honesty texture, faint casing, thin light outline), reticle during the descent, draft outline, measure tool. |
 | Markers | DOM | Demo-field beacons (buttons), draft handles. |
 
 Terrain: AWS Terrarium, level 12, exaggeration 1.25, switched on at zoom 9.5 and off below 8.6. From orbit relief is sub-pixel and would cost the terrain texture cache.
@@ -62,11 +63,26 @@ Terrain: AWS Terrarium, level 12, exaggeration 1.25, switched on at zoom 9.5 and
 
 `anchor` is `{x, y}` = **centre** of the parcel's screen bounding box, `{w, h}` its size, CSS pixels, published at most once per rendered frame and only when it changes by half a pixel. `visible` is false when the parcel is off screen or behind the planet.
 
-Reduced motion (`prefers-reduced-motion`, or `?motion=reduced`): no rotation, flights become cuts under a 120 ms fade. `?motion=full` forces motion for demos.
+Motion is on by default. The system `prefers-reduced-motion` setting is deliberately not followed: the user reported the cuts it produced as not smooth and asked for smooth globe movement. `?motion=reduced` or `setMotion('reduced')` give the old behaviour (no rotation, flights become cuts under a 120 ms fade, toolbar eases become jumps).
+
+## 3b. Field picture (changed 2026-11-14)
+
+The parcel is drawn the way field-monitoring apps draw a field: the picture of the selected metric inside the polygon over the satellite image, a 1.5 px light outline over a faint 3 px dark casing, no glow, faint dimming outside, no gauge.
+
+- If `rasters` holds a raster whose `key === layers.parcelMetric` (with frames), it is drawn: painted at its own size with `paintRaster` (blending between frames), upscaled with smoothing into a canvas of about 384 px on its long side, clipped there to the parcel ring, at 88 % opacity. The repaint is coalesced to one per displayed frame and skipped when the cursor day has not changed; following the camera is one `transform` write per frame. The raster wins over `focusBranch` (rule as briefed). A raster whose source is `simulated` (or a mock telemetry) gets the dotted texture.
+- Otherwise the single-colour fill from the series (`paintForSeries`) as before, at 62 % opacity.
+- `useParcelPaint()` gives the legend: source (`raster` / `series`), key, label, unit, `rampCss`, range, date of the frame shown and the frame it is blending toward. It changes only when one of those changes. `rasterRampCss(rampId)` is exported; ramps the design system lacks (terrain, soil, light, risk) have local stops in `fieldRaster.ts`.
+- Limit: the picture lies on the plane through its four corners, so relief inside the field is ignored; the outline still follows terrain. The grid is assumed north-up (as the contract says).
+
+## 3c. Map tools and insets
+
+`tools.ts` implements the toolbar contract on the active engine: `zoomBy`, `resetNorth`, `setTilt` (pitch 54 / 0), `fitParcel` (parcel, else the draft), `locateMe` (browser geolocation, 10 s timeout; flies to zoom 15.5, or 12 when the fix is coarser than 500 m; resolves null on refusal), `setMotion`, `startMeasure` / `stopMeasure` (`measure.ts`: click points; a click on the first point closes an area; haversine metres, `polygonAreaHa` hectares; double-click zoom is off while measuring), `useMapView` (rAF-coalesced, rounded, written only on change) and `useMeasure`.
+
+`insets` from the store are the camera padding (plus 12 px) for the fly-in, `fitParcel`, `refocusParcel`, `flyToPlace` and draft framing; the padding is shrunk so at least 120 px of map stay free each way. With insets the parcel fills 62 % of the free area. A change of insets eases (360 ms): the whole framing when the camera is still near the parcel view, only the padding when the user has wandered off. Without insets the old design-token estimate is used. Hero and explore poses do not use insets yet.
 
 ## 4. Exports of `@/globe`
 
-`GlobeCanvas`, `GlobeLab`, `OVERLAYS` (+ `getOverlay`, `overlayLegendCss`), `draftToParcel`, `squareDraft`, `makeDraft`, `isLockable`, `draftAreaHa`, `paintForSeries`, `colorForValue`, `rampCss`, `parcelReadingAt`, `useGlobeStatus` (imagery in use, real overlay date and state, terrain, flying, reduced motion, credits text, notice key), `flyToPlace(lngLat, zoom?)`, `refocusParcel()`, `MIN_DRAW_ZOOM`.
+`GlobeCanvas`, `GlobeLab`, `OVERLAYS` (+ `getOverlay`, `overlayLegendCss`), `draftToParcel`, `squareDraft`, `makeDraft`, `isLockable`, `draftAreaHa`, `paintForSeries`, `colorForValue`, `rampCss`, `parcelReadingAt`, `useParcelPaint`, `rasterRampCss`, the tools above, `useGlobeStatus` (imagery in use, real overlay date and state, terrain, flying, reduced motion, credits text, notice key), `flyToPlace(lngLat, zoom?)`, `refocusParcel()`, `MIN_DRAW_ZOOM`.
 
 Overlay choices that differ from the brief: land surface temperature uses `MODIS_Terra_L3_Land_Surface_Temp_8Day_Day` (the product the thermal branch samples, without the cloud gaps of the daily swath); GIBS tiles are declared 512 px so a date change needs a quarter of the requests.
 
@@ -86,9 +102,31 @@ One machine, 2026-11-14: AMD Radeon integrated graphics, 1440 x 900 CSS px at DP
 
 The one long frame in the fly-in is consistent with terrain being switched on mid-descent; it was not isolated. Not measured: the hero rotation (the run was cut by a dev-server reload), a cold tile cache, a production build, other GPUs, phones, displays above 1440 x 900. Pixel ratio is capped at 2 and at 5.2 M canvas pixels.
 
+### Smoothness pass (2026-11-14)
+
+Changes: motion on by default; while a flight or a user gesture moves the camera the canvas renders at 0.75 of its resting pixel ratio (never below 1) and gets it back 260 ms after the camera rests (`setPixelRatio` plus an immediate redraw where MapLibre allows it, so no blank frame); the anchor is published at most every 120 ms during a scripted flight and exactly on arrival; per-frame code no longer reads `clientWidth` / `clientHeight` (cached on resize), which could force a layout each frame; when a fly-in starts, the destination's Esri tiles (3 x 3 at the final zoom and one level above) and DEM tiles are prefetched into memory through the same per-host queue; the toolbar view state is rAF-coalesced.
+
+Measured in the bench (`/src/globe/lab.html?motion=full`), dev server, in the desktop app's browser pane. The pane did not hold an emulated 1440 x 900 viewport during the runs; the second set ran at the pane's own 426 x 295 CSS px at DPR 1.25 and is labelled so. Drag and wheel are synthetic mouse events dispatched on the canvas (`__globeLab.gesture()`).
+
+| Run | Viewport | fps | p95 / max (ms) |
+|---|---|---|---|
+| Hero rotation, 5 s | 426 x 690, DPR 2 (emulated) | 59.6 | 17.0 / 49.8 |
+| Drag 1.5 s, explore | 426 x 690, DPR 2 | 60.1 | 17.1 / 17.2 |
+| Wheel zoom in and out | 426 x 690, DPR 2 | 60.1 | 17.0 / 17.2 |
+| Fly-in with the lighter ratio disabled (before) | 426 x 690, DPR 2 | 56.4 | 17.0 / 83.3, plus four 50-67 ms frames at zoom 9.7-11.8 (terrain switching on) |
+| Fly-in with the lighter ratio (after) | 426 x 690, DPR 2 | 59.0 | 17.0 / 116.6, no long frame in the descent |
+| Scrub the year, 4 s | 426 x 690, DPR 2 | 58.1 | 17.0 / 66.6 |
+| Hero rotation, 4 s | 426 x 295, DPR 1.25 | 60.0 | 16.9 / 17.3 |
+| Drag / wheel | 426 x 295, DPR 1.25 | 60.0 | 16.7-16.8 / 16.8-17.0 |
+| Fly-in to Iowa, first visit | 426 x 295, DPR 1.25 | 59.2 | 17.0 / 99.8 |
+| Fly-in, warm | 426 x 295, DPR 1.25 | 59.2 | 17.0 / 100 |
+| Scrub with a 36 x 18 synthetic raster drawn | 426 x 295, DPR 1.25 | 60.0 | 17.0 / 17.2 |
+
+The one long frame left in each fly-in (80-117 ms, at zoom about 1.7, right after the lock) was attributed with the Long Animation Frame API to a `Response.text().then` callback in `src/lib/http.ts`: the field data parsed on the main thread as the flight starts. It is outside the globe. There are no "before" frame rates for the old default: under the user's system setting flights were cuts. Not measured: 1440 x 900 in this pass, a production build, a normal desktop browser, a truly cold HTTP cache.
+
 ## 6. Known limits
 
-- **Demo polygons are still the provisional rectangles and circle** in `src/data/samples.ts`; they were not aligned to field edges.
+- **Demo polygons** (`src/data/samples.ts`): Nevada is now the single pivot circle under the verified point (centre -115.96894, 39.71961, radius 395 m, 48.9 ha) and Iowa the field block between the section roads minus the farmstead (29.3 ha), both traced on Esri imagery at zoom 14 (about 4 m per pixel, so edges are good to roughly 5-10 m; the Iowa south edge is a faint line). Dak Lak and Can Tho are still provisional rectangles: the coffee plots under tree cover and the rice-paddy dikes could not be told apart on the imagery.
 - Seen working in the browser: hero, explore, beacons, lock fly-in from explore and from a deep link, parcel fill and textures, anchor, quad taps, corner drag, coords draft, lock from a draft, NDVI / SMAP / IMERG / LST overlays, terrain toggle. The composed app was checked once with `/?sample=daklak-coffee`: parcel between the HUD columns, hub on the anchor, credits above the timeline. Written but not exercised: midpoint insert, corner delete, keyboard nudging, GPS with a real fix, labels, satellite off, the Sentinel-2 fallback, the no-WebGL message, the reduced-motion cut, and `/?phase=explore` in the composed app (explore was checked in the bench only).
 - No unit tests yet for the pure modules (`overlays`, `draft`, `ramps`, `camera`).
 - With the camera at rest after a deep link, MapLibre once left the raster layers out of the last frame; the engine now repaints once after loading settles. The cause was not found.
@@ -96,3 +134,6 @@ The one long frame in the fly-in is consistent with terrain being switched on mi
 - The newest 16-day NDVI composite on GIBS is 28 days old today, so NDVI shows as stale at the right end of the timeline. That is the latency gap, shown on purpose.
 - The credits line sits bottom-left (above `--timeline-h` when locked). If the UI covers it, render `useGlobeStatus().credits` in the chrome and set `--globe-credits-display: none`.
 - Terrain exaggeration is 1.25: slopes look a quarter steeper than they are.
+- The lighter pixel ratio while moving shows as a slight softening on DPR 2 screens during a drag; at DPR 1.25 the moving ratio is 1.
+- Measure tool: no undo of the last point and no editing; the UI should offer Escape or a stop button.
+- `locateMe` was not exercised with a real fix. GIBS overlays and labels are not held back during a flight.

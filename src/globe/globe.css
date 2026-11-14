@@ -46,13 +46,10 @@
 }
 
 /* --- Locked parcel ---------------------------------------------------------------------------- */
+/* Drawn the way field-monitoring apps draw a field: the metric picture inside, a thin light edge. */
 
 .globe-parcel__glow {
-  fill: none;
-  stroke: var(--color-signal, #fbfaf6);
-  stroke-width: 9;
-  stroke-linejoin: round;
-  opacity: 0.5;
+  display: none;
 }
 
 .globe-parcel__fill {
@@ -64,19 +61,30 @@
   stroke: none;
 }
 
-/* Dark edge under the bright one, so the outline holds on pale ground (desert, bare soil). */
+/* A faint dark edge under the light one, only so the outline holds on pale ground. */
 .globe-parcel__casing {
   fill: none;
-  stroke: rgb(3 5 11 / 0.78);
-  stroke-width: 4.75;
+  stroke: rgb(3 5 11 / 0.32);
+  stroke-width: 3;
   stroke-linejoin: round;
 }
 
 .globe-parcel__line {
   fill: none;
-  stroke: var(--color-signal, #fbfaf6);
-  stroke-width: 2.25;
+  stroke: rgb(255 255 255 / 0.95);
+  stroke-width: 1.5;
   stroke-linejoin: round;
+}
+
+/* The within-field raster: a canvas placed by a matrix3d homography, under the SVG outline. */
+.globe-raster {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  opacity: 0.88;
+  will-change: transform;
 }
 
 /* Honesty textures laid over the fill: dotted = simulated, hatched = not received or held too long. */
@@ -91,19 +99,46 @@
   opacity: 0.85;
 }
 
-.globe-parcel.is-arriving .globe-parcel__glow {
-  animation: globe-arrive 1100ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+.globe-parcel.is-arriving .globe-parcel__line,
+.globe-parcel.is-arriving .globe-parcel__fill {
+  animation: globe-arrive 700ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
 }
 
 @keyframes globe-arrive {
   from {
-    stroke-width: 30;
-    opacity: 0.9;
+    opacity: 0;
   }
   to {
-    stroke-width: 9;
-    opacity: 0.5;
+    opacity: 1;
   }
+}
+
+/* --- Measure tool ----------------------------------------------------------------------------- */
+
+.globe-measure__shape {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  stroke-linejoin: round;
+}
+
+.globe-measure__shape[data-kind='area'] {
+  fill: rgb(255 255 255 / 0.14);
+}
+
+.globe-measure__dot {
+  fill: #fff;
+  stroke: rgb(3 5 11 / 0.7);
+  stroke-width: 1.5;
+}
+
+.globe-measure__label {
+  fill: #fff;
+  font: 600 12px/1 var(--font-mono, ui-monospace, monospace);
+  paint-order: stroke;
+  stroke: rgb(3 5 11 / 0.75);
+  stroke-width: 3px;
 }
 
 /* While the parcel is still a speck during the descent. */

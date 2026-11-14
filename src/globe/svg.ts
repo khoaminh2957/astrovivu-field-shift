@@ -65,12 +65,13 @@ const RAD = Math.PI / 180;
  * (it returns where they would be if the planet were glass), so anything drawn from projected
  * coordinates has to ask first. Exact for a sphere; terrain is ignored.
  */
-export function facesCamera(map: MapLibreMap, at: LngLat): boolean {
+export function facesCamera(map: MapLibreMap, at: LngLat, viewportHeight?: number): boolean {
   const zoom = map.getZoom();
   // From about here the horizon is far outside the frame: anything on screen is in front.
   if (zoom >= 8.5) return true;
   const center = map.getCenter();
-  const height = map.getContainer().clientHeight || 1;
+  // The caller passes the cached height: reading clientHeight here would force a layout every frame.
+  const height = viewportHeight || map.getContainer().clientHeight || 1;
   const fov = map.getVerticalFieldOfView() * RAD;
   const cameraToCenter = (0.5 / Math.tan(fov / 2)) * height;
   const globeRadius = (512 * 2 ** zoom) / (2 * Math.PI) / Math.cos(center.lat * RAD);

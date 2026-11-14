@@ -150,7 +150,7 @@ export function registerTileScheduler(): void {
     const url = params.url.replace(`${TILE_SCHEME}://`, 'https://');
     const host = url.slice(8, url.indexOf('/', 8));
     const s = hostStats(host);
-    return schedule(host, url, abortController.signal, () => fetchTile(url, host, abortController.signal)).then(
+    const viaQueue = () => schedule(host, url, abortController.signal, () => fetchTile(url, host, abortController.signal)).then(
       (data) => {
         s.ok++;
         s.streak = 0;
@@ -167,6 +167,11 @@ export function registerTileScheduler(): void {
         throw err;
       },
     );
+    const warm = prefetched.get(url);
+    if (!warm) return viaQueue();
+    prefetched.delete(url);
+    // A prefetch that failed for any reason falls back to the ordinary path (and its retries).
+    return warm.then((data) => (data ? { data } : viaQueue()));
   });
 }
 
@@ -180,4 +185,31 @@ export async function fetchText(url: string, signal?: AbortSignal): Promise<stri
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
     return res.text();
   });
+}
+
+/**
+ * Tiles fetched ahead of a flight, keyed by https URL. MapLibre asks for the destination tiles only
+ * in the last second of a descent; fetched early (through the same per-host queue, so the
+ * four-per-host rule holds), they are in memory when it does and the field appears without a
+ * second of blur at the end of the move. Null means the server has no tile there.
+ */
+const prefetched = new Map<string, Promise<ArrayBuffer | null>>();
+const PREFETCH_MAX = 96;
+
+/** Warms the tile cache for these https URLs. Each is fetched once; the oldest entries are dropped first. */
+export function prefetchTiles(urls: string[]): void {
+  for (const url of urls) {
+    if (prefetched.has(url)) continue;
+    const host = url.slice(8, url.indexOf('/', 8));
+    const ctrl = new AbortController();
+    const job = schedule(host, url, ctrl.signal, () => fetchTile(url, host, ctrl.signal)).then(
+      (data) => data,
+      () => null,
+    );
+    prefetched.set(url, job);
+    if (prefetched.size > PREFETCH_MAX) {
+      const oldest = prefetched.keys().next().value;
+      if (oldest !== undefined) prefetched.delete(oldest);
+    }
+  }
 }

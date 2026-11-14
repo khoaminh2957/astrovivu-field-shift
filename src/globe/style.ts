@@ -135,7 +135,7 @@ export function baseStyle(): StyleSpecification {
         paint: {
           'fill-color': COLOR.void,
           'fill-antialias': false,
-          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9.5, 0, 13, 0.52],
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9.5, 0, 13, 0.14],
         },
       },
     ],

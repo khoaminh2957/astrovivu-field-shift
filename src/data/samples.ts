@@ -1,13 +1,14 @@
 import type { SampleParcel } from '@/contracts';
 import { tx } from '@/contracts';
-import { circlePolygon, makeParcel, rectPolygon } from '@/lib/geo';
+import { circlePolygon, closeRing, makeParcel, rectPolygon } from '@/lib/geo';
 
 /**
  * Demo fields. Telemetry for these is pre-cached (`npm run data:samples`) so the story plays
  * instantly; every other location on Earth goes through the live adapters.
  *
- * Geometry is provisional: rectangles/circles around verified coordinates. Agent 3 aligns the
- * vertices with field edges visible on the imagery; ids and default crops must not change.
+ * Nevada and Iowa follow the field visible on Esri World Imagery under the verified centre
+ * (traced at zoom 14, about 4 m per pixel). Dak Lak and Can Tho are still provisional shapes:
+ * plot edges under their centres could not be told apart on the imagery.
  */
 export const SAMPLE_PARCELS: SampleParcel[] = [
   {
@@ -55,7 +56,20 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
     ...makeParcel({
       id: 'iowa-corn-soy',
       name: 'Story County corn-soybean field',
-      polygon: rectPolygon([-93.505, 42.105], 780, 390, 0),
+      // The field block between the section roads, minus the farmstead in its north-west corner.
+      polygon: {
+        type: 'Polygon',
+        coordinates: [
+          closeRing([
+            [-93.50556, 42.10682],
+            [-93.50207, 42.10681],
+            [-93.50205, 42.0999],
+            [-93.50678, 42.09992],
+            [-93.50679, 42.10622],
+            [-93.50556, 42.10621],
+          ]),
+        ],
+      },
       source: 'sample',
       place: { label: 'Iowa, United States', country: 'United States', countryCode: 'US', admin1: 'Iowa' },
     }),
@@ -72,7 +86,8 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
     ...makeParcel({
       id: 'nevada-alfalfa',
       name: 'Diamond Valley alfalfa pivot',
-      polygon: circlePolygon([-115.97, 39.72], 400),
+      // The pivot circle around the verified point: its pivot at the centre, wetted radius about 395 m.
+      polygon: circlePolygon([-115.96894, 39.71961], 395),
       source: 'sample',
       place: { label: 'Nevada, United States', country: 'United States', countryCode: 'US', admin1: 'Nevada' },
     }),

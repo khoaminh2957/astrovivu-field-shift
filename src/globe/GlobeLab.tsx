@@ -4,10 +4,12 @@
  * exposed on `window.__globeLab` so measurements can be repeated from the console.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { BaseLayerId, DrawMode, LngLat, OverlayId } from '@/contracts';
+import type { BaseLayerId, DrawMode, FieldRaster, LngLat, OverlayId } from '@/contracts';
 import { BRANCHES, pick } from '@/contracts';
 import { SAMPLE_PARCELS } from '@/data';
 import { useT } from '@/i18n';
+import { bboxOf } from '@/lib/geo';
+import { encodeFrame, valueToByte } from '@/lib/raster';
 import { addDays, diffDays } from '@/lib/time';
 import { useMission } from '@/state/mission';
 import { draftToParcel, isLockable, squareDraft } from './draft';
@@ -101,6 +103,88 @@ const scenarios = {
     await sleep(seconds * 1000);
     useMission.getState().pause();
     return meter.endRecording();
+  },
+
+  /**
+   * SYNTHETIC test raster over the locked parcel (bench only, never shipped into the app): an
+   * NDVI-like field with a gradient and a wet patch that grows through the year, one frame a month.
+   */
+  syntheticRaster(key = 'ndvi'): boolean {
+    const m = useMission.getState();
+    if (!m.parcel) return false;
+    const [w, s, e, n] = bboxOf(m.parcel.polygon);
+    const width = 36;
+    const height = Math.max(8, Math.round((width * (n - s)) / ((e - w) * Math.cos(((n + s) / 2) * (Math.PI / 180)))));
+    const frames: FieldRaster['frames'] = [];
+    for (let k = 0; k < 12; k++) {
+      const t = addDays(m.timeline.start, Math.round((k * diffDays(m.timeline.end, m.timeline.start)) / 11));
+      const bytes = new Uint8Array(width * height);
+      const season = 0.5 + 0.45 * Math.sin((k / 12) * Math.PI * 2);
+      for (let y = 0; y < height; y++)
+        for (let x = 0; x < width; x++) {
+          const patch = Math.exp(-(((x - width * 0.3) / (width * 0.25)) ** 2 + ((y - height * 0.6) / (height * 0.3)) ** 2));
+          const v = Math.max(0, Math.min(1, season * (0.55 + 0.35 * (x / width)) - 0.35 * patch * (k / 11) + 0.04 * Math.sin(x * 1.7 + y)));
+          bytes[y * width + x] = valueToByte({ scale: 1 / 254, offset: 0 }, v);
+        }
+      frames.push({ t, data: encodeFrame(bytes), coverage: 1, scene: 'SYNTHETIC' });
+    }
+    const raster: FieldRaster = {
+      key,
+      branch: 'vegetation',
+      label: { en: 'SYNTHETIC test raster (bench)', vi: 'Raster thử nghiệm GIẢ LẬP (bench)' },
+      unit: '',
+      sourceId: 'synthetic-bench',
+      ramp: 'vegetation',
+      cellM: 10,
+      width,
+      height,
+      corners: [
+        [w, n],
+        [e, n],
+        [e, s],
+        [w, s],
+      ],
+      scale: 1 / 254,
+      offset: 0,
+      range: [0, 1],
+      cadence: 'monthly' as FieldRaster['cadence'],
+      frames,
+    };
+    useMission.setState({ rasters: [raster] });
+    useMission.getState().setParcelMetric(key);
+    return true;
+  },
+
+  /** Simulated user input on the canvas: a drag of `px` pixels, then wheel zoom in and out. */
+  async gesture(): Promise<{ drag: FrameStats; wheel: FrameStats }> {
+    const canvas = getActiveGlobe()?.map.getCanvas();
+    if (!canvas) throw new Error('no map');
+    const r = canvas.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const opts = (x: number, y: number, buttons: number): MouseEventInit => ({ bubbles: true, clientX: x, clientY: y, button: 0, buttons });
+    meter.beginRecording();
+    canvas.dispatchEvent(new MouseEvent('mousedown', opts(cx, cy, 1)));
+    await new Promise<void>((resolve) => {
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / 1500);
+        window.dispatchEvent(new MouseEvent('mousemove', opts(cx - 220 * Math.sin(t * Math.PI), cy - 60 * t, 1)));
+        if (t < 1) requestAnimationFrame(step);
+        else resolve();
+      };
+      requestAnimationFrame(step);
+    });
+    window.dispatchEvent(new MouseEvent('mouseup', opts(cx, cy - 60, 0)));
+    await sleep(600);
+    const drag = meter.endRecording();
+    meter.beginRecording();
+    for (let i = 0; i < 24; i++) {
+      canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: cx, clientY: cy, deltaY: i < 12 ? -100 : 100, deltaMode: 0 }));
+      await sleep(60);
+    }
+    await sleep(700);
+    return { drag, wheel: meter.endRecording() };
   },
 
   /** Records while nothing is asked of the map: the baseline. */

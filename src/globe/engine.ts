@@ -12,12 +12,12 @@ import { Map as MapLibreMap, setMaxParallelImageRequests, setWorkerUrl, type Err
 // MapLibre 6 ships its worker as a separate module and finds it next to its own file, which a
 // bundler moves. Vite's `?url` gives the address the file really has, in dev and in the build.
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import type { Lang, LngLat, Parcel, ParcelDraft, Series } from '@/contracts';
+import type { FieldRaster, Lang, LngLat, Parcel, ParcelDraft, Series, ViewInsets } from '@/contracts';
 import { BRANCHES } from '@/contracts';
 import { SAMPLE_PARCELS } from '@/data';
 import { translate } from '@/i18n';
 import { closeRing } from '@/lib/geo';
-import { primarySeries } from '@/lib/series';
+import { primarySeries, sampleAt } from '@/lib/series';
 import { useMission, type MissionState } from '@/state/mission';
 import { Beacons } from './beacons';
 import {
@@ -38,16 +38,19 @@ import { DraftEditor } from './draw';
 import { createHaloLayer } from './halo';
 import { BaseImagery, type ImageryLook } from './imagery';
 import { GLYPHS, Labels } from './labels';
-import { registerTileScheduler } from './net';
+import { MeasureTool } from './measure';
+import { prefetchTiles, registerTileScheduler } from './net';
+import { rasterRampCss } from './fieldRaster';
+import { TILT_THRESHOLD, useMapViewStore, useParcelPaintStore, type MeasureKind, type ParcelPaintInfo } from './toolState';
 import { OverlayController } from './overlayLayer';
 import { getOverlay } from './overlays';
 import { ParcelOverlay, type FillTexture } from './parcelOverlay';
-import { paintForSeries, parcelReadingAt } from './ramps';
+import { paintForSeries, parcelReadingAt, rampCss } from './ramps';
 import { createStarsLayer } from './stars';
 import { setGlobeStatus, useGlobeStatus } from './status';
 import { CREDIT, LAYER, SOURCE, TERRAIN_EXAGGERATION, baseStyle, dimMask } from './style';
 import { svgEl } from './svg';
-import { clamp, easeInOutCubic, smoothstep } from './tween';
+import { clamp, easeInOutCubic, easeOutCubic, smoothstep } from './tween';
 
 export type MotionPref = 'auto' | 'full' | 'reduced';
 type View = 'hero' | 'explore' | 'parcel';
@@ -71,6 +74,39 @@ const FIELD_ZOOM = 15.6;
 const MAX_PIXEL_RATIO = 2;
 /** Above this many device pixels the fill rate, not the scene, decides the frame time. */
 const MAX_CANVAS_PIXELS = 5_200_000;
+/** While the camera moves the canvas renders at this share of the resting pixel ratio (never below 1). */
+const MOVING_RATIO_SHARE = 0.75;
+/** Rest this long before the full pixel ratio comes back, so a drag with pauses does not flip it. */
+const RATIO_RESTORE_MS = 260;
+/** During a scripted flight the anchor is published at most this often; exact again on arrival. */
+const FLIGHT_ANCHOR_MS = 120;
+const INSET_EASE_MS = 360;
+const ESRI_TILE = (z: number, x: number, y: number) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+const DEM_TILE = (z: number, x: number, y: number) => `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`;
+
+/** Tile column and row of a point at a zoom (web mercator). */
+function tileXY([lng, lat]: LngLat, z: number): [number, number] {
+  const n = 2 ** z;
+  const x = Math.floor(((lng + 180) / 360) * n);
+  const r = (lat * Math.PI) / 180;
+  const y = Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n);
+  return [clamp(x, 0, n - 1), clamp(y, 0, n - 1)];
+}
+
+/** Keeps at least 120 px of free map in each direction, whatever the panels claim. */
+function fitPadding(p: Padding, view: Viewport): Padding {
+  const fit = (a: number, b: number, size: number): [number, number] => {
+    const room = size - 120;
+    if (a + b <= room) return [a, b];
+    const k = Math.max(0, room) / (a + b || 1);
+    return [Math.floor(a * k), Math.floor(b * k)];
+  };
+  const [left, right] = fit(p.left, p.right, view.width);
+  const [top, bottom] = fit(p.top, p.bottom, view.height);
+  return { top, bottom, left, right };
+}
+
+const hasInsets = (i: ViewInsets | undefined): i is ViewInsets => !!i && i.top + i.right + i.bottom + i.left > 0;
 
 let workerConfigured = false;
 let active: GlobeEngine | null = null;
@@ -96,7 +132,6 @@ export class GlobeEngine {
   private state: MissionState = useMission.getState();
   private view: View = viewOf(this.state);
   private motion: MotionPref;
-  private readonly reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   private ready = false;
   private destroyed = false;
 
@@ -121,6 +156,13 @@ export class GlobeEngine {
   private resizeTimer: ReturnType<typeof setTimeout> | null = null;
   private fillKey = '';
   private lockedParcelId: string | null = null;
+  private measure!: MeasureTool;
+  private vw = 0;
+  private vh = 0;
+  private movingRatio = false;
+  private ratioTimer: ReturnType<typeof setTimeout> | null = null;
+  private viewRaf = 0;
+  private paintKey = '';
   private readonly warned = new Set<string>();
 
   constructor(host: HTMLElement, opts: { motion?: MotionPref } = {}) {
@@ -186,7 +228,40 @@ export class GlobeEngine {
   /** Flies to a place at field scale (place search, "take me there"). Has no effect on a locked parcel. */
   flyToPlace(location: LngLat, zoom = 13.5): void {
     if (!this.ready || this.state.parcel) return;
-    this.fly({ center: location, zoom, pitch: 0, bearing: 0, padding: explorePose(this.viewport(), location).padding }, 'level');
+    this.flyTo(location, zoom);
+  }
+
+  /** Flies to a place even with a parcel locked (the locate button). */
+  flyTo(location: LngLat, zoom = 15): void {
+    if (!this.ready) return;
+    this.prefetch(location, zoom);
+    this.fly({ center: location, zoom, pitch: 0, bearing: 0, padding: this.freePadding(explorePose(this.viewport(), location).padding) }, 'level');
+  }
+
+  /** A short camera ease for the toolbar; a cut under reduced motion. */
+  ease(opts: { zoom?: number; bearing?: number; pitch?: number }): void {
+    if (!this.ready) return;
+    this.map.easeTo({ ...opts, duration: this.reduced ? 0 : 420, easing: easeOutCubic, essential: true });
+  }
+
+  zoomBy(delta: number): void {
+    if (this.ready) this.ease({ zoom: clamp(this.map.getZoom() + delta, 0.5, 19.5) });
+  }
+
+  /** Frames the locked parcel, or the draft being drawn, in the free part of the screen. */
+  fitParcel(): void {
+    if (!this.ready) return;
+    const { parcel, draft } = this.state;
+    if (parcel) this.fly(this.parcelPose(parcel), 'level');
+    else if (draft && draft.vertices.length > 0) this.frameDraft(draft.vertices, true);
+  }
+
+  startMeasure(kind: MeasureKind): void {
+    if (this.ready) this.measure.start(kind);
+  }
+
+  stopMeasure(): void {
+    if (this.ready) this.measure.stop();
   }
 
   /** Returns the camera to the locked parcel after the user has wandered off. */
@@ -206,7 +281,10 @@ export class GlobeEngine {
     this.destroyed = true;
     if (active === this) active = null;
     cancelAnimationFrame(this.rotateRaf);
+    cancelAnimationFrame(this.viewRaf);
+    cancelAnimationFrame(this.rasterRaf);
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
+    if (this.ratioTimer) clearTimeout(this.ratioTimer);
     for (const fn of this.cleanups) fn();
     this.cleanups = [];
     if (this.ready) {
@@ -215,7 +293,9 @@ export class GlobeEngine {
       this.draft.destroy();
       this.beacons.destroy();
       this.parcelLayer.destroy();
+      this.measure.destroy();
     }
+    useParcelPaintStore.setState({ paint: null });
     this.map.remove();
     this.mapEl.remove();
     this.creditsEl.remove();
@@ -248,6 +328,10 @@ export class GlobeEngine {
       },
     });
     this.parcelLayer = new ParcelOverlay(map, this.svg, (anchor) => useMission.getState().setAnchor(anchor));
+    this.measure = new MeasureTool(map, this.svg);
+    const size = this.viewport();
+    this.vw = size.width;
+    this.vh = size.height;
     this.draft = new DraftEditor(map, this.svg, {
       setDraft: (draft: ParcelDraft) => useMission.getState().setDraft(draft),
       lang: () => this.state.lang,
@@ -273,6 +357,9 @@ export class GlobeEngine {
     map.on('render', this.onRender);
     map.on('zoom', this.onZoom);
     map.on('resize', this.onResize);
+    map.on('movestart', this.onMoveStart);
+    map.on('moveend', this.onMoveEnd);
+    map.on('move', this.queueViewState);
     // With a camera at rest (a deep link straight into explore or a locked field) the frame
     // drawn when the last tile landed was observed to leave the raster layers out until the
     // next repaint. One extra frame once loading settles costs nothing and closes that gap.
@@ -304,8 +391,6 @@ export class GlobeEngine {
     window.addEventListener('pointercancel', up);
     el.addEventListener('wheel', nudge, { passive: true });
     el.addEventListener('keydown', nudge);
-    const onMotion = () => this.onMotionChange();
-    this.reducedQuery.addEventListener('change', onMotion);
     // A page that loaded in a background tab may have been denied its last frames: draw one on return.
     const onVisible = () => {
       if (!document.hidden) map.triggerRepaint();
@@ -320,7 +405,6 @@ export class GlobeEngine {
       () => window.removeEventListener('pointercancel', up),
       () => el.removeEventListener('wheel', nudge),
       () => el.removeEventListener('keydown', nudge),
-      () => this.reducedQuery.removeEventListener('change', onMotion),
       useMission.subscribe((s, prev) => this.onStore(s, prev)),
     );
 
@@ -334,6 +418,7 @@ export class GlobeEngine {
     this.recolour();
     this.renderCredits();
     setGlobeStatus({ webgl: true, ready: true, reducedMotion: this.reduced, imagery: this.imagery.imagery });
+    this.queueViewState();
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -357,7 +442,14 @@ export class GlobeEngine {
     if (s.phase !== prev.phase) this.syncBeacons();
     if (s.layers !== prev.layers) this.applyLayers(false);
     if (s.timeline.cursor !== prev.timeline.cursor) this.overlay.set(s.layers.overlay, s.layers.overlayOpacity, s.timeline.cursor);
-    if (s.timeline.cursor !== prev.timeline.cursor || s.telemetry !== prev.telemetry || s.focusBranch !== prev.focusBranch || s.layers.parcelMetric !== prev.layers.parcelMetric) {
+    if (s.insets !== prev.insets) this.onInsets();
+    if (
+      s.timeline.cursor !== prev.timeline.cursor ||
+      s.telemetry !== prev.telemetry ||
+      s.rasters !== prev.rasters ||
+      s.focusBranch !== prev.focusBranch ||
+      s.layers.parcelMetric !== prev.layers.parcelMetric
+    ) {
       this.recolour();
     }
     if (s.lang !== prev.lang) this.onLang(s.lang);
@@ -384,7 +476,9 @@ export class GlobeEngine {
   }
 
   private get reduced(): boolean {
-    return this.motion === 'reduced' || (this.motion === 'auto' && this.reducedQuery.matches);
+    // The system setting is not followed on purpose: the user asked for smooth globe movement and
+    // their system reports reduce. `?motion=reduced` and setMotion('reduced') turn it down.
+    return this.motion === 'reduced';
   }
 
   private poseFor(view: View, viewport: Viewport): CameraPose {
@@ -399,20 +493,56 @@ export class GlobeEngine {
    * breakpoint; MapLibre then centres the look-at point in what is left, a little above the middle.
    */
   private parcelPose(parcel: Parcel, viewport: Viewport = this.viewport()): CameraPose {
-    const wide = viewport.width >= 1024;
-    const side = wide ? cssPx('--hud-gutter', 24) + cssPx('--hud-callout-w', 264) + 28 : 12;
-    const padding: Padding = {
-      top: cssPx('--topbar-h', 48) + 8,
-      bottom: cssPx('--timeline-h', 132) + 20,
-      left: side,
-      right: side,
-    };
+    const padding = this.parcelPadding(viewport);
     const ring = openRing(parcel.polygon.coordinates[0]);
     // Lay the long side across the screen; a compact shape gets a slight turn so the scene
     // reads as 3D rather than as a tilted map.
     const bearing = framingBearing(ring, -16);
-    const zoom = clamp(fitZoom(ring, parcel.centroid[1], viewport, padding, LOCK_PITCH, bearing, LOCK_FILL), ...LOCK_ZOOM_RANGE);
+    const fill = hasInsets(this.state.insets) ? 0.62 : LOCK_FILL;
+    const zoom = clamp(fitZoom(ring, parcel.centroid[1], viewport, padding, LOCK_PITCH, bearing, fill), ...LOCK_ZOOM_RANGE);
     return { center: parcel.centroid, zoom, pitch: LOCK_PITCH, bearing, padding };
+  }
+
+  /**
+   * Camera padding around the parcel: the panel insets the UI publishes, plus a margin. Before
+   * the UI has published any, the earlier estimate of the HUD layout from the design tokens.
+   */
+  private parcelPadding(viewport: Viewport): Padding {
+    const ins = this.state.insets;
+    if (hasInsets(ins)) {
+      const m = 12;
+      return fitPadding({ top: ins.top + m, bottom: ins.bottom + m, left: ins.left + m, right: ins.right + m }, viewport);
+    }
+    const wide = viewport.width >= 1024;
+    const side = wide ? cssPx('--hud-gutter', 24) + cssPx('--hud-callout-w', 264) + 28 : 12;
+    return fitPadding({ top: cssPx('--topbar-h', 48) + 8, bottom: cssPx('--timeline-h', 132) + 20, left: side, right: side }, viewport);
+  }
+
+  /** A pose padding widened to clear the panels, side by side. */
+  private freePadding(p: Padding): Padding {
+    const ins = this.state.insets;
+    if (!hasInsets(ins)) return p;
+    return fitPadding(
+      { top: Math.max(p.top, ins.top + 12), bottom: Math.max(p.bottom, ins.bottom + 12), left: Math.max(p.left, ins.left + 12), right: Math.max(p.right, ins.right + 12) },
+      this.viewport(),
+    );
+  }
+
+  /** Panels opened or closed: slide the field back into the middle of what is still visible. */
+  private onInsets(): void {
+    const { parcel } = this.state;
+    if (this.view !== 'parcel' || !parcel || this.flying) return;
+    const pose = this.parcelPose(parcel);
+    const here = this.map.project(parcel.centroid);
+    const near = Math.abs(this.map.getZoom() - pose.zoom) < 1.2 && here.x > 0 && here.x < this.vw && here.y > 0 && here.y < this.vh;
+    // Near the framed view the whole framing follows; after the user has wandered off only the padding does.
+    this.map.easeTo({
+      padding: pose.padding,
+      ...(near ? { center: pose.center, zoom: pose.zoom } : {}),
+      duration: this.reduced ? 0 : INSET_EASE_MS,
+      easing: easeOutCubic,
+      essential: true,
+    });
   }
 
   /** What the base imagery should look like in the current view and with the current layer switches. */
@@ -446,7 +576,9 @@ export class GlobeEngine {
       map.jumpTo(this.poseFor(view, viewport));
       this.syncTerrain();
     } else if (view === 'parcel' && parcel) {
-      this.fly(this.parcelPose(parcel, viewport), 'descend', () => this.parcelLayer.flash());
+      const pose = this.parcelPose(parcel, viewport);
+      this.prefetch(pose.center, pose.zoom);
+      this.fly(pose, 'descend', () => this.parcelLayer.flash());
     } else {
       // Keep looking at the same part of the world: back out above the parcel that was locked,
       // or step in or out over wherever the user had turned the globe.
@@ -464,15 +596,15 @@ export class GlobeEngine {
   }
 
   /** A draft arrived from the UI (coordinates, GPS): show it top-down, unless it already sits well in view. */
-  private frameDraft(vertices: LngLat[]): void {
+  private frameDraft(vertices: LngLat[], force = false): void {
     const { map } = this;
     const viewport = this.viewport();
     const center = meanPoint(vertices);
-    const padding = explorePose(viewport, center).padding;
+    const padding = this.freePadding(explorePose(viewport, center).padding);
     const zoom = clamp(fitZoom(vertices, center[1], viewport, padding, 0, 0, 0.42), ...DRAFT_ZOOM_RANGE);
     const p = map.project(center);
     const inView = p.x > viewport.width * 0.2 && p.x < viewport.width * 0.8 && p.y > viewport.height * 0.15 && p.y < viewport.height * 0.75;
-    if (inView && Math.abs(map.getZoom() - zoom) < 0.9 && map.getPitch() < 20) return;
+    if (!force && inView && Math.abs(map.getZoom() - zoom) < 0.9 && map.getPitch() < 20) return;
     this.fly({ center, zoom, pitch: 0, bearing: 0, padding }, 'level');
   }
 
@@ -508,6 +640,7 @@ export class GlobeEngine {
       map.setTransformCameraUpdate(null);
     }
     this.flying = true;
+    this.parcelLayer.anchorEveryMs = FLIGHT_ANCHOR_MS;
     setGlobeStatus({ flying: true });
     const onEnd = (e: MapMovementEvent & { flight?: number }) => {
       if (e.flight !== id) return;
@@ -516,6 +649,8 @@ export class GlobeEngine {
       if (this.flightId !== id || this.destroyed) return;
       map.setTransformCameraUpdate(null);
       this.flying = false;
+      this.parcelLayer.anchorEveryMs = 0;
+      if (this.state.parcel) this.parcelLayer.update(this.vw, this.vh, true);
       setGlobeStatus({ flying: false });
       this.rotateResumeAt = performance.now() + 600;
       this.rotateRampFrom = 0;
@@ -545,6 +680,7 @@ export class GlobeEngine {
     // Any flight still running is abandoned: its end handler will see a newer id and stand down.
     this.flightId++;
     this.flying = false;
+    this.parcelLayer.anchorEveryMs = 0;
     setGlobeStatus({ flying: false });
     map.setTransformCameraUpdate(null);
     mapEl.classList.add('is-cutting');
@@ -555,6 +691,7 @@ export class GlobeEngine {
 
   private onMotionChange(): void {
     setGlobeStatus({ reducedMotion: this.reduced });
+    this.queueViewState();
     if (!this.ready) return;
     if (this.reduced) {
       this.stopRotation();
@@ -631,6 +768,64 @@ export class GlobeEngine {
   // Parcel colour (State 4)
   // ---------------------------------------------------------------------------------------------
 
+  /** A within-field raster of the chosen metric, when the data agent delivered one. */
+  private paintRaster(): FieldRaster | null {
+    const key = this.state.layers.parcelMetric;
+    if (!key) return null;
+    return this.state.rasters.find((r) => r.key === key && r.frames.length > 0) ?? null;
+  }
+
+  private rasterRaf = 0;
+
+  /** Repaint coalesced to one per displayed frame, however many cursor writes arrive in it. */
+  private queueRasterPaint(): void {
+    if (this.rasterRaf) return;
+    this.rasterRaf = requestAnimationFrame(() => {
+      this.rasterRaf = 0;
+      if (this.destroyed) return;
+      const raster = this.paintRaster();
+      if (!raster) return;
+      const info = this.parcelLayer.paintRaster(this.state.timeline.cursor);
+      this.publishPaint({
+        source: 'raster',
+        key: raster.key,
+        label: raster.label,
+        unit: raster.unit,
+        rampCss: rasterRampCss(raster.ramp),
+        range: raster.range,
+        date: info?.date ?? null,
+        nextDate: info?.nextDate ?? null,
+      });
+    });
+  }
+
+  private publishSeriesPaint(series: Series | null): void {
+    const paint = series ? paintForSeries(series) : null;
+    if (!series || !paint) {
+      this.publishPaint(null);
+      return;
+    }
+    const at = sampleAt(series, this.state.timeline.cursor);
+    this.publishPaint({
+      source: 'series',
+      key: series.key,
+      label: null,
+      unit: series.unit,
+      rampCss: rampCss(paint),
+      range: paint.domain,
+      date: at.sample?.t ?? null,
+      nextDate: null,
+    });
+  }
+
+  /** Legend info goes out only when what it says changes, not on every cursor step. */
+  private publishPaint(info: ParcelPaintInfo | null): void {
+    const key = info ? `${info.source}|${info.key}|${info.date}|${info.nextDate}|${info.range.join(',')}|${info.unit}` : '';
+    if (key === this.paintKey) return;
+    this.paintKey = key;
+    useParcelPaintStore.setState({ paint: info });
+  }
+
   /** The series that paints the parcel: the focused HUD branch if it has map paint, else the chosen metric. */
   private paintSeries(): Series | null {
     const { telemetry, focusBranch, layers } = this.state;
@@ -655,7 +850,20 @@ export class GlobeEngine {
   private recolour(): void {
     if (!this.ready || !this.state.parcel) return;
     const { telemetry, timeline } = this.state;
+    const raster = this.paintRaster();
+    this.parcelLayer.setRaster(raster);
+    if (raster) {
+      this.queueRasterPaint();
+      const simulated = telemetry?.mode === 'mock' || telemetry?.sources[raster.sourceId]?.provenance === 'simulated';
+      const key = `raster|${simulated}`;
+      if (key !== this.fillKey) {
+        this.fillKey = key;
+        this.parcelLayer.setFill({ color: null, texture: simulated ? 'simulated' : 'none' });
+      }
+      return;
+    }
     const series = this.paintSeries();
+    this.publishSeriesPaint(series);
     const reading = series ? parcelReadingAt(series, timeline.cursor) : null;
     let color: string | null = null;
     let texture: FillTexture = 'none';
@@ -676,13 +884,16 @@ export class GlobeEngine {
 
   /** Runs after MapLibre has drawn a frame: whatever follows the camera or the terrain is re-projected here. */
   private onRender = (): void => {
-    if (this.state.parcel) this.parcelLayer.update();
+    if (this.state.parcel) this.parcelLayer.update(this.vw, this.vh);
     if (this.draft.hasDraft) this.draft.render();
+    if (this.measure.active) this.measure.render();
   };
 
   private onResize = (): void => {
     const viewport = this.viewport();
-    const ratio = cappedPixelRatio(viewport);
+    this.vw = viewport.width;
+    this.vh = viewport.height;
+    const ratio = this.targetRatio();
     if (Math.abs(ratio - this.map.getPixelRatio()) > 0.01) this.map.setPixelRatio(ratio);
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => {
@@ -695,6 +906,86 @@ export class GlobeEngine {
       } else this.map.setPadding(explorePose(this.viewport(), HERO_CENTER).padding);
     }, 160);
   };
+
+  /** Resting pixel ratio, or the lighter one while the camera is being moved. */
+  private targetRatio(): number {
+    const full = cappedPixelRatio({ width: this.vw || window.innerWidth, height: this.vh || window.innerHeight });
+    return this.movingRatio ? Math.max(1, full * MOVING_RATIO_SHARE) : full;
+  }
+
+  private applyRatio(): void {
+    const ratio = this.targetRatio();
+    if (Math.abs(ratio - this.map.getPixelRatio()) < 0.01) return;
+    this.map.setPixelRatio(ratio);
+    // Resizing the canvas clears it; drawing now, in the same task, means no blank frame is shown.
+    // A gesture fires movestart from inside MapLibre's own frame, where a nested draw is refused
+    // before it starts; that frame then draws at the new size anyway.
+    try {
+      this.map.redraw();
+    } catch {
+      this.map.triggerRepaint();
+    }
+  }
+
+  /**
+   * Flights and user gestures render at a lighter pixel ratio and get the full one back when the
+   * camera rests. The hero rotation is left alone: it is slow and continuous, and a sharpness
+   * change in it would be visible.
+   */
+  private onMoveStart = (e: { originalEvent?: Event }): void => {
+    if (!this.flying && !e.originalEvent) return;
+    if (this.ratioTimer) {
+      clearTimeout(this.ratioTimer);
+      this.ratioTimer = null;
+    }
+    if (this.movingRatio) return;
+    this.movingRatio = true;
+    this.applyRatio();
+  };
+
+  private onMoveEnd = (): void => {
+    if (!this.movingRatio) return;
+    if (this.ratioTimer) clearTimeout(this.ratioTimer);
+    this.ratioTimer = setTimeout(() => {
+      this.ratioTimer = null;
+      if (this.destroyed || this.flying || this.map.isMoving()) return;
+      this.movingRatio = false;
+      this.applyRatio();
+    }, RATIO_RESTORE_MS);
+  };
+
+  /** Camera numbers for the toolbar, at most once per animation frame. */
+  private queueViewState = (): void => {
+    if (this.viewRaf || this.destroyed) return;
+    this.viewRaf = requestAnimationFrame(() => {
+      this.viewRaf = 0;
+      if (this.destroyed) return;
+      const zoom = Math.round(this.map.getZoom() * 100) / 100;
+      const bearing = Math.round(this.map.getBearing() * 10) / 10;
+      const pitch = Math.round(this.map.getPitch() * 10) / 10;
+      const motion = this.reduced ? 'reduced' : 'full';
+      const prev = useMapViewStore.getState();
+      if (prev.zoom === zoom && prev.bearing === bearing && prev.pitch === pitch && prev.motion === motion) return;
+      useMapViewStore.setState({ zoom, bearing, pitch, tilted: pitch > TILT_THRESHOLD, motion });
+    });
+  };
+
+  /** Asks for the destination's imagery and terrain tiles before the camera gets there. */
+  private prefetch(center: LngLat, zoom: number): void {
+    const urls: string[] = [];
+    const z = Math.min(19, Math.round(zoom));
+    for (const zz of [z, z - 1]) {
+      const [x, y] = tileXY(center, zz);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) urls.push(ESRI_TILE(zz, x + dx, y + dy));
+    }
+    if (this.state.layers.base.terrain) {
+      // The DEM source is 256 px tiles to level 12; around the field that is one tile and its neighbours.
+      const dz = Math.min(12, Math.round(zoom) - 1);
+      const [x, y] = tileXY(center, dz);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) urls.push(DEM_TILE(dz, x + dx, y + dy));
+    }
+    prefetchTiles(urls);
+  }
 
   private onError = (e: ErrorEvent): void => {
     const err = e.error as { name?: string; message?: string } | undefined;
