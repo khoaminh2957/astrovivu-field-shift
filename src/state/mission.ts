@@ -113,6 +113,7 @@ export interface MissionState {
   setOverlay(id: OverlayId): void;
   setOverlayOpacity(value: number): void;
   setParcelMetric(key: string | null): void;
+  setStretch(stretch: 'fixed' | 'field'): void;
   setAnchor(anchor: ScreenAnchor | null): void;
   setInsets(insets: ViewInsets): void;
   setFocusBranch(branch: BranchId | null): void;
@@ -184,7 +185,7 @@ export const useMission = create<MissionState>()((set, get) => ({
   advisory: null,
   tracking: null,
 
-  layers: { base: { satellite: true, terrain: true, labels: false }, overlay: 'none', overlayOpacity: 0.7, parcelMetric: 'ndvi' },
+  layers: { base: { satellite: true, terrain: true, labels: false }, overlay: 'none', overlayOpacity: 0.7, parcelMetric: 'ndvi', stretch: 'field' },
   anchor: null,
   insets: { top: 0, right: 0, bottom: 0, left: 0 },
   focusBranch: null,
@@ -371,6 +372,8 @@ export const useMission = create<MissionState>()((set, get) => ({
   setOverlay: (overlay) => set((s) => ({ layers: { ...s.layers, overlay } })),
   setOverlayOpacity: (value) => set((s) => ({ layers: { ...s.layers, overlayOpacity: Math.max(0, Math.min(1, value)) } })),
   setParcelMetric: (key) => set((s) => ({ layers: { ...s.layers, parcelMetric: key } })),
+  // A new timeline object makes every time-driven painter (map and cards) repaint the same day.
+  setStretch: (stretch) => set((s) => ({ layers: { ...s.layers, stretch }, timeline: { ...s.timeline } })),
   setAnchor: (anchor) => set({ anchor }),
   setInsets: (insets) => set({ insets }),
   setFocusBranch: (focusBranch) => set({ focusBranch }),

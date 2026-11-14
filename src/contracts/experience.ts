@@ -16,6 +16,8 @@ export interface LayerState {
   overlayOpacity: number;
   /** `Series.key` whose value at the cursor date colours the parcel fill (instant, no network). */
   parcelMetric: string | null;
+  /** Colour scale of field pictures: the raster's fixed range, or stretched to this field's own values. */
+  stretch?: 'fixed' | 'field';
 }
 
 export interface OverlayInfo {

@@ -18,6 +18,8 @@ import { rainSum } from '@/ui/hud/readings';
 import { GroundTruthForm } from '@/ui/override';
 import { CardDetail } from './CardDetail';
 import { SatelliteCanvas } from './SatelliteCanvas';
+import { ScaleLegend } from './ScaleLegend';
+import { NdviChart, gddBase, gddNote, gddSeries } from './StatusCharts';
 import { FieldReport } from './FieldReport';
 import { LiveFieldCanvas, ShapeThumb } from './FieldCanvas';
 import { CropSelect, ScoreBlock, WhatChanged } from './FieldSummary';
@@ -122,7 +124,7 @@ function PictureTile({ branch }: { branch: BranchId }) {
       <span className="relative block aspect-square overflow-hidden rounded-sm bg-ink-1">
         {pic === 'loading' ? <span className="skeleton absolute inset-3 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={branch} pad={12} />}
       </span>
-      {raster && <span aria-hidden className="h-1.5 rounded-full" style={{ background: rampGradient(raster.ramp) }} />}
+      {raster && <ScaleLegend raster={raster} compact />}
       <span className="t-caption truncate">{caption}</span>
     </button>
   );
@@ -222,6 +224,10 @@ function StatusTab() {
   const rain = telemetry ? (findSeries(telemetry.branches.rainfall, 'rain') ?? primarySeries(telemetry.branches.rainfall)) : undefined;
   const temp = telemetry ? (findSeries(telemetry.branches.agromet, 't2m_max') ?? findSeries(telemetry.branches.agromet, 't2m')) : undefined;
   const notes = useMemo(() => chartNotes(veg, rain, temp, t), [veg, rain, temp, t]);
+  const cropId = useMission((s) => s.cropId);
+  const crop = getCrop(cropId);
+  const base = gddBase(crop);
+  const gdd = useMemo(() => (telemetry ? gddSeries(telemetry.branches.agromet, base) : null), [telemetry, base]);
   return (
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-3">
@@ -239,9 +245,9 @@ function StatusTab() {
       {telemetry && (
         <section className="flex flex-col gap-4">
           <h3 className="t-title text-lg">{t('field.status.charts')}</h3>
-          {veg && <Chart series={veg} branch="vegetation" note={notes.veg} />}
+          <NdviChart modis={veg} />
           {rain && <Chart series={rain} branch="rainfall" accumulate note={notes.rain} />}
-          {temp && <Chart series={temp} branch="thermal" note={notes.temp} />}
+          {gdd && <Chart series={gdd} branch="thermal" note={`${gddNote(t, lang, crop, base)} ${notes.temp ?? ''}`} />}
         </section>
       )}
       <WhatChanged />

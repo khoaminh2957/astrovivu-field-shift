@@ -5,6 +5,9 @@
 import { useEffect, useState } from 'react';
 import { Box, Compass, Expand, Focus, Gauge, Layers, LocateFixed, Minimize, Minus, Plus, Ruler, SquareDashed, X } from 'lucide-react';
 import { useParcelPaint } from '@/globe';
+import { displayRange } from '@/lib/raster';
+import { useMission } from '@/state/mission';
+import { StretchToggle } from '@/ui/field/ScaleLegend';
 import { pick } from '@/contracts';
 import { useLang } from '@/i18n';
 import { fmtDate } from '@/ui/hud/format';
@@ -143,8 +146,13 @@ export function MapToolbar({ className }: { className?: string }) {
 export function MapLegendChip({ className }: { className?: string }) {
   const lang = useLang();
   const paint = useParcelPaint();
+  const raster = useMission((s) => (paint?.source === 'raster' ? s.rasters.find((r) => r.key === paint.key) : undefined));
+  const polygon = useMission((s) => s.parcel?.polygon);
+  const stretch = useMission((s) => s.layers.stretch);
   if (!paint) return null;
-  const d = paint.range[1] - paint.range[0] < 5 ? 2 : 0;
+  // The map paints rasters on the same scale as the cards; the legend follows it.
+  const range = raster ? displayRange(raster, polygon, stretch) : paint.range;
+  const d = range[1] - range[0] < 5 ? 2 : 0;
   return (
     <div className={cn('plate flex w-56 flex-col gap-1 rounded-md px-3 py-2 shadow-md', className)}>
       <span className="flex items-baseline justify-between gap-2">
@@ -153,10 +161,11 @@ export function MapLegendChip({ className }: { className?: string }) {
       </span>
       <span aria-hidden className="h-1.5 rounded-full" style={{ background: paint.rampCss }} />
       <span className="t-meta flex justify-between">
-        <span>{fmtNum(paint.range[0], d)}</span>
+        <span>{fmtNum(range[0], d)}</span>
         <span>{paint.unit}</span>
-        <span>{fmtNum(paint.range[1], d)}</span>
+        <span>{fmtNum(range[1], d)}</span>
       </span>
+      {raster && raster.frames.length > 1 && <StretchToggle className="self-start" />}
     </div>
   );
 }

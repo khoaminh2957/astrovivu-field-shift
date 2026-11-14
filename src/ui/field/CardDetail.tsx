@@ -18,6 +18,7 @@ import { digitsFor, fmtDate, fmtNum, fmtRes, unitFor } from '@/ui/hud/format';
 import { readBranch } from '@/ui/hud/readings';
 import '@/ui/hud/strings';
 import { FrameCanvas, LiveFieldCanvas } from './FieldCanvas';
+import { ScaleLegend } from './ScaleLegend';
 import { usePictureCaption, usePictureState } from './MetricCards';
 import { frameShown, rampGradient, rasterFor } from './picture';
 import './strings';
@@ -81,15 +82,9 @@ function PictureLegend({ id }: { id: BranchId }) {
   const branch = useMission((s) => s.telemetry?.branches[id]);
   if (raster) {
     const shown = frameShown(raster, cursor);
-    const d = raster.range[1] - raster.range[0] < 5 ? 2 : 0;
     return (
-      <div className="flex flex-col gap-1">
-        <span aria-hidden className="h-2 w-full rounded-xs border border-line-2" style={{ background: rampGradient(raster.ramp) }} />
-        <span className="t-meta flex justify-between">
-          <span>{fmtNum(raster.range[0], d)}</span>
-          <span>{pick(raster.label, lang)}{raster.unit ? ` · ${raster.unit}` : ''}</span>
-          <span>{fmtNum(raster.range[1], d)}</span>
-        </span>
+      <div className="flex flex-col gap-1.5">
+        <ScaleLegend raster={raster} />
         {shown ? (
           <span className="t-caption">
             {t('field.frame.shown', { d: fmtDate(shown.date, lang) })}

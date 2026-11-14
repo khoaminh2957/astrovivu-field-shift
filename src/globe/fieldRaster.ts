@@ -12,7 +12,8 @@
  */
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { FieldRaster, ISODate, LngLat, RampId } from '@/contracts';
-import { framesAt, paintRaster, type RampColor } from '@/lib/raster';
+import { displayRange, framesAt, paintRaster, type RampColor } from '@/lib/raster';
+import { useMission } from '@/state/mission';
 import { RAMPS, type MapMetric } from '@/ui/design/tokens';
 
 const TARGET_PX = 384;
@@ -152,9 +153,13 @@ export class FieldRasterView {
     const pair = framesAt(raster, t);
     if (!pair) return null;
     const info = { date: pair.a.t, nextDate: pair.b && pair.mix > 0 ? pair.b.t : null };
-    if (t === this.paintedKey) return info;
-    this.paintedKey = t;
-    paintRaster(raster, t, rampColor(raster.ramp), image.data);
+    // Same colour scale as the metric cards (fixed, or stretched to this field's own values).
+    const s = useMission.getState();
+    const range = displayRange(raster, s.parcel?.polygon, s.layers.stretch);
+    const key = `${t}|${range[0]},${range[1]}`;
+    if (key === this.paintedKey) return info;
+    this.paintedKey = key;
+    paintRaster(raster, t, rampColor(raster.ramp), image.data, true, range);
     this.small.getContext('2d')?.putImageData(image, 0, 0);
     const ctx = this.el.getContext('2d');
     if (!ctx) return info;

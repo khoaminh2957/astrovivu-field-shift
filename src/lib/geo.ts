@@ -117,3 +117,21 @@ export function makeParcel(args: {
     isUS: isInUS(centroid),
   };
 }
+
+/** Even-odd test of a point against a ring (lng/lat treated as planar, fine at field scale). */
+export function pointInRing([x, y]: LngLat, ring: LngLat[]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** Inside the outer ring and outside every hole. */
+export function pointInPolygon(p: LngLat, polygon: PolygonGeometry): boolean {
+  const [outer, ...holes] = polygon.coordinates;
+  if (!outer || !pointInRing(p, outer)) return false;
+  return !holes.some((h) => pointInRing(p, h));
+}

@@ -215,6 +215,8 @@ export interface CropHistoryYear {
   crop: string;
   code?: number;
   sourceId: string;
+  /** How the year was decided when several points inside the parcel were sampled, e.g. "4 of 5 points". */
+  note?: I18nText;
 }
 
 export interface FieldTelemetry {

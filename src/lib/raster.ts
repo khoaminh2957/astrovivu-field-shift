@@ -2,7 +2,8 @@
  * Field rasters: decoding, picking the frame for a date, and painting. Pure and DOM-free, so the
  * map overlay, the metric cards and the cache script all use the same code.
  */
-import type { FieldRaster, FieldRasterFrame, ISODate } from '@/contracts';
+import type { FieldRaster, FieldRasterFrame, ISODate, PolygonGeometry } from '@/contracts';
+import { pointInPolygon } from './geo';
 import { diffDays } from './time';
 
 export const NO_DATA = 255;
@@ -64,21 +65,21 @@ export function framesAt(raster: FieldRaster, t: ISODate): FramePair | null {
 
 export type RampColor = (position: number) => [r: number, g: number, b: number];
 
-const luts = new WeakMap<FieldRaster, { color: RampColor; lut: Uint8ClampedArray }>();
+const luts = new WeakMap<FieldRaster, { color: RampColor; lo: number; hi: number; lut: Uint8ClampedArray }>();
 
-function lutFor(raster: FieldRaster, color: RampColor): Uint8ClampedArray {
+function lutFor(raster: FieldRaster, color: RampColor, range: [number, number] = raster.range): Uint8ClampedArray {
   const hit = luts.get(raster);
-  if (hit && hit.color === color) return hit.lut;
+  if (hit && hit.color === color && hit.lo === range[0] && hit.hi === range[1]) return hit.lut;
   const lut = new Uint8ClampedArray(255 * 3);
-  const span = raster.range[1] - raster.range[0] || 1;
+  const span = range[1] - range[0] || 1;
   for (let b = 0; b < 255; b++) {
-    const pos = Math.max(0, Math.min(1, (raster.offset + raster.scale * b - raster.range[0]) / span));
+    const pos = Math.max(0, Math.min(1, (raster.offset + raster.scale * b - range[0]) / span));
     const [r, g, bl] = color(pos);
     lut[b * 3] = r;
     lut[b * 3 + 1] = g;
     lut[b * 3 + 2] = bl;
   }
-  luts.set(raster, { color, lut });
+  luts.set(raster, { color, lo: range[0], hi: range[1], lut });
   return lut;
 }
 
@@ -87,12 +88,12 @@ function lutFor(raster: FieldRaster, color: RampColor): Uint8ClampedArray {
  * data are transparent. With `blend`, values move linearly from one frame to the next, so the
  * picture changes continuously while the timeline plays. Returns false when there is no frame.
  */
-export function paintRaster(raster: FieldRaster, t: ISODate, color: RampColor, out: Uint8ClampedArray, blend = true): boolean {
+export function paintRaster(raster: FieldRaster, t: ISODate, color: RampColor, out: Uint8ClampedArray, blend = true, range?: [number, number]): boolean {
   const pair = framesAt(raster, t);
   if (!pair) return false;
   const a = decodeFrame(pair.a);
   const b = blend && pair.b && pair.mix > 0 ? decodeFrame(pair.b) : null;
-  const lut = lutFor(raster, color);
+  const lut = lutFor(raster, color, range);
   const n = raster.width * raster.height;
   for (let i = 0; i < n; i++) {
     let v = a[i];
@@ -128,4 +129,92 @@ export function rasterMean(raster: FieldRaster, t: ISODate): number | null {
     }
   }
   return n ? raster.offset + raster.scale * (sum / n) : null;
+}
+
+/** Cell centres of the raster grid in lng/lat (the grid is north-up between its NW and SE corners). */
+function cellCentre(raster: Pick<FieldRaster, 'corners' | 'width' | 'height'>, i: number): [number, number] {
+  const [nw, , se] = raster.corners;
+  const x = i % raster.width;
+  const y = Math.floor(i / raster.width);
+  return [nw[0] + ((x + 0.5) / raster.width) * (se[0] - nw[0]), nw[1] + ((y + 0.5) / raster.height) * (se[1] - nw[1])];
+}
+
+const masks = new WeakMap<FieldRaster, { polygon: PolygonGeometry; mask: Uint8Array }>();
+
+/** 1 for cells whose centre lies inside the parcel, else 0. Cached per raster and polygon. */
+export function parcelCellMask(raster: FieldRaster, polygon: PolygonGeometry): Uint8Array {
+  const hit = masks.get(raster);
+  if (hit && hit.polygon === polygon) return hit.mask;
+  const n = raster.width * raster.height;
+  const mask = new Uint8Array(n);
+  for (let i = 0; i < n; i++) mask[i] = pointInPolygon(cellCentre(raster, i), polygon) ? 1 : 0;
+  masks.set(raster, { polygon, mask });
+  return mask;
+}
+
+const fieldRanges = new WeakMap<FieldRaster, { polygon: PolygonGeometry; range: [number, number] | null }>();
+
+/**
+ * This field's own display range: the 2nd to 98th percentile of the valid cells inside the parcel
+ * over every frame of the stack, so a stretched picture still rises and falls through the season.
+ * Null when fewer than 2 distinct values exist.
+ */
+export function fieldRange(raster: FieldRaster, polygon: PolygonGeometry, lo = 0.02, hi = 0.98): [number, number] | null {
+  const hit = fieldRanges.get(raster);
+  if (hit && hit.polygon === polygon) return hit.range;
+  const mask = parcelCellMask(raster, polygon);
+  const hist = new Uint32Array(255);
+  let n = 0;
+  for (const f of raster.frames) {
+    const bytes = decodeFrame(f);
+    for (let i = 0; i < bytes.length; i++) {
+      if (!mask[i] || bytes[i] === NO_DATA) continue;
+      hist[bytes[i]]++;
+      n++;
+    }
+  }
+  let range: [number, number] | null = null;
+  if (n > 0) {
+    const at = (q: number) => {
+      const target = q * (n - 1);
+      let acc = 0;
+      for (let b = 0; b < 255; b++) {
+        acc += hist[b];
+        if (acc > target) return b;
+      }
+      return 254;
+    };
+    const a = at(lo);
+    const b = at(hi);
+    if (b > a) range = [raster.offset + raster.scale * a, raster.offset + raster.scale * b];
+  }
+  fieldRanges.set(raster, { polygon, range });
+  return range;
+}
+
+/** Mean, min and max of the valid cells inside the parcel for one frame (no blending). */
+export function frameStats(raster: FieldRaster, frame: FieldRasterFrame, polygon: PolygonGeometry): { mean: number; min: number; max: number; n: number } | null {
+  const mask = parcelCellMask(raster, polygon);
+  const bytes = decodeFrame(frame);
+  let sum = 0, n = 0, mn = 255, mx = -1;
+  for (let i = 0; i < bytes.length; i++) {
+    const v = bytes[i];
+    if (!mask[i] || v === NO_DATA) continue;
+    sum += v;
+    n++;
+    if (v < mn) mn = v;
+    if (v > mx) mx = v;
+  }
+  if (!n) return null;
+  const val = (b: number) => raster.offset + raster.scale * b;
+  return { mean: val(sum / n), min: val(mn), max: val(mx), n };
+}
+
+/**
+ * The range a picture is painted over: the raster's own fixed range, or this field's range
+ * (dated rasters only; a single-frame layer such as terrain keeps its own min and max).
+ */
+export function displayRange(raster: FieldRaster, polygon: PolygonGeometry | null | undefined, stretch: 'fixed' | 'field' | undefined): [number, number] {
+  if (stretch === 'fixed' || !polygon || raster.frames.length < 2) return raster.range;
+  return fieldRange(raster, polygon) ?? raster.range;
 }

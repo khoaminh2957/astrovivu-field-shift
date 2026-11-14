@@ -137,6 +137,8 @@ export interface DrawOptions {
   outline?: boolean;
   /** Overrides the raster ramp (binned zones). */
   color?: RampColor;
+  /** Display range (fixed or field stretch); defaults to the raster's own. */
+  range?: [number, number];
 }
 
 /** Draws into a canvas whose backing size is already set (CSS size x DPR). Returns what it drew. */
@@ -166,7 +168,7 @@ export function drawFieldPicture(canvas: HTMLCanvasElement, o: DrawOptions): Pic
   if (o.raster) {
     const r = o.raster;
     const { canvas: off, img } = rasterCanvas(r);
-    if (paintRaster(r, o.t, o.color ?? rampColorFn(r.ramp), img.data, o.blend ?? true)) {
+    if (paintRaster(r, o.t, o.color ?? rampColorFn(r.ramp), img.data, o.blend ?? true, o.range)) {
       off.getContext('2d')?.putImageData(img, 0, 0);
       const [x0, y0] = pr.toPx(r.corners[0]);
       const [x1, y1] = pr.toPx(r.corners[2]);

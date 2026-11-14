@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { BranchId, FieldRaster, ISODate, Parcel } from '@/contracts';
 import { useMission } from '@/state/mission';
 import { cn } from '@/ui/design';
+import { displayRange } from '@/lib/raster';
 import { drawFieldPicture, rasterFor, shapePath, singleColor } from './picture';
 
 /**
@@ -22,7 +23,8 @@ export function LiveFieldCanvas({ branch, className, pad = 8 }: { branch: Branch
       if (!s.parcel) return;
       const raster = rasterFor(s.rasters, branch);
       const t = s.timeline.cursor;
-      drawFieldPicture(canvas, { parcel: s.parcel, raster, t, fill: raster ? null : singleColor(s, branch, t), pad });
+      const range = raster ? displayRange(raster, s.parcel.polygon, s.layers.stretch) : undefined;
+      drawFieldPicture(canvas, { parcel: s.parcel, raster, t, range, fill: raster ? null : singleColor(s, branch, t), pad });
     };
     const schedule = () => {
       if (!raf) raf = requestAnimationFrame(draw);
@@ -41,7 +43,7 @@ export function LiveFieldCanvas({ branch, className, pad = 8 }: { branch: Branch
     ro.observe(canvas);
     fit();
     const unsub = useMission.subscribe((s, p) => {
-      if (s.timeline.cursor !== p.timeline.cursor || s.rasters !== p.rasters || s.telemetry !== p.telemetry || s.parcel !== p.parcel) schedule();
+      if (s.timeline.cursor !== p.timeline.cursor || s.layers.stretch !== p.layers.stretch || s.rasters !== p.rasters || s.telemetry !== p.telemetry || s.parcel !== p.parcel) schedule();
     });
     return () => {
       ro.disconnect();
@@ -56,14 +58,15 @@ export function LiveFieldCanvas({ branch, className, pad = 8 }: { branch: Branch
 /** One fixed frame of a raster (filmstrip thumbnail). Drawn once per raster and size. */
 export function FrameCanvas({ parcel, raster, t, className }: { parcel: Parcel; raster: FieldRaster; t: ISODate; className?: string }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const stretch = useMission((s) => s.layers.stretch);
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
     canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
-    drawFieldPicture(canvas, { parcel, raster, t, blend: false, pad: 4 });
-  }, [parcel, raster, t]);
+    drawFieldPicture(canvas, { parcel, raster, t, blend: false, pad: 4, range: displayRange(raster, parcel.polygon, stretch) });
+  }, [parcel, raster, t, stretch]);
   return <canvas ref={ref} aria-hidden className={cn('block h-full w-full', className)} />;
 }
 
