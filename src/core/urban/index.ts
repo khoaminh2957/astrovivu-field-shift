@@ -7,6 +7,12 @@ import { tx } from '@/contracts';
 import { monthEn, monthVi, monthsFrom, wrapMonth } from '@/core/advisory/util';
 import { listCrops } from '@/core/crops';
 import { trapezoid, windowMonths } from '@/core/scoring';
+import { SOW_FIT } from './calendar';
+
+export { MARGINAL_FIT, SOW_FIT, climateScale, nextSow, sowLevel, sowLevels, yearFrom } from './calendar';
+export type { ClimateScale, SowLevel } from './calendar';
+export { ECOCROP_CREDIT, ECOCROP_TERMS_URL, cropImage, ecocropPageUrl, ecocropPhotoUrl } from './ecocrop';
+export type { CropImageManifest, CropImageSize } from './ecocrop';
 
 const LIGHT_RANK = { shade: 0, partial: 1, full: 2 } as const;
 const TAG_TIPS: Record<string, I18nText> = {
@@ -36,8 +42,30 @@ function windowFit(c: CropProfile, climate: UrbanClimate, start: number): number
 }
 
 export function recommendUrban(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], month?: number): UrbanRecommendation[] {
+  return rank(site, climate, prefs, month ?? 1, false);
+}
+
+/**
+ * When nothing can be sown this month (a temperate winter), the picks of the first later month in
+ * which one of them can be sown, scored as if that month were now. A month whose picks only count
+ * on the month after it is passed over, so the month named is one sowing really opens in. Null
+ * when no month of the year has any pick.
+ */
+export function recommendUrbanAhead(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], month: number): { month: number; picks: UrbanRecommendation[] } | null {
+  let first: { month: number; picks: UrbanRecommendation[] } | null = null;
+  for (let k = 1; k < 12; k++) {
+    const m = wrapMonth(month + k);
+    const picks = rank(site, climate, prefs, m, true);
+    if (!picks.length) continue;
+    if (picks.some((p) => p.care.sowMonths.includes(m))) return { month: m, picks };
+    first ??= { month: m, picks };
+  }
+  return first;
+}
+
+/** `ahead` only changes the wording: the month being scored is then a future one, not "now". */
+function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], now: number, ahead: boolean): UrbanRecommendation[] {
   if (!climate.months.length) return [];
-  const now = month ?? 1;
   const out: UrbanRecommendation[] = [];
   for (const c of listCrops()) {
     const u = c.urban;
@@ -45,7 +73,7 @@ export function recommendUrban(site: UrbanSite, climate: UrbanClimate, prefs: Ur
     if ((site.space === 'windowsill' || site.space === 'balcony') && !u.container) continue;
     if (site.space === 'windowsill' && (u.tags.includes('climber') || u.difficulty === 3 || c.category === 'fruit')) continue;
     const fits = Array.from({ length: 12 }, (_, i) => windowFit(c, climate, i + 1));
-    const sowMonths = fits.map((f, i) => (f >= 0.6 ? i + 1 : 0)).filter((m) => m > 0);
+    const sowMonths = fits.map((f, i) => (f >= SOW_FIT ? i + 1 : 0)).filter((m) => m > 0);
     if (!sowMonths.length) continue;
     const soon = Math.max(fits[now - 1], 0.85 * fits[wrapMonth(now + 1) - 1]);
     const gap = LIGHT_RANK[u.light] - LIGHT_RANK[site.light];
@@ -57,7 +85,9 @@ export function recommendUrban(site: UrbanSite, climate: UrbanClimate, prefs: Ur
     if (score < 20) continue;
     const name = tx(c.names.en, c.names.vi ?? c.names.en);
     const why: I18nText[] = [];
-    if (fits[now - 1] >= 0.6) why.push(tx(`Can be sown now: this month's mean ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C suits it.`, `Có thể gieo ngay: nhiệt độ trung bình tháng này ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C phù hợp.`));
+    const tNow = Math.round(climate.months[now - 1]?.tMean ?? 0);
+    if (ahead && fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown from ${monthEn(now)}: that month's mean ${tNow} °C suits it.`, `Có thể gieo từ ${monthVi(now)}: nhiệt độ trung bình tháng đó ${tNow} °C phù hợp.`));
+    else if (fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown now: this month's mean ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C suits it.`, `Có thể gieo ngay: nhiệt độ trung bình tháng này ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C phù hợp.`));
     else why.push(tx(`Best sown in ${sowMonths.map(monthEn).join(', ')}.`, `Nên gieo vào ${sowMonths.map(monthVi).join(', ')}.`));
     why.push(gap <= 0 ? tx(`Your ${site.light} light is enough (needs ${u.light}).`, `Ánh sáng ${site.light === 'full' ? 'nắng đủ' : site.light === 'partial' ? 'nắng một phần' : 'râm'} của bạn là đủ.`) : tx(`Needs ${u.light} sun; expect a smaller harvest with ${site.light} light.`, `Cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'}; thiếu sáng sẽ cho thu hoạch ít hơn.`));
     if (prefs.some((p) => u.tags.includes(PREF_TAG[p]))) why.push(tx('Matches what you want to grow.', 'Phù hợp với thứ bạn muốn trồng.'));
@@ -78,7 +108,7 @@ export function recommendUrban(site: UrbanSite, climate: UrbanClimate, prefs: Ur
       if (sowMonths.some((s) => monthsFrom(s, harvestOffset).includes(m)) && !tasks.length) tasks.push(tx('Water, feed every 2 weeks, check for pests', 'Tưới, bón phân 2 tuần một lần, kiểm tra sâu bệnh'));
       return { month: m, tasks };
     });
-    out.push({ cropId: c.id, name, score: Math.min(100, score), why, difficulty: u.difficulty, care: { water, light: lightTxt, sowMonths, harvestDays, tips }, calendar });
+    out.push({ cropId: c.id, name, score: Math.min(100, score), why, difficulty: u.difficulty, care: { water, light: lightTxt, sowMonths, sowFit: fits.map((f) => Math.round(f * 100) / 100), harvestDays, tips }, calendar });
   }
   return out.sort((a, b) => b.score - a.score || a.difficulty - b.difficulty).slice(0, 10);
 }

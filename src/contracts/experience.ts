@@ -136,6 +136,12 @@ export interface UrbanRecommendation {
     water: I18nText;
     light: I18nText;
     sowMonths: number[];
+    /**
+     * Temperature suitability of sowing in each calendar month, January first, 0..1 (twelve values).
+     * `sowMonths` are the months at or above the sowing threshold; this lets a calendar also show
+     * the marginal months. Absent when the recommender did not compute it.
+     */
+    sowFit?: number[];
     harvestDays: [min: number, max: number];
     tips: I18nText[];
   };

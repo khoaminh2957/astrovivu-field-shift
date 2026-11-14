@@ -72,6 +72,8 @@ Past 5 seasons follow the current rotation or CDL history; yield = reference yie
 
 Curated crops with `urban.suitable`; windowsill and balcony require container crops (windowsill excludes climbers, fruit, difficulty 3). Sowing months are those whose first months fit the crop's temperature window >= 0.6 (frost below the kill temperature excluded). Score = temperature fit now/next month and length of season × light match × preference match × difficulty.
 
+Each pick carries `care.sowFit`, the temperature fit of sowing in each month (0 to 1). Months at 0.6 or more are sowing months; 0.3 to 0.6 are drawn as marginal (possible, slower growth). When no crop scores 20 or more this month, `recommendUrbanAhead` returns the picks of the first later month in which one of them can be sown, scored for that month; the screen says which month and that scores apply then. Photographs come from FAO EcoCrop (see DATA_SOURCES.md) and are not part of the recommendation.
+
 ## Limits
 
 - Not verified against field data. Thresholds are rules of thumb; z-scores rely on short MODIS baselines.

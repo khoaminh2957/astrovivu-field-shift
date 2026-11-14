@@ -146,3 +146,24 @@ Open-Meteo quota: the 20-year archive request weighs a few hundred "calls" of th
 **Checks (2026-11-14).** Sentinel-2 NDVI parcel means follow the MODIS MOD13Q1 series of the demo fields within about 0.1 on most dates (Iowa July 0.88 vs 0.91, Nevada June 0.62 vs 0.69, Dak Lak October 0.88 vs 0.81); MODIS 16-day maximum-value composites run slightly higher, as expected. Flooded rice in Can Tho reads near 0 at transplanting.
 
 **Limits.** Terrain is one frame dated today (static). Tropical fields get few clear frames in the wet season (Can Tho 6-12, Dak Lak 9-13 over the year). Landsat thermal is 100 m native, resampled by USGS to 30 m. HLS (`hls2-s30`/`hls2-l30`) is not wired; it is the planned fallback if Sentinel-2 L2A on the Planetary Computer fails. A data-API failure for one scene is logged and that bin moves to its next candidate; a whole collection failing yields no raster for that key (an empty list is a valid answer).
+
+## Crop photographs (FAO EcoCrop)
+
+The Urban Grower shows one photograph per plant. They are FAO's, and they are linked, not copied.
+
+| | |
+|---|---|
+| Source | FAO EcoCrop. Species page `https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=<code>`, photograph `https://ecocrop.apps.fao.org/ecocrop/ec_images/<code>.jpg`, where `<code>` is `CropProfile.ecocropId` |
+| Terms | https://www.fao.org/contact-us/terms/en/ : copying and use are allowed "in non-commercial products or services, provided that appropriate acknowledgement of FAO as the source and copyright holder is given" and that FAO's endorsement is not implied |
+| Accessed | 2026-11-14 |
+| Credit shown | "Photo: © FAO, EcoCrop" under the photograph in the care guide, and once under the grid of cards with the sentence that FAO does not endorse the tool and a link to the terms. Every `<img>` has alt text naming the crop; the care guide links to the species page |
+| Storage | None. No image file is in the repository or in the build. The browser loads each photograph from FAO in an `<img>` with `loading="lazy"`, `decoding="async"`, `referrerpolicy="no-referrer"` and fixed width and height. Hotlinking from `http://localhost:5173` was checked in the browser on 2026-11-14 (images load; a code without a photograph fails cleanly) |
+| Manifest | `public/data/crops/images.json`: `{ generatedAt, source, terms, credit, images: { "<code>": { w, h } } }`, written by `npx tsx scripts/crops/crop-images.ts`. Only crops listed there get an `<img>` |
+
+**The script** requests each curated crop's photograph once (15 s timeout, at most 3 retries with 1, 2, 4 s backoff on a network error, 429 or 5xx, 4 requests at a time), reads the width and height from the JPEG frame header, and keeps only that outcome in `.cache/crop-images/<code>.json`; the image bytes are not written anywhere. A second run makes no request (`--refresh` asks again). A crop that FAO could not be reached for is left out of the manifest and not cached, and the script exits with code 1.
+
+**Coverage (2026-11-14).** 72 of the 73 curated crops have an EcoCrop code (marigold, `tagetes-erecta`, is not in EcoCrop). 59 of the 72 have a photograph; the other 13 answer HTTP 404: mung bean, chickpea, robusta coffee, avocado, sunn hemp, daikon radish, sesbania, lettuce, water spinach, mustard greens, cabbage, yardlong bean, squash (`cucurbita-moschata`). Of the 32 crops the Urban Grower can recommend, 25 have a photograph. The originals are small, 92 to 200 px wide and 152 to 220 px tall, so the cards draw them at 64 x 96 or 80 x 120 px and the care guide at no more than 136 x 204 px.
+
+**When there is no photograph.** A crop without one, a manifest that fails to load, or an image that fails at run time (`onError`) shows a tile instead: the tint and icon of the crop's group with the crop's initial. The tile is also what is visible while a photograph loads. Nothing else on the screen depends on FAO's server.
+
+**Limits.** The photographs are EcoCrop's choice for the species, not for the variety grown in a given country (the "Lettuce" entry is a head lettuce; "Mint" is `Mentha spicata`). Some are botanical drawings rather than photographs. The terms cover non-commercial use only: a commercial deployment would need FAO's permission or other pictures.
