@@ -21,6 +21,11 @@ export function resetNorth(): void {
   getActiveGlobe()?.ease({ bearing: 0 });
 }
 
+/** Turns the map by `deg`, clockwise on screen when positive. */
+export function rotateBy(deg: number): void {
+  getActiveGlobe()?.rotateBy(deg);
+}
+
 /** Pitched 3D view on or off. */
 export function setTilt(tilted: boolean): void {
   getActiveGlobe()?.ease({ pitch: tilted ? TILT_PITCH : 0 });

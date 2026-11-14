@@ -90,6 +90,8 @@ const FLIGHT_ANCHOR_MS = 120;
 const INSET_EASE_MS = 360;
 /** Wheel events closer together than this belong to one touchpad gesture and keep its axis. */
 const WHEEL_GESTURE_GAP_MS = 180;
+/** Alt + swipe: a swipe across a touchpad (about 600 px of scroll) is a half turn. */
+const TURN_DEG_PER_PX = 0.3;
 /** Below this zoom the whole globe is in view (the explore framing sits between 1 and 3). */
 const GLOBE_VIEW_ZOOM = 4;
 const ESRI_TILE = (z: number, x: number, y: number) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
@@ -253,6 +255,11 @@ export class GlobeEngine {
   ease(opts: { zoom?: number; bearing?: number; pitch?: number }): void {
     if (!this.ready) return;
     this.map.easeTo({ ...opts, duration: this.reduced ? 0 : 420, easing: easeOutCubic, essential: true });
+  }
+
+  /** Turns the map by `deg` (positive = clockwise on screen) around the middle of the free area. */
+  rotateBy(deg: number): void {
+    if (this.ready) this.ease({ bearing: this.map.getBearing() - deg });
   }
 
   zoomBy(delta: number): void {
@@ -421,17 +428,33 @@ export class GlobeEngine {
     let swipeAxis: 'x' | 'y' = 'y';
     let lastWheelAt = 0;
     let swipeDx = 0;
+    let swipeTurn = 0;
     let swipeRaf = 0;
     const flushSwipe = () => {
       swipeRaf = 0;
       const dx = swipeDx;
+      const turn = swipeTurn;
       swipeDx = 0;
-      if (this.destroyed || !this.ready || dx === 0) return;
-      map.panBy([dx, 0], { animate: false });
+      swipeTurn = 0;
+      if (this.destroyed || !this.ready) return;
+      if (turn !== 0) map.jumpTo({ bearing: map.getBearing() + turn });
+      if (dx !== 0) map.panBy([dx, 0], { animate: false });
     };
     const sideSwipe = (e: WheelEvent) => {
       // ctrl + wheel is a touchpad pinch: MapLibre zooms with it.
       if (e.ctrlKey) return;
+      // Alt + swipe (or Alt + wheel) turns the map. A Windows touchpad does not report a two-finger
+      // twist to the page (the browser passes on scroll and pinch only), so this is the touchpad's
+      // way to change the bearing; a touch screen twists with two fingers as usual.
+      if (e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        nudge();
+        const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        swipeTurn += d * (e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 40 : 1) * TURN_DEG_PER_PX;
+        if (!swipeRaf) swipeRaf = requestAnimationFrame(flushSwipe);
+        return;
+      }
       const now = performance.now();
       if (now - lastWheelAt > WHEEL_GESTURE_GAP_MS) swipeAxis = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? 'x' : 'y';
       lastWheelAt = now;

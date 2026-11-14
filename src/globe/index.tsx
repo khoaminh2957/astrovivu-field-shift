@@ -18,7 +18,7 @@ export { paintForSeries, colorForValue, rampCss, rampPosition, parcelReadingAt, 
 export { useGlobeStatus, type GlobeStatus, type OverlayStatus, type ImagerySource } from './status';
 export { MIN_DRAW_ZOOM } from './draw';
 export type { MotionPref } from './engine';
-export { zoomBy, resetNorth, setTilt, fitParcel, flyToPoint, locateMe, setMotion, startMeasure, stopMeasure, useMapView, useMeasure, type MapViewState, type MeasureKind, type MeasureState } from './tools';
+export { zoomBy, resetNorth, rotateBy, setTilt, fitParcel, flyToPoint, locateMe, setMotion, startMeasure, stopMeasure, useMapView, useMeasure, type MapViewState, type MeasureKind, type MeasureState } from './tools';
 export { useParcelPaint, type ParcelPaintInfo } from './legend';
 export { isFieldRange, rampColor as rasterRampColor, rampStops as rasterRampStops, rasterRampCss } from './fieldRaster';
 export { onMapClick } from './mapClick';
