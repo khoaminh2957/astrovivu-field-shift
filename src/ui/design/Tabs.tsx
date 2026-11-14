@@ -44,7 +44,7 @@ export function Tabs<V extends string = string>({ tabs, value, onValueChange, ar
               'transition-colors duration-(--dur-instant) ease-out hover:text-ink-1 disabled:opacity-45',
               'data-[state=active]:border-signal data-[state=active]:text-ink-1',
               '-outline-offset-2',
-              size === 'lg' ? 'h-11 text-base' : 'h-9 text-sm',
+              size === 'lg' ? 'h-11 text-base' : 'h-9 text-base',
               block && 'flex-1',
             )}
           >

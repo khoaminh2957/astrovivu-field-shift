@@ -20,7 +20,7 @@ export const COLOR = {
   ink2: '#3a3a3c',
   ink3: '#636366',
   ink4: '#aeaeb2',
-  signal: '#15804a',
+  signal: '#1d874b',
   onSignal: '#ffffff',
   nominal: '#11703c',
   watch: '#8f5300',

@@ -6,6 +6,7 @@
  *   - Texture is honesty: dashed = forecast, dotted = simulated, hatched = not yet received.
  * `src/ui/design/tokens.ts` mirrors the values that canvas / WebGL code needs as literals.
  */
+@import '@fontsource-variable/inter/index.css';
 @import '@fontsource-variable/archivo/wdth.css';
 @import '@fontsource-variable/chivo-mono/index.css';
 
@@ -40,7 +41,7 @@
   --color-ink-4: #aeaeb2;
 
   /* Signal: the operator. Solid fills for primary actions, selection, the timeline cursor, ground truth. */
-  --color-signal: #15804a;
+  --color-signal: #1d874b; /* the reference green #27ae60 darkened to the lightest step that keeps white text at AA */
   --color-on-signal: #ffffff;
 
   /* States of the land or of the data. Always paired with a shape and a word. */
@@ -65,7 +66,8 @@
   --color-white: #fff;
 
   /* Type. One grotesque in three widths plus its monospaced sibling; both carry full Vietnamese. */
-  --font-sans: 'Archivo Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  /* Inter: the closest open neo-grotesque to the reference product's proprietary Graphik, full Vietnamese. */
+  --font-sans: 'Inter Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
   --font-mono: 'Chivo Mono Variable', 'Cascadia Mono', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
   --font-display: 'Archivo Variable', 'Segoe UI', system-ui, sans-serif;
 
@@ -74,10 +76,10 @@
   --text-2xs--line-height: 0.875rem;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
-  --text-sm: 0.8125rem;
+  --text-sm: 0.8125rem; /* rare in the reference (12 and 14 px dominate) */
   --text-sm--line-height: 1.125rem;
   --text-base: 0.875rem;
-  --text-base--line-height: 1.25rem;
+  --text-base--line-height: 1.125rem;
   --text-md: 1rem;
   --text-md--line-height: 1.5rem;
   --text-lg: 1.125rem;
@@ -90,6 +92,12 @@
   --text-3xl--line-height: 2.5rem;
   --text-4xl: 3rem;
   --text-4xl--line-height: 3rem;
+
+  /* The reference uses 500 for every emphasis; 600 exists once. `semibold` maps to that weight. */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 600;
 
   --tracking-tight: -0.01em;
   --tracking-normal: 0em;
@@ -376,7 +384,7 @@
 @utility t-title {
   font-size: var(--text-lg);
   line-height: var(--text-lg--line-height);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: var(--tracking-tight);
   text-wrap: balance;
 }
@@ -385,7 +393,7 @@
 @utility t-heading {
   font-size: var(--text-base);
   line-height: var(--text-base--line-height);
-  font-weight: 600;
+  font-weight: 500;
   text-wrap: balance;
 }
 
@@ -409,9 +417,7 @@
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
   font-weight: 500;
-  font-stretch: var(--stretch-semi);
-  letter-spacing: 0.01em;
-  color: var(--color-ink-2);
+  color: var(--color-ink-3);
 }
 
 /* Secondary lines under a value or control. */
@@ -432,16 +438,17 @@
   text-transform: uppercase;
 }
 
-/* Measurements. Monospace is for numbers, units, dates and coordinates, never for prose or labels. */
+/* Measurements: the sans with tabular figures, so numbers sit in the same voice as their labels. */
 @utility t-value {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 
 @utility t-unit {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
   font-weight: 400;
@@ -450,7 +457,7 @@
 
 /* Source strings: "SMAP L4 · 9 km · 2 d". */
 @utility t-meta {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--text-2xs);
   line-height: var(--text-2xs--line-height);
   font-weight: 400;

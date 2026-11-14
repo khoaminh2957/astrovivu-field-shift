@@ -185,7 +185,9 @@ Layers (`z-(--z-*)`): globe 0, map-ui 10, leader 20, hud 30, panel 40, dock 50, 
 
 ### Shell (light, OneSoil-like structure)
 
-Measured on OneSoil's web app at 1440 x 900 (2026-11-14) and matched in tokens, not copied: grey icon rail 56 px (#e5e5ea), white list panel 280 px with an 8 px left radius, field panel ~790 px with 24 px padding, body text #1c1c1e at 14 px (Graphik, proprietary; we keep Archivo, which carries Vietnamese), section titles 18 / 500, tabs 36 px tall, primary button green #27ae60 pill (radius 18 px, padding 0 8 px, shadow 0 4 8 -2 rgba(16,24,40,.1) + 0 2 4 -2 rgba(16,24,40,.06)).
+Measured on OneSoil's web app at 1440 x 900 (2026-11-14) and matched in tokens, not copied: grey icon rail 56 px (#e5e5ea), white list panel 280 px with an 8 px left radius, field panel ~790 px with 24 px padding, body text #1c1c1e at 14 px (Graphik, proprietary; we use Inter, the closest open neo-grotesque with full Vietnamese), section titles 18 / 500, tabs 36 px tall, primary button green #27ae60 pill (radius 18 px, padding 0 8 px, shadow 0 4 8 -2 rgba(16,24,40,.1) + 0 2 4 -2 rgba(16,24,40,.06)).
+
+From their public stylesheet (values only): 12 px and 14 px dominate (line heights 16 and 18 px), weight 500 for every emphasis (600 almost never), radii 8 / 4 / 12 px, borders 1 px #e5e5ea, gaps 8 / 4 / 16 px, controls 32 and 40 px tall, text greys #1c1c1e / #48484a / #636366 / #8e8e93. Charts: grid and axis #e5e5ea, ticks 12 px #8e8e93, line 2 px. We follow these, except the primary green: theirs (#27ae60) gives white text 2.9:1, so `signal` is #1d874b (4.55:1). Numbers use the sans with tabular figures, not the mono.
 
 Our values: surfaces white / #f2f2f7 / #e5e5ea, lines #e5e5ea / #d1d1d6 / #7c7c80, ink #1c1c1e / #3a3a3c / #636366, primary (`signal`) #15804a (darker than theirs so white text meets 4.5:1), states darkened to pass AA on #e5e5ea, radii 4 / 8 / 10 / 12 px, buttons are pills, soft shadows. The hero keeps the dark palette through the `.theme-dark` scope.
 
