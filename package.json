@@ -15,7 +15,13 @@
     "data:samples": "tsx scripts/cache-samples.ts",
     "data:rasters": "tsx scripts/data/cache-rasters.ts",
     "crops:build": "tsx scripts/build-crop-catalog.ts",
-    "rag:build": "tsx scripts/rag/build.ts"
+    "rag:build": "tsx scripts/rag/build.ts",
+    "market:match": "tsx scripts/market/match-faostat.ts",
+    "db:start": "npx --yes supabase@3.1.0 start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
+    "db:stop": "npx --yes supabase@3.1.0 stop",
+    "db:reset": "npx --yes supabase@3.1.0 db reset",
+    "db:test": "npx --yes supabase@3.1.0 db lint --level warning --fail-on error && npx --yes supabase@3.1.0 test db",
+    "db:load": "tsx scripts/market/load.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

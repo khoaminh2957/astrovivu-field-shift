@@ -19,6 +19,7 @@
 - [ ] `npx tsc --noEmit`
 - [ ] `npx vitest run`
 - [ ] `npx vite build`
+- [ ] `npm run db:test` nếu sửa `supabase/` / if `supabase/` changed
 - [ ] Đã mở web và xem phần mình sửa / Opened the app and looked at it
 - [ ] Chuỗi hiển thị có cả tiếng Anh và tiếng Việt / Strings exist in English and Vietnamese
 

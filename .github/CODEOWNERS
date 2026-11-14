@@ -49,3 +49,10 @@
 # Soil improvement from soil data.
 /src/core/soil/                     @MinDuy314
 /docs/SOIL.md                       @MinDuy314
+
+# Database (Supabase) and FAOSTAT producer prices. Two owners, so that a pull request by one of
+# them still has a code owner who can review it.
+/supabase/                          @khoaminh2957 @quocbao271207
+/scripts/market/                    @khoaminh2957 @quocbao271207
+/data/market/                       @khoaminh2957 @quocthai2711
+/docs/DATABASE.md                   @khoaminh2957 @quocbao271207
