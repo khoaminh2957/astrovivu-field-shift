@@ -88,6 +88,8 @@ const RATIO_RESTORE_MS = 900;
 /** While the camera moves the anchor is published at most this often; exact again when it rests. */
 const FLIGHT_ANCHOR_MS = 120;
 const INSET_EASE_MS = 360;
+/** Wheel events closer together than this belong to one touchpad gesture and keep its axis. */
+const WHEEL_GESTURE_GAP_MS = 180;
 /** Below this zoom the whole globe is in view (the explore framing sits between 1 and 3). */
 const GLOBE_VIEW_ZOOM = 4;
 const ESRI_TILE = (z: number, x: number, y: number) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
@@ -412,6 +414,41 @@ export class GlobeEngine {
     const nudge = () => {
       if (!this.pointerDown) this.rotateResumeAt = performance.now() + ROTATE_RESUME_MS;
     };
+    // A sideways two-finger swipe on a touchpad (or shift + wheel) turns the globe and slides the
+    // map. MapLibre's scroll handler reads deltaY only, so without this the gesture did nothing.
+    // The axis is decided when a gesture starts and held until the wheel has been quiet, so the
+    // small vertical drift of a sideways swipe does not zoom and a zoom does not slide.
+    let swipeAxis: 'x' | 'y' = 'y';
+    let lastWheelAt = 0;
+    let swipeDx = 0;
+    let swipeRaf = 0;
+    const flushSwipe = () => {
+      swipeRaf = 0;
+      const dx = swipeDx;
+      swipeDx = 0;
+      if (this.destroyed || !this.ready || dx === 0) return;
+      map.panBy([dx, 0], { animate: false });
+    };
+    const sideSwipe = (e: WheelEvent) => {
+      // ctrl + wheel is a touchpad pinch: MapLibre zooms with it.
+      if (e.ctrlKey) return;
+      const now = performance.now();
+      if (now - lastWheelAt > WHEEL_GESTURE_GAP_MS) swipeAxis = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? 'x' : 'y';
+      lastWheelAt = now;
+      if (swipeAxis !== 'x') return;
+      // Ours: the page must not go back in history, and MapLibre must not read the drift as a zoom.
+      e.preventDefault();
+      e.stopPropagation();
+      nudge();
+      const unit = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 40 : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? this.vw : 1;
+      swipeDx += e.deltaX * unit;
+      if (!swipeRaf) swipeRaf = requestAnimationFrame(flushSwipe);
+    };
+    el.addEventListener('wheel', sideSwipe, { passive: false, capture: true });
+    this.cleanups.push(
+      () => el.removeEventListener('wheel', sideSwipe, { capture: true }),
+      () => cancelAnimationFrame(swipeRaf),
+    );
     el.addEventListener('pointerdown', down);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
@@ -474,7 +511,9 @@ export class GlobeEngine {
       s.telemetry !== prev.telemetry ||
       s.rasters !== prev.rasters ||
       s.focusBranch !== prev.focusBranch ||
-      s.layers.parcelMetric !== prev.layers.parcelMetric
+      s.layers.parcelMetric !== prev.layers.parcelMetric ||
+      // The scale switch changes the range and, for vegetation, the ramp: the picture is repainted at once.
+      s.layers.stretch !== prev.layers.stretch
     ) {
       this.recolour();
     }
