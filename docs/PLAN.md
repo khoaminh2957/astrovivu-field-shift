@@ -92,7 +92,9 @@ Bảng cũ được dựng lại thành một bộ dữ liệu trong repo (`data
 
 **Giữ cây nào.** Một loài được giữ khi có ít nhất một bằng chứng từ dữ liệu là có người trồng: khớp `exact` với một hàng FAOSTAT có sản lượng; thuộc một hàng gộp và EcoCrop ghi là được trồng (quy mô lớn hoặc nhỏ); là một cây của MapSPAM; hoặc nằm trong 73 cây đã biên soạn (cây thức ăn gia súc và cây phủ đất không có trong thống kê cây trồng của FAOSTAT nhưng phần luân canh cần). Các loài còn lại vào bảng `dropped`, không mất đi lặng lẽ.
 
-Số cây được giữ, số nước, số vùng và đường dẫn Google Sheet được ghi vào `docs/CROP_DATA.md` khi bộ dữ liệu dựng xong.
+**Kết quả (15/11/2026).** Giữ 387 trên 2.568 loài; 165 loài khớp `exact`, 202 loài thuộc hàng gộp, 20 loài không có hàng FAOSTAT nào (cây thức ăn gia súc, cây phủ đất và vài loại rau trong 73 cây đã biên soạn). 198 nước; 2.273 tỉnh, bang từ MapSPAM. Google Sheet: <https://docs.google.com/spreadsheets/d/1AWTjpsYIUrwBiPcq9UKlxkZezkZLP5gJOZiXXD6Abto/edit>. Chi tiết, nguồn và giấy phép: `docs/CROP_DATA.md`.
+
+**Còn thiếu, cần Thái xử lý.** 12 trong 73 cây đã biên soạn chỉ khớp ở mức hàng gộp nên mức phổ biến theo nước còn `unknown` (ví dụ đậu cô ve, ớt, xoài, xà lách, bí đỏ, sầu riêng); 138 cây chưa có tên tiếng Anh thông dụng từ nguồn; tên tiếng Việt mới có cho 73 cây.
 
 ### 2.3 Các bước còn lại của Thái
 

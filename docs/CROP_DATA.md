@@ -1,5 +1,7 @@
 # Crop atlas
 
+The same tables as a Google Sheet (uploaded 2026-11-15 from `.cache/atlas/astrovivu-crop-atlas.xlsx`; the sheet is a copy for reading and for filling in prices, the CSV files here are the source): <https://docs.google.com/spreadsheets/d/1AWTjpsYIUrwBiPcq9UKlxkZezkZLP5gJOZiXXD6Abto/edit>. Two tables are shortened in the sheet to stay within its size: `crop_country` leaves out the rows with level `absent`, and `region_crops` keeps the 15 largest crops of each region.
+
 `data/crops/atlas/` answers three questions with data that is merged from published datasets and never typed in: which plants are farmed, what each needs, and where each is grown. It is built by `scripts/crops/atlas/build.ts`. This document lists the sources, every rule and threshold, the counts of the current build and the known gaps.
 
 The one principle: every value is copied or computed from a named source file by a rule written in code. The build contains no list of plants, countries, quantities, names or translations. An unknown is an empty cell; a mapping that the rules cannot make says `match = none`.
