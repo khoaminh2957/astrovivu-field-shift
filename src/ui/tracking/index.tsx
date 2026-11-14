@@ -46,7 +46,7 @@ export function TrackingView() {
   }, [telemetry]);
 
   return (
-    <main aria-labelledby="trk-title" className="fixed inset-x-0 top-(--topbar-h) bottom-0 z-(--z-panel) overflow-y-auto bg-surface-0">
+    <main aria-labelledby="trk-title" className="absolute inset-0 overflow-y-auto bg-surface-0">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-6 pt-5 pb-28 compact:px-4 compact:pt-4">
         <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h1 id="trk-title" className="t-title text-2xl leading-8">

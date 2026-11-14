@@ -47,6 +47,7 @@ export function HeroOverlay() {
   return (
     <div
       className={cn(
+        'theme-dark',
         'absolute inset-0 z-(--z-overlay) cursor-pointer transition-opacity duration-(--dur-slow) ease-in',
         leaving && 'pointer-events-none opacity-0',
       )}

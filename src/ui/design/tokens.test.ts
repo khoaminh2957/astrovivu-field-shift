@@ -29,7 +29,8 @@ describe('design tokens', () => {
     for (const s of surfaces) for (const ink of [COLOR.ink1, COLOR.ink2, COLOR.ink3]) expect(contrastRatio(ink, s)).toBeGreaterThanOrEqual(4.5);
     for (const s of [COLOR.surface0, COLOR.surface1, COLOR.surface2, COLOR.inset]) expect(contrastRatio(COLOR.line3, s)).toBeGreaterThanOrEqual(3);
     for (const state of [COLOR.nominal, COLOR.watch, COLOR.alert, COLOR.stale, COLOR.simulated]) for (const s of surfaces) expect(contrastRatio(state, s)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(COLOR.onSignal, COLOR.signal)).toBeGreaterThanOrEqual(7);
+    // Light theme: white on the green primary meets AA for text (it was 7:1 inverse video on the dark theme).
+    expect(contrastRatio(COLOR.onSignal, COLOR.signal)).toBeGreaterThanOrEqual(4.5);
   });
 
   it('rampColor clamps and spans the ramp', () => {

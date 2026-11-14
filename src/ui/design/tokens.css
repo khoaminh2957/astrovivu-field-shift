@@ -20,46 +20,46 @@
   --breakpoint-*: initial;
 
   /* Surfaces: night-side navy, hue 258. Each step is one elevation level. */
-  --color-void: #03050b;
-  --color-surface-0: #060b14;
-  --color-surface-1: #0b131e;
-  --color-surface-2: #131c2a;
-  --color-surface-3: #1c2737;
-  --color-inset: #04070f;
-  --color-scrim: rgb(3 5 11 / 0.72);
+  --color-void: #e5e5ea;
+  --color-surface-0: #ffffff;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f2f2f7;
+  --color-surface-3: #e5e5ea;
+  --color-inset: #f2f2f7;
+  --color-scrim: rgb(28 28 30 / 0.4);
 
   /* Lines. line-3 is the only one that reaches 3:1 and is therefore the control boundary. */
-  --color-line-1: #242e3d;
-  --color-line-2: #3a4656;
-  --color-line-3: #5d6a7d;
+  --color-line-1: #e5e5ea;
+  --color-line-2: #d1d1d6;
+  --color-line-3: #7c7c80;
 
   /* Ink. ink-1..3 pass 4.5:1 on every surface; ink-4 is for disabled and non-text marks only. */
-  --color-ink-1: #edebe4;
-  --color-ink-2: #bdc5d0;
-  --color-ink-3: #959faf;
-  --color-ink-4: #6a7586;
+  --color-ink-1: #1c1c1e;
+  --color-ink-2: #3a3a3c;
+  --color-ink-3: #636366;
+  --color-ink-4: #aeaeb2;
 
   /* Signal: the operator. Solid fills for primary actions, selection, the timeline cursor, ground truth. */
-  --color-signal: #fbfaf6;
-  --color-on-signal: #060b14;
+  --color-signal: #15804a;
+  --color-on-signal: #ffffff;
 
   /* States of the land or of the data. Always paired with a shape and a word. */
-  --color-nominal: #58da98;
-  --color-watch: #f8bd40;
-  --color-alert: #ff5a50;
-  --color-stale: #92a8b9;
-  --color-simulated: #baaac7;
-  --color-truth: #fbfaf6;
+  --color-nominal: #11703c;
+  --color-watch: #8f5300;
+  --color-alert: #b42a20;
+  --color-stale: #4f5f6e;
+  --color-simulated: #674c83;
+  --color-truth: #15804a;
 
   /* Data ink, one per telemetry branch (Okabe-Ito hues relit for a dark ground). */
-  --color-branch-soil-moisture: #4dc3dd;
-  --color-branch-vegetation: #8add6c;
-  --color-branch-thermal: #ff8350;
-  --color-branch-rainfall: #87b1fd;
-  --color-branch-agromet: #f5db59;
-  --color-branch-terrain: #c8bca5;
-  --color-branch-soil: #d69459;
-  --color-branch-risk: #f180b5;
+  --color-branch-soil-moisture: #0e8fb0;
+  --color-branch-vegetation: #3f9a2a;
+  --color-branch-thermal: #d9541e;
+  --color-branch-rainfall: #3b6fd6;
+  --color-branch-agromet: #a88600;
+  --color-branch-terrain: #8c7a5b;
+  --color-branch-soil: #a8642b;
+  --color-branch-risk: #c2477f;
 
   --color-black: #000;
   --color-white: #fff;
@@ -99,16 +99,16 @@
 
   /* Corners are machined, not soft. `full` is for dots, switch thumbs and the hub only. */
   --radius-none: 0px;
-  --radius-xs: 1px;
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
   --radius-full: 9999px;
 
   /* Elevation: offset + blur, never a glow. Lifts plates off imagery, not off each other. */
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
-  --shadow-md: 0 6px 16px -6px rgb(0 0 0 / 0.65), 0 1px 2px rgb(0 0 0 / 0.5);
-  --shadow-lg: 0 20px 44px -14px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.5);
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06);
+  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.1), 0 2px 4px -2px rgb(16 24 40 / 0.06);
+  --shadow-lg: 0 12px 24px -4px rgb(16 24 40 / 0.12), 0 4px 8px -2px rgb(16 24 40 / 0.06);
 
   /* 1440 x 900 is the reference; 1280 x 720 must work; below `lg` the HUD stacks. */
   --breakpoint-sm: 40rem;
@@ -156,7 +156,7 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* Width axis of the sans: engineering lettering in narrow, medium and wide. */
   --stretch-condensed: 80%;
@@ -228,6 +228,25 @@
   @media (max-width: 63.99rem) {
     @slot;
   }
+}
+
+/*
+ * Shell breakpoint (see useShellLayout): `narrow:` below 1100 px, where the rail becomes a tab bar,
+ * the map keeps the top of the screen and the panels become one scrolling sheet under it.
+ */
+@custom-variant narrow {
+  @media (max-width: 68.74rem) {
+    @slot;
+  }
+}
+
+:root {
+  --rail-w: 56px;
+  --left-w: 300px;
+  --right-w: 500px;
+  --strip-h: 52px;
+  --tabbar-h: 60px;
+  --map-h: 45dvh;
 }
 
 /* 1280 x 720: the same instruments, tighter. */
@@ -478,4 +497,47 @@
 /* Keeps a fixed-position screen inside the safe area on phones. */
 @utility safe-bottom {
   padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+/* The hero keeps the night-side globe look: the dark palette, scoped. */
+.theme-dark {
+  --color-void: #03050b;
+  --color-surface-0: #060b14;
+  --color-surface-1: #0b131e;
+  --color-surface-2: #131c2a;
+  --color-surface-3: #1c2737;
+  --color-inset: #04070f;
+  --color-line-1: #242e3d;
+  --color-line-2: #3a4656;
+  --color-line-3: #5d6a7d;
+  --color-ink-1: #edebe4;
+  --color-ink-2: #bdc5d0;
+  --color-ink-3: #959faf;
+  --color-ink-4: #6a7586;
+  --color-signal: #fbfaf6;
+  --color-on-signal: #060b14;
+  --color-nominal: #58da98;
+  --color-watch: #f8bd40;
+  --color-alert: #ff5a50;
+  --color-stale: #92a8b9;
+  --color-simulated: #baaac7;
+  --color-truth: #fbfaf6;
+  --color-branch-soil-moisture: #4dc3dd;
+  --color-branch-vegetation: #8add6c;
+  --color-branch-thermal: #ff8350;
+  --color-branch-rainfall: #87b1fd;
+  --color-branch-agromet: #f5db59;
+  --color-branch-terrain: #c8bca5;
+  --color-branch-soil: #d69459;
+  --color-branch-risk: #f180b5;
+  --color-scrim: rgb(3 5 11 / 0.72);
+  color-scheme: dark;
+}
+
+/* Narrow shell: nothing below 12 px on a phone. */
+@media (max-width: 68.74rem) {
+  :root {
+    --text-2xs: 0.75rem;
+    --text-2xs--line-height: 1rem;
+  }
 }

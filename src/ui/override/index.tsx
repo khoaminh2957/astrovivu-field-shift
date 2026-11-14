@@ -10,8 +10,7 @@ import { pick } from '@/contracts';
 import { getCrop, searchCrops } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { useMission } from '@/state/mission';
-import { Button, Dialog, Field, IconButton, Input, Segmented, Select, Sheet, StatusTag, cn } from '@/ui/design';
-import { useMissionUi } from '@/ui/chrome/uiState';
+import { Button, Dialog, Field, IconButton, Input, Segmented, Select, StatusTag, cn } from '@/ui/design';
 import { cropName, fmtNum } from '@/ui/hud/format';
 import { factOf } from '@/ui/hud/readings';
 import '@/ui/hud/strings';
@@ -26,44 +25,6 @@ export const EDITED_KEYS: (keyof GroundTruth)[] = ['sowingDate', 'irrigation', '
 
 export function countOverrides(gt: GroundTruth): number {
   return EDITED_KEYS.filter((k) => gt[k] != null).length;
-}
-
-function CropPicker() {
-  const t = useT();
-  const lang = useLang();
-  const cropId = useMission((s) => s.cropId);
-  const setCrop = useMission((s) => s.setCrop);
-  const [q, setQ] = useState('');
-  const hits = useMemo(() => searchCrops(q, lang, 8), [q, lang]);
-  const current = getCrop(cropId);
-  const id = useId();
-  return (
-    <Field label={t('gt.crop')} htmlFor={id} hint={current ? `${t('gt.cropCurrent')}: ${cropName(current.names, lang)} · ${current.scientificName}` : undefined}>
-      <div className="flex flex-col gap-1.5">
-        <Input id={id} prefix={<Search size={14} strokeWidth={1.5} aria-hidden />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('gt.cropSearch')} autoComplete="off" />
-        <ul className="flex max-h-44 flex-col overflow-y-auto rounded-sm border border-line-1" aria-label={t('gt.crop')}>
-          {hits.length === 0 && <li className="t-caption px-2 py-1.5">{t('gt.cropNone', { q })}</li>}
-          {hits.map((c) => {
-            const on = c.id === cropId;
-            return (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setCrop(on ? null : c.id)}
-                  className={cn('flex h-8 w-full items-center gap-2 px-2 text-left text-sm hover:bg-surface-3', on && 'bg-signal text-on-signal hover:bg-signal')}
-                >
-                  <span className="min-w-0 flex-1 truncate">{cropName(c.names, lang)}</span>
-                  <span className={cn('truncate text-xs italic', on ? 'text-on-signal' : 'text-ink-3')}>{c.scientificName}</span>
-                  {on && <Check size={14} aria-hidden />}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </Field>
-  );
 }
 
 /** A number the farmer measured. Committed on Enter or blur, validated, clearable. */
@@ -207,10 +168,9 @@ function ResetButton() {
   );
 }
 
-export function GroundTruthPanel() {
+/** Ground-truth form, inline in the field panel: every value replaces the satellite estimate. */
+export function GroundTruthForm() {
   const t = useT();
-  const open = useMissionUi((s) => s.overrideOpen);
-  const setOpen = useMissionUi((s) => s.setOverrideOpen);
   const soil = useMission((s) => s.telemetry?.branches.soil);
   const gt = useMission((s) => s.groundTruth);
   const setGroundTruth = useMission((s) => s.setGroundTruth);
@@ -225,18 +185,9 @@ export function GroundTruthPanel() {
   const drainageEst = factOf(soil, 'drainage_class')?.value;
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={setOpen}
-      title={t('gt.title')}
-      description={t('gt.description')}
-      width="380px"
-      className="bottom-(--timeline-h)"
-      footer={<ResetButton />}
-    >
-      <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
+        <p className="t-caption text-ink-2">{t('gt.description')}</p>
         {demo && <p className="t-caption text-ink-2">{t('gt.demoProfile')}</p>}
-        <CropPicker />
 
         <Field label={t('gt.sowing')} htmlFor={sowId} hint={t('gt.sowingHint')} aside={gt.sowingDate ? <StatusTag status="ground-truth" compact /> : undefined}>
           <div className="flex items-center gap-1">
@@ -284,7 +235,9 @@ export function GroundTruthPanel() {
         </section>
 
         <Ledger />
-      </div>
-    </Sheet>
+        <div>
+          <ResetButton />
+        </div>
+    </div>
   );
 }

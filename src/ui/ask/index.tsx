@@ -44,8 +44,6 @@ export function AskPanel() {
   const open = useMission((s) => s.askOpen);
   const setOpen = useMission((s) => s.setAskOpen);
   const lang = useMission((s) => s.lang);
-  // The ground-truth sheet sits where the launcher floats; the launcher steps aside while it is open.
-  const overrideOpen = useMissionUi((s) => s.overrideOpen);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(open);
 
@@ -59,27 +57,8 @@ export function AskPanel() {
   if (phase === 'hero') return null;
   const locked = phase === 'locked';
 
-  if (!open) {
-    if (overrideOpen) return null;
-    return (
-      <Button
-        ref={triggerRef}
-        variant="secondary"
-        icon={<MessageCircleQuestion />}
-        onClick={() => setOpen(true)}
-        aria-label={t('ask.open.label')}
-        className={cn(
-          'fixed z-(--z-assistant) shadow-lg',
-          // Locked: sit in the free centre above the timeline, clear of the right callout column and the hub.
-          locked ? 'right-[calc(var(--hud-callout-w)+var(--hud-gutter)+var(--hud-shelf)+12px)] bottom-[calc(var(--timeline-h)+12px)]' : 'right-4 bottom-4',
-          locked && 'stacked:right-3',
-          'stacked:h-11',
-        )}
-      >
-        {t('ask.launcher')}
-      </Button>
-    );
-  }
+  // The launcher is the Ask entry in the rail or the tab bar.
+  if (!open) return null;
   return <AskSheet lang={lang} locked={locked} onClose={() => setOpen(false)} />;
 }
 
@@ -136,9 +115,9 @@ function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onCl
       }}
       className={cn(
         'plate-raised fixed z-(--z-assistant) flex flex-col',
-        'top-[calc(var(--topbar-h)+8px)] right-4 w-[400px] compact:w-[360px]',
-        locked ? 'bottom-[calc(var(--timeline-h)+8px)]' : 'bottom-4',
-        'stacked:inset-x-0 stacked:top-auto stacked:right-0 stacked:bottom-0 stacked:h-[85dvh] stacked:w-full stacked:rounded-none stacked:safe-bottom',
+        'top-3 right-3 bottom-3 w-[400px]',
+        locked && 'right-[calc(var(--right-w)+12px)] bottom-[calc(var(--strip-h)+12px)]',
+        'narrow:inset-x-0 narrow:top-auto narrow:right-0 narrow:bottom-(--tabbar-h) narrow:h-[80dvh] narrow:w-full narrow:rounded-none',
       )}
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-line-1 px-(--panel-pad) py-2">

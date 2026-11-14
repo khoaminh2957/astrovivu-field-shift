@@ -10,8 +10,8 @@ import { useLang, useT } from '@/i18n';
 import { insightsNear, primarySeries, scoreAt } from '@/lib/series';
 import { addDays, diffDays } from '@/lib/time';
 import { useMission } from '@/state/mission';
-import { AnomalyMarker, IconButton, Segmented, Slider, type SliderMarker, type SliderRange, type SliderTick, useHudDensity } from '@/ui/design';
-import { useMissionUi } from '@/ui/chrome/uiState';
+import { AnomalyMarker, IconButton, Segmented, Slider, type SliderMarker, type SliderRange, type SliderTick, cn } from '@/ui/design';
+import { useMissionUi, useNarrow } from '@/ui/chrome/uiState';
 import { MONTHS, fmtDate } from '@/ui/hud/format';
 import './strings';
 
@@ -152,10 +152,10 @@ function Keys() {
   );
 }
 
-export function TimelineScrubber() {
+export function TimelineScrubber({ className }: { className?: string }) {
   const t = useT();
   const lang = useLang();
-  const density = useHudDensity();
+  const narrow = useNarrow();
   const start = useMission((s) => s.timeline.start);
   const end = useMission((s) => s.timeline.end);
   const cursor = useMission((s) => s.timeline.cursor);
@@ -184,11 +184,11 @@ export function TimelineScrubber() {
       const date = addDays(start, d);
       if (!date.endsWith('-01')) continue;
       const m = Number(date.slice(5, 7));
-      const labelled = density !== 'stacked' || (m - 1) % 3 === 0;
+      const labelled = !narrow || (m - 1) % 3 === 0;
       out.push({ value: d, major: m === 1, label: labelled ? (m === 1 ? `${MONTHS[lang][0]} ${date.slice(0, 4)}` : MONTHS[lang][m - 1]) : undefined });
     }
     return out;
-  }, [start, max, lang, density]);
+  }, [start, max, lang, narrow]);
 
   const markers = useMemo<SliderMarker[]>(() => {
     const out: SliderMarker[] = insights.map((i) => ({ value: diffDays(i.t, start), severity: i.severity, label: `${fmtDate(i.t, lang)}: ${pick(i.text, lang)}` }));
@@ -237,68 +237,41 @@ export function TimelineScrubber() {
   }, [setPlaying]);
 
   const rel = diffDays(cursor, today);
-  const stacked = density === 'stacked';
 
   return (
     <div
       ref={rootRef}
       role="region"
       aria-label={t('tl.timeline')}
-      className="absolute inset-x-0 bottom-0 z-(--z-dock) grid h-(--timeline-h) items-center gap-x-5 border-t border-line-1 bg-surface-1/94 px-(--panel-pad) shadow-md lg:grid-cols-[auto_minmax(0,1fr)] stacked:h-auto stacked:min-h-(--timeline-h) stacked:gap-y-1 stacked:py-2"
+      className={cn('flex min-w-0 items-center gap-3 bg-surface-0 px-3 shadow-md', className)}
     >
-      <div className="flex items-center gap-2">
-        <IconButton label={playing ? t('tl.pause') : t('tl.play')} icon={playing ? <Pause /> : <Play />} variant="primary" size={stacked ? 'lg' : 'md'} onClick={() => setPlaying(!playing)} />
-        <IconButton label={t('tl.back')} icon={<ChevronLeft />} size={stacked ? 'lg' : 'sm'} onClick={() => step(-STEP_DAYS)} />
-        <IconButton label={t('tl.forward')} icon={<ChevronRight />} size={stacked ? 'lg' : 'sm'} onClick={() => step(STEP_DAYS)} />
-        <div className="ml-1 flex w-40 flex-col">
-          <span className="t-value text-xl leading-6 text-ink-1">{fmtDate(cursor, lang)}</span>
-          <span className="t-meta">{rel === 0 ? t('tl.today') : rel < 0 ? t('tl.ago', { n: -rel }) : t('tl.ahead', { n: rel })}</span>
-        </div>
-        <Segmented
-          ariaLabel={t('tl.speed')}
-          size="sm"
-          value={String(speed)}
-          onValueChange={(v) => setSpeed(Number(v) as 1 | 2 | 4)}
-          options={[
-            { value: '1', label: '1×' },
-            { value: '2', label: '2×' },
-            { value: '4', label: '4×' },
-          ]}
-        />
+      <IconButton label={playing ? t('tl.pause') : t('tl.play')} icon={playing ? <Pause /> : <Play />} variant="primary" size={narrow ? 'lg' : 'md'} onClick={() => setPlaying(!playing)} />
+      <div className={cn('flex shrink-0 flex-col leading-tight', narrow ? 'w-[5.5rem]' : 'w-28')}>
+        <span className="t-value text-sm text-ink-1">{fmtDate(cursor, lang)}</span>
+        <span className="t-meta truncate">{rel === 0 ? t('tl.today') : rel < 0 ? t('tl.ago', { n: -rel }) : t('tl.ahead', { n: rel })}</span>
       </div>
-      <div className="flex min-w-0 flex-col">
-        <p className="flex h-5 min-w-0 items-center gap-2 text-sm" aria-live="polite">
-          <Commentary />
-          <span className="ml-auto pl-3">
-            <Keys />
-          </span>
-        </p>
-        <div
-          className="relative"
-          onPointerDown={() => {
-            setPlaying(false);
-            setScrubbing(true);
-          }}
-          onPointerUp={() => setScrubbing(false)}
-          onPointerCancel={() => setScrubbing(false)}
-        >
-          <ScoreTrack max={max} />
-          {/* Without markers the slider drops its top row; keep the row so the curve has its place. */}
-          {markers.length === 0 && <div className="h-[18px]" aria-hidden />}
-          <Slider
-            ariaLabel={t('tl.timeline')}
-            size="lg"
-            value={value}
-            onValueChange={(v) => setCursor(addDays(start, Math.min(v, todayIdx)))}
-            min={0}
-            max={max}
-            step={1}
-            formatValue={(v) => fmtDate(addDays(start, v), lang)}
-            ticks={ticks}
-            markers={markers}
-            ranges={ranges}
-          />
-        </div>
+      <div
+        className="relative min-w-0 flex-1"
+        onPointerDown={() => {
+          setPlaying(false);
+          setScrubbing(true);
+        }}
+        onPointerUp={() => setScrubbing(false)}
+        onPointerCancel={() => setScrubbing(false)}
+      >
+        <Slider
+          ariaLabel={t('tl.timeline')}
+          size="md"
+          value={value}
+          onValueChange={(v) => setCursor(addDays(start, Math.min(v, todayIdx)))}
+          min={0}
+          max={max}
+          step={1}
+          formatValue={(v) => fmtDate(addDays(start, v), lang)}
+          ticks={ticks}
+          markers={undefined}
+          ranges={ranges}
+        />
       </div>
     </div>
   );

@@ -183,7 +183,20 @@ Other layout tokens: `--hud-callout-gap` 12 / 8, `--hud-shelf` 28 / 20, `--panel
 
 Layers (`z-(--z-*)`): globe 0, map-ui 10, leader 20, hud 30, panel 40, dock 50, chrome 60, assistant 70, overlay 80, popover 90, toast 100.
 
-### Radial HUD
+### Shell (light, OneSoil-like structure)
+
+Measured on OneSoil's web app at 1440 x 900 (2026-11-14) and matched in tokens, not copied: grey icon rail 56 px (#e5e5ea), white list panel 280 px with an 8 px left radius, field panel ~790 px with 24 px padding, body text #1c1c1e at 14 px (Graphik, proprietary; we keep Archivo, which carries Vietnamese), section titles 18 / 500, tabs 36 px tall, primary button green #27ae60 pill (radius 18 px, padding 0 8 px, shadow 0 4 8 -2 rgba(16,24,40,.1) + 0 2 4 -2 rgba(16,24,40,.06)).
+
+Our values: surfaces white / #f2f2f7 / #e5e5ea, lines #e5e5ea / #d1d1d6 / #7c7c80, ink #1c1c1e / #3a3a3c / #636366, primary (`signal`) #15804a (darker than theirs so white text meets 4.5:1), states darkened to pass AA on #e5e5ea, radii 4 / 8 / 10 / 12 px, buttons are pills, soft shadows. The hero keeps the dark palette through the `.theme-dark` scope.
+
+| Width | Layout |
+|---|---|
+| 1100 px and up | Rail 56 (`--rail-w`) · list panel 300 (`--left-w`) · map with a white tool stack on its right edge and a floating timeline strip 52 px (`--strip-h`) · field panel 500 (`--right-w`) floating over the right of the map once a field is locked. Advisory (Rotation), Tracking (Notes) and Urban fill everything right of the rail. |
+| below 1100 px (`narrow:`) | Map in the top 45 % (`--map-h`) with zoom, fit and layers; one scrolling sheet under it; timeline pinned above a 60 px tab bar (`--tabbar-h`); nothing under 12 px. |
+
+Field panel tabs: Status (two field pictures, score, crop, three charts on one month axis each with one plain sentence, what changed), Field report (relative NDVI zones with a per-zone table, stable area, frames used, the gallery of real frames that can be toggled, three field maps), Data (eight field-shaped metric cards, each opening a detail with legend, frame date and age, a filmstrip of real frames, series, facts, sources and caveats), Ground truth (form and ledger). Field pictures are canvases drawn from a store subscription, so playback never re-renders React. The radial HUD, leader lines and hub on the parcel are retired; their primitives stay in the style guide only.
+
+### Radial HUD (retired from the app)
 
 - **Stage.** The HUD area is the viewport minus the top bar and the timeline dock: 720 px tall at 1440 × 900, 560 px at 1280 × 720.
 - **Callouts.** Four per side in `BRANCHES` order (left: soil moisture, vegetation, thermal, rainfall; right: agromet, terrain, soil, risk). Each column is absolutely positioned `--hud-gutter` from its edge, 8 px from top and bottom, vertically centred, `gap: --hud-callout-gap`. A callout is 150-164 px tall regular and 124-126 px compact; four fit with no scrolling. Heights must not change while scrubbing: always pass `delta`, or never.

@@ -52,7 +52,7 @@ export function UrbanCompanion() {
   }, [fixture, loc, climate, light, space, prefs, month]);
 
   return (
-    <main aria-labelledby="urb-title" className="fixed inset-x-0 top-(--topbar-h) bottom-0 z-(--z-panel) overflow-y-auto bg-surface-0">
+    <main aria-labelledby="urb-title" className="absolute inset-0 overflow-y-auto bg-surface-0">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 pt-4 pb-24 lg:px-6 lg:pt-5">
         <header className="flex flex-col gap-1">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
