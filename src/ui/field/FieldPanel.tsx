@@ -41,11 +41,13 @@ function ScoreLink() {
   const score = useMission((s) => s.score);
   const cursor = useMission((s) => s.timeline.cursor);
   const setTab = useMissionUi((s) => s.setFieldTab);
+  const hasCrop = useMission((s) => !!s.cropId);
   const snap = scoreAt(score, cursor);
   if (!snap) return <span className="skeleton inline-block h-3 w-20 align-middle" />;
   return (
     <button type="button" onClick={() => setTab('report')} className="rounded-xs text-ink-2 underline decoration-line-2 underline-offset-2 hover:text-ink-1 hover:decoration-ink-3">
-      {snap.offSeason ? t('field.line.outlook') : t('field.line.productivity')} <span className="t-value text-ink-1">{Math.round(snap.productivity)}</span>
+      {/* Without a crop the number is the generic growing-conditions index, so it is not called productivity. */}
+      {!hasCrop ? t('field.line.conditions') : snap.offSeason ? t('field.line.outlook') : t('field.line.productivity')} <span className="t-value text-ink-1">{Math.round(snap.productivity)}</span>
       /100
     </button>
   );
@@ -54,7 +56,7 @@ function ScoreLink() {
 /** A next step for this field, drawn as an icon over its name. */
 function HeaderAction({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex h-12 min-w-16 flex-col items-center justify-center gap-1 rounded-sm px-2 text-xs text-ink-1 hover:bg-surface-2 [&_svg]:size-5 [&_svg]:stroke-[1.5]">
+    <button type="button" onClick={onClick} className="flex h-[52px] min-w-16 flex-col items-center justify-center gap-1 rounded-sm px-2 text-xs font-medium text-ink-3 hover:bg-surface-2 [&_svg]:size-6 [&_svg]:stroke-[1.5] [&_svg]:text-ink-1">
       {icon}
       <span className="whitespace-nowrap">{label}</span>
     </button>
@@ -74,11 +76,11 @@ function Header() {
   const go = (phase: Phase) => () => setPhase(phase);
   return (
     <header className="flex items-start gap-2">
-      <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
-        <h2 className="truncate text-lg leading-6 font-bold text-ink-1" title={parcel.name}>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <h2 className="truncate text-[20px] leading-[34px] font-[700] text-ink-1" title={parcel.name}>
           {parcel.name}
         </h2>
-        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-ink-2">
+        <p className="flex flex-wrap items-center gap-x-1.5 text-base leading-[18px] text-ink-1">
           <span>
             <span className="font-medium text-ink-1">{fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha</span>
             {crop ? `, ${cropName(crop.names, lang)}` : ''}
@@ -95,7 +97,7 @@ function Header() {
         <HeaderAction icon={<Lightbulb />} label={t('field.go.rotation')} onClick={go('advisory')} />
         <HeaderAction icon={<CalendarCheck />} label={t('field.go.notes')} onClick={go('tracking')} />
       </div>
-      <IconButton label={t('field.close')} icon={<X />} size="lg" onClick={unlock} className="-mr-2 shrink-0 [&_svg]:size-5" />
+      <IconButton label={t('field.close')} icon={<X />} size="lg" onClick={unlock} className="mt-1.5 -mr-2 shrink-0 [&_svg]:size-6 [&_svg]:stroke-[1.5]" />
     </header>
   );
 }
@@ -110,11 +112,11 @@ function TopCards() {
   const crop = getCrop(cropId);
   const add = (label: string) => <span className="text-signal-strong">{label}</span>;
   return (
-    <div className="grid grid-cols-[150fr_176fr_188fr] gap-2 narrow:grid-cols-2">
+    <div className="grid grid-cols-3 gap-4 compact:gap-2 narrow:grid-cols-2">
       <InfoCard label={t('field.crop')} onClick={() => setTab('truth')} action={t('field.addCrop')}>
         {crop ? (
           <span className="inline-flex max-w-full items-center gap-1.5">
-            <span aria-hidden className="size-2 shrink-0 rounded-full bg-signal" />
+            <span aria-hidden className="size-3 shrink-0 rounded-full border border-signal bg-signal/30" />
             <span className="truncate">{cropName(crop.names, lang)}</span>
           </span>
         ) : (
@@ -124,10 +126,10 @@ function TopCards() {
       <InfoCard label={t('field.sowing')} onClick={() => setTab('truth')} action={t('field.addSowing')}>
         {sowing ? fmtDate(sowing, lang) : add(t('field.addSowing'))}
       </InfoCard>
-      <div title={t('field.weather')} className="flex min-h-[60px] min-w-0 items-center gap-3 rounded-sm border border-line-1 px-3 py-2 narrow:col-span-2">
-        <CloudSun size={28} strokeWidth={1.5} aria-hidden className="shrink-0 text-branch-rainfall" />
-        <span className="t-value text-xl leading-6 text-ink-1">{w?.tmax != null ? `${fmtNum(w.tmax, 0)}°` : '--'}</span>
-        <span className="t-value flex min-w-0 flex-col text-xs font-normal text-ink-2">
+      <div title={t('field.weather')} className="flex min-h-[62px] min-w-0 items-center justify-center gap-3 overflow-hidden rounded-sm border border-line-1 px-3 py-2 compact:gap-2 compact:px-2 narrow:col-span-2 narrow:gap-3">
+        <CloudSun size={30} strokeWidth={1.5} aria-hidden className="shrink-0 text-branch-rainfall" />
+        <span className="t-value text-[24px] leading-none text-ink-1">{w?.tmax != null ? `${fmtNum(w.tmax, 0)}°` : '--'}</span>
+        <span className="t-value flex min-w-0 flex-col gap-1 text-[11px] leading-4 text-ink-1 narrow:text-xs">
           <span className="inline-flex items-center gap-1 whitespace-nowrap">
             <Droplets size={12} strokeWidth={1.5} aria-hidden className="text-ink-3" />
             {w?.rain != null ? `${fmtNum(w.rain, w.rain < 10 ? 1 : 0)} mm` : '--'}
@@ -162,7 +164,7 @@ function DatePill() {
       <button type="button" aria-label={t('field.frame.prev')} disabled={!prev} onClick={() => go(prev)} className={step}>
         <ChevronLeft size={16} aria-hidden />
       </button>
-      <span className="t-value min-w-24 px-1 text-center text-base">{fmtDate(cursor, lang)}</span>
+      <span className="t-value min-w-28 px-1 text-center text-lg">{fmtDate(cursor, lang)}</span>
       <button type="button" aria-label={t('field.frame.next')} disabled={!next} onClick={() => go(next)} className={step}>
         <ChevronRight size={16} aria-hidden />
       </button>
@@ -170,8 +172,8 @@ function DatePill() {
   );
 }
 
-const TILE = 'relative block aspect-[8/7] overflow-hidden rounded-sm bg-ink-1';
-const TILE_CHIP = 'bg-[#3a3a3c] text-white';
+const TILE = 'relative block aspect-[8/7] overflow-hidden rounded-sm bg-tile';
+const TILE_CHIP = 'bg-ink-1 text-white';
 
 /** Left tile: the field picture, a metric selector and an expand button on top, its legend in the corner. */
 function PictureTile() {
@@ -188,34 +190,35 @@ function PictureTile() {
   return (
     <figure className={TILE}>
       {pic === 'loading' ? <span className="skeleton absolute inset-10 opacity-20" aria-hidden /> : <LiveFieldCanvas branch={branch} pad={44} />}
-      <label className={`absolute top-2 left-2 flex h-7 max-w-[calc(100%-3.5rem)] items-center rounded-full pr-2 text-xs font-medium ${TILE_CHIP}`}>
+      <label className={`absolute top-3 left-3 flex h-8 max-w-[calc(100%-4.5rem)] items-center gap-1 rounded-[18px] pr-2 text-xs font-medium shadow-map ${TILE_CHIP}`}>
         <span className="sr-only">{t('field.metric')}</span>
-        <select value={branch} onChange={(e) => select(e.target.value as BranchId)} className="h-full min-w-0 cursor-pointer appearance-none truncate rounded-full bg-transparent pr-1 pl-3 outline-offset-2">
+        <select value={branch} onChange={(e) => select(e.target.value as BranchId)} className="h-full min-w-0 cursor-pointer appearance-none truncate rounded-full bg-transparent pl-3 outline-offset-2">
           {BRANCHES.map((b) => (
             <option key={b} value={b} className="text-ink-1">
               {title(b)}
             </option>
           ))}
         </select>
-        <ChevronsUpDown size={12} aria-hidden className="shrink-0 opacity-80" />
+        {raster && <span className="shrink-0 rounded-xs bg-[#3a3a3c] px-1.5 py-0.5 leading-4">{(raster.unit || raster.key).toUpperCase().slice(0, 6)}</span>}
+        <ChevronsUpDown size={14} aria-hidden className="shrink-0" />
       </label>
       <button
         type="button"
         aria-label={t('field.pic.open', { name: title(branch) })}
         title={t('field.pic.open', { name: title(branch) })}
         onClick={() => (select(branch), setTab('data'))}
-        className={`absolute top-2 right-2 flex size-7 items-center justify-center rounded-xs hover:bg-[#48484a] ${TILE_CHIP}`}
+        className={`absolute top-3 right-3 flex size-8 items-center justify-center rounded-sm hover:bg-black ${TILE_CHIP}`}
       >
-        <Maximize2 size={14} strokeWidth={1.75} aria-hidden />
+        <Maximize2 size={16} strokeWidth={1.75} aria-hidden />
       </button>
       {raster ? (
-        <TileLegend raster={raster} className="absolute bottom-2 left-3" />
+        <TileLegend raster={raster} className="absolute bottom-3 left-3" />
       ) : (
         <figcaption className="absolute right-3 bottom-2 left-3 text-[11px] leading-[14px] text-white/80 narrow:text-xs">{t('field.pic.singleNoRes')}</figcaption>
       )}
       {raster && raster.frames.length > 1 && (
-        <span className="absolute right-3 bottom-[26px] inline-flex items-center gap-1 text-[11px] leading-[14px] text-white/70 narrow:text-xs">
-          <span aria-hidden className="inline-block size-2 rounded-[2px] bg-[#3a3a3c] ring-1 ring-white/30" />
+        <span className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 text-[11px] leading-[14px] text-[#b9b9bd] compact:hidden narrow:inline-flex narrow:text-xs">
+          <span aria-hidden className="inline-block size-2.5 rounded-full border border-[#b9b9bd] bg-[#b9b9bd]/30" />
           {t('field.scale.noData')}
         </span>
       )}
@@ -231,7 +234,7 @@ function SatelliteTile() {
   return (
     <figure className={TILE}>
       <SatelliteCanvas parcel={parcel} pad={44} />
-      <figcaption className={`absolute top-3 left-3 text-base font-medium text-white ${shadow}`}>{t('field.sat.title')}</figcaption>
+      <figcaption className={`absolute top-4 left-4 text-md leading-6 font-medium text-white ${shadow}`}>{t('field.sat.title')}</figcaption>
       <span className={`absolute right-3 bottom-2 left-3 text-[11px] leading-[14px] text-white/85 narrow:text-xs ${shadow}`}>{t('field.sat.credit')}</span>
     </figure>
   );
@@ -244,8 +247,8 @@ function PeriodNote() {
   const window = useMission((s) => s.telemetry?.window);
   if (!window) return null;
   return (
-    <span className="inline-flex h-8 items-center gap-1.5 self-end rounded-sm border border-line-1 px-2.5 text-xs text-ink-1" title={t('field.period')}>
-      <CalendarDays size={14} strokeWidth={1.5} aria-hidden className="text-ink-3" />
+    <span className="inline-flex h-8 items-center gap-1.5 self-end rounded-sm border border-line-2 px-2.5 text-base text-ink-1" title={t('field.period')}>
+      <CalendarDays size={16} strokeWidth={1.5} aria-hidden className="text-ink-1" />
       <span className="sr-only">{t('field.period')}: </span>
       {fmtDate(window.start, lang)} – {fmtDate(window.today, lang)}
     </span>
@@ -258,7 +261,7 @@ function ChartCard({ title, value, unit, note, children }: { title: string; valu
     <section className="grid grid-cols-[minmax(0,1fr)_9.5rem] gap-5 rounded-sm border border-line-1 p-4 narrow:grid-cols-1 narrow:gap-3">
       <div className="min-w-0">{children}</div>
       <div className="flex flex-col gap-1 narrow:order-first">
-        <h4 className="text-xs font-medium text-ink-1">{title}</h4>
+        <h4 className="text-base leading-5 font-medium text-ink-1">{title}</h4>
         <span className="flex items-baseline gap-1">
           <span className="t-value text-xl leading-7 text-ink-1">{value}</span>
           <span className="t-unit">{unit}</span>
@@ -295,7 +298,7 @@ function StatusCharts() {
   const rainDays = rain ? diffDays(cursor, telemetry.window.start) : 0;
   const gddNow = gdd?.samples.filter((s) => s.t <= cursor && s.v != null).at(-1)?.v ?? null;
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <ChartCard title={t('field.ndvi.card')} value={latest ? fmtNum(latest.mean, 2) : '--'} unit="" note={ndviNote}>
         <NdviChart modis={modis} />
       </ChartCard>
@@ -369,7 +372,7 @@ export function FieldPanel() {
   useEffect(() => {
     root.current?.closest('[data-panel-scroll]')?.scrollTo({ top: 0 });
   }, [tab, parcelId]);
-  const count = <span className="rounded-xs border border-signal px-1 text-xs leading-4 font-medium text-signal-strong">{BRANCHES.length}</span>;
+  const count = <span className="flex h-6 min-w-6 items-center justify-center rounded-xs border border-signal px-1 font-normal text-signal-strong">{BRANCHES.length}</span>;
   return (
     <div ref={root} className="flex flex-col gap-5 narrow:gap-3">
       <Header />

@@ -16,12 +16,12 @@ export function InfoCard({ label, children, onClick, action, className }: { labe
           {onClick && <SquarePen size={14} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-4" />}
         </span>
       )}
-      <span className="min-w-0 truncate text-base font-medium text-ink-1">{children}</span>
+      <span className="min-w-0 truncate text-xs leading-4 font-medium text-ink-1 narrow:text-base">{children}</span>
     </>
   );
-  const cls = cn('flex min-h-[60px] min-w-0 flex-col justify-center gap-1 rounded-sm border border-line-1 bg-surface-0 px-3 py-2 text-left', className);
+  const cls = cn('flex min-h-[62px] min-w-0 flex-col justify-center gap-[5px] rounded-sm border border-line-1 bg-surface-0 px-4 py-3 text-left compact:px-3', className);
   return onClick ? (
-    <button type="button" aria-label={action} onClick={onClick} className={cn(cls, 'transition-colors duration-(--dur-instant) hover:border-line-2 hover:bg-surface-2')}>
+    <button type="button" aria-label={action} onClick={onClick} className={cn(cls, 'transition-colors duration-(--dur-base) hover:bg-surface-2')}>
       {body}
     </button>
   ) : (

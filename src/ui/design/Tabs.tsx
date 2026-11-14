@@ -33,19 +33,19 @@ export interface TabsProps<V extends string = string> {
 export function Tabs<V extends string = string>({ tabs, value, onValueChange, ariaLabel, size = 'md', block, children, className }: TabsProps<V>) {
   return (
     <RTabs.Root value={value} onValueChange={(v) => onValueChange(v as V)} className={cn('flex min-w-0 flex-col', className)}>
-      <RTabs.List aria-label={ariaLabel} className="flex min-w-0 shrink-0 gap-6 overflow-x-auto border-b border-line-1 [scrollbar-width:none]">
+      <RTabs.List aria-label={ariaLabel} className="flex min-w-0 shrink-0 gap-7 overflow-x-auto border-b border-line-1 [scrollbar-width:none]">
         {tabs.map((tab) => (
           <RTabs.Trigger
             key={tab.value}
             value={tab.value}
             disabled={tab.disabled}
             className={cn(
-              'relative -mb-px inline-flex shrink-0 items-center justify-center gap-1.5 border-b-2 border-transparent px-0 whitespace-nowrap text-ink-2 [&_svg]:size-4',
-              'transition-colors duration-(--dur-instant) ease-out hover:text-ink-1 disabled:opacity-45',
+              'relative -mb-px inline-flex shrink-0 items-center justify-center gap-1.5 border-b-2 border-transparent px-0 pt-[3px] whitespace-nowrap text-ink-1 [&_svg]:size-4',
+              'transition-colors duration-(--dur-instant) ease-out hover:border-line-2 disabled:opacity-45',
               'data-[state=active]:border-ink-1 data-[state=active]:font-medium data-[state=active]:text-ink-1',
               // The label has no padding, so a ring would sit on the text: focus shows as a tint and the rule instead.
               'rounded-t-xs outline-none focus-visible:border-signal focus-visible:bg-surface-2 focus-visible:text-ink-1',
-              size === 'lg' ? 'h-11 text-base' : 'h-9 text-base',
+              size === 'lg' ? 'h-11 text-md' : 'h-9 text-md leading-[22px]',
               block && 'flex-1',
             )}
           >

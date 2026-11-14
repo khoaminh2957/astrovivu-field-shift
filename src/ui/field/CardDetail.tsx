@@ -190,7 +190,7 @@ export function CardDetail({ branch: id, onBack, backLabel }: { branch: BranchId
         <h2 className="truncate text-lg font-medium text-ink-1">{title}</h2>
       </header>
 
-      <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-ink-1">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-tile">
         {pic === 'loading' ? <span className="skeleton absolute inset-3" aria-hidden /> : <LiveFieldCanvas branch={id} pad={28} />}
       </div>
       <p className="t-caption -mt-2">{pic === 'loading' ? t('field.pic.loading') : caption}</p>

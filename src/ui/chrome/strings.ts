@@ -43,6 +43,9 @@ registerStrings(
   {
     tools: 'Map tools',
     search: 'Search a place',
+    'legend.show': 'Show legend',
+    'legend.hide': 'Hide legend',
+    painted: 'The field is coloured by',
     'search.clear': 'Clear the search',
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',
@@ -78,6 +81,9 @@ registerStrings(
   {
     tools: 'Công cụ bản đồ',
     search: 'Tìm địa điểm',
+    'legend.show': 'Hiện chú giải',
+    'legend.hide': 'Ẩn chú giải',
+    painted: 'Thửa ruộng được tô màu theo',
     'search.clear': 'Xoá ô tìm',
     zoomIn: 'Phóng to',
     zoomOut: 'Thu nhỏ',

@@ -46,7 +46,7 @@ function ZonesCanvas({ parcel, raster, className, pad = 10 }: { parcel: Parcel; 
 
 function Tile({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <figure className="relative aspect-square min-w-0 overflow-hidden rounded-sm bg-ink-1">
+    <figure className="relative aspect-square min-w-0 overflow-hidden rounded-sm bg-tile">
       {children}
       <figcaption className="absolute top-2 right-2 left-2.5 truncate text-xs font-medium text-white">{title}</figcaption>
     </figure>
@@ -56,15 +56,15 @@ function Tile({ title, children }: { title: string; children: React.ReactNode })
 /** A dark figure card: one large number, its name, one sentence; optionally a share drawn as a bar. */
 function DarkStat({ value, title, note, share, accent }: { value: React.ReactNode; title: string; note: string; share?: number | null; accent?: boolean }) {
   return (
-    <div className="flex min-w-0 gap-2 rounded-sm bg-ink-1 p-3 text-white">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className={cn('t-value text-2xl', accent && 'text-signal')}>{value}</span>
-        <span className="text-xs font-medium">{title}</span>
-        <span className="mt-auto pt-2 text-[11px] leading-[14px] text-white/60 narrow:text-xs">{note}</span>
+    <div className="flex min-w-0 gap-2 rounded-lg bg-ink-1 p-4 text-white">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <span className={cn('t-value text-[32px] leading-none', accent && 'text-signal-bright')}>{value}</span>
+        <span className="text-base leading-5 font-medium">{title}</span>
+        <span className="mt-auto pt-1 text-xs leading-[17px] text-[#b9b9bd]">{note}</span>
       </div>
       {share != null && (
-        <span aria-hidden className="relative w-1 shrink-0 overflow-hidden rounded-full bg-white/15">
-          <span className="absolute inset-x-0 bottom-0 rounded-full bg-signal" style={{ height: `${Math.max(0, Math.min(100, share))}%` }} />
+        <span aria-hidden className="relative w-2 shrink-0 overflow-hidden rounded-sm bg-signal-bright/30">
+          <span className="absolute inset-x-0 bottom-0 bg-signal" style={{ height: `${Math.max(0, Math.min(100, share))}%` }} />
         </span>
       )}
     </div>
@@ -112,10 +112,10 @@ export function FieldReport() {
           <p className="t-caption">{t('field.report.noNdvi')}</p>
         ) : (
           <div className="grid grid-cols-2 gap-2 narrow:grid-cols-1">
-            <figure className="relative min-h-72 overflow-hidden rounded-sm bg-ink-1 narrow:aspect-square">
+            <figure className="relative min-h-72 overflow-hidden rounded-sm bg-tile narrow:aspect-square">
               <SatelliteCanvas parcel={parcel} pad={28} className="absolute inset-0" />
               <ZonesCanvas parcel={parcel} raster={result.raster} pad={28} className="absolute inset-0 opacity-90" />
-              <figcaption className="absolute top-3 left-3 text-base font-medium text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.7)]">{t('field.report.zones')}</figcaption>
+              <figcaption className="absolute top-4 left-4 text-md leading-6 font-medium text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.7)]">{t('field.report.zones')}</figcaption>
               <span className="absolute bottom-2 left-3 flex flex-col gap-0.5 text-[11px] leading-[14px] text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.7)] narrow:text-xs">
                 {(['high', 'medium', 'low'] as const).map((z) => (
                   <span key={z} className="inline-flex items-center gap-1.5">
@@ -138,39 +138,39 @@ export function FieldReport() {
                   value={
                     <>
                       {result.framesUsed.length}
-                      <span className="text-white/45">/{frames.length}</span>
+                      <span className="text-ink-3">/{frames.length}</span>
                     </>
                   }
                   title={t('field.report.usedShort')}
                   note={t('field.report.usedNote')}
                 />
               </div>
-              <section className="flex flex-1 flex-col gap-1 rounded-sm border border-line-1 px-3 pt-3 pb-1">
-                <h4 className="text-base font-medium text-ink-1">{t('field.report.dist')}</h4>
+              <section className="flex flex-1 flex-col gap-1 rounded-lg border border-line-1 px-4 pt-3 pb-1">
+                <h4 className="text-md leading-6 font-medium text-ink-1">{t('field.report.dist')}</h4>
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-left text-ink-3">
-                      <th className="py-1.5 font-normal">{t('field.report.zone')}</th>
-                      <th className="py-1.5 font-normal">{t('field.report.area')}</th>
-                      <th className="py-1.5 text-right font-normal">{t('field.report.dev')}</th>
+                    <tr className="text-left font-medium text-ink-3">
+                      <th className="py-1.5 font-medium">{t('field.report.zone')}</th>
+                      <th className="py-1.5 font-medium">{t('field.report.area')}</th>
+                      <th className="py-1.5 text-right font-medium">{t('field.report.dev')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[...result.zones].reverse().map((z) => (
                       <tr key={z.id} className="border-t border-line-1">
-                        <td className="py-2.5 font-medium text-ink-1">
+                        <td className="py-2 text-base font-medium text-ink-1">
                           <span className="inline-flex items-center gap-1.5">
                             <span aria-hidden className="size-2 rounded-[2px]" style={{ background: ZONE_HEX[z.id] }} />
                             {t(`field.report.z.${z.id}`)}
                           </span>
                         </td>
-                        <td className="t-value py-2.5 font-normal text-ink-2">
+                        <td className="t-value py-2 font-normal text-ink-1">
                           {fmtNum(z.areaHa, z.areaHa < 10 ? 2 : 1)} ha, {fmtNum(z.sharePct, 1)}%
                         </td>
-                        <td className="py-2.5 text-right">
+                        <td className="py-2 text-right">
                           <span
                             className={cn(
-                              't-value inline-block min-w-12 rounded-xs px-2 py-1 text-center',
+                              't-value inline-block min-w-14 rounded-[5px] px-2 py-1.5 text-center text-base',
                               z.deviationPct > 2 ? 'bg-nominal/12 text-nominal' : z.deviationPct < -2 ? 'bg-alert/10 text-alert' : 'bg-watch/12 text-watch',
                             )}
                           >
@@ -192,7 +192,7 @@ export function FieldReport() {
       {ndvi && frames.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <h3 className="text-lg font-medium text-ink-1">{t('field.report.images', { n: frames.length })}</h3>
+            <h3 className="text-md leading-[22px] font-medium text-ink-1">{t('field.report.images', { n: frames.length })}</h3>
             <p className="t-caption">{t('field.report.imagesNote')}</p>
           </div>
           <ul className="grid grid-cols-3 gap-2">
@@ -228,7 +228,7 @@ export function FieldReport() {
       )}
 
       <section className="flex flex-col gap-3">
-        <h3 className="text-lg font-medium text-ink-1">{t('field.report.maps')}</h3>
+        <h3 className="text-md leading-[22px] font-medium text-ink-1">{t('field.report.maps')}</h3>
         <div className="grid grid-cols-3 gap-2">
           <Tile title={t('field.report.zones')}>{result ? <ZonesCanvas parcel={parcel} raster={result.raster} pad={30} /> : <span className="skeleton absolute inset-8 opacity-20" />}</Tile>
           <Tile title={t('field.report.moisture')}>

@@ -10,7 +10,7 @@ export type ControlSize = 'md' | 'lg';
 /** Shared look of every text-like control: white, a hairline boundary, signal on focus, alert on error. */
 const well =
   'w-full min-w-0 rounded-sm border border-line-2 bg-surface-0 text-ink-1 transition-colors duration-(--dur-instant) ease-out ' +
-  'hover:border-ink-4 focus-within:border-signal focus-within:outline-2 focus-within:outline-offset-0 focus-within:outline-signal/25 ' +
+  'hover:border-[#b9b9bd] focus-within:border-signal focus-within:outline-2 focus-within:outline-offset-0 focus-within:outline-signal/25 ' +
   'has-[:disabled]:opacity-45 has-[:disabled]:hover:border-line-2 data-[invalid=true]:border-alert';
 
 const heights: Record<ControlSize, string> = { md: 'h-8 text-xs', lg: 'h-10 text-base narrow:h-11' };

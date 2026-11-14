@@ -7,14 +7,14 @@
  * One green button per state: Add field, then Show on the map, then Lock field.
  */
 import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowDownUp, ArrowLeft, ArrowRight, LocateFixed, MapPin, MessageCircleQuestion, Plus, Search, SquarePlus } from 'lucide-react';
+import { ArrowDownUp, ArrowLeft, ArrowRight, LocateFixed, MapPin, MessageCircleQuestion, MousePointerClick, Plus, Search, SquarePlus } from 'lucide-react';
 import type { LngLat, Parcel, PlaceHit, PlaceInfo } from '@/contracts';
 import { pick } from '@/contracts';
 import { SAMPLE_PARCELS, reverseGeocode, searchPlace } from '@/data';
 import { draftToParcel, flyToPlace, isLockable, squareDraft } from '@/globe';
 import { useLang, useT } from '@/i18n';
 import { useMission } from '@/state/mission';
-import { Button, Field, IconButton, Input, Segmented, cn } from '@/ui/design';
+import { Button, Field, IconButton, Input, Popover, Segmented, cn } from '@/ui/design';
 import { parseLatLon } from '@/ui/chrome/MapSearch';
 import { useMissionUi } from '@/ui/chrome/uiState';
 import { fmtNum } from '@/ui/hud/format';
@@ -31,6 +31,21 @@ const areaOf = (s: string): number | null => {
 
 const fmtArea = (ha: number): string => `${fmtNum(ha, ha < 10 ? 1 : 0)} ha`;
 
+/** The short place line of a row: region and country when the geocoder gave them, else its label. */
+const placeLine = (place: PlaceInfo | undefined): string | undefined => (place ? [place.admin1, place.country].filter(Boolean).join(', ') || place.label : undefined);
+
+/**
+ * A neutral default name, "Field in <region>". The first part of a geocoder label is often a shop
+ * or a street, so the region is taken from `admin1`, else from the second-last part of the label.
+ */
+function defaultFieldName(t: (k: string, v?: Record<string, string | number>) => string, place: PlaceInfo | undefined): string | undefined {
+  if (!place) return undefined;
+  const parts = place.label.split(',').map((p) => p.trim()).filter(Boolean);
+  const fromLabel = parts.length >= 3 ? parts.at(-2) : undefined;
+  const region = place.admin1 ?? (fromLabel && !/^[-\d.\s]+$/.test(fromLabel) ? fromLabel : undefined);
+  return region ? t('field.name.in', { place: region }) : undefined;
+}
+
 type SortBy = 'default' | 'area' | 'name';
 const NEXT_SORT: Record<SortBy, SortBy> = { default: 'area', area: 'name', name: 'default' };
 
@@ -42,16 +57,17 @@ function FieldRow({ parcel, current, tag, sub, onOpen, label }: { parcel: Parcel
       onClick={onOpen}
       aria-label={label}
       aria-current={current || undefined}
-      className={cn('flex min-h-14 w-full items-center gap-2.5 rounded-sm px-1.5 py-1 text-left transition-colors duration-(--dur-fast)', current ? 'bg-surface-2' : 'hover:bg-surface-2')}
+      // A row runs edge to edge of the panel, 56 px tall, and turns grey under the pointer and when it is the open field.
+      className={cn('flex min-h-14 w-full items-center gap-2 px-4 py-1 text-left transition-colors duration-(--dur-fast)', current ? 'bg-surface-2' : 'hover:bg-surface-2')}
     >
-      <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xs bg-ink-1">
+      <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-ink-1">
         {/* The open field shows its real vegetation picture; the others their outline. */}
-        {current ? <LiveFieldCanvas branch="vegetation" pad={4} /> : <ShapeThumb parcel={parcel} size={32} light />}
+        {current ? <LiveFieldCanvas branch="vegetation" pad={5} /> : <ShapeThumb parcel={parcel} size={38} light />}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-base font-medium text-ink-1">{parcel.name}</span>
-        {tag && <span className="self-start rounded-xs bg-signal px-1 text-[11px] leading-[14px] font-bold text-on-signal narrow:text-xs">{tag}</span>}
-        <span className="truncate text-xs text-ink-3">{sub}</span>
+        <span className="truncate text-base leading-[18px] font-medium text-ink-1">{parcel.name}</span>
+        {tag && <span className="self-start rounded-xs bg-signal px-1 text-[10px] leading-[13px] font-medium text-on-signal narrow:text-xs narrow:leading-4">{tag}</span>}
+        <span className="truncate text-xs leading-4 text-ink-3">{sub}</span>
       </span>
     </button>
   );
@@ -67,21 +83,21 @@ function Demos({ filter, sort }: { filter: string; sort: SortBy }) {
   if (sort === 'area') rows.sort((a, b) => b.areaHa - a.areaHa);
   if (sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name));
   return (
-    <section aria-labelledby="demo-title" className="flex flex-col gap-1 pt-2">
-      <h3 id="demo-title" className="px-1 pb-1 text-xs font-medium text-ink-1">
+    <section aria-labelledby="demo-title" className="flex flex-col pt-2">
+      <h3 id="demo-title" className="px-4 pb-3 text-base leading-4 font-medium text-ink-1">
         {t('field.demo.group')}
       </h3>
       {rows.length === 0 ? (
-        <p className="t-caption px-1">{t('field.list.none')}</p>
+        <p className="t-caption px-4">{t('field.list.none')}</p>
       ) : (
-        <ul className="flex flex-col gap-1">
+        <ul className="flex flex-col">
           {rows.map((p) => (
             <li key={p.id}>
               <FieldRow
                 parcel={p}
                 current={current === p.id}
                 tag={t('field.demo.tag')}
-                sub={[fmtArea(p.areaHa), p.place?.label].filter(Boolean).join(' · ')}
+                sub={[fmtArea(p.areaHa), placeLine(p.place)].filter(Boolean).join(' · ')}
                 label={t('field.demo.open', { name: p.name })}
                 onOpen={() => void lockSample(p.id)}
               />
@@ -159,7 +175,8 @@ export function FindField() {
   const seq = useRef(0);
   const id = useId();
   const areaId = useId();
-  const [way, setWay] = useState<'address' | 'map'>('address');
+  const way = useMissionUi((s) => s.addWay);
+  const setWay = useMissionUi((s) => s.setAddWay);
   const sel = useSelectOnMap(way === 'map');
   const placed = !!draft?.closed && !!chosen;
 
@@ -234,13 +251,13 @@ export function FindField() {
   const canSubmit = !!parseLatLon(q) || !!(chosen && chosen.label === q) || !!hits?.length;
 
   return (
-    <div className="flex flex-col gap-4 px-1">
+    <div className="flex flex-col gap-4 px-4">
       <header className="flex flex-col gap-2">
         <button type="button" onClick={() => (cancelDraw(), setListMode('list'))} className="-ml-1.5 flex h-8 items-center gap-1 self-start rounded-sm px-1.5 text-xs font-medium text-ink-2 hover:bg-surface-2 hover:text-ink-1 narrow:h-11 narrow:text-base">
           <ArrowLeft size={16} aria-hidden />
           {t('field.add.back')}
         </button>
-        <h2 className="text-base font-medium text-ink-1">{t('field.add.step')}</h2>
+        <h2 className="text-md leading-[21px] font-medium text-ink-1">{t('field.add.step')}</h2>
       </header>
 
       <Segmented<'address' | 'map'>
@@ -260,7 +277,7 @@ export function FindField() {
       {way === 'map' ? (
         <>
           <SelectOnMapStatus state={sel.state} />
-          {sel.state.kind === 'found' && draft?.closed && <LockForm place={sel.place} defaultName={sel.place?.label.split(',')[0]} />}
+          {sel.state.kind === 'found' && draft?.closed && <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />}
         </>
       ) : (
         <>
@@ -323,7 +340,7 @@ export function FindField() {
             )}
           </form>
 
-          {placed && <LockForm place={chosen ? { label: chosen.label, country: chosen.country, admin1: chosen.admin1 } : undefined} defaultName={chosen?.label.split(',')[0]} />}
+          {placed && chosen && <LockForm place={{ label: chosen.label, country: chosen.country, admin1: chosen.admin1 }} defaultName={defaultFieldName(t, chosen)} />}
         </>
       )}
     </div>
@@ -337,24 +354,25 @@ export function FieldList() {
   const setPhase = useMission((s) => s.setPhase);
   const setAskOpen = useMission((s) => s.setAskOpen);
   const setListMode = useMissionUi((s) => s.setListMode);
+  const setAddWay = useMissionUi((s) => s.setAddWay);
   const isDemo = SAMPLE_PARCELS.some((p) => p.id === parcel?.id);
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<SortBy>('default');
   const own = parcel && !isDemo ? parcel : null;
   return (
     <div className="flex min-h-full flex-col gap-3">
-      <header className="flex flex-col gap-3 px-1">
-        <div className="flex flex-col">
-          <h2 className="text-base font-medium text-ink-1">{t('field.list.title')}</h2>
-          <span className="text-xs text-ink-3">
+      <header className="flex flex-col gap-2 border-b border-line-1 pb-2">
+        <div className="flex flex-col px-4">
+          <h2 className="text-md leading-[21px] font-medium text-ink-1">{t('field.list.title')}</h2>
+          <span className="text-xs leading-4 text-ink-3">
             {t('field.list.total', {
               n: SAMPLE_PARCELS.length + (own ? 1 : 0),
               a: fmtNum(SAMPLE_PARCELS.reduce((a, p) => a + p.areaHa, 0) + (own ? own.areaHa : 0), 1),
             })}
           </span>
         </div>
-        <div className="flex h-8 items-center gap-2 border-b border-line-1 pb-1 narrow:h-11">
-          <Search size={16} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-3" />
+        <div className="mx-2 flex h-[34px] items-center gap-2 pl-2 narrow:h-11">
+          <Search size={20} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-3" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -367,32 +385,61 @@ export function FieldList() {
             onClick={() => setSort(NEXT_SORT[sort])}
             title={t(`field.list.sort.${sort}`)}
             aria-label={`${t('field.list.sort')}: ${t(`field.list.sort.${sort}`)}`}
-            className={cn('flex h-full shrink-0 items-center gap-1 rounded-xs px-1 text-xs font-medium hover:bg-surface-2', sort === 'default' ? 'text-ink-1' : 'text-signal-strong')}
+            className={cn('flex h-8 shrink-0 items-center gap-1 rounded-sm px-2 text-xs font-medium hover:bg-surface-3', sort === 'default' ? 'text-ink-1' : 'text-signal-strong')}
           >
             {t('field.list.sort')}
-            <ArrowDownUp size={14} strokeWidth={1.5} aria-hidden />
+            <ArrowDownUp size={16} strokeWidth={1.5} aria-hidden />
           </button>
         </div>
       </header>
       {own && (
-        <section className="flex flex-col gap-1 pt-2">
-          <h3 className="px-1 pb-1 text-xs font-medium text-ink-1">{t('field.list.yours')}</h3>
-          <FieldRow parcel={own} current sub={[fmtArea(own.areaHa), own.place?.label].filter(Boolean).join(' · ')} label={own.name} onOpen={() => setPhase('locked')} />
+        <section className="flex flex-col pt-2">
+          <h3 className="px-4 pb-3 text-base leading-4 font-medium text-ink-1">{t('field.list.yours')}</h3>
+          <FieldRow parcel={own} current sub={[fmtArea(own.areaHa), placeLine(own.place)].filter(Boolean).join(' · ')} label={own.name} onOpen={() => setPhase('locked')} />
         </section>
       )}
       <Demos filter={q} sort={sort} />
-      <div className="flex min-h-52 flex-1 flex-col items-center justify-center gap-2 rounded-sm bg-surface-2 px-4 py-6 text-center">
-        <SquarePlus size={20} strokeWidth={1.5} aria-hidden className="text-ink-1" />
-        <h3 className="text-md font-medium text-ink-1">{t('field.add.title')}</h3>
-        <p className="text-xs text-ink-3">{t('field.add.card')}</p>
-        <Button variant="primary" icon={<Plus />} className="mt-2 narrow:h-11 narrow:px-4 narrow:text-base" onClick={() => setListMode('add')}>
-          {t('field.add.button')}
-        </Button>
+      <div className="mx-3 flex min-h-56 flex-1 flex-col items-center justify-center gap-2 rounded-sm bg-surface-2 p-4 text-center">
+        <SquarePlus size={24} strokeWidth={1.5} aria-hidden className="mb-2 text-ink-1" />
+        <h3 className="text-md leading-[19px] font-medium text-ink-1">{t('field.add.title')}</h3>
+        <p className="text-base leading-[17px] text-ink-1">{t('field.add.card')}</p>
+        {/* The green button opens the ways to add a field, the way the reference's does; the step that follows can still switch. */}
+        <Popover
+          side="bottom"
+          align="center"
+          label={t('field.add.way')}
+          className="w-52 border-0 px-0 py-2"
+          trigger={
+            <Button variant="primary" icon={<Plus />} className="mt-4 narrow:h-11 narrow:px-4 narrow:text-base">
+              {t('field.add.button')}
+            </Button>
+          }
+        >
+          <ul className="flex flex-col">
+            {(
+              [
+                ['map', <MousePointerClick key="i" />, 'field.select.map'],
+                ['address', <MapPin key="i" />, 'field.select.address'],
+              ] as const
+            ).map(([way, icon, key]) => (
+              <li key={way} className="px-2">
+                <button
+                  type="button"
+                  onClick={() => (setAddWay(way), setListMode('add'))}
+                  className="flex h-8 w-full items-center gap-2 rounded-sm px-2 text-left text-base text-ink-1 hover:bg-surface-2 narrow:h-11 [&_svg]:size-4 [&_svg]:stroke-[1.5] [&_svg]:text-ink-3"
+                >
+                  {icon}
+                  {t(key)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Popover>
       </div>
-      <div className="flex flex-col items-center gap-1.5 rounded-sm border border-signal px-4 py-4 text-center">
-        <MessageCircleQuestion size={20} strokeWidth={1.5} aria-hidden className="text-ink-1" />
-        <h3 className="text-md font-medium text-ink-1">{t('field.askCard.title')}</h3>
-        <p className="text-xs text-ink-3">{t('field.askCard.body')}</p>
+      <div className="mx-3 flex flex-col items-center gap-1.5 rounded-lg border-2 border-signal px-4 py-5 text-center">
+        <MessageCircleQuestion size={24} strokeWidth={1.5} aria-hidden className="mb-1 text-ink-1" />
+        <h3 className="text-md leading-[21px] font-medium text-ink-1">{t('field.askCard.title')}</h3>
+        <p className="text-xs leading-4 text-ink-3">{t('field.askCard.body')}</p>
         <Button variant="secondary" className="mt-1.5 border-signal text-signal-strong narrow:h-11 narrow:px-4 narrow:text-base" onClick={() => setAskOpen(true)}>
           {t('field.askCard.button')}
         </Button>

@@ -1,9 +1,10 @@
 /**
- * What floats on the map's top-left corner: a place search that flies the camera there, and, once
- * a field is locked, the latest weather reading for it. Neither changes the field in the panel.
+ * A place search for the map (a dark pill, like every map control) that flies the camera there,
+ * and the latest weather reading of the locked field as plain white text over the imagery.
+ * Neither changes the field in the panel.
  */
 import { useEffect, useId, useRef, useState } from 'react';
-import { CloudSun, MapPin, Search, X } from 'lucide-react';
+import { CloudSun, MapPin, Search, Wind, X } from 'lucide-react';
 import type { LngLat, PlaceHit } from '@/contracts';
 import { searchPlace } from '@/data';
 import { flyToPoint } from '@/globe';
@@ -76,8 +77,8 @@ export function MapSearch({ className }: { className?: string }) {
       }}
       onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
     >
-      <label className="flex h-10 items-center gap-2 rounded-sm border border-line-1 bg-surface-0 px-3 shadow-md focus-within:border-signal">
-        <Search size={16} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-3" />
+      <label className="flex h-10 items-center gap-2 rounded-[20px] border border-ink-1 bg-ink-1 pr-1.5 pl-3 text-white shadow-map focus-within:border-white/50 narrow:h-11">
+        <Search size={20} strokeWidth={1.5} aria-hidden className="shrink-0" />
         <span className="sr-only">{t('map.search')}</span>
         <input
           value={q}
@@ -87,22 +88,22 @@ export function MapSearch({ className }: { className?: string }) {
           aria-controls={`${id}-list`}
           onChange={(e) => (setQ(e.target.value), setOpen(true))}
           onFocus={() => setOpen(true)}
-          className="h-full min-w-0 flex-1 bg-transparent text-base text-ink-1 outline-none"
+          className="h-full min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-ink-4"
         />
         {q && (
-          <button type="button" aria-label={t('map.search.clear')} onClick={() => (setQ(''), setHits(null))} className="flex size-6 shrink-0 items-center justify-center rounded-xs text-ink-3 hover:bg-surface-2 hover:text-ink-1">
+          <button type="button" aria-label={t('map.search.clear')} onClick={() => (setQ(''), setHits(null))} className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/70 hover:bg-white/15 hover:text-white">
             <X size={14} aria-hidden />
           </button>
         )}
       </label>
       {showList && (
-        <ul id={`${id}-list`} role="listbox" aria-label={t('map.search')} className="absolute inset-x-0 top-full z-(--z-popover) mt-1 flex max-h-64 flex-col overflow-y-auto rounded-sm border border-line-1 bg-surface-0 py-1 shadow-lg">
+        <ul id={`${id}-list`} role="listbox" aria-label={t('map.search')} className="absolute top-full right-0 z-(--z-popover) mt-1.5 flex max-h-64 w-72 max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-sm bg-surface-0 py-2 shadow-lg">
           {busy && <li className="t-caption px-3 py-2">{t('field.searching')}</li>}
           {!busy && hits?.length === 0 && <li className="t-caption px-3 py-2">{failed ? t('field.search.failed') : t('field.search.none', { q })}</li>}
           {!busy &&
             hits?.map((h) => (
               <li key={`${h.location[0]},${h.location[1]}`} role="option" aria-selected={false}>
-                <button type="button" onClick={() => go(h.location, h.label)} className="flex min-h-10 w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-surface-2">
+                <button type="button" onClick={() => go(h.location, h.label)} className="mx-2 flex min-h-8 w-[calc(100%-16px)] items-center gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-surface-2">
                   <MapPin size={16} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-3" />
                   <span className="min-w-0 truncate text-base text-ink-1">{h.label}</span>
                 </button>
@@ -128,16 +129,23 @@ export function useWeatherNow(): WeatherNow | null {
   return { tmax: last('t2m_max', 'agromet'), rain: last('rain', 'rainfall'), wind: last('wind', 'agromet') };
 }
 
-/** Weather for the locked field, beside the search. Hidden until there is a reading. */
+/** Weather for the locked field, white text straight on the map. Hidden until there is a reading. */
 export function WeatherChip({ className }: { className?: string }) {
   const t = useT();
   const w = useWeatherNow();
   if (!w || w.tmax == null) return null;
   return (
-    <div title={t('field.weather')} className={cn('flex h-10 shrink-0 items-center gap-2 rounded-sm border border-line-1 bg-surface-0 px-3 shadow-md', className)}>
-      <CloudSun size={18} strokeWidth={1.5} aria-hidden className="text-ink-2" />
-      <span className="t-value text-base text-ink-1">{fmtNum(w.tmax, 0)}°</span>
-      {w.rain != null && <span className="t-value text-xs text-ink-3">{fmtNum(w.rain, w.rain < 10 ? 1 : 0)} mm</span>}
+    <div title={t('field.weather')} className={cn('t-value flex h-8 shrink-0 items-center gap-3 px-2 text-base font-normal whitespace-nowrap text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.8)]', className)}>
+      <span className="inline-flex items-center gap-1.5">
+        <CloudSun size={18} strokeWidth={1.5} aria-hidden />
+        {fmtNum(w.tmax, 0)}°
+      </span>
+      {w.wind != null && (
+        <span className="inline-flex items-center gap-1.5">
+          <Wind size={16} strokeWidth={1.5} aria-hidden />
+          {fmtNum(w.wind, 0)} m/s
+        </span>
+      )}
       <span className="sr-only">{t('field.weather')}</span>
     </div>
   );

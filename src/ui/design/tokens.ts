@@ -84,10 +84,10 @@ export const PROVENANCES: Provenance[] = ['observed', 'modelled', 'derived', 'fo
 export type MapMetric = 'vegetation' | 'moisture' | 'heat' | 'rain';
 export type RampMode = 'sequential' | 'diverging';
 
-// NDVI on its fixed 0-1 scale: bare soil brown, sparse cover orange and yellow, canopy green to dark green.
-const NDVI = ['#300b05', '#7a1e0c', '#c2410f', '#ee8a1e', '#f8d03c', '#e6e65a', '#b5d94c', '#7dc243', '#4da63a', '#2f8431', '#1f5a22', '#123011'];
-// Vegetation stretched to one field's own range: weakest part crimson, strongest green.
-const NDVI_FIELD = ['#b5121b', '#dc3b1f', '#f0702a', '#f8a63a', '#fbd84a', '#cfe04e', '#8fcb4f', '#4caf50', '#1e8e3e'];
+// NDVI on its fixed 0-1 scale, the twelve stops of the reference product's legend: bare soil brown, yellow, canopy green.
+const NDVI = ['#300b05', '#812c14', '#b36127', '#e7bc4c', '#f3da60', '#f8ee64', '#f4f550', '#d1e54a', '#a3cf40', '#4d8f28', '#1e4816', '#123011'];
+// Vegetation stretched to one field's own range (the reference's "contrasted" colouring): plum, red, yellow, green, teal.
+const NDVI_FIELD = ['#881e4c', '#db3d25', '#f1b54f', '#f7e050', '#eff651', '#80db45', '#4aa069', '#3e8874', '#3d8575'];
 // Relative zones of a field (low, medium, high).
 const ZONES = ['#d0e3fc', '#8abbf7', '#4392f1'];
 const YL_GN_BU = ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58'];

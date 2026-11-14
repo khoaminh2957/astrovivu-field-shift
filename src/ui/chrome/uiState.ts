@@ -20,6 +20,12 @@ export interface MissionUiState {
   /** List panel: the list of fields, or the add-field step. */
   listMode: 'list' | 'add';
   setListMode(mode: 'list' | 'add'): void;
+  /** How the add-field step finds the field: chosen in the menu under "Add field", switchable in the step. */
+  addWay: 'address' | 'map';
+  setAddWay(way: 'address' | 'map'): void;
+  /** The legend of what the field is painted with is shown on the map. */
+  legendOpen: boolean;
+  setLegendOpen(open: boolean): void;
   /** Which map-toolbar popover is open. */
   mapPopover: MapPopover;
   /** Playback driven by requestAnimationFrame in the scrubber (smoother than the store's interval). */
@@ -42,6 +48,10 @@ export const useMissionUi = create<MissionUiState>()((set) => ({
   mapPopover: null,
   listMode: 'list',
   setListMode: (listMode) => set({ listMode }),
+  addWay: 'address',
+  setAddWay: (addWay) => set({ addWay }),
+  legendOpen: true,
+  setLegendOpen: (legendOpen) => set({ legendOpen }),
   sheetFull: false,
   setSheetFull: (sheetFull) => set({ sheetFull }),
   playing: false,

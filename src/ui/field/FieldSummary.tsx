@@ -90,7 +90,8 @@ export function ScoreBlock() {
   return (
     <section aria-label={t('field.score.aria')} className="flex flex-col gap-2">
       <div className="grid grid-cols-4 gap-2 narrow:grid-cols-2">
-        <InfoCard label={snap.offSeason ? t('field.line.outlook') : t('field.score.productivity')}>
+        {/* Without a crop the score is the generic growing-conditions index, not a productivity of anything. */}
+        <InfoCard label={!cropId ? t('field.line.conditions') : snap.offSeason ? t('field.line.outlook') : t('field.score.productivity')}>
           <span className={cn('t-value', tone)}>{v}</span>
           {outOf}
         </InfoCard>

@@ -80,10 +80,10 @@ export function TileLegend({ raster, className }: { raster: FieldRaster; classNa
   const s = useScale(raster);
   const scale = s.dated ? (s.relative ? t('field.scale.field') : t('field.scale.fixed')) : t('field.scale.own');
   return (
-    <div className={cn('flex flex-col gap-1 text-[11px] leading-[14px] text-white/80 narrow:text-xs', className)} title={s.dated ? (s.relative ? t('field.scale.fieldOn') : t('field.scale.fixedOn')) : t('field.scale.static')}>
-      <div className="flex items-stretch gap-1.5">
-        <span aria-hidden className="w-1.5 rounded-full" style={{ background: rampGradient(raster.ramp, s.relative, 'up') }} />
-        <span className="t-value flex h-14 flex-col justify-between font-normal">
+    <div className={cn('flex flex-col gap-1.5 text-[11px] leading-[14px] text-[#b9b9bd] narrow:text-xs', className)} title={s.dated ? (s.relative ? t('field.scale.fieldOn') : t('field.scale.fixedOn')) : t('field.scale.static')}>
+      <div className="flex items-stretch gap-2">
+        <span aria-hidden className="w-2.5 rounded-full border border-ink-1" style={{ background: rampGradient(raster.ramp, s.relative, 'up') }} />
+        <span className="t-value flex h-[74px] flex-col justify-between text-xs leading-3 font-normal text-white">
           <span>{s.hi}</span>
           <span>{s.lo}</span>
         </span>

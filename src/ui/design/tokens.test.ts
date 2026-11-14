@@ -31,8 +31,8 @@ describe('design tokens', () => {
     for (const s of surfaces) for (const ink of [COLOR.ink1, COLOR.ink2, COLOR.ink3]) expect(contrastRatio(ink, s)).toBeGreaterThanOrEqual(4.5);
     for (const s of [COLOR.surface0, COLOR.surface1, COLOR.surface2, COLOR.inset]) expect(contrastRatio(COLOR.line3, s)).toBeGreaterThanOrEqual(3);
     for (const state of [COLOR.nominal, COLOR.watch, COLOR.alert, COLOR.stale, COLOR.simulated]) for (const s of surfaces) expect(contrastRatio(state, s)).toBeGreaterThanOrEqual(4.5);
-    // The fill green is the reference product's (#27ae60). White on it is 2.9:1, so labels on a green
-    // fill are always weight 600 and never the only cue; green used as text is the darker signalStrong.
+    // The fill green is the reference product's (#27ae60) with its own white 500 labels: 2.9:1, kept to short
+    // labels and never the only cue. Green used as text on a light surface is the darker signalStrong.
     expect(contrastRatio(COLOR.onSignal, COLOR.signal)).toBeGreaterThanOrEqual(2.8);
     for (const s of [COLOR.surface0, COLOR.surface1, COLOR.surface2]) expect(contrastRatio(COLOR.signalStrong, s)).toBeGreaterThanOrEqual(4.5);
   });

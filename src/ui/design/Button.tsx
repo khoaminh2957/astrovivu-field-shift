@@ -8,14 +8,14 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const base =
-  'inline-flex shrink-0 select-none items-center justify-center gap-1.5 rounded-full border font-medium whitespace-nowrap ' +
+  'inline-flex shrink-0 select-none items-center justify-center gap-1.5 rounded-sm border font-medium whitespace-nowrap ' +
   'transition-colors duration-(--dur-instant) ease-out disabled:opacity-45 aria-disabled:opacity-45';
 
 const variants: Record<ButtonVariant, string> = {
-  // The one green pill of a panel. White on this green is below 4.5:1, so the label is weight 600.
-  primary: 'border-signal bg-signal font-bold text-on-signal shadow-md hover:border-signal-strong hover:bg-signal-strong active:brightness-95',
-  secondary: 'border-line-1 bg-surface-0 text-ink-1 hover:bg-surface-2 active:bg-surface-3',
-  ghost: 'border-transparent bg-transparent text-ink-2 hover:bg-surface-2 hover:text-ink-1 active:bg-surface-3',
+  // The one green pill of a panel: white 500 on the reference green, as the reference sets it. Only the primary is a pill.
+  primary: 'rounded-full border-signal bg-signal text-on-signal shadow-md hover:border-signal-hover hover:bg-signal-hover active:brightness-95',
+  secondary: 'border-line-2 bg-surface-0 text-ink-1 hover:border-[#b9b9bd] active:bg-surface-2',
+  ghost: 'border-transparent bg-transparent text-ink-1 hover:bg-surface-3 active:bg-surface-3',
   danger: 'border-alert/60 bg-transparent text-alert hover:bg-alert/12 active:bg-alert/20',
 };
 

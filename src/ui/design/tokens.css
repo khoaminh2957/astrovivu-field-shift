@@ -42,6 +42,9 @@
 
   /* Signal: the operator. Solid fills for primary actions, selection, the timeline cursor, ground truth. */
   --color-signal: #27ae60; /* the reference green, for fills and selection; white text on it is set at weight 600 */
+  --color-signal-hover: #2a9456; /* a green fill under the pointer */
+  --color-signal-bright: #37d279; /* green on a dark tile or a dark map control */
+  --color-tile: #2c2c2e; /* dark picture tiles */
   --color-signal-strong: #1a7f45; /* green as text or icon on a light surface (4.5:1 on white and on surface-2), and the pressed fill */
   --color-on-signal: #ffffff;
 
@@ -117,7 +120,9 @@
   /* Elevation: offset + blur, never a glow. Lifts plates off imagery, not off each other. */
   --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06);
   --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.1), 0 2px 4px -2px rgb(16 24 40 / 0.06);
-  --shadow-lg: 0 12px 24px -4px rgb(16 24 40 / 0.12), 0 4px 8px -2px rgb(16 24 40 / 0.06);
+  --shadow-lg: 0 16px 32px rgb(0 0 0 / 0.15), 0 0 2px rgb(0 0 0 / 0.1);
+  /* Dark controls floating on imagery. */
+  --shadow-map: 0 2px 8px rgb(34 34 34 / 0.35);
 
   /* 1440 x 900 is the reference; 1280 x 720 must work; below `lg` the HUD stacks. */
   --breakpoint-sm: 40rem;
@@ -213,10 +218,10 @@
   --hatch-pending: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-stale) 50%, transparent) 0 1px, transparent 1px 5px);
   --hatch-simulated: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-simulated) 60%, transparent) 0 1px, transparent 1px 4px);
 
-  /* Map metric ramps, low to high. Vegetation on the fixed 0-1 scale: twelve stops, bare soil brown through yellow to dense canopy. */
-  --ramp-vegetation: linear-gradient(90deg, #300b05, #7a1e0c, #c2410f, #ee8a1e, #f8d03c, #e6e65a, #b5d94c, #7dc243, #4da63a, #2f8431, #1f5a22, #123011);
-  /* Vegetation stretched to one field's own range: weakest crimson, strongest green. */
-  --ramp-vegetation-field: linear-gradient(90deg, #b5121b, #dc3b1f, #f0702a, #f8a63a, #fbd84a, #cfe04e, #8fcb4f, #4caf50, #1e8e3e);
+  /* Map metric ramps, low to high. Vegetation on the fixed 0-1 scale: the reference product's twelve stops, read from its legend. */
+  --ramp-vegetation: linear-gradient(90deg, #300b05, #812c14, #b36127, #e7bc4c, #f3da60, #f8ee64, #f4f550, #d1e54a, #a3cf40, #4d8f28, #1e4816, #123011);
+  /* Vegetation stretched to one field's own range: the reference's "contrasted" ramp, nine stops, plum to teal. */
+  --ramp-vegetation-field: linear-gradient(90deg, #881e4c, #db3d25, #f1b54f, #f7e050, #eff651, #80db45, #4aa069, #3e8874, #3d8575);
   /* Relative zones of a field, low to high. */
   --ramp-zones: linear-gradient(90deg, #d0e3fc, #8abbf7, #4392f1);
   --ramp-moisture: linear-gradient(90deg, #ffffd9, #edf8b1, #c7e9b4, #7fcdbb, #41b6c4, #1d91c0, #225ea8, #253494, #081d58);
@@ -529,6 +534,7 @@
   --color-ink-3: #959faf;
   --color-ink-4: #6a7586;
   --color-signal: #fbfaf6;
+  --color-signal-hover: #ffffff;
   --color-signal-strong: #ffffff;
   --color-on-signal: #060b14;
   --color-nominal: #58da98;

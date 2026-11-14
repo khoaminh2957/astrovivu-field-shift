@@ -170,6 +170,9 @@ registerStrings(
     'pic.open': 'Open the details of {name}',
     'scale.own': 'own range',
     period: 'Period shown in the charts',
+    'line.conditions': 'Growing conditions',
+    'name.in': 'Field in {place}',
+    'add.way': 'Choose how to add the field',
   },
   {
     'find.title': 'Tìm thửa ruộng',
@@ -339,5 +342,8 @@ registerStrings(
     'pic.open': 'Mở chi tiết {name}',
     'scale.own': 'dải riêng',
     period: 'Khoảng thời gian của biểu đồ',
+    'line.conditions': 'Điều kiện sinh trưởng',
+    'name.in': 'Thửa ở {place}',
+    'add.way': 'Chọn cách thêm thửa',
   },
 );

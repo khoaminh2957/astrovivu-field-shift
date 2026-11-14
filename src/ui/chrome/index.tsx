@@ -25,7 +25,7 @@ import { TimelineScrubber } from '@/ui/timeline';
 import { TrackingView } from '@/ui/tracking';
 import { UrbanCompanion } from '@/ui/urban';
 import { MapSearch, WeatherChip } from './MapSearch';
-import { MapLegendChip, MapToolbar } from './MapToolbar';
+import { MapLayerPill, MapLegend, MapToolbar } from './MapToolbar';
 import { useMissionUi, useNarrow } from './uiState';
 import './strings';
 
@@ -80,7 +80,7 @@ function LangSwitch({ vertical }: { vertical?: boolean }) {
           className={cn(
             't-value rounded-[6px] text-xs',
             vertical ? 'h-7 w-10' : 'h-7 w-9',
-            lang === l.id ? 'bg-surface-0 text-ink-1 shadow-sm' : 'text-ink-3 hover:text-ink-1',
+            lang === l.id ? (vertical ? 'bg-line-2 text-ink-1' : 'bg-surface-0 text-ink-1 shadow-sm') : 'text-ink-3 hover:text-ink-1',
           )}
         >
           {l.id.toUpperCase()}
@@ -100,7 +100,7 @@ function Mark() {
       type="button"
       aria-label={t('chrome.home')}
       onClick={() => (hasParcel ? unlock() : setPhase('explore'))}
-      className="t-display flex size-10 items-center justify-center rounded-sm bg-signal text-base text-on-signal hover:bg-signal-strong"
+      className="t-display flex size-10 items-center justify-center rounded-sm bg-signal text-base text-on-signal hover:bg-signal-hover"
     >
       A
     </button>
@@ -112,9 +112,9 @@ function Rail() {
   const t = useT();
   const { active, disabled, go } = useNav();
   return (
-    <nav aria-label={t('chrome.nav.label')} className="absolute inset-y-0 left-0 z-(--z-chrome) flex w-(--rail-w) flex-col items-center bg-surface-3 py-2">
+    <nav aria-label={t('chrome.nav.label')} className="absolute inset-y-0 left-0 z-(--z-chrome) flex w-(--rail-w) flex-col items-center bg-surface-3 pt-4 pb-2">
       <Mark />
-      <div className="mt-5 flex flex-col items-center gap-2">
+      <div className="mt-4 flex flex-col items-center gap-2">
         {NAV.map((n) => (
           <Tooltip key={n.id} content={disabled(n.id) ? `${t(`chrome.${n.key}`)}: ${t('chrome.nav.needField')}` : t(`chrome.${n.id === 'urban' ? 'nav.urbanLong' : n.key}`)} side="right" delay={150}>
             <button
@@ -124,9 +124,10 @@ function Rail() {
               aria-label={t(`chrome.${n.key}`)}
               onClick={() => go(n.id)}
               className={cn(
-                'flex size-10 items-center justify-center rounded-sm [&_svg]:size-5 [&_svg]:stroke-[1.5]',
-                active(n.id) ? 'bg-surface-0 text-signal-strong shadow-sm' : 'text-ink-2 hover:bg-surface-0/60 hover:text-ink-1',
-                disabled(n.id) && 'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-ink-2',
+                // The page in view and the one under the pointer share one grey tile, as in the reference rail.
+                'flex size-10 items-center justify-center rounded-sm text-ink-1 [&_svg]:size-6 [&_svg]:stroke-[1.5]',
+                active(n.id) ? 'bg-line-2' : 'hover:bg-line-2',
+                disabled(n.id) && 'cursor-not-allowed opacity-35 hover:bg-transparent',
               )}
             >
               {n.icon}
@@ -180,7 +181,7 @@ function MapNotice({ className }: { className?: string }) {
   else if (done < BRANCHES.length) body = <><span className="skeleton h-3 w-8 shrink-0" aria-hidden /><span className="min-w-0 truncate text-xs text-ink-2">{t('hud.loading.title')} · {t('hud.loading.body', { done })}</span></>;
   if (!body) return null;
   return (
-    <div role="status" className={cn('pointer-events-auto flex h-8 max-w-full items-center gap-2 rounded-sm border border-line-1 bg-surface-0 px-3 shadow-md', className)}>
+    <div role="status" className={cn('pointer-events-auto flex h-8 max-w-full items-center gap-2 rounded-full bg-surface-0 px-3 shadow-map', className)}>
       {body}
     </div>
   );
@@ -200,7 +201,7 @@ function MapCredits({ className }: { className?: string }) {
 function RightPanel() {
   const t = useT();
   return (
-    <aside aria-label={t('chrome.fieldPanel')} data-panel-scroll className="absolute top-2 right-2 bottom-2 z-(--z-panel) w-(--right-w) overflow-y-auto rounded-lg border border-line-1 bg-surface-0 px-6 pt-6 pb-6 shadow-lg">
+    <aside aria-label={t('chrome.fieldPanel')} data-panel-scroll className="absolute top-2 right-2 bottom-2 z-(--z-panel) w-(--right-w) overflow-y-auto rounded-lg bg-surface-0 px-6 pt-5 pb-6 shadow-lg">
       <FieldPanel />
     </aside>
   );
@@ -214,22 +215,25 @@ function WideField({ locked }: { locked: boolean }) {
   const listMode = useMissionUi((s) => s.listMode);
   return (
     <>
-      <aside className="absolute inset-y-0 left-(--rail-w) z-(--z-panel) flex w-(--left-w) flex-col overflow-y-auto rounded-l-sm border-r border-line-1 bg-surface-0 px-3 py-4">
+      <aside className="absolute inset-y-0 left-(--rail-w) z-(--z-panel) flex w-(--left-w) flex-col overflow-y-auto rounded-l-sm border-r border-line-1 bg-surface-0 py-4">
         {listMode === 'add' ? <FindField /> : <FieldList />}
       </aside>
-      <div className={cn('pointer-events-none absolute top-3 z-(--z-map-ui) flex flex-col items-start gap-2', MAP_L, locked ? 'right-[calc(var(--right-w)+72px)]' : 'right-16')}>
-        <div className="pointer-events-auto flex w-full max-w-[420px] items-center gap-2">
-          <MapSearch className="min-w-0 flex-1" />
-          {locked && <WeatherChip className="compact:hidden" />}
+      {/* Top row of the map: what the field is coloured by on the left, the place search on the right. */}
+      <div className={cn('pointer-events-none absolute top-[15px] z-(--z-map-ui) flex items-start justify-between gap-2', MAP_L, locked ? MAP_R_LOCKED : 'right-[15px]')}>
+        <div className="pointer-events-auto flex min-w-0 flex-col items-start gap-2">
+          {locked && <MapLayerPill />}
+          <MapNotice />
         </div>
-        <MapNotice />
+        <MapSearch className={cn('pointer-events-auto shrink-0', locked ? 'w-44' : 'w-60')} />
       </div>
-      <MapToolbar className={cn('absolute top-3 z-(--z-map-ui)', locked ? MAP_R_LOCKED : 'right-3')} />
+      <MapToolbar className={cn('absolute top-1/2 z-(--z-map-ui) -translate-y-1/2', locked ? MAP_R_LOCKED : 'right-[15px]')} />
       {locked ? (
         <>
-          <div className={cn('pointer-events-none absolute bottom-[calc(var(--strip-h)+20px)] z-(--z-map-ui) flex items-end justify-between gap-3', MAP_L, MAP_R_LOCKED)}>
-            <MapLegendChip className="pointer-events-auto" />
-            <MapCredits className="min-w-0" />
+          {/* Bottom of the map, above the timeline strip: legend and its switch, the weather, the credits. */}
+          <div className={cn('pointer-events-none absolute bottom-[calc(var(--strip-h)+16px)] z-(--z-map-ui) flex items-end justify-between gap-2', MAP_L, MAP_R_LOCKED)}>
+            <MapLegend className="pointer-events-auto" />
+            <WeatherChip className="pointer-events-auto compact:hidden" />
+            <MapCredits className="mb-2 min-w-0" />
           </div>
           <TimelineScrubber className={cn('absolute bottom-3 z-(--z-dock) h-(--strip-h) rounded-lg border border-line-1 shadow-md', MAP_L, MAP_R_LOCKED)} />
           <RightPanel />
@@ -250,7 +254,7 @@ function NarrowField({ locked }: { locked: boolean }) {
   const setFull = useMissionUi((s) => s.setSheetFull);
   return (
     <>
-      <div className="absolute top-2 left-2 z-(--z-map-ui) flex h-10 items-center gap-2 rounded-sm border border-line-1 bg-surface-0 pr-1 pl-3 shadow-md">
+      <div className="absolute top-2 left-2 z-(--z-map-ui) flex h-11 items-center gap-2 rounded-full bg-surface-0 pr-1.5 pl-4 shadow-map">
         <span className="t-display text-xs text-ink-1">Astrovivu</span>
         <LangSwitch />
       </div>
@@ -302,7 +306,7 @@ function useReportInsets(narrow: boolean, locked: boolean, phase: Phase) {
         // The hero counts as the field view: when the user enters, the globe already knows where the list panel will be.
         const left = px('--rail-w') + (phase === 'explore' || phase === 'locked' || phase === 'hero' ? px('--left-w') : 0);
         // Top: the search row; right: the tool stack (and the field panel); bottom: the legend and the timeline strip.
-        setInsets({ top: 52, left, right: (locked ? px('--right-w') + 8 : 0) + 56, bottom: locked ? px('--strip-h') + 12 : 0 });
+        setInsets({ top: 56, left, right: (locked ? px('--right-w') + 8 : 0) + 64, bottom: locked ? px('--strip-h') + 48 : 0 });
       }
     };
     report();
