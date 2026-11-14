@@ -35,7 +35,7 @@ function parseLatLon(q: string): LngLat | null {
   return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? [lon, lat] : null;
 }
 
-function Demos() {
+function Demos({ filter = '' }: { filter?: string }) {
   const t = useT();
   const lang = useLang();
   const lockSample = useMission((s) => s.lockSample);
@@ -46,7 +46,7 @@ function Demos() {
         {t('field.demo.group')}
       </h3>
       <ul className="flex flex-col">
-        {SAMPLE_PARCELS.map((p) => {
+        {SAMPLE_PARCELS.filter((p) => !filter || `${p.name} ${p.place?.label ?? ''}`.toLowerCase().includes(filter.toLowerCase())).map((p) => {
           const crop = getCrop(p.defaultCropId);
           return (
             <li key={p.id}>
@@ -323,9 +323,21 @@ export function FieldList() {
   const setListMode = useMissionUi((s) => s.setListMode);
   const isDemo = SAMPLE_PARCELS.some((p) => p.id === parcel?.id);
   const crop = getCrop(cropId);
+  const [q, setQ] = useState('');
   return (
     <div className="flex flex-col gap-5">
-      <h2 className="text-lg font-semibold text-ink-1">{t('field.list.title')}</h2>
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-col">
+          <h2 className="text-lg leading-6 font-semibold text-ink-1">{t('field.list.title')}</h2>
+          <span className="text-xs text-ink-3">
+            {t('field.list.total', {
+              n: SAMPLE_PARCELS.length + (parcel && !isDemo ? 1 : 0),
+              a: fmtNum(SAMPLE_PARCELS.reduce((a, p) => a + p.areaHa, 0) + (parcel && !isDemo ? parcel.areaHa : 0), 1),
+            })}
+          </span>
+        </div>
+        <Input size="md" prefix={<Search size={14} strokeWidth={1.5} aria-hidden />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('field.list.search')} aria-label={t('field.list.search')} />
+      </header>
       {parcel && !isDemo && (
         <section className="flex flex-col gap-2">
           <h3 className="text-sm font-medium text-ink-2">{t('field.list.yours')}</h3>
@@ -340,7 +352,7 @@ export function FieldList() {
           </button>
         </section>
       )}
-      <Demos />
+      <Demos filter={q} />
       <div className="flex flex-col items-center gap-2 rounded-md bg-surface-2 px-5 py-8 text-center">
         <Plus size={20} aria-hidden className="text-ink-2" />
         <h3 className="text-base font-semibold text-ink-1">{t('field.add.title')}</h3>

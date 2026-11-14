@@ -113,7 +113,7 @@ export function TimelineScrubber({ className }: { className?: string }) {
       if (!date.endsWith('-01')) continue;
       const m = Number(date.slice(5, 7));
       const labelled = (m - 1) % 3 === 0;
-      out.push({ value: d, major: m === 1, label: labelled ? (m === 1 ? `${MONTHS[lang][0]} ${date.slice(0, 4)}` : MONTHS[lang][m - 1]) : undefined });
+      out.push({ value: d, major: m === 1, label: labelled ? (m === 1 && !narrow ? `${MONTHS[lang][0]} ${date.slice(0, 4)}` : MONTHS[lang][m - 1]) : undefined });
     }
     return out;
   }, [start, max, lang, narrow]);

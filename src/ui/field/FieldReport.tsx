@@ -14,12 +14,13 @@ import { drawFieldPicture, rasterFor } from './picture';
 import type { RampColor } from '@/lib/raster';
 import { computeFieldZones } from '@/core/zones';
 import { FrameCanvas, LiveFieldCanvas } from './FieldCanvas';
+import { SatelliteCanvas } from './SatelliteCanvas';
 import './strings';
 
 export const ZONE_HEX = { low: '#d73027', medium: '#fee08b', high: '#1a9850' } as const;
 const zoneColor: RampColor = (p) => (p < 0.34 ? [215, 48, 39] : p < 0.67 ? [254, 224, 139] : [26, 152, 80]);
 
-function ZonesCanvas({ parcel, raster, className }: { parcel: Parcel; raster: FieldRaster; className?: string }) {
+function ZonesCanvas({ parcel, raster, className, pad = 10 }: { parcel: Parcel; raster: FieldRaster; className?: string; pad?: number }) {
   const [el, setEl] = useState<HTMLCanvasElement | null>(null);
   useEffect(() => {
     if (!el) return;
@@ -27,8 +28,8 @@ function ZonesCanvas({ parcel, raster, className }: { parcel: Parcel; raster: Fi
     el.width = Math.max(1, Math.round(el.clientWidth * dpr));
     el.height = Math.max(1, Math.round(el.clientHeight * dpr));
     const t = raster.frames[0]?.t;
-    if (t) drawFieldPicture(el, { parcel, raster, t, blend: false, pad: 10, color: zoneColor });
-  }, [el, parcel, raster]);
+    if (t) drawFieldPicture(el, { parcel, raster, t, blend: false, pad, color: zoneColor, outline: false });
+  }, [el, parcel, raster, pad]);
   return <canvas ref={setEl} aria-hidden className={cn('block h-full w-full', className)} />;
 }
 
@@ -73,65 +74,74 @@ export function FieldReport() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="t-caption rounded-md bg-surface-2 p-3 text-ink-2">{t('field.report.note')}</p>
 
-      <section className="flex flex-col gap-3">
-        <h3 className="t-title text-lg">{t('field.report.zones')}</h3>
-        {waiting ? (
-          <div className="flex gap-3">
-            <span className="skeleton aspect-square w-40 shrink-0 rounded-sm" />
-            <span className="skeleton h-24 flex-1 rounded-sm" />
-          </div>
-        ) : !result ? (
-          <p className="t-caption">{t('field.report.noNdvi')}</p>
-        ) : (
-          <div className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-4 narrow:grid-cols-1">
-            <span className="relative block aspect-square overflow-hidden rounded-sm bg-ink-1">
-              <ZonesCanvas parcel={parcel} raster={result.raster} />
-            </span>
-            <table className="w-full self-start text-sm">
-              <thead>
-                <tr className="t-caption text-left">
-                  <th className="pb-1 font-normal">{t('field.report.zone')}</th>
-                  <th className="pb-1 text-right font-normal">ha</th>
-                  <th className="pb-1 text-right font-normal">%</th>
-                  <th className="pb-1 text-right font-normal">{t('field.report.dev')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...result.zones].reverse().map((z) => (
-                  <tr key={z.id} className="border-t border-line-1">
-                    <td className="py-1.5">
-                      <span className="flex items-center gap-2">
-                        <span aria-hidden className="size-3 rounded-xs" style={{ background: ZONE_HEX[z.id as keyof typeof ZONE_HEX] ?? '#8e8e93' }} />
-                        {t(`field.report.z.${z.id}`)}
-                      </span>
-                    </td>
-                    <td className="t-value py-1.5 text-right">{fmtNum(z.areaHa, z.areaHa < 10 ? 2 : 1)}</td>
-                    <td className="t-value py-1.5 text-right">{fmtNum(z.sharePct, 0)}</td>
-                    <td className="t-value py-1.5 text-right">{z.deviationPct > 0 ? '+' : ''}{fmtNum(z.deviationPct, 1)} %</td>
+      {waiting ? (
+        <div className="grid grid-cols-2 gap-3">
+          <span className="skeleton aspect-square rounded-lg" />
+          <span className="skeleton aspect-square rounded-lg" />
+        </div>
+      ) : !result ? (
+        <p className="t-caption">{t('field.report.noNdvi')}</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 narrow:grid-cols-1">
+          <figure className="relative aspect-square overflow-hidden rounded-lg bg-ink-1">
+            <SatelliteCanvas parcel={parcel} pad={20} />
+            <ZonesCanvas parcel={parcel} raster={result.raster} pad={20} className="absolute inset-0 opacity-85" />
+            <figcaption className="absolute top-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">{t('field.report.zones')}</figcaption>
+          </figure>
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1 rounded-lg bg-ink-1 p-3 text-white">
+                <span className="t-value text-2xl text-[#5fd08a]">{result.stableSharePct == null ? '--' : `${fmtNum(result.stableSharePct, 0)}%`}</span>
+                <span className="text-sm font-semibold">{t('field.report.stableShort')}</span>
+                <span className="text-xs text-white/70">{t('field.report.stableNote')}</span>
+              </div>
+              <div className="flex flex-col gap-1 rounded-lg bg-ink-1 p-3 text-white">
+                <span className="t-value text-2xl">
+                  {result.framesUsed.length}
+                  <span className="text-white/50">/{frames.length}</span>
+                </span>
+                <span className="text-sm font-semibold">{t('field.report.usedShort')}</span>
+                <span className="text-xs text-white/70">{t('field.report.usedNote')}</span>
+              </div>
+            </div>
+            <section className="flex flex-col gap-2 rounded-lg border border-line-1 p-3">
+              <h4 className="text-sm font-semibold text-ink-1">{t('field.report.dist')}</h4>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-ink-3">
+                    <th className="pb-1 font-normal">{t('field.report.zone')}</th>
+                    <th className="pb-1 font-normal">{t('field.report.area')}</th>
+                    <th className="pb-1 text-right font-normal">{t('field.report.dev')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {[...result.zones].reverse().map((z) => (
+                    <tr key={z.id} className="border-t border-line-1">
+                      <td className="py-2 font-medium text-ink-1">{t(`field.report.z.${z.id}`)}</td>
+                      <td className="py-2 text-xs text-ink-2">
+                        {fmtNum(z.areaHa, z.areaHa < 10 ? 2 : 1)} ha, {fmtNum(z.sharePct, 1)}%
+                      </td>
+                      <td className="py-2 text-right">
+                        <span
+                          className={cn(
+                            't-value rounded-sm px-2 py-0.5 text-xs',
+                            z.deviationPct > 2 ? 'bg-nominal/12 text-nominal' : z.deviationPct < -2 ? 'bg-alert/10 text-alert' : 'bg-watch/12 text-watch',
+                          )}
+                        >
+                          {z.deviationPct > 0 ? '+' : ''}
+                          {fmtNum(z.deviationPct, 0)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
           </div>
-        )}
-      </section>
-
-      {result && (
-        <dl className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-0.5 rounded-md border border-line-1 p-3">
-            <dt className="t-caption">{t('field.report.stable')}</dt>
-            <dd className="t-value text-xl text-ink-1">{result.stableSharePct == null ? '--' : `${result.stableSharePct == null ? '--' : `${fmtNum(result.stableSharePct, 0)} %`}`}</dd>
-            <dd className="t-caption">{t('field.report.stableNote')}</dd>
-          </div>
-          <div className="flex flex-col gap-0.5 rounded-md border border-line-1 p-3">
-            <dt className="t-caption">{t('field.report.used')}</dt>
-            <dd className="t-value text-xl text-ink-1">{result.framesUsed.length}</dd>
-            <dd className="t-caption">{t('field.report.usedNote')}</dd>
-          </div>
-        </dl>
+        </div>
       )}
+      <p className="t-caption">{t('field.report.note')}</p>
 
       {ndvi && frames.length > 0 && (
         <section className="flex flex-col gap-3">
