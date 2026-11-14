@@ -31,8 +31,9 @@ export default function App() {
   if (hash === '#/styleguide') return <StyleGuide />;
   if (hash === '#/globe-lab') return <GlobeLab />;
 
+  // The globe's space stays night-side in the light theme: --color-void is re-scoped here.
   return (
-    <div className="app-root bg-void">
+    <div className="app-root bg-[#03050b]" style={{ '--color-void': '#03050b' } as React.CSSProperties}>
       <GlobeCanvas />
       <HeroOverlay />
       <Shell />
