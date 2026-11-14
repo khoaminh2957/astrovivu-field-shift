@@ -1,0 +1,56 @@
+name: Release
+
+# A tag like v1.0.0 on main produces a GitHub release: the checked build as an archive, the list of
+# everything inside it (SBOM), checksums, and a signed statement of which commit and which workflow
+# built it. What visitors see is still deployed by Vercel from main; a release is the fixed,
+# citable copy (the version handed in to the jury).
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # create the release
+      id-token: write # sign the provenance statement
+      attestations: write # store it
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: The tag is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - uses: ./.github/actions/setup
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Test
+        run: npx vitest run
+      - name: Build
+        run: npx vite build
+      - name: Package
+        run: |
+          mkdir release
+          tar -czf "release/astrovivu-field-shift-$TAG.tar.gz" -C dist .
+          npm sbom --sbom-format cyclonedx --omit dev > "release/astrovivu-field-shift-$TAG.sbom.cdx.json"
+          (cd release && sha256sum astrovivu-field-shift-* > SHA256SUMS)
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/astrovivu-field-shift-*.tar.gz
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes release/*

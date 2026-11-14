@@ -1,0 +1,118 @@
+name: Database deploy
+
+# Applies supabase/migrations to the hosted Supabase projects: staging first, production after it
+# and after the approval the "production" environment asks for. Nothing runs until the repository
+# variables below exist, so the workflow is safe to merge before a project is created.
+#
+# Repository variables:   SUPABASE_STAGING_PROJECT_REF (optional), SUPABASE_PRODUCTION_PROJECT_REF
+# Environment secrets:    SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, and for the data load
+#                         SUPABASE_SERVICE_ROLE_KEY; optional SUPABASE_ANON_KEY for the read check
+# Setup, step by step: docs/CI_CD.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - supabase/migrations/**
+      - supabase/config.toml
+      - .github/workflows/database.yml
+  workflow_dispatch:
+    inputs:
+      load_data:
+        description: After the migrations, load the market data into production (scripts/market/load.ts)
+        type: boolean
+        default: false
+
+# Two deployments never run at once, and one in progress is never cut off half way.
+concurrency:
+  group: database-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DO_NOT_TRACK: 1
+
+jobs:
+  staging:
+    name: Staging
+    if: vars.SUPABASE_STAGING_PROJECT_REF != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    env:
+      PROJECT_REF: ${{ vars.SUPABASE_STAGING_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.1.0
+      - name: Migrations that would be applied
+        run: supabase db push --remote="$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --dry-run
+      - name: Apply
+        run: supabase db push --remote="$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --yes
+      - name: Local files and the database agree
+        run: supabase migration list --remote="$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Anyone can read through the Data API
+        if: ${{ env.SUPABASE_ANON_KEY != '' }}
+        run: |
+          curl --fail --silent --show-error --max-time 30 --retry 3 \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            "https://$PROJECT_REF.supabase.co/rest/v1/crop_latest_prices?select=crop_id&limit=1"
+
+  production:
+    name: Production
+    needs: staging
+    # Runs after a successful staging deployment, or directly when there is no staging project.
+    if: ${{ !cancelled() && !failure() && vars.SUPABASE_PRODUCTION_PROJECT_REF != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      PROJECT_REF: ${{ vars.SUPABASE_PRODUCTION_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.1.0
+      - name: Migrations that would be applied
+        run: supabase db push --remote="$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --dry-run
+      - name: Apply
+        run: supabase db push --remote="$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --yes
+      - name: Local files and the database agree
+        run: supabase migration list --remote="$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Anyone can read through the Data API
+        if: ${{ env.SUPABASE_ANON_KEY != '' }}
+        run: |
+          curl --fail --silent --show-error --max-time 30 --retry 3 \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            "https://$PROJECT_REF.supabase.co/rest/v1/crop_latest_prices?select=crop_id&limit=1"
+
+  load:
+    name: Load market data
+    needs: production
+    if: ${{ !cancelled() && needs.production.result == 'success' && inputs.load_data }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Load the atlas, the FAOSTAT link and producer prices
+        env:
+          SUPABASE_URL: https://${{ vars.SUPABASE_PRODUCTION_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npx tsx scripts/market/load.ts

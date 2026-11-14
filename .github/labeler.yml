@@ -1,0 +1,38 @@
+# Labels set on a pull request from the paths it touches (.github/workflows/pr.yml).
+# The areas are those of CONTRIBUTING.md and .github/CODEOWNERS.
+
+ui:
+  - changed-files:
+      - any-glob-to-any-file: ['src/ui/**', 'src/globe/**', 'src/styles/**', 'src/App.tsx', 'docs/DESIGN.md']
+
+mascot:
+  - changed-files:
+      - any-glob-to-any-file: ['src/ui/mascot/**', 'public/mascot/**', 'docs/MASCOT.md']
+
+crop-data:
+  - changed-files:
+      - any-glob-to-any-file: ['data/crops/**', 'data/ecocrop/**', 'scripts/crops/**', 'scripts/build-crop-catalog.ts', 'public/data/crops/**', 'src/core/crops/**', 'docs/CROP_DATA.md']
+
+model:
+  - changed-files:
+      - any-glob-to-any-file: ['src/core/scoring/**', 'src/core/economics/**', 'src/core/advisory/**', 'docs/SCORING.md', 'docs/SCORING_PAPER.md', 'docs/ECONOMICS.md']
+
+contracts:
+  - changed-files:
+      - any-glob-to-any-file: ['src/contracts/**', 'src/state/**']
+
+database:
+  - changed-files:
+      - any-glob-to-any-file: ['supabase/**', 'scripts/market/**', 'data/market/**', 'docs/DATABASE.md']
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**', 'scripts/ci/**', 'docs/CI_CD.md']
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: ['package.json', 'package-lock.json']
+
+docs:
+  - changed-files:
+      - any-glob-to-all-files: ['**/*.md']

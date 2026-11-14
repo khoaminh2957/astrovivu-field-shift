@@ -4,6 +4,7 @@ dist/
 .agent-locks/
 .vite/
 coverage/
+reports/
 *.log
 .env
 .env.local

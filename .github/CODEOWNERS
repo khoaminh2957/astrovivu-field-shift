@@ -4,6 +4,11 @@
 # Default: the project lead.
 *                                   @quocbao271207
 
+# CI/CD: workflows, their scripts and their description.
+/.github/                           @quocbao271207
+/scripts/ci/                        @quocbao271207 @khoaminh2957
+/docs/CI_CD.md                      @quocbao271207 @khoaminh2957
+
 # Interface, map, shared contracts and state: UI/UX lead.
 /src/ui/                            @quocbao271207
 /src/globe/                         @quocbao271207

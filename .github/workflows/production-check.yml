@@ -1,0 +1,55 @@
+name: Production check
+
+# Vercel builds and deploys every push by itself (its GitHub integration). This workflow is the
+# step after it: when Vercel reports a finished deployment of main, load the live site and check
+# that it comes up. It also runs once a day, because a site can break without a deployment.
+
+on:
+  status:
+  schedule:
+    - cron: '7 1 * * *' # 01:07 UTC, 08:07 in Viet Nam
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke test of the live site
+    # The status event fires for every status of every commit: only a finished Vercel deployment
+    # of the default branch is of interest.
+    if: >-
+      github.event_name != 'status' ||
+      (github.event.context == 'Vercel' && github.event.state == 'success' &&
+       contains(github.event.branches.*.name, github.event.repository.default_branch))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: production-check
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      issues: write # report a failure where the team will see it
+    env:
+      SITE_URL: ${{ vars.PRODUCTION_URL || 'https://astrovivu-field-shift.vercel.app' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Load the live site
+        run: npx tsx scripts/ci/smoke.ts "$SITE_URL"
+      - name: Report a failure as an issue
+        if: ${{ failure() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Production smoke test failed"
+          body="The live site at $SITE_URL did not pass the smoke test (scripts/ci/smoke.ts). Run: $RUN_URL. If a deployment caused it, roll back in Vercel (Deployments, the previous one, Promote to Production): docs/CI_CD.md."
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "Failed again. Run: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          fi

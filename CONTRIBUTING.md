@@ -88,12 +88,16 @@ Không commit thẳng lên `main`. Mỗi việc một nhánh, xong thì mở pul
 | `chat/` | chatbot | `chat/table-lookups` |
 | `urban/` | trồng rau đô thị | `urban/sun-hours` |
 | `soil/` | cải tạo đất | `soil/diagnosis` |
+| `db/` | cơ sở dữ liệu Supabase, dữ liệu giá | `db/price-views` |
+| `ci/` | workflow, kiểm tra tự động | `ci/smoke-test` |
 | `fix/` | sửa lỗi nhỏ ở bất kỳ đâu | `fix/calendar-label` |
 | `docs/` | chỉ tài liệu | `docs/demo-script` |
 
 ### Lời nhắn commit
 
-`loại(phạm vi): việc đã làm`, viết ngắn, tiếng Anh hoặc tiếng Việt đều được. Loại: `feat`, `fix`, `data`, `docs`, `test`, `refactor`. Ví dụ: `fix(scoring): pH gate no longer zeroes alfalfa in Nevada`.
+`loại(phạm vi): việc đã làm`, viết ngắn, tiếng Anh hoặc tiếng Việt đều được. Loại: `feat`, `fix`, `data`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore`, `revert`. Ví dụ: `fix(scoring): pH gate no longer zeroes alfalfa in Nevada`.
+
+Tiêu đề pull request viết theo đúng mẫu này: khi gộp bằng Squash and merge, tiêu đề trở thành lời nhắn commit trên `main`, nên có một kiểm tra tự động cho nó.
 
 ## 4. Những chỗ dễ đụng nhau
 
@@ -162,7 +166,9 @@ Ai dùng Claude Code hay công cụ tương tự thì cho nó đọc `AGENTS.md`
 
 | Tình huống | Làm gì |
 |---|---|
-| CI đỏ | mở tab Checks của pull request, đọc bước nào lỗi, chạy lại đúng lệnh đó trên máy |
+| CI đỏ | mở tab Checks của pull request, đọc bước nào lỗi, chạy lại đúng lệnh đó trên máy; từng kiểm tra chạy lệnh gì: `docs/CI_CD.md` |
+| Kiểm tra tiêu đề pull request đỏ | sửa tiêu đề theo mẫu `loại(phạm vi): việc đã làm` (mục 3), kiểm tra tự chạy lại |
+| Trang thật lỗi sau khi gộp | quay về bản trước trong Vercel rồi mới sửa: `docs/CI_CD.md`, mục 6 |
 | Xung đột khi gộp | `git fetch origin` rồi `git merge origin/main`, gỡ trong tệp của mình; tệp sinh ra thì xem mục 4 |
 | Lỡ commit lên `main` trên máy (chưa đẩy) | `git switch -c ten-nhanh-moi`, rồi đẩy nhánh đó; `main` trên máy đặt lại bằng `git switch main` và `git reset --hard origin/main` |
 | Lỡ commit khoá bí mật | báo Bảo ngay và đổi khoá; xoá khỏi lịch sử không đủ |

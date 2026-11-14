@@ -1,0 +1,71 @@
+name: Market data
+
+# FAOSTAT republishes producer prices a few times a year. Once a month this reads the current
+# release end to end without writing (a format change at FAO shows here, not in the app), and,
+# when a production database is configured, loads it after the approval the "production"
+# environment asks for. A manual run can do the same at any time.
+
+on:
+  schedule:
+    - cron: '17 4 3 * *' # the 3rd of each month, 04:17 UTC
+  workflow_dispatch:
+    inputs:
+      load:
+        description: Write the prices to the production database
+        type: boolean
+        default: false
+      monthly:
+        description: Include monthly prices (about 293,000 more rows)
+        type: boolean
+        default: false
+
+concurrency:
+  group: market-data
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  read:
+    name: Read the FAOSTAT release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Read and count everything, write nothing
+        run: |
+          set -o pipefail
+          npx tsx scripts/market/load.ts --dry-run | tee dry-run.txt
+          {
+            echo '### FAOSTAT producer prices, dry run'
+            echo
+            echo '```'
+            cat dry-run.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  load:
+    name: Load into production
+    needs: read
+    if: ${{ vars.SUPABASE_PRODUCTION_PROJECT_REF != '' && (github.event_name == 'schedule' || inputs.load) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Load the atlas, the FAOSTAT link and producer prices
+        env:
+          SUPABASE_URL: https://${{ vars.SUPABASE_PRODUCTION_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MONTHLY: ${{ inputs.monthly }}
+        run: |
+          args=()
+          if [ "$MONTHLY" = "true" ]; then args+=(--monthly); fi
+          npx tsx scripts/market/load.ts "${args[@]}"
