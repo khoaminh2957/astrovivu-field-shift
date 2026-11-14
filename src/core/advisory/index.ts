@@ -3,7 +3,7 @@
  * See docs/ADVISORY.md for every rule, its source and its limits.
  */
 import type { AdvisoryReport, Insight, ModelInput, ScoreTimeline } from '@/contracts';
-import { scanSowingWindows } from '@/core/scoring';
+import { assessCropSuite, scanSowingWindows } from '@/core/scoring';
 import { advisories, annualPlan, irrigationPlan, phPlan } from './actions';
 import { computeInsights } from './insights';
 import { buildRotations } from './rotation';
@@ -31,6 +31,7 @@ export function buildAdvisoryReport(input: ModelInput, score: ScoreTimeline): Ad
   const irrigation = irrigationPlan(input, score);
   const ph = phPlan(input);
   const best = [...rotations].sort((a, b) => b.score - a.score)[0];
+  const cropSuite = input.cropId ? assessCropSuite(input, input.cropId)?.cropSuite : undefined;
   const report: AdvisoryReport = {
     generatedAt: input.today,
     cropId: input.cropId,
@@ -39,6 +40,7 @@ export function buildAdvisoryReport(input: ModelInput, score: ScoreTimeline): Ad
     rotations,
     ...(irrigation ? { irrigation } : {}),
     ...(input.cropId ? { sowing: scanSowingWindows(input) } : {}),
+    ...(cropSuite ? { cropSuite } : {}),
     ...(ph ? { ph } : {}),
     ...(best ? { annualPlan: annualPlan(input, best) } : {}),
   };

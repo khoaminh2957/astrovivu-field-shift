@@ -3,7 +3,7 @@
  * the same anatomy: what to do and when, the impact, the evidence, confidence and caveats.
  */
 import type { ReactNode } from 'react';
-import type { Advisory, IrrigationPlan, ISODate, Lang, PhPlan, SowingWindow } from '@/contracts';
+import type { Advisory, CropSuiteSummary, IrrigationPlan, ISODate, Lang, PhPlan, SowingWindow } from '@/contracts';
 import { pick } from '@/contracts';
 import { useLang, useT } from '@/i18n';
 import { addDays, diffDays } from '@/lib/time';
@@ -302,6 +302,46 @@ export function SowingView({ windows, chosenMonth }: { windows: SowingWindow[]; 
         {chosenMonth != null && <span className="t-caption">{t('advisory.sow.yours', { month: monthShort(chosenMonth, lang) })}</span>}
       </div>
       {limits.length > 0 && <p className="t-caption">{t('advisory.sow.limits', { list: limits.map((l) => factorName(t, l)).join(', ') })}</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// CropSuite: the selected crop read by the second suitability method (docs/SCORING.md §9)
+// ---------------------------------------------------------------------------------------------
+
+const doyDate = (doy: number): ISODate => addDays('2025-01-01', doy - 1); // 2025: a non-leap year, like the model's 365-day calendar
+
+export function CropSuiteView({ summary }: { summary: CropSuiteSummary }) {
+  const t = useT();
+  const lang = useLang();
+  const s = summary;
+  const tone = s.class === 'unsuitable' ? 'alert' : s.class === 'marginal' ? 'watch' : undefined;
+  // With every day suitable the model has no single best day: it reports day 1 by convention.
+  const allYear = s.suitableSowingDays >= 365 && s.optimalSowingDoy === 1;
+  const rainLimited = s.limiting === 'variability' || s.limiting === 'water';
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <h4 className="t-heading">{t('advisory.cs.title')}</h4>
+        <p className="t-caption max-w-[68ch]">{t('advisory.cs.lead')}</p>
+      </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <Stat size="sm" label={t('advisory.cs.crop')} value={fmtNum(s.cropSuitability, lang)} unit="/100" hint={t(`advisory.cs.class.${s.class}`)} {...(tone ? { tone } : {})} />
+        <Stat size="sm" label={t('advisory.cs.climate')} value={fmtNum(s.climateSuitability, lang)} unit="/100" />
+        <Stat size="sm" label={t('advisory.cs.soil')} value={s.soilSuitability == null ? '--' : fmtNum(s.soilSuitability, lang)} unit="/100" />
+      </div>
+      <ul className="flex list-none flex-col gap-1 p-0 text-sm text-ink-1">
+        {!s.perennial && allYear && <li>{t('advisory.cs.sowingAllYear')}</li>}
+        {!s.perennial && !allYear && s.suitableSowingDays > 0 && <li>{t('advisory.cs.sowing', { date: fmtDayMonth(doyDate(s.optimalSowingDoy), lang), days: fmtNum(s.suitableSowingDays, lang) })}</li>}
+        {!s.perennial && s.harvestsPerYear > 1 && <li>{t('advisory.cs.harvests', { n: s.harvestsPerYear, dates: s.sowingDoys.map((d) => fmtDayMonth(doyDate(d), lang)).join(', ') })}</li>}
+        {s.failureRate != null && <li>{t('advisory.cs.failure', { pct: fmtNum(100 * s.failureRate, lang) })}</li>}
+        {s.limiting && <li>{t('advisory.cs.limiting', { factor: factorName(t, s.limiting) })}</li>}
+      </ul>
+      <p className="t-caption max-w-[68ch]">
+        {t('advisory.cs.note')}
+        {rainLimited ? ` ${t('advisory.cs.rainNote')}` : ''}
+      </p>
     </div>
   );
 }
