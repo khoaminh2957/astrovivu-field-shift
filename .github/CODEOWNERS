@@ -1,0 +1,36 @@
+# Who reviews what. The last matching line wins. A pull request that touches a path asks its
+# owner for review automatically. Full description of the areas: CONTRIBUTING.md.
+
+# Default: the project lead.
+*                                   @quocbao271207
+
+# Interface, map, shared contracts and state: UI/UX lead.
+/src/ui/                            @quocbao271207
+/src/globe/                         @quocbao271207
+/src/styles/                        @quocbao271207
+/src/contracts/                     @quocbao271207
+/src/state/                         @quocbao271207
+
+# Mascot.
+/src/ui/mascot/                     @thuyyen03052008
+/public/mascot/                     @thuyyen03052008
+/docs/MASCOT.md                     @thuyyen03052008
+
+# Crop data: catalogue, regional prevalence, costs and prices per country.
+/data/crops/                        @quocthai2711
+/data/ecocrop/                      @quocthai2711
+/scripts/crops/                     @quocthai2711
+/scripts/build-crop-catalog.ts      @quocthai2711
+/public/data/crops/                 @quocthai2711
+/src/core/crops/                    @quocthai2711
+/docs/CROP_DATA.md                  @quocthai2711
+
+# Model: suitability scoring and profit optimisation.
+/src/core/scoring/                  @khoaminh2957
+/src/core/economics/                @khoaminh2957
+/src/core/advisory/rotation.ts      @khoaminh2957
+/src/core/advisory/customRotation.ts @khoaminh2957
+/scripts/crops/evaluate-scoring-paper.ts @khoaminh2957
+/docs/SCORING.md                    @khoaminh2957
+/docs/SCORING_PAPER.md              @khoaminh2957
+/docs/ECONOMICS.md                  @khoaminh2957

@@ -2,6 +2,19 @@
 
 Astrovivu is built by several agents in parallel in **one working tree**. These rules keep the pieces interlocking. Read `docs/ARCHITECTURE.md` and `src/contracts/` before writing anything.
 
+## People
+
+Four people also work on this repository, each on their own branch through pull requests: `CONTRIBUTING.md` describes that workflow and `.github/CODEOWNERS` records who reviews which paths.
+
+| Person | Area | Paths |
+|---|---|---|
+| `quocbao271207` | UI/UX end to end, map, contracts, merges | `src/ui/**` (not `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
+| `thuyyen03052008` | Mascot | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
+| `quocthai2711` | Crop data: catalogue, regional prevalence, costs and prices per country | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `docs/CROP_DATA.md` |
+| `khoaminh2957` | Model: suitability scoring and profit optimisation | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md` |
+
+An agent works for one person, on that person's branch. Before touching a path another person owns, say so and let its owner review the pull request; never push to `main`, never merge a pull request, and never rewrite a branch someone else has pushed. Rule 1 below (no git writes) is for agents sharing one working tree under an orchestrator; an agent working alone on a person's branch commits there when that person asks.
+
 ## Ownership
 
 Edit only the paths you own. If you need something outside them, describe the change in your final report; do not make it.
