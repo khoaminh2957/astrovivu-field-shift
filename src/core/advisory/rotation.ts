@@ -2,10 +2,12 @@
  * Rotation planner: the current strategy plus soil-health, water-saver, income and resilience
  * alternatives built from the curated catalogue. Rules in docs/ADVISORY.md §2.
  */
-import type { CropProfile, EvidenceItem, FarmerPriority, I18nText, ModelInput, RotationKind, RotationSeason, RotationStrategy, SeasonEconomics } from '@/contracts';
+import type { CropProfile, EvidenceItem, FarmerPriority, I18nText, ModelInput, RotationKind, RotationSeason, RotationSeasonDetail, RotationStrategy, SeasonEconomics } from '@/contracts';
 import { getCrop, listCrops } from '@/core/crops';
 import { referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
 import { scanSowingWindows, windowMonths } from '@/core/scoring';
+import { type MonthNormal, monthlyNormals } from '@/lib/climate';
+import { cropSeasonDetail, fallowSeasons, sumNormal } from './seasonDetail';
 import { climateNormals, cropText, effectiveIrrigation, factNum, meanKc, monthEn, monthVi, monthsFrom, r0, resolutionM, sourceName, tx, wrapMonth } from './util';
 
 /** One planned season. `share` < 1 marks an inter-row or partial-area crop standing beside the main one. */
@@ -16,13 +18,18 @@ interface Plan {
   year: number;
   share: number;
   role?: 'inter-row' | 'companion' | 'converted' | 'break' | 'cover';
+  /** A legume the engine placed for its nitrogen (soil-health rules), not for its margin. */
+  forN?: boolean;
 }
 
 interface Ctx {
   input: ModelInput;
   irrigation: 'rainfed' | 'supplemental' | 'full';
   irrigationInferred: boolean;
-  fit: (id: string) => { s: number[]; rel: (number | null)[] };
+  /** `known` is false when the scorer returned no windows and `s` is only a zero placeholder. */
+  fit: (id: string) => { s: number[]; rel: (number | null)[]; known: boolean };
+  /** Same monthly normals the calendar's rain strip is drawn from. */
+  normals: MonthNormal[];
   best: (id: string) => { month: number; s: number };
   currentSource: 'ground-truth' | 'crop-history' | 'assumed';
   main: CropProfile | undefined;
@@ -174,7 +181,7 @@ function fill(ctx: Ctx, plans: Plan[], year: number, choose: Chooser, opts: { ma
           const s = ctx.fit(c.id).s[st - 1];
           if (s < (c.category === 'cover' ? 35 : (opts.cashMin ?? 55))) continue;
           const v = choose(c, st, s);
-          if (v > pv) (pv = v), (pick = { cropId: c.id, start: st, len, year, share: 1, ...(c.category === 'cover' ? { role: 'cover' as const } : {}) });
+          if (v > pv) (pv = v), (pick = { cropId: c.id, start: st, len, year, share: 1, ...(c.category === 'cover' ? { role: 'cover' as const } : choose === soilChooser && c.rotation!.nitrogenFixing ? { forN: true } : {}) });
         }
       }
     }
@@ -237,7 +244,7 @@ function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number): Candidate[] 
     if (!main.rotation?.nitrogenFixing) {
       const leg = bestBy(ctx, cash, (c, s) => (c.rotation!.nitrogenFixing ? s : -1), 50, [main.id]);
       if (leg && leg.rotation!.nitrogenFixing) {
-        plans = fill(ctx, [...plans, mkSeason(ctx, leg.id, 1)], 1, soilChooser);
+        plans = fill(ctx, [...plans, { ...mkSeason(ctx, leg.id, 1), forN: true }], 1, soilChooser);
         years = 2;
       }
     }
@@ -249,7 +256,7 @@ function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number): Candidate[] 
     const a = bestBy(ctx, [main, ...cash], (c, s, m) => (c.rotation!.waterUse === 'high' && c.id !== main.id ? -Infinity : s / 100 - etcMm(ctx, c, m, windowMonths(c)) / 500), 55) ?? main;
     const plans = fill(ctx, [a.id === main.id ? anchor : mkSeason(ctx, a.id, 0)], 0, wc, { maxAdd: 1 });
     const an = cropText(a.id);
-    out.push({ kind: 'water-saver', plans, years: 1, why: [tx(`Built around ${an.en}, the suitable crop with the lowest modelled water demand for its fit here, and leaves the driest months fallow instead of planting another thirsty crop.`, `Xây dựng quanh ${an.vi}, cây thích hợp có nhu cầu nước mô hình thấp nhất so với mức phù hợp ở đây, và để đất nghỉ trong các tháng khô nhất thay vì trồng thêm cây tốn nước.`)] });
+    out.push({ kind: 'water-saver', plans, years: 1, why: [tx(`Built around ${an.en}, the suitable crop with the lowest modelled water demand for its fit here, with at most one more season of a crop that is not a heavy water user; the remaining months stay fallow instead of carrying another thirsty crop.`, `Xây dựng quanh ${an.vi}, cây thích hợp có nhu cầu nước mô hình thấp nhất so với mức phù hợp ở đây, thêm tối đa một vụ cây không tốn nhiều nước; các tháng còn lại để đất nghỉ thay vì trồng thêm cây tốn nước.`)] });
   }
   // Income: the highest reference margin per season, then the best-paying crop for the remaining months.
   {
@@ -307,7 +314,17 @@ function perennialCandidates(ctx: Ctx, main: CropProfile): Candidate[] {
   if (inc) out.push({ kind: 'income', plans: fill(ctx, [...standYears(life), mkSeason(ctx, inc.id, life, 'break')], life, incomeChooser(ctx), { maxAdd: 1, allowCover: false }), years: life + 1, why: [tx(`Renews the stand after ${life} years with ${cropText(inc.id).en}, the break crop with the best reference margin here.`, `Trồng lại sau ${life} năm với ${cropText(inc.id).vi}, cây cắt vòng có lãi tham chiếu tốt nhất ở đây.`)] });
   const fams = new Set([main.rotation?.family, brk?.rotation?.family]);
   const third = pickCash((c, s) => (fams.has(c.rotation!.family) ? -1 : s));
-  out.push({ kind: 'resilience', plans: [...standYears(life - 1), ...(brk ? [mkSeason(ctx, brk.id, life - 1, 'break')] : []), ...(third ? [mkSeason(ctx, third.id, life, 'break')] : [])], years: life + 1, why: [tx(`Two different break crops between stands spread market and weather risk over more plant families.`, `Hai cây cắt vòng khác nhau giữa các chu kỳ giúp phân tán rủi ro thị trường và thời tiết qua nhiều họ cây hơn.`)] });
+  // The text says what the plan really holds: years no break crop could fill stay fallow and are named as such.
+  const resilienceWhy =
+    brk && third
+      ? tx(`Two different break crops between stands spread market and weather risk over more plant families.`, `Hai cây cắt vòng khác nhau giữa các chu kỳ giúp phân tán rủi ro thị trường và thời tiết qua nhiều họ cây hơn.`)
+      : brk
+        ? tx(`One break crop (${cropText(brk.id).en}) and a rest year between stands: no second crop from another plant family fits this field well enough.`, `Một cây cắt vòng (${cropText(brk.id).vi}) và một năm để đất nghỉ giữa các chu kỳ: không có cây thứ hai thuộc họ khác đủ phù hợp với thửa ruộng này.`)
+        : tx(
+            `No annual cash crop from another plant family reaches a fit of 20/100 on this field, so the ${life - 1}-year stand is followed by two rest years before re-seeding: that breaks the stand's pest and disease cycle but earns nothing in those years.`,
+            `Không có cây hằng năm khác họ nào đạt mức phù hợp 20/100 trên thửa ruộng này, nên sau ${life - 1} năm cây đứng là hai năm để đất nghỉ trước khi gieo lại: cắt được vòng sâu bệnh nhưng không có thu trong các năm đó.`,
+          );
+  out.push({ kind: 'resilience', plans: [...standYears(life - 1), ...(brk ? [mkSeason(ctx, brk.id, life - 1, 'break')] : []), ...(third ? [mkSeason(ctx, third.id, life, 'break')] : [])], years: life + 1, why: [resilienceWhy] });
   return out;
 }
 
@@ -337,6 +354,9 @@ function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: string):
   let nitrogen = 0;
   const seasons: SeasonEconomics[] = [];
   const noEcon = new Set<string>();
+  const details: RotationSeasonDetail[] = [];
+  const historyYears = t.climateHistory?.length ?? 0;
+  const seq = plans.filter((p) => p.share === 1).sort((a, b) => a.year - b.year || a.start - b.start);
   plans.forEach((p, i) => {
     const c = crops[i];
     const f = ctx.fit(p.cropId);
@@ -346,7 +366,8 @@ function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: string):
     sW += w;
     sSum += s * w;
     relSum += (rel ?? 0.5) * w;
-    const etc = etcMm(ctx, c, p.start, p.len) * p.share;
+    const etcHa = etcMm(ctx, c, p.start, p.len);
+    const etc = etcHa * p.share;
     water += etc;
     need += etc;
     const rain = n ? monthsFrom(p.start, p.len).reduce((a, m) => a + n[m - 1].rainMm, 0) * 0.8 * p.share : 0;
@@ -358,17 +379,46 @@ function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: string):
     const e = seasonEconomics({ cropId: p.cropId, areaHa: area * p.share, yieldFraction: s / 100, reference: referenceEconomics(p.cropId, input.parcel), own });
     if (e) seasons.push(e);
     else noEcon.add(p.cropId);
+    // The next crop in the sequence that is harvested (covers skipped): the one a legume's nitrogen is left for.
+    const si = seq.indexOf(p);
+    const follower = si < 0 ? undefined : Array.from({ length: seq.length - 1 }, (_, k) => seq[(si + 1 + k) % seq.length]).find((q) => getCrop(q.cropId)?.category !== 'cover');
+    details.push(
+      cropSeasonDetail(
+        {
+          crop: c,
+          start: p.start,
+          len: p.len,
+          share: p.share,
+          interRow: p.role === 'inter-row',
+          forNitrogen: !!p.forN,
+          suitability: f.known ? s : null,
+          reliability: rel,
+          bestMonth: c.lifeSpan === 'annual' && ctx.best(p.cropId).month === p.start,
+          // The metric falls back to an assumed ET0 or Kc when one is missing; the per-season figure is given only when both are on record.
+          etcMm: n && c.water && sumNormal(ctx.normals, p.start, p.len, 'et0Mm') != null ? etcHa : null,
+          econ: e,
+          nitrogenKgHa: N_CREDIT(c),
+          irrigation: ctx.irrigation,
+          ...(follower && follower.cropId !== p.cropId ? { next: cropText(follower.cropId) } : {}),
+          ...(p.role === 'inter-row' && plans[0] !== p ? { host: cropText(plans[0].cropId) } : {}),
+        },
+        ctx.normals,
+        historyYears,
+      ),
+    );
   });
   const years = cand.years;
   const economics = strategyEconomics(seasons, years, area);
+  const inYear = (p: Plan, y: number) => p.year === y || (p.len === 12 && plans.every((q) => q.year === 0));
   const covered = Array.from({ length: years }, (_, y) => {
     const ms = new Set<number>();
-    for (const p of plans) if (p.year === y || (p.len === 12 && plans.every((q) => q.year === 0))) monthsFrom(p.start, p.len).forEach((m) => ms.add(m));
-    return ms.size / 12;
+    for (const p of plans) if (inYear(p, y)) monthsFrom(p.start, p.len).forEach((m) => ms.add(m));
+    return ms;
   });
-  const coverFrac = covered.reduce((a, b) => a + b, 0) / Math.max(1, years);
+  const coverFrac = covered.reduce((a, ms) => a + ms.size / 12, 0) / Math.max(1, years);
+  // The crop a fallow gap is compared with: the longest full-area season of that year.
+  const mainOf = (y: number) => getCrop((plans.filter((p) => p.share === 1 && inYear(p, y)).sort((a, b) => b.len - a.len)[0] ?? plans[0])?.cropId);
   const families = new Set(crops.map((c) => c.rotation?.family ?? c.id));
-  const seq = plans.filter((p) => p.share === 1).sort((a, b) => a.year - b.year || a.start - b.start);
   let pest = 0;
   if (seq.length >= 2 && plans.every((p) => p.share === 1)) {
     let sum = 0;
@@ -402,7 +452,8 @@ function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: string):
     kind: cand.kind,
     name: NAMES[cand.kind],
     years,
-    seasons: plans.map((p): RotationSeason => ({ cropId: p.cropId, label: label(p), startMonth: p.start, endMonth: wrapMonth(p.start + p.len - 1), year: p.year })),
+    // Crop seasons in plan order, then one fallow season per uncovered run of months so the calendar can explain the gaps.
+    seasons: [...plans.map((p, i): RotationSeason => ({ cropId: p.cropId, label: label(p), startMonth: p.start, endMonth: wrapMonth(p.start + p.len - 1), year: p.year, detail: details[i] })), ...fallowSeasons(covered, mainOf, ctx.normals)],
     metrics,
     economics,
     ...lists,
@@ -524,12 +575,12 @@ export function buildRotations(input: ModelInput): RotationStrategy[] {
 
 function compute(input: ModelInput): RotationStrategy[] {
   const irr = effectiveIrrigation(input);
-  const cache = new Map<string, { s: number[]; rel: (number | null)[] }>();
+  const cache = new Map<string, { s: number[]; rel: (number | null)[]; known: boolean }>();
   const fit = (id: string) => {
     let f = cache.get(id);
     if (!f) {
       const w = scanSowingWindows({ ...input, cropId: id, groundTruth: { ...input.groundTruth, irrigation: irr.mode, sowingDate: undefined } });
-      f = { s: w.length ? w.map((x) => x.score) : new Array(12).fill(0), rel: w.length ? w.map((x) => x.reliability) : new Array(12).fill(null) };
+      f = { s: w.length ? w.map((x) => x.score) : new Array(12).fill(0), rel: w.length ? w.map((x) => x.reliability) : new Array(12).fill(null), known: w.length > 0 };
       cache.set(id, f);
     }
     return f;
@@ -540,7 +591,7 @@ function compute(input: ModelInput): RotationStrategy[] {
     for (let i = 1; i < 12; i++) if (s[i] > s[bm] || (s[i] === s[bm] && (rel[i] ?? 0) > (rel[bm] ?? 0))) bm = i;
     return { month: bm + 1, s: s[bm] };
   };
-  const ctx: Ctx = { input, irrigation: irr.mode, irrigationInferred: irr.inferred, fit, best, currentSource: 'assumed', main: getCrop(input.cropId) };
+  const ctx: Ctx = { input, irrigation: irr.mode, irrigationInferred: irr.inferred, fit, best, normals: monthlyNormals(input.telemetry.climateHistory), currentSource: 'assumed', main: getCrop(input.cropId) };
   const cur = currentPlans(ctx);
   const curMain = getCrop(cur.plans[0]?.cropId) ?? ctx.main;
   const curCand: Candidate = { kind: 'current', plans: cur.plans.length ? cur.plans : [mkSeason(ctx, bestOverall(ctx), 0)], years: cur.years, why: [tx('The reference every alternative is compared with.', 'Mốc để so sánh mọi phương án khác.')] };
@@ -548,7 +599,7 @@ function compute(input: ModelInput): RotationStrategy[] {
   const main = curMain ?? getCrop(curCand.plans[0].cropId)!;
   const cands = main.lifeSpan !== 'annual' ? perennialCandidates(ctx, main) : annualCandidates(ctx, curCand.plans, cur.years);
   const sig = (c: { plans?: Plan[]; seasons?: RotationSeason[] }) => JSON.stringify((c.plans ?? c.seasons ?? []).map((p) => ('cropId' in p ? [p.cropId, 'start' in p ? p.start : p.startMonth, p.year] : [])).sort());
-  const seen = new Set([sig({ seasons: current.seasons })]);
+  const seen = new Set([sig({ plans: curCand.plans })]);
   const alts: Evaluated[] = [];
   for (const c of cands) {
     if (!c.plans.length) continue;

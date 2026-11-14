@@ -1,6 +1,6 @@
 # Advisory engine (Tier 5, rule-based core)
 
-Code: `src/core/advisory` (insights, rotations, actions), `src/core/tracking`, `src/core/urban`. All functions are pure functions of `ModelInput`. `buildAdvisoryReport` and the rotation search are memoised on the telemetry object plus the value of crop, ground truth, priorities, parcel and date. Tests: `src/core/advisory/advisory.test.ts` loads the four real demo samples.
+Code: `src/core/advisory` (insights, rotations, actions), `src/core/tracking`, `src/core/urban`. All functions are pure functions of `ModelInput`. `buildAdvisoryReport` and the rotation search are memoised on the telemetry object plus the value of crop, ground truth, priorities, parcel and date. Tests: `src/core/advisory/advisory.test.ts` and `seasonDetail.test.ts` load the four real demo samples.
 
 ## 1. Insights (Anomaly Markers)
 
@@ -25,15 +25,37 @@ Current strategy: `groundTruth.currentRotation` (entries whose months overlap an
 Fit per crop and sowing month comes from `scanSowingWindows` with the effective irrigation (the farmer's entry; else full irrigation is inferred when normal rain < 350 mm and the field is cropped, and said so). Annual systems fill free months greedily (cash crops need fit >= 55, covers >= 35, no pest group back to back):
 
 - soil-health: main crop + legumes/covers; a legume year when the main crop fixes no N.
-- water-saver: crop with the best fit per mm of ETc, at most one more low/medium water crop.
+- water-saver: crop with the best fit per mm of ETc, at most one more low/medium water crop; the other months stay fallow (not necessarily the driest ones, and the text no longer says so).
 - income: highest reference margin per season, then best-paying fillers.
 - resilience: up to three years and three families, weighted by reliability.
 
-Perennials are not rotated yearly. Tree crops get an inter-row N-fixing cover (~25 % area), a companion tree (~20 %), a partial conversion (~30 %) to a lower-water crop, or a mix. Stands (forage, sugarcane) are renewed after 4 years with break crops (paddy rice excluded). Area shares are written in the season label.
+Perennials are not rotated yearly. Tree crops get an inter-row N-fixing cover (~25 % area), a companion tree (~20 %), a partial conversion (~30 %) to a lower-water crop, or a mix. Stands (forage, sugarcane) are renewed after 4 years with break crops (paddy rice excluded); when no break crop reaches a fit of 20, those years stay fallow and the strategy text says so (Nevada demo field). Area shares are written in the season label.
 
 Metrics: suitability = month- and area-weighted fit; water use = Σ mean Kc (FAO-56 stage-weighted) × normal monthly ET0 per year; water fit = min(1, (0.8 × rain + irrigation supply) / ETc); N = indicative credit 40 (grain legume), 90 (cover legume), 150 (forage legume) kg/ha per season × area share; ground cover = covered months; pest break = 1 for a different family, 0.5 same family other pest group, 0 same pest group, over consecutive seasons (perennial mixes capped at 60); soil health = 30 cover + 20 N + 20 residue + 15 family diversity + 15 cover/perennial; risk = 50 (1 - reliability) + 25 / families + 25 (1 - water fit). Economics: `seasonEconomics` with yield fraction = fit at the sowing month and reference values, `strategyEconomics` over the rotation years. Score: each priority metric normalised 0..1 (margin and cost min-max across the strategies), weight 0.5 + 3/2/1 for the first/second/third priority.
 
 The five lists are generated from the field: evidence cites the climate source, soil source, CDL history and reference economics; gaps name the missing soil test, coarse climate pixel, reference prices, irrigation assumptions, assumed rotation, perennial establishment, cover-crop literature values; risks name market and seed checks, upland crops after paddy, cover-crop timing, frost calendars, limiting soil chemistry, intercropping, monoculture, low suitability, and always local extension review.
+
+### Per-season detail
+
+Every season of every strategy (the current one included) carries `detail`, filled in `src/core/advisory/seasonDetail.ts` from the numbers `evaluate` already uses for the strategy metrics. Months no crop covers in a rotation year are emitted as extra seasons with `cropId: 'fallow'`, one per run of bare months, after the crop seasons; they are the months the ground-cover metric counts as bare. Every season has `year` (0-based) and the full crop name as `label` (area shares and "cover crop" / "break crop" are appended in brackets).
+
+| Field | What it is | How it is computed | Left undefined when |
+|---|---|---|---|
+| `role` | what the season is there for | `fallow` for a bare run; `cover` for a catalogue cover crop (inter-row covers included); `perennial` for any non-annual crop; `legume` for an annual N-fixing crop the soil-health rules placed for its nitrogen (the legume year, and legumes picked by the soil chooser); `cash` otherwise, so soybean in the current practice or in the income strategy is `cash` | never |
+| `suitability` | 0..100 fit | the scorer's fit at the sowing month (`scanSowingWindows`); for a perennial the best month's fit. Same value the strategy suitability is averaged from | fallow; the scorer returned no windows |
+| `metInYears` | years the crop's needs were met | `round(reliability × years in climateHistory)` of `years`, the same arithmetic as the evidence line. Reliability is stored to two decimals, so `met` is approximate | fallow; no reliability or no climate history |
+| `waterNeedMm` | crop water need over the season | mean Kc (FAO-56 stage-weighted) × normal ET0 of the season's months, rounded | fallow; a month has no ET0 normal; the crop has no Kc curve (the strategy metric then uses an assumed value, the detail shows none) |
+| `rainMm` | normal rain over the season | sum of `monthlyNormals(climateHistory).rainMm` over the months, wrapping over December, rounded to 1 mm. Total rain, not the 0.8 effective share used in water fit | a month has no rain normal |
+| `yieldTHa` | expected yield | `SeasonEconomics.yield.expectedTHa` of the same season | no economics; a cover crop with a reference yield of 0 |
+| `marginUsdPerHa` | margin of the season | `marginUsd / areaHa` of the same `economics.seasons` entry, rounded. A cover crop with a seed cost shows a negative margin | no reference economics |
+| `nitrogenKgHa` | indicative N credit | the per-season credit of the metrics (40 / 90 / 150 kg N/ha) for any N-fixing crop, whatever its role | the crop fixes no nitrogen |
+| `reason` | one sentence, EN and VI | built from the fields above, wording by role (below) | never |
+
+Units are per hectare of the area the crop occupies. For a full-area strategy the seasons add up to the metrics: length-weighted suitability and summed nitrogen match exactly, water need and margin to within rounding (half a unit per season). For a tree-crop mix (labels with "~N % of area") each figure must be weighted by that share first; the share is not a separate field.
+
+Reason wording. Cash: "sits inside the rains" when season rain >= water need; otherwise rain against need, and where the rest comes from (irrigation, supplemental irrigation plus stored soil water, or stored soil water when rainfed); "best-fitting month" only when the sowing month is the crop's best one. Legume: the N credit and the next harvested crop in the sequence (covers skipped). Cover: "through the wet months" when the season's rain per month is above the annual monthly mean, else "between cash crops"; an inter-row cover names the host crop and its share. Perennial: annual rain against annual use, plus the months whose normal rain is below Kc × ET0. Fallow: a whole bare year is called a rest year; a run with a monthly mean temperature below 5 °C is called the cold season and quotes that temperature; otherwise rain against what the year's longest full-area crop would use over those months (Kc × ET0), called the dry season when rain per month is under half the annual monthly mean; with rain above that use only the rain is stated. A fallow season carries `role`, `rainMm` and `reason` only.
+
+Limits: normals hide year-to-year spread (the calendar's rain strip shows the 10th and 90th percentile, the sentence does not); mean Kc spreads the season's demand evenly over its months, so the "dry months" of a perennial are indicative; seasons are placed on calendar months of one cyclic year, so a season sown late in a rotation year is drawn wrapping into January of the same year; the 5 °C and half-of-average thresholds only choose words, they do not change any number.
 
 ## 3. Actions
 

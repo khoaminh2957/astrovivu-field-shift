@@ -240,7 +240,7 @@ export function advisories(input: ModelInput, score: ScoreTimeline, irr: Irrigat
       priority: best.score - cur.score >= 10 ? 1 : 2,
       title: tx(`Consider the ${best.name.en.toLowerCase()}`, `Cân nhắc ${best.name.vi.toLowerCase()}`),
       summary: tx(`It scores ${best.score} against ${cur.score} for the current practice under your priorities. ${best.why[0]?.en ?? ''}`, `Phương án đạt ${best.score} so với ${cur.score} của cách làm hiện tại theo ưu tiên của bạn. ${best.why[0]?.vi ?? ''}`),
-      actions: best.seasons.filter((s) => (s.year ?? 0) === 0).map((s) => ({ when: tx(`${monthEn(s.startMonth)}-${monthEn(s.endMonth)}`, `${monthVi(s.startMonth)}-${monthVi(s.endMonth)}`), what: s.label })),
+      actions: best.seasons.filter((s) => (s.year ?? 0) === 0 && s.cropId !== 'fallow').map((s) => ({ when: tx(`${monthEn(s.startMonth)}-${monthEn(s.endMonth)}`, `${monthVi(s.startMonth)}-${monthVi(s.endMonth)}`), what: s.label })),
       impact: { marginDeltaUsdPerHa: best.metrics.marginUsdPerHaYr - cur.metrics.marginUsdPerHaYr, waterSavedMm: Math.max(0, cur.metrics.waterUseMm - best.metrics.waterUseMm) },
       evidence: best.evidence.slice(0, 3),
       confidence: r1(0.3 + 0.4 * branchConf(t, ['agromet', 'soil'])),
