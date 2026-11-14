@@ -105,3 +105,9 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
 ];
 
 export const getSampleParcel = (id: string): SampleParcel | undefined => SAMPLE_PARCELS.find((p) => p.id === id);
+
+/**
+ * The one demo field the app offers: on the landing, in the field list and as the beacon on the
+ * globe. The others stay above for tests, fixtures and `?sample=<id>` deep links.
+ */
+export const DEMO_FIELD: SampleParcel = SAMPLE_PARCELS.find((p) => p.id === 'nevada-alfalfa') ?? SAMPLE_PARCELS[0];

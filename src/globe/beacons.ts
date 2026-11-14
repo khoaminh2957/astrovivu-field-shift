@@ -1,6 +1,6 @@
 /**
- * Demo-field beacons: one focusable button per sample parcel, pinned to the globe.
- * DOM markers rather than a GL layer because there are four of them, they must be reachable by
+ * Demo-field beacons: one focusable button per offered demo field, pinned to the globe.
+ * DOM markers rather than a GL layer because there are only a few of them, they must be reachable by
  * keyboard, and MapLibre already hides markers that are on the far side of the planet.
  */
 import { Marker, type Map as MapLibreMap } from 'maplibre-gl';

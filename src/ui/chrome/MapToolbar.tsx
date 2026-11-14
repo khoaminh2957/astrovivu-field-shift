@@ -9,7 +9,7 @@
  *                 "Hide legend / Show legend" text button.
  */
 import { type ReactNode, useEffect, useState } from 'react';
-import { Box, Compass, Expand, Focus, Gauge, Layers, LoaderCircle, LocateFixed, Minimize, Minus, Plus, RotateCcw, RotateCw, Ruler, SquareDashed, X } from 'lucide-react';
+import { Box, Compass, Expand, Focus, Gauge, Layers, LoaderCircle, LocateFixed, Minimize, Minus, Plus, Ruler, SquareDashed, X } from 'lucide-react';
 import { BRANCHES, type BranchId, pick } from '@/contracts';
 import {
   fitParcel,
@@ -17,7 +17,6 @@ import {
   locateMe,
   rasterRampCss,
   resetNorth,
-  rotateBy,
   setMotion,
   setTilt,
   startMeasure,
@@ -37,9 +36,6 @@ import { fmtDate, fmtNum } from '@/ui/hud/format';
 import { LayersPanel } from './LayersPanel';
 import { useMissionUi, useNarrow } from './uiState';
 import './strings';
-
-/** One press of a turn button. */
-const ROTATE_STEP_DEG = 30;
 
 /** The dark surface every map control shares. */
 const DARK = 'bg-ink-1 text-white shadow-map';
@@ -169,12 +165,10 @@ export function MapToolbar({ className }: { className?: string }) {
           <MapButton label={t('map.fit')} icon={<Focus />} onClick={fitParcel} />
           {!narrow && <MapButton label={t('map.locate')} icon={<LocateFixed />} loading={locating} onClick={locate} />}
         </Group>
-        {/* Turning the map: a touchpad has no twist gesture in the browser, so it gets buttons (and Alt + swipe). */}
+        {/* The compass shows the bearing and resets it. Turning is a gesture: two fingers on a touch screen, Alt + swipe on a touchpad. */}
         {!narrow && (
           <Group>
-            <MapButton label={t('map.rotate.left')} icon={<RotateCcw />} onClick={() => rotateBy(-ROTATE_STEP_DEG)} />
             <MapButton label={t('map.north', { b: Math.round(((view.bearing % 360) + 360) % 360) })} icon={<Compass style={{ transform: `rotate(${-view.bearing}deg)` }} />} onClick={resetNorth} />
-            <MapButton label={t('map.rotate.right')} icon={<RotateCw />} onClick={() => rotateBy(ROTATE_STEP_DEG)} />
           </Group>
         )}
         {!narrow && (

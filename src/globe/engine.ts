@@ -14,7 +14,7 @@ import { Map as MapLibreMap, Marker, setMaxParallelImageRequests, setWorkerUrl, 
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import type { FieldRaster, Lang, LngLat, Parcel, ParcelDraft, Series, ViewInsets } from '@/contracts';
 import { BRANCHES } from '@/contracts';
-import { SAMPLE_PARCELS } from '@/data';
+import { DEMO_FIELD } from '@/data';
 import { translate } from '@/i18n';
 import { closeRing } from '@/lib/geo';
 import { primarySeries, sampleAt } from '@/lib/series';
@@ -57,7 +57,7 @@ export type MotionPref = 'auto' | 'full' | 'reduced';
 type View = 'hero' | 'explore' | 'parcel';
 type FlightShape = 'descend' | 'ascend' | 'level';
 
-/** Where the hero globe starts: South-East Asia in view, two of the demo fields under it. */
+/** Where the hero globe starts: South-East Asia in view. */
 const HERO_CENTER: LngLat = [112, 16];
 /** One revolution in a little over two minutes: visibly alive, never distracting. */
 const ROTATE_DEG_PER_S = 2.8;
@@ -88,6 +88,12 @@ const RATIO_RESTORE_MS = 900;
 /** While the camera moves the anchor is published at most this often; exact again when it rests. */
 const FLIGHT_ANCHOR_MS = 120;
 const INSET_EASE_MS = 360;
+/** A draft is framed this long after it last changed: the UI answers a new outline by opening a panel, and one flight should serve both. */
+const DRAFT_FRAME_SETTLE_MS = 140;
+/** Clear space kept between a draft's outline and the edge of the free area. */
+const DRAFT_MARGIN_PX = 12;
+/** A first outline this many zoom levels smaller than its fitted size is too small to check or to drag by its corners. */
+const DRAFT_SMALL_ZOOMS = 1.5;
 /** Wheel events closer together than this belong to one touchpad gesture and keep its axis. */
 const WHEEL_GESTURE_GAP_MS = 180;
 /** Alt + swipe: a swipe across a touchpad (about 600 px of scroll) is a half turn. */
@@ -260,11 +266,6 @@ export class GlobeEngine {
     this.map.easeTo({ ...opts, duration: this.reduced ? 0 : 420, easing: easeOutCubic, essential: true });
   }
 
-  /** Turns the map by `deg` (positive = clockwise on screen) around the middle of the free area. */
-  rotateBy(deg: number): void {
-    if (this.ready) this.ease({ bearing: this.map.getBearing() - deg });
-  }
-
   zoomBy(delta: number): void {
     if (this.ready) this.ease({ zoom: clamp(this.map.getZoom() + delta, 0.5, 19.5) });
   }
@@ -356,6 +357,7 @@ export class GlobeEngine {
     cancelAnimationFrame(this.rasterRaf);
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
     if (this.ratioTimer) clearTimeout(this.ratioTimer);
+    if (this.frameTimer) clearTimeout(this.frameTimer);
     for (const fn of this.cleanups) fn();
     this.cleanups = [];
     this.pickMarker?.remove();
@@ -414,7 +416,7 @@ export class GlobeEngine {
     this.draft = new DraftEditor(map, this.svg, {
       setDraft: (draft: ParcelDraft) => useMission.getState().setDraft(draft),
       lang: () => this.state.lang,
-      frameDraft: (vertices) => this.frameDraft(vertices),
+      frameDraft: () => this.queueFrameDraft(),
       zoomToField: (at) => {
         setGlobeStatus({ notice: 'globe.draw.zoomHint' });
         this.fly({ center: at, zoom: FIELD_ZOOM, pitch: 0, bearing: 0, padding: this.explore(this.viewport(), at).padding }, 'level', () => {
@@ -424,7 +426,7 @@ export class GlobeEngine {
     });
     // Plain clicks go to the UI (field selection, select on the map).
     map.on('click', (ev) => emitMapClick([ev.lngLat.lng, ev.lngLat.lat], ev.originalEvent));
-    this.beacons = new Beacons(map, SAMPLE_PARCELS, (id) => void useMission.getState().lockSample(id), mission.lang);
+    this.beacons = new Beacons(map, [DEMO_FIELD], (id) => void useMission.getState().lockSample(id), mission.lang);
     this.overlay = new OverlayController(map, {
       beforeLayer: () => LAYER.dim,
       today: () => this.state.telemetry?.window.today ?? this.state.timeline.end,
@@ -530,6 +532,7 @@ export class GlobeEngine {
       () => el.removeEventListener('wheel', sideSwipe, { capture: true }),
       () => cancelAnimationFrame(swipeRaf),
     );
+    this.listenForTrackpadTwist(el, nudge);
     el.addEventListener('pointerdown', down);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
@@ -565,6 +568,57 @@ export class GlobeEngine {
     this.queueViewState();
   }
 
+  /**
+   * Safari reports a two-finger twist or pinch on a trackpad as `gesturestart` / `gesturechange` /
+   * `gestureend`. They exist in Safari only and are not in lib.dom, hence the feature test and the
+   * local type. Fingers turning clockwise turn the map clockwise, which lowers the bearing; the
+   * pinch zooms, because the page zoom these events would otherwise cause is cancelled here.
+   * On a touch screen the same events accompany the touches MapLibre already handles (two fingers
+   * turn and zoom the map through `touchZoomRotate`, on by default), so they are left alone there.
+   * Other browsers send no twist to the page at all: Alt + swipe above is their way to turn.
+   */
+  private listenForTrackpadTwist(el: HTMLElement, nudge: () => void): void {
+    if (!('ongesturestart' in window)) return;
+    type SafariGestureEvent = Event & { rotation: number; scale: number };
+    const { map } = this;
+    let touches = 0;
+    let ours = false;
+    let bearing0 = 0;
+    let zoom0 = 0;
+    const countTouches = (e: TouchEvent) => {
+      touches = e.touches.length;
+    };
+    const start = (e: Event) => {
+      ours = touches === 0 && this.ready && !this.flying;
+      if (!ours) return;
+      e.preventDefault();
+      bearing0 = map.getBearing();
+      zoom0 = map.getZoom();
+    };
+    const change = (e: Event) => {
+      if (!ours) return;
+      e.preventDefault();
+      nudge();
+      const g = e as SafariGestureEvent;
+      map.jumpTo({ bearing: bearing0 - g.rotation, zoom: clamp(zoom0 + Math.log2(Math.max(g.scale, 0.01)), 0.5, 19.5) });
+    };
+    const end = (e: Event) => {
+      if (ours) e.preventDefault();
+      ours = false;
+    };
+    const touchEvents = ['touchstart', 'touchend', 'touchcancel'] as const;
+    for (const name of touchEvents) el.addEventListener(name, countTouches, { passive: true });
+    el.addEventListener('gesturestart', start);
+    el.addEventListener('gesturechange', change);
+    el.addEventListener('gestureend', end);
+    this.cleanups.push(() => {
+      for (const name of touchEvents) el.removeEventListener(name, countTouches);
+      el.removeEventListener('gesturestart', start);
+      el.removeEventListener('gesturechange', change);
+      el.removeEventListener('gestureend', end);
+    });
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Store
   // ---------------------------------------------------------------------------------------------
@@ -580,6 +634,7 @@ export class GlobeEngine {
       this.enterView(view, from);
     }
     if (s.draft !== prev.draft || s.drawMode !== prev.drawMode) {
+      if (!s.draft?.closed) this.draftFramed = false;
       this.draft.sync(s.draft, s.drawMode);
       this.syncBeacons();
     }
@@ -692,6 +747,11 @@ export class GlobeEngine {
       return;
     }
     this.insetsPending = false;
+    // An outline is on the map: it decides the framing, not the place under the camera.
+    if (this.closedDraft()) {
+      this.queueFrameDraft();
+      return;
+    }
     if (this.view === 'explore') {
       // No field to keep in the middle: the free area moves and the place under the camera stays. While the
       // whole globe is in view it is also resized to the new free area (a field panel that closed gives room back).
@@ -755,7 +815,10 @@ export class GlobeEngine {
       // or step in or out over wherever the user had turned the globe.
       const c = map.getCenter();
       const here: LngLat = [c.lng, c.lat];
-      this.fly(view === 'hero' ? heroPose(viewport, here) : this.explore(viewport, here), from === 'parcel' ? 'ascend' : 'level');
+      const pose = view === 'hero' ? heroPose(viewport, here) : this.explore(viewport, here);
+      // A visitor who zoomed in on the landing keeps that view when they enter: only the padding follows the panels.
+      if (from === 'hero' && map.getZoom() > pose.zoom) pose.zoom = map.getZoom();
+      this.fly(pose, from === 'parcel' ? 'ascend' : 'level');
     }
     if (view === 'hero') this.startRotation();
     else this.stopRotation();
@@ -766,17 +829,72 @@ export class GlobeEngine {
     source?.setData(dimMask(parcel ? closeRing(openRing(parcel.polygon.coordinates[0])) : null));
   }
 
-  /** A draft arrived from the UI (coordinates, GPS): show it top-down, unless it already sits well in view. */
+  private frameTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The closed draft on the map has been framed once; later changes to it move the camera only when it leaves the free area. */
+  private draftFramed = false;
+
+  /** The corners of the draft when it is a closed outline, else null. */
+  private closedDraft(): LngLat[] | null {
+    const { draft } = this.state;
+    if (!draft?.closed) return null;
+    const ring = openRing(draft.vertices);
+    return ring.length >= 3 ? ring : null;
+  }
+
+  /**
+   * A draft arrived or changed, or the panels around it did. The two come as a pair (a recognised
+   * outline opens the add-a-field card, which changes the insets), so the framing waits for both
+   * and the camera moves once, with the padding it will keep.
+   */
+  private queueFrameDraft(): void {
+    if (this.frameTimer) clearTimeout(this.frameTimer);
+    this.frameTimer = setTimeout(() => {
+      this.frameTimer = null;
+      if (this.destroyed || !this.ready) return;
+      // A flight is under way: it frames the draft when it lands, with whatever changed meanwhile.
+      if (this.flying) {
+        this.insetsPending = true;
+        return;
+      }
+      const ring = this.closedDraft();
+      if (ring) this.frameDraft(ring);
+    }, DRAFT_FRAME_SETTLE_MS);
+  }
+
+  /** True when every corner is inside what the padding leaves free, with a margin. */
+  private ringInFreeArea(ring: LngLat[], padding: Padding, viewport: Viewport): boolean {
+    const m = DRAFT_MARGIN_PX;
+    return ring.every((v) => {
+      const p = this.map.project(v);
+      return p.x >= padding.left + m && p.x <= viewport.width - padding.right - m && p.y >= padding.top + m && p.y <= viewport.height - padding.bottom - m;
+    });
+  }
+
+  /**
+   * Shows a draft top-down in the free part of the screen. It flies when the outline is not whole
+   * inside the free area, or is the wrong size for it; otherwise the camera stays and only adopts
+   * the new padding, with the map held still under it. While the visitor refines an outline by
+   * clicking, size alone moves the camera only for the first outline: after that they choose the zoom.
+   */
   private frameDraft(vertices: LngLat[], force = false): void {
     const { map } = this;
     const viewport = this.viewport();
     const center = meanPoint(vertices);
     const padding = this.explore(viewport, center).padding;
     const zoom = clamp(fitZoom(vertices, center[1], viewport, padding, 0, 0, 0.42), ...DRAFT_ZOOM_RANGE);
-    const p = map.project(center);
-    if (!force && this.mapEl.classList.contains('is-picking') && p.x > 40 && p.x < viewport.width - 40 && p.y > 40 && p.y < viewport.height - 40) return;
-    const inView = p.x > viewport.width * 0.2 && p.x < viewport.width * 0.8 && p.y > viewport.height * 0.15 && p.y < viewport.height * 0.75;
-    if (!force && inView && Math.abs(map.getZoom() - zoom) < 0.9 && map.getPitch() < 20) return;
+    const first = !this.draftFramed;
+    this.draftFramed = true;
+    if (!force && map.getPitch() < 20 && this.ringInFreeArea(vertices, padding, viewport)) {
+      const off = map.getZoom() - zoom;
+      const picking = this.mapEl.classList.contains('is-picking');
+      const sized = picking ? !first || off > -DRAFT_SMALL_ZOOMS : Math.abs(off) < 0.9;
+      if (sized) {
+        // The point now in the middle of the free area becomes the centre: the padding changes and nothing on screen moves.
+        const middle = map.unproject([(padding.left + viewport.width - padding.right) / 2, (padding.top + viewport.height - padding.bottom) / 2]);
+        map.jumpTo({ center: middle, padding });
+        return;
+      }
+    }
     this.fly({ center, zoom, pitch: 0, bearing: 0, padding }, 'level');
   }
 
@@ -898,8 +1016,11 @@ export class GlobeEngine {
     }
     if (!this.rotateRampFrom) this.rotateRampFrom = now;
     // Ease back in after an interaction rather than snapping to full speed.
-    const speed = ROTATE_DEG_PER_S * smoothstep(0, ROTATE_RAMP_MS, now - this.rotateRampFrom);
     const c = this.map.getCenter();
+    // The landing lets the visitor zoom in: the turn then keeps its speed on screen, not in degrees,
+    // so a place they zoomed to drifts gently instead of racing past.
+    const closer = this.map.getZoom() - heroPose({ width: this.vw, height: this.vh }, [c.lng, c.lat]).zoom;
+    const speed = ROTATE_DEG_PER_S * smoothstep(0, ROTATE_RAMP_MS, now - this.rotateRampFrom) * Math.min(1, 2 ** -closer);
     // The planet turns eastward, so the longitude under a fixed camera falls.
     this.map.jumpTo({ center: [c.lng - (speed * dt) / 1000, c.lat] });
   };

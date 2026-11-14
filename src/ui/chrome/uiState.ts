@@ -5,6 +5,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { create } from 'zustand';
+import type { Parcel } from '@/contracts';
 
 export type MapPopover = 'layers' | 'measure' | null;
 
@@ -17,12 +18,24 @@ export interface MissionUiState {
   /** Narrow: the sheet covers the map except a strip at the top. */
   sheetFull: boolean;
   setSheetFull(on: boolean): void;
-  /** List panel: the list of fields, or the add-field step. */
+  /** The add-a-field step is open: in the list column beside an open field, above the finder box before one. */
   listMode: 'list' | 'add';
   setListMode(mode: 'list' | 'add'): void;
-  /** How the add-field step finds the field: chosen in the menu under "Add field", switchable in the step. */
+  /** How the add-field step finds the field: set by what opened the step, switchable in the step. */
   addWay: 'address' | 'map';
   setAddWay(way: 'address' | 'map'): void;
+  /** The field the visitor made in this session, kept so the list and the search can offer it again after another field is opened. */
+  ownField: Parcel | null;
+  setOwnField(parcel: Parcel | null): void;
+  /** Wide screens, with a field open: the list column is folded away and the map has its room. */
+  listFolded: boolean;
+  setListFolded(folded: boolean): void;
+  /** Before a field is open: the add-a-field step shows as its card (on the left edge of a wide screen), not as its one-line hint. */
+  addCard: boolean;
+  setAddCard(open: boolean): void;
+  /** Height in px of the finder (its box and whatever is open above it), measured by the finder; 0 when it is not on screen. */
+  finderH: number;
+  setFinderH(h: number): void;
   /** The legend of what the field is painted with is shown on the map. */
   legendOpen: boolean;
   setLegendOpen(open: boolean): void;
@@ -41,6 +54,25 @@ export interface MissionUiState {
   setScrubbing(on: boolean): void;
 }
 
+const FOLD_KEY = 'astrovivu.listFolded';
+
+/** Session storage can be refused (private mode, an embedded pane): the fold then lasts until the page reloads. */
+function storedFold(): boolean {
+  try {
+    return sessionStorage.getItem(FOLD_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function storeFold(folded: boolean): void {
+  try {
+    sessionStorage.setItem(FOLD_KEY, folded ? '1' : '0');
+  } catch {
+    // Not remembered across a reload; the state in memory still holds.
+  }
+}
+
 export const useMissionUi = create<MissionUiState>()((set) => ({
   overrideOpen: false,
   fieldTab: 'status',
@@ -50,6 +82,17 @@ export const useMissionUi = create<MissionUiState>()((set) => ({
   setListMode: (listMode) => set({ listMode }),
   addWay: 'address',
   setAddWay: (addWay) => set({ addWay }),
+  ownField: null,
+  setOwnField: (ownField) => set({ ownField }),
+  listFolded: storedFold(),
+  setListFolded: (listFolded) => {
+    storeFold(listFolded);
+    set({ listFolded });
+  },
+  addCard: false,
+  setAddCard: (addCard) => set({ addCard }),
+  finderH: 0,
+  setFinderH: (finderH) => set({ finderH }),
   legendOpen: true,
   setLegendOpen: (legendOpen) => set({ legendOpen }),
   sheetFull: false,
@@ -63,6 +106,9 @@ export const useMissionUi = create<MissionUiState>()((set) => ({
   setSpeed: (speed) => set({ speed }),
   setScrubbing: (scrubbing) => set({ scrubbing }),
 }));
+
+/** Width in px of the add-a-field card on a wide screen, and its distance from the screen's edges. Mirrored by the classes in FindField. */
+export const ADD_CARD = { width: 360, margin: 16 } as const;
 
 /** Instruments skip easing while time moves under them. */
 export const useTimeMoving = (): boolean => useMissionUi((s) => s.playing || s.scrubbing);

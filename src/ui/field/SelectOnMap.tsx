@@ -404,6 +404,37 @@ export function useSelectOnMap(active: boolean): SelectOnMapControl {
   return { state, place, selectCandidate, setPromptMode, regularize, undo, startManual, backToAuto };
 }
 
+/**
+ * The one line shown above the finder box while "Select on map" waits for a click: what to do
+ * next, and the way to the other method. Once an outline is found the full step takes over.
+ */
+export function SelectOnMapHint({ control, onAddress }: { control: SelectOnMapControl; onAddress: () => void }) {
+  const t = useT();
+  const { zoom } = useMapView();
+  const { kind } = control.state;
+  const tooFar = zoom < MIN_PICK_ZOOM;
+  const message = kind === 'detecting' ? t('field.select.hint.detecting') : kind === 'zoomed' ? t('field.select.hint.zoomed') : tooFar ? t('field.select.hint.zoom') : t('field.select.hint');
+  return (
+    <div role="status" className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 self-center rounded-[22px] border border-line-2 bg-surface-0 px-4 py-2.5 text-base text-ink-1 shadow-lg">
+      <span className="flex min-w-0 items-center gap-2">
+        {kind === 'detecting' ? (
+          <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-signal border-t-transparent" aria-hidden />
+        ) : tooFar && kind !== 'zoomed' ? (
+          <ZoomIn size={18} strokeWidth={1.5} aria-hidden className="shrink-0" />
+        ) : (
+          <MousePointerClick size={18} strokeWidth={1.5} aria-hidden className="shrink-0" />
+        )}
+        {message}
+      </span>
+      {kind !== 'detecting' && (
+        <button type="button" onClick={onAddress} className="shrink-0 rounded-xs font-medium text-ink-1 underline underline-offset-4 hover:text-signal-strong">
+          {t('field.select.orAddress')}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function SelectOnMapStatus({ control }: { control: SelectOnMapControl }) {
   const t = useT();
   const draft = useMission((s) => s.draft);

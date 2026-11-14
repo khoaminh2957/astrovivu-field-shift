@@ -17,8 +17,9 @@ export { draftToParcel, squareDraft, makeDraft, isLockable, draftAreaHa } from '
 export { paintForSeries, colorForValue, rampCss, rampPosition, parcelReadingAt, type MetricPaint, type ParcelReading } from './ramps';
 export { useGlobeStatus, type GlobeStatus, type OverlayStatus, type ImagerySource } from './status';
 export { MIN_DRAW_ZOOM } from './draw';
+export { heroGlobeMiddle } from './camera';
 export type { MotionPref } from './engine';
-export { zoomBy, resetNorth, rotateBy, setTilt, fitParcel, flyToPoint, locateMe, setMotion, startMeasure, stopMeasure, setPickMode, setPickTarget, setPromptMarkers, useMapView, useMeasure, type MapViewState, type MeasureKind, type MeasureState } from './tools';
+export { zoomBy, resetNorth, setTilt, fitParcel, flyToPoint, locateMe, setMotion, startMeasure, stopMeasure, setPickMode, setPickTarget, setPromptMarkers, useMapView, useMeasure, type MapViewState, type MeasureKind, type MeasureState } from './tools';
 export { useParcelPaint, type ParcelPaintInfo } from './legend';
 export { isFieldRange, rampColor as rasterRampColor, rampStops as rasterRampStops, rasterRampCss } from './fieldRaster';
 export { onMapClick, type MapClickMods } from './mapClick';

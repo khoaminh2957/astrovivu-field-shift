@@ -16,7 +16,7 @@ import { BRANCH_TITLES, findSeries, primarySeries, scoreAt } from '@/lib/series'
 import { diffDays } from '@/lib/time';
 import { type Phase, useMission } from '@/state/mission';
 import { IconButton, StatusTag, TabPanel, Tabs } from '@/ui/design';
-import { useWeatherNow } from '@/ui/chrome/MapSearch';
+import { useWeatherNow } from '@/ui/chrome/Weather';
 import { useMissionUi } from '@/ui/chrome/uiState';
 import { cropName, fmtDate, fmtNum } from '@/ui/hud/format';
 import { rainSum } from '@/ui/hud/readings';

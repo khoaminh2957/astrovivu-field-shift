@@ -12,7 +12,7 @@
 | 3DTilesRendererJS + three.js / R3F + takram atmosphere | The showcase path uses Google Photorealistic Tiles or Cesium ion terrain: both need a key. Without them there is no field-scale terrain. |
 | iTowns, openglobus | Capable globes with thin documentation and no native Terrarium terrain; too much risk for the gain. |
 | globe.gl / plain three.js | Good hero, no field-scale imagery or terrain. It would need a second renderer and a hand-off; a seam between two cameras is what the brief forbids. |
-| deck.gl interleaved, PMTiles | Not needed: four beacons, one polygon, raster base maps. |
+| deck.gl interleaved, PMTiles | Not needed: one beacon (the demo field the app offers, `DEMO_FIELD`), one polygon, raster base maps. |
 
 What MapLibre gives for free: the `globe` projection turns into mercator between zoom 11 and 12 inside one camera, so the flight from orbit to a two-hectare field is one `flyTo`; AWS Terrarium tiles are a native terrain source; GIBS WMTS is a plain raster source.
 
@@ -76,12 +76,13 @@ The parcel is drawn the way field-monitoring apps draw a field: the picture of t
 
 ## 3c. Map tools, touchpad gestures and insets
 
-`tools.ts` implements the toolbar contract on the active engine: `zoomBy`, `rotateBy`, `resetNorth`, `setTilt` (pitch 54 / 0), `fitParcel` (parcel, else the draft), `locateMe` (browser geolocation, 10 s timeout; flies to zoom 15.5, or 12 when the fix is coarser than 500 m; resolves null on refusal), `setMotion`, `startMeasure` / `stopMeasure` (`measure.ts`: click points; a click on the first point closes an area; haversine metres, `polygonAreaHa` hectares; double-click zoom is off while measuring), `onMapClick` (delivers unhandled map clicks to the UI: clicking a demo field selects it, and "Select on the map" runs `detectFieldBoundary`), `useMapView` (rAF-coalesced, rounded, written only on change) and `useMeasure`.
+`tools.ts` implements the toolbar contract on the active engine: `zoomBy`, `resetNorth`, `setTilt` (pitch 54 / 0), `fitParcel` (parcel, else the draft), `locateMe` (browser geolocation, 10 s timeout; flies to zoom 15.5, or 12 when the fix is coarser than 500 m; resolves null on refusal), `setMotion`, `startMeasure` / `stopMeasure` (`measure.ts`: click points; a click on the first point closes an area; haversine metres, `polygonAreaHa` hectares; double-click zoom is off while measuring), `onMapClick` (delivers unhandled map clicks to the UI: clicking a demo field selects it, and "Select on the map" runs `detectFieldBoundary`), `useMapView` (rAF-coalesced, rounded, written only on change) and `useMeasure`.
 
 Touchpad and wheel handling (`engine.ts`):
 - Container `resize` re-frames the camera only when the container's CSS width or height actually changes, so `setPixelRatio` no longer triggers a snap-back 160 ms after wheel zoom; pixel-ratio reduction while moving runs only above DPR 1.5, avoiding canvas resize hitches on standard screens.
 - Horizontal two-finger touchpad swipe (or `Shift` + wheel) locks axis at gesture start: from orbit it spins the globe left/right, and at field/regional zoom it pans horizontally.
-- `Alt` + two-finger swipe (or `Alt` + wheel) and the turn-left / turn-right toolbar buttons beside the compass rotate map bearing on Windows touchpads, which do not report two-finger twist events to the browser.
+- Turning the map is a gesture; the toolbar keeps only the compass (reset north). Touch screen: two fingers, through MapLibre's `touchZoomRotate`, which the engine leaves on (read in the code, not tried on touch hardware). Safari trackpad: `gesturestart` / `gesturechange` / `gestureend` on the map element apply `event.rotation` to the bearing (clockwise fingers, clockwise map) and `event.scale` to the zoom, and cancel the page zoom; feature-detected, skipped while touches are down, not tried in Safari. Other browsers send no trackpad twist to the page (Chromium on Windows among them): `Alt` + two-finger swipe (or `Alt` + wheel) turns the map there.
+- The landing (hero) globe can be dragged and zoomed. `heroPose` keeps its lower edge clear of the landing's controls (150 px along the bottom edge); the turn slows with the zoom so its speed on screen stays the same; a visitor who zoomed in keeps that zoom when they leave the landing.
 
 `insets` from the store are the camera padding (plus 12 px) for the fly-in, `fitParcel`, `refocusParcel`, `flyToPlace` and draft framing; the padding is shrunk so at least 120 px of map stay free each way. With insets the parcel fills 62 % of the free area. A change of insets eases (360 ms): the whole framing when the camera is still near the parcel view, only the padding when the user has wandered off. Without insets the old design-token estimate is used. Hero and explore poses do not use insets yet.
 

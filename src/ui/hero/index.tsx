@@ -1,103 +1,70 @@
 /**
- * State 1: the hero over the turning globe. One way in (click anywhere, Enter, or the button);
- * when the phase changes the overlay fades while the globe sharpens and starts its approach.
+ * The landing: one question over the turning globe. The answer is given in the finder under it
+ * (`@/ui/chrome/Finder`: the search, "Select on map", the demo field), which stays on screen when
+ * the visitor leaves, so this overlay holds only what belongs to the landing alone: the question,
+ * the wordmark, the language switch and one caption. It takes no pointer events except on the
+ * switch: the globe under it can be turned and zoomed. When the phase changes it fades out.
  */
-import { useEffect, useRef, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
-import type { Lang } from '@/contracts';
+import { useEffect, useState } from 'react';
+import { heroGlobeMiddle } from '@/globe';
 import { useT } from '@/i18n';
 import { useMission } from '@/state/mission';
-import { Button, Segmented, Wordmark, cn, usePrefersReducedMotion } from '@/ui/design';
+import { LangSegmented } from '@/ui/chrome/Finder';
+import { Wordmark, cn, usePrefersReducedMotion } from '@/ui/design';
 import './strings';
 
 const LEAVE_MS = 420;
 
+/** Where the camera puts the middle of the globe, so the question sits on it at every screen size. */
+function useGlobeMiddle(): number {
+  const read = () => heroGlobeMiddle({ width: window.innerWidth, height: window.innerHeight });
+  const [middle, setMiddle] = useState(read);
+  useEffect(() => {
+    const onResize = () => setMiddle(read());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return middle;
+}
+
 export function HeroOverlay() {
   const t = useT();
-  const phase = useMission((s) => s.phase);
-  const lang = useMission((s) => s.lang);
-  const setLang = useMission((s) => s.setLang);
-  const enterExplore = useMission((s) => s.enterExplore);
+  const leaving = useMission((s) => s.phase !== 'hero');
   const reduced = usePrefersReducedMotion();
-  const [gone, setGone] = useState(phase !== 'hero');
-  const button = useRef<HTMLButtonElement | null>(null);
-  const leaving = phase !== 'hero';
+  const [gone, setGone] = useState(leaving);
+  const middle = useGlobeMiddle();
 
   useEffect(() => {
     if (!leaving) {
       setGone(false);
-      button.current?.focus({ preventScroll: true });
       return;
     }
     const id = setTimeout(() => setGone(true), reduced ? 0 : LEAVE_MS);
     return () => clearTimeout(id);
   }, [leaving, reduced]);
 
-  useEffect(() => {
-    if (leaving) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement)) enterExplore();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [leaving, enterExplore]);
-
   if (gone) return null;
 
   return (
     <div
-      className={cn(
-        'theme-dark',
-        'absolute inset-0 z-(--z-overlay) cursor-pointer transition-opacity duration-(--dur-slow) ease-in',
-        leaving && 'pointer-events-none opacity-0',
-      )}
-      onClick={() => enterExplore()}
+      className={cn('theme-dark pointer-events-none absolute inset-0 z-(--z-overlay) transition-opacity duration-(--dur-slow) ease-in', leaving && 'opacity-0')}
       aria-hidden={leaving || undefined}
+      inert={leaving || undefined}
     >
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-6 px-[clamp(16px,5vw,72px)] pb-[clamp(24px,7vh,72px)] md:flex-row md:items-end md:justify-between">
-        <div className="flex max-w-[44rem] flex-col gap-4">
-          <h1 className="m-0">
-            <Wordmark size="hero" />
-          </h1>
-          <p className="t-reading m-0 max-w-[34rem] text-md text-ink-1 md:text-lg md:leading-7">{t('hero.line')}</p>
-          <p className="t-meta m-0 text-ink-3">{t('hero.sources')}</p>
-        </div>
+      <h1
+        style={{ top: middle }}
+        className="absolute inset-x-4 m-0 -translate-y-1/2 text-center text-[clamp(1.875rem,calc(1.2rem+2.6vw),3.5rem)] leading-[1.1] font-bold tracking-[-0.01em] text-balance text-white [text-shadow:0_2px_14px_rgb(3_5_11/0.75),0_0_2px_rgb(3_5_11/0.6)]"
+      >
+        {t('hero.question')}
+      </h1>
 
-        <div className="flex flex-col items-start gap-3 md:items-end">
-          <div className="pointer-events-auto flex items-center gap-3">
-            <Button
-              ref={button}
-              variant="primary"
-              size="lg"
-              iconRight={<ArrowRight />}
-              onClick={(e) => {
-                e.stopPropagation();
-                enterExplore();
-              }}
-            >
-              {t('hero.begin')}
-            </Button>
-          </div>
-          <p className="t-caption m-0">{t('hero.hint')}</p>
-          <div className="mt-2 flex flex-col gap-0.5 border-t border-line-2 pt-3 md:items-end">
-            <span className="text-xs font-medium text-ink-2 [font-stretch:var(--stretch-semi)]">{t('hero.credit')}</span>
-            <span className="t-caption">{t('hero.challenge')}</span>
-          </div>
-        </div>
+      <div className="absolute top-4 left-4 md:top-6 md:left-8">
+        <Wordmark size="sm" className="text-white [text-shadow:0_1px_3px_rgb(3_5_11/0.8)]" />
       </div>
+      <LangSegmented className="pointer-events-auto absolute top-3 right-4 md:top-5 md:right-8" />
 
-      <div className="pointer-events-auto absolute top-4 right-[clamp(16px,5vw,72px)]" onClick={(e) => e.stopPropagation()}>
-        <Segmented<Lang>
-          ariaLabel={t('hero.lang')}
-          size="sm"
-          value={lang}
-          onValueChange={setLang}
-          options={[
-            { value: 'en', label: 'EN', ariaLabel: 'English' },
-            { value: 'vi', label: 'VI', ariaLabel: 'Tiếng Việt' },
-          ]}
-        />
-      </div>
+      {/* Bottom right, level with the imagery credit the globe writes bottom left. Dropped where the two would meet. */}
+      <p className="absolute right-2.5 bottom-1.5 m-0 text-[10px] leading-[13px] text-white/60 [text-shadow:0_1px_2px_rgb(0_0_0/0.95)] max-[560px]:hidden">{t('hero.caption')}</p>
     </div>
   );
 }

@@ -49,15 +49,36 @@ export const metresPerPixel = (zoom: number, lat: number): number => (EARTH_CIRC
 
 export const zoomForMetresPerPixel = (mpp: number, lat: number): number => Math.log2((EARTH_CIRCUMFERENCE_M * Math.cos(lat * RAD)) / (WORLD_PX * mpp));
 
-/** State 1: the planet centred a little above the middle, about two thirds of the short side. */
+/** Height of the landing's controls along the bottom edge: the search, the two pills under it and their margins. */
+const HERO_CONTROLS_PX = 150;
+/** Clear space kept between the globe and the controls below it, and the corner row above it. */
+const HERO_GAP_PX = 16;
+const HERO_TOP_PX = 56;
+
+function heroFrame(view: Viewport): { radius: number; middle: number } {
+  const floor = view.height - HERO_CONTROLS_PX - HERO_GAP_PX;
+  const radius = Math.max(60, Math.min(0.34 * view.height, 0.44 * view.width, (floor - HERO_TOP_PX) / 2));
+  // Never above 30 % of the height: on a screen too short for both, the globe may pass behind the controls, but the padding stays sane.
+  return { radius, middle: Math.max(0.3 * view.height, Math.min(0.47 * view.height, floor - radius)) };
+}
+
+/** Distance in px from the top of the screen to the middle of the landing's globe: where the landing sets its question. */
+export const heroGlobeMiddle = (view: Viewport): number => heroFrame(view).middle;
+
+/**
+ * State 1: the planet centred across the screen and a little above the middle, about two thirds
+ * of the short side, with its lower edge clear of the landing's search. On a short screen the
+ * controls keep their size, so the globe moves up and, when it would reach the top row, shrinks.
+ */
 export function heroPose(view: Viewport, center: LngLat): CameraPose {
-  const radius = Math.min(0.34 * view.height, 0.44 * view.width);
+  const { radius, middle } = heroFrame(view);
   return {
     center,
     zoom: zoomForGlobeRadius(radius, center[1], view.height),
     pitch: 0,
     bearing: 0,
-    padding: { top: 0, bottom: Math.round(0.06 * view.height), left: 0, right: 0 },
+    // MapLibre puts the look-at point in the middle of what the padding leaves: this lifts it to `middle`.
+    padding: { top: 0, bottom: Math.max(0, Math.round(view.height - 2 * middle)), left: 0, right: 0 },
   };
 }
 

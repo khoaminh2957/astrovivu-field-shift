@@ -1,17 +1,20 @@
 /**
- * The app shell after the hero. Wide screens (1100 px and up): a grey icon rail on the far left,
- * the white list panel beside it, the map in the rest with a search and its tools floating on it,
- * and, once a field is locked, the field panel floating over the map's right side with a slim
- * timeline strip in the gap. Narrow screens: the map keeps the top of the screen, one scrolling
- * sheet holds the panels, the timeline is pinned above a tab bar.
+ * The app shell. Three layouts:
+ *   No field open (the landing, and the map while the visitor looks for their field): the finder at
+ *   the bottom centre is the whole interface; on the map the tools join it on the right edge.
+ *   A field open, wide screens (1100 px and up): a grey icon rail on the far left, the list column
+ *   beside it (it folds away), the map in the rest with the search and its tools floating on it,
+ *   the field panel over the map's right side and a slim timeline strip in the gap.
+ *   A field open, narrow screens: the map keeps the top of the screen, one scrolling sheet holds
+ *   the field panel, the timeline is pinned above a tab bar.
  * The shell reports the space its panels cover (`setInsets`) so the globe frames the parcel, or a
  * place the camera flies to, in what is left.
  */
-import { useEffect, type ReactNode } from 'react';
-import { CalendarCheck, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
+import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import { CalendarCheck, ChevronLeft, ChevronRight, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { BRANCHES } from '@/contracts';
-import { SAMPLE_PARCELS } from '@/data';
+import { DEMO_FIELD } from '@/data';
 import { onMapClick, useGlobeStatus } from '@/globe';
 import { useMeasureStore } from '@/globe/toolState';
 import { useLang, useT } from '@/i18n';
@@ -24,9 +27,12 @@ import { FieldList, FindField } from '@/ui/field/FindField';
 import { TimelineScrubber } from '@/ui/timeline';
 import { TrackingView } from '@/ui/tracking';
 import { UrbanCompanion } from '@/ui/urban';
-import { MapSearch, WeatherChip } from './MapSearch';
+import { Finder } from './Finder';
+import { goHome } from './finderActions';
 import { MapLayerPill, MapLegend, MapToolbar } from './MapToolbar';
-import { useMissionUi, useNarrow } from './uiState';
+import { PlaceSearch } from './PlaceSearch';
+import { WeatherChip } from './Weather';
+import { ADD_CARD, useMissionUi, useNarrow } from './uiState';
 import './strings';
 
 type NavId = 'field' | 'advisory' | 'tracking' | 'urban' | 'ask';
@@ -92,14 +98,11 @@ function LangSwitch({ vertical }: { vertical?: boolean }) {
 
 function Mark() {
   const t = useT();
-  const unlock = useMission((s) => s.unlockParcel);
-  const hasParcel = useMission((s) => !!s.parcel);
-  const setPhase = useMission((s) => s.setPhase);
   return (
     <button
       type="button"
       aria-label={t('chrome.home')}
-      onClick={() => (hasParcel ? unlock() : setPhase('explore'))}
+      onClick={goHome}
       className="t-display flex size-10 items-center justify-center rounded-sm bg-signal text-base text-on-signal hover:bg-signal-hover"
     >
       A
@@ -207,55 +210,88 @@ function RightPanel() {
   );
 }
 
-/** Left edge of the map, and its right edge when the field panel floats over it. */
+/** Left edge of the map, and its right edge under the field panel. `--left-w` is 0 while the list column is folded. */
 const MAP_L = 'left-[calc(var(--rail-w)+var(--left-w)+12px)]';
-const MAP_R_LOCKED = 'right-[calc(var(--right-w)+20px)]';
+const MAP_R = 'right-[calc(var(--right-w)+20px)]';
+const LIST_ID = 'field-list-column';
 
-function WideField({ locked }: { locked: boolean }) {
-  const listMode = useMissionUi((s) => s.listMode);
+/** The tab on the list column's edge that folds the column away and brings it back. */
+function ListFold({ folded }: { folded: boolean }) {
+  const t = useT();
+  const setFolded = useMissionUi((s) => s.setListFolded);
+  const label = t(folded ? 'chrome.list.unfold' : 'chrome.list.fold');
   return (
-    <>
-      <aside className="absolute inset-y-0 left-(--rail-w) z-(--z-panel) flex w-(--left-w) flex-col overflow-y-auto rounded-l-sm border-r border-line-1 bg-surface-0 py-4">
+    <Tooltip content={label} side="right" delay={150}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={!folded}
+        aria-controls={LIST_ID}
+        onClick={() => setFolded(!folded)}
+        className="absolute top-1/2 left-[calc(var(--rail-w)+var(--left-w))] z-(--z-panel) flex h-12 w-5 -translate-y-1/2 items-center justify-center rounded-r-sm border border-l-0 border-line-1 bg-surface-0 text-ink-2 shadow-md hover:bg-surface-2 hover:text-ink-1"
+      >
+        {folded ? <ChevronRight size={16} aria-hidden /> : <ChevronLeft size={16} aria-hidden />}
+      </button>
+    </Tooltip>
+  );
+}
+
+/** A field is open on a wide screen: list column, map furniture, timeline strip, field panel. */
+function WideField() {
+  const listMode = useMissionUi((s) => s.listMode);
+  const folded = useMissionUi((s) => s.listFolded);
+  return (
+    // No box of its own: it only carries the column width down to the map furniture.
+    <div className="contents" style={folded ? ({ '--left-w': '0px' } as CSSProperties) : undefined}>
+      <aside id={LIST_ID} hidden={folded} className={cn('absolute inset-y-0 left-(--rail-w) z-(--z-panel) w-(--left-w) flex-col overflow-y-auto rounded-l-sm border-r border-line-1 bg-surface-0 py-4', !folded && 'flex')}>
         {listMode === 'add' ? <FindField /> : <FieldList />}
       </aside>
-      {/* Top row of the map: what the field is coloured by on the left, the place search on the right. */}
-      <div className={cn('pointer-events-none absolute top-[15px] z-(--z-map-ui) flex items-start justify-between gap-2', MAP_L, locked ? MAP_R_LOCKED : 'right-[15px]')}>
+      <ListFold folded={folded} />
+      {/* Top row of the map: what the field is coloured by on the left, the search on the right. */}
+      <div className={cn('pointer-events-none absolute top-[15px] z-(--z-map-ui) flex items-start justify-between gap-2', MAP_L, MAP_R)}>
         <div className="pointer-events-auto flex min-w-0 flex-col items-start gap-2">
-          {locked && <MapLayerPill />}
+          <MapLayerPill />
           <MapNotice />
         </div>
-        <MapSearch className={cn('pointer-events-auto shrink-0', locked ? 'w-44' : 'w-60')} />
+        <PlaceSearch look="map" compact={!folded} className={cn('pointer-events-auto shrink-0', folded ? 'w-64' : 'w-44')} />
       </div>
-      <MapToolbar className={cn('absolute top-1/2 z-(--z-map-ui) -translate-y-1/2', locked ? MAP_R_LOCKED : 'right-[15px]')} />
-      {locked ? (
-        <>
-          {/* Bottom of the map, above the timeline strip: legend and its switch, the weather, the credits. */}
-          <div className={cn('pointer-events-none absolute bottom-[calc(var(--strip-h)+16px)] z-(--z-map-ui) flex items-end justify-between gap-2', MAP_L, MAP_R_LOCKED)}>
-            <MapLegend className="pointer-events-auto" />
-            <WeatherChip className="pointer-events-auto compact:hidden" />
-            <MapCredits className="mb-2 min-w-0" />
-          </div>
-          <TimelineScrubber className={cn('absolute bottom-3 z-(--z-dock) h-(--strip-h) rounded-lg border border-line-1 shadow-md', MAP_L, MAP_R_LOCKED)} />
-          <RightPanel />
-        </>
-      ) : (
-        <div className={cn('pointer-events-none absolute right-3 bottom-2 z-(--z-map-ui) flex justify-end', MAP_L)}>
-          <MapCredits className="min-w-0" />
-        </div>
-      )}
+      <MapToolbar className={cn('absolute top-1/2 z-(--z-map-ui) -translate-y-1/2', MAP_R)} />
+      {/* Bottom of the map, above the timeline strip: legend and its switch, the weather, the credits. */}
+      <div className={cn('pointer-events-none absolute bottom-[calc(var(--strip-h)+16px)] z-(--z-map-ui) flex items-end justify-between gap-2', MAP_L, MAP_R)}>
+        <MapLegend className="pointer-events-auto" />
+        <WeatherChip className="pointer-events-auto compact:hidden" />
+        <MapCredits className="mb-2 min-w-0" />
+      </div>
+      <TimelineScrubber className={cn('absolute bottom-3 z-(--z-dock) h-(--strip-h) rounded-lg border border-line-1 shadow-md', MAP_L, MAP_R)} />
+      <RightPanel />
+    </div>
+  );
+}
+
+/** No field open yet: the map is the screen. Its tools keep the right edge; the finder (mounted by the shell) holds the rest. */
+function ExploreMap({ narrow }: { narrow: boolean }) {
+  return (
+    <>
+      <MapToolbar className={cn('absolute z-(--z-map-ui)', narrow ? 'top-2 right-2' : 'top-1/2 right-[15px] -translate-y-1/2')} />
+      {/* The finder owns the bottom edge of a narrow screen, so the credits go to the top there. */}
+      <div className={cn('pointer-events-none absolute left-2.5 z-(--z-map-ui) flex', narrow ? 'top-2 right-16' : 'right-[calc(50%+309px)] bottom-1.5')}>
+        <MapCredits className="min-w-0" />
+      </div>
     </>
   );
 }
 
-function NarrowField({ locked }: { locked: boolean }) {
+/** A field is open on a narrow screen. */
+function NarrowField() {
   const t = useT();
   const full = useMissionUi((s) => s.sheetFull);
-  const listMode = useMissionUi((s) => s.listMode);
   const setFull = useMissionUi((s) => s.setSheetFull);
   return (
     <>
-      <div className="absolute top-2 left-2 z-(--z-map-ui) flex h-11 items-center gap-2 rounded-full bg-surface-0 pr-1.5 pl-4 shadow-map">
-        <span className="t-display text-xs text-ink-1">Astrovivu</span>
+      <div className="absolute top-2 left-2 z-(--z-map-ui) flex h-11 items-center gap-2 rounded-full bg-surface-0 pr-1.5 pl-1.5 shadow-map">
+        <button type="button" aria-label={t('chrome.home')} onClick={goHome} className="t-display flex h-8 items-center rounded-full pr-1 pl-2.5 text-xs text-ink-1 hover:bg-surface-2">
+          Astrovivu
+        </button>
         <LangSwitch />
       </div>
       <MapToolbar className="absolute top-2 right-2 z-(--z-map-ui)" />
@@ -264,14 +300,11 @@ function NarrowField({ locked }: { locked: boolean }) {
         <MapCredits className="max-w-full" />
       </div>
       <section
-        // Remounted when its content changes kind, so a list scrolled down does not open the field half-way.
-        key={locked ? 'field' : listMode}
         data-panel-scroll
-        aria-label={locked ? t('chrome.metrics') : t('field.find.title')}
+        aria-label={t('chrome.metrics')}
         className={cn(
-          'absolute inset-x-0 z-(--z-panel) flex flex-col overflow-x-hidden overflow-y-auto rounded-t-lg bg-surface-0 px-4 pt-0 pb-6 shadow-lg transition-[top] duration-(--dur-base)',
+          'absolute inset-x-0 bottom-[calc(var(--tabbar-h)+var(--strip-h))] z-(--z-panel) flex flex-col overflow-x-hidden overflow-y-auto rounded-t-lg bg-surface-0 px-4 pt-0 pb-6 shadow-lg transition-[top] duration-(--dur-base)',
           full ? 'top-14' : 'top-(--map-h)',
-          locked ? 'bottom-[calc(var(--tabbar-h)+var(--strip-h))]' : 'bottom-(--tabbar-h)',
         )}
       >
         <div className="sticky top-0 z-10 -mx-4 flex shrink-0 justify-center bg-surface-0">
@@ -285,34 +318,46 @@ function NarrowField({ locked }: { locked: boolean }) {
             <span aria-hidden className="h-1 w-9 rounded-full bg-line-2" />
           </button>
         </div>
-        {locked ? <FieldPanel /> : listMode === 'add' ? <FindField /> : <FieldList />}
+        <FieldPanel />
       </section>
-      {locked && <TimelineScrubber className="absolute inset-x-0 bottom-(--tabbar-h) z-(--z-dock) h-(--strip-h) border-t border-line-1" />}
+      <TimelineScrubber className="absolute inset-x-0 bottom-(--tabbar-h) z-(--z-dock) h-(--strip-h) border-t border-line-1" />
     </>
   );
 }
 
+/** What the finder covers before it has measured itself: its box, without anything open above it. */
+const FINDER_H = 150;
+
 /** Reports the screen space the panels cover, so the globe frames the parcel in the free part. */
-function useReportInsets(narrow: boolean, locked: boolean, phase: Phase) {
+function useReportInsets(narrow: boolean, locked: boolean, finding: boolean) {
   const setInsets = useMission((s) => s.setInsets);
+  const folded = useMissionUi((s) => s.listFolded);
+  const finderH = useMissionUi((s) => s.finderH);
+  const addCard = useMissionUi((s) => s.addCard);
   useEffect(() => {
     const report = () => {
       const css = getComputedStyle(document.documentElement);
       const px = (v: string) => parseFloat(css.getPropertyValue(v)) || 0;
-      if (narrow) {
+      if (finding) {
+        // The landing reports the same as the map after it: when the visitor enters, the globe already knows its room.
+        // Wide screens keep the tool stack's width free on both sides, so the globe stays above the middle of the finder.
+        const side = narrow ? 0 : 64;
+        // The add-a-field card takes the left edge of a wide screen; on a narrow one it is part of the finder's height.
+        const left = !narrow && addCard ? ADD_CARD.margin + ADD_CARD.width : side;
+        setInsets({ top: 12, left, right: side, bottom: (finderH || FINDER_H) + 12 });
+      } else if (narrow) {
         const mapH = Math.round(window.innerHeight * 0.45);
         setInsets({ top: 52, left: 0, right: 56, bottom: Math.max(0, window.innerHeight - mapH) });
       } else {
-        // The hero counts as the field view: when the user enters, the globe already knows where the list panel will be.
-        const left = px('--rail-w') + (phase === 'explore' || phase === 'locked' || phase === 'hero' ? px('--left-w') : 0);
-        // Top: the search row; right: the tool stack (and the field panel); bottom: the legend and the timeline strip.
+        const left = px('--rail-w') + (locked && !folded ? px('--left-w') : 0);
+        // Top: the search row; right: the tool stack and the field panel; bottom: the legend and the timeline strip.
         setInsets({ top: 56, left, right: (locked ? px('--right-w') + 8 : 0) + 64, bottom: locked ? px('--strip-h') + 48 : 0 });
       }
     };
     report();
     window.addEventListener('resize', report);
     return () => window.removeEventListener('resize', report);
-  }, [narrow, locked, phase, setInsets]);
+  }, [narrow, locked, finding, folded, finderH, addCard, setInsets]);
 }
 
 export function Shell() {
@@ -320,35 +365,43 @@ export function Shell() {
   const hasParcel = useMission((s) => !!s.parcel);
   const narrow = useNarrow();
   const locked = phase === 'locked' && hasParcel;
-  useReportInsets(narrow, locked, phase);
+  const hero = phase === 'hero';
+  /** No field is open and the visitor is finding one: on the landing, or on the map after it. */
+  const finding = hero || ((phase === 'explore' || phase === 'locked') && !locked);
+  useReportInsets(narrow, locked, finding);
   const setListMode = useMissionUi((s) => s.setListMode);
   const setFieldTab = useMissionUi((s) => s.setFieldTab);
-  const parcelId = useMission((s) => s.parcel?.id);
+  const setOwnField = useMissionUi((s) => s.setOwnField);
+  const parcel = useMission((s) => s.parcel);
+  const parcelId = parcel?.id;
   // A newly selected field opens on Status, and the list panel goes back to the list.
   useEffect(() => {
     if (!parcelId) return;
     setListMode('list');
     setFieldTab('status');
   }, [parcelId, setListMode, setFieldTab]);
+  // A field the visitor made stays on offer for the session, in the list and in the search.
+  useEffect(() => {
+    if (parcel && parcel.source !== 'sample') setOwnField(parcel);
+  }, [parcel, setOwnField]);
 
-  // A click on a demo field's outline selects it, like a click on its row.
+  // A click on the demo field's outline selects it, like a click on its row.
   useEffect(
     () =>
       onMapClick((at) => {
         const s = useMission.getState();
         if (s.phase === 'hero' || s.draft || useMissionUi.getState().listMode === 'add' || useMeasureStore.getState().kind) return;
-        const hit = SAMPLE_PARCELS.find((p) => pointInPolygon(at, p.polygon));
-        if (hit && hit.id !== s.parcel?.id) void s.lockSample(hit.id);
+        if (DEMO_FIELD.id !== s.parcel?.id && pointInPolygon(at, DEMO_FIELD.polygon)) void s.lockSample(DEMO_FIELD.id);
       }),
     [],
   );
-  if (phase === 'hero') return null;
-  const fieldPhase = phase === 'explore' || phase === 'locked';
   const view = phase === 'advisory' ? <AdvisoryPanel /> : phase === 'tracking' ? <TrackingView /> : phase === 'urban' ? <UrbanCompanion /> : null;
   return (
     <>
-      {narrow ? <TabBar /> : <Rail />}
-      {fieldPhase && (narrow ? <NarrowField locked={locked} /> : <WideField locked={locked} />)}
+      {finding && <Finder />}
+      {finding && !hero && <ExploreMap narrow={narrow} />}
+      {!finding && (narrow ? <TabBar /> : <Rail />)}
+      {locked && (narrow ? <NarrowField /> : <WideField />)}
       {view && narrow && (
         <div className="absolute inset-x-0 top-0 z-(--z-chrome) flex h-12 items-center justify-between border-b border-line-1 bg-surface-0 px-3">
           <span className="t-display text-xs">Astrovivu</span>

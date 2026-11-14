@@ -18,7 +18,7 @@ import { mockTelemetry } from './mock';
 import { nominatimSearch, parseCoordinates, photonSearch, reverse } from './adapters/geocode';
 import { loadUrban } from './urban';
 
-export { SAMPLE_PARCELS, getSampleParcel } from './samples';
+export { DEMO_FIELD, SAMPLE_PARCELS, getSampleParcel } from './samples';
 export { confidenceAt, staticBadge } from './confidence';
 export { SOURCES } from './sources';
 export { loadFieldRasters, type RasterLoadOptions } from './rasters';

@@ -1,25 +1,30 @@
 /**
- * The list panel and its add-a-field step.
- *   FieldList  title and total, a search-and-sort row, the fields as rows (your own first, then the
- *              demo group), the card that starts the add step, and a card that opens the assistant.
+ * The list panel and the add-a-field step.
+ *   FieldList  title, total and sort, the fields as rows (your own first, then the demo field), the
+ *              card that starts the add step, and a card that opens the assistant. Finding a field
+ *              by typing is the job of the one search (`@/ui/chrome/PlaceSearch`), not of this list.
  *   FindField  one address (or "lat, lon") and one area, or a click on the map; the outline that
- *              lands can be dragged by its corners, then the field is named and locked.
+ *              lands can be dragged by its corners, then the field is named and locked. Beside an
+ *              open field it fills the list column; before one (`floating`) it is one line above
+ *              the finder box while it waits for a click on the map, and otherwise a card on the
+ *              left edge of a wide screen, or a sheet above the box on a narrow one, so that the
+ *              outline it talks about stays in view.
  * One green button per state: Add field, then Show on the map, then Lock field.
  */
 import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowDownUp, ArrowLeft, ArrowRight, LocateFixed, MapPin, MessageCircleQuestion, MousePointerClick, Plus, Search, SquarePlus } from 'lucide-react';
-import type { LngLat, Parcel, PlaceHit, PlaceInfo } from '@/contracts';
+import { ArrowDownUp, ArrowLeft, ArrowRight, LocateFixed, MapPin, MessageCircleQuestion, MousePointerClick, Plus, Search, SquarePlus, X } from 'lucide-react';
+import type { LngLat, Parcel, PlaceHit, PlaceInfo, SampleParcel } from '@/contracts';
 import { pick } from '@/contracts';
-import { SAMPLE_PARCELS, reverseGeocode, searchPlace } from '@/data';
-import { draftToParcel, flyToPlace, isLockable, squareDraft } from '@/globe';
+import { DEMO_FIELD, getSampleParcel, reverseGeocode, searchPlace } from '@/data';
+import { draftToParcel, isLockable, squareDraft } from '@/globe';
 import { useLang, useT } from '@/i18n';
 import { useMission } from '@/state/mission';
 import { Button, Field, IconButton, Input, Popover, Segmented, cn } from '@/ui/design';
-import { parseLatLon } from '@/ui/chrome/MapSearch';
+import { parseLatLon } from '@/ui/chrome/searchModel';
 import { useMissionUi } from '@/ui/chrome/uiState';
 import { fmtNum } from '@/ui/hud/format';
 import { LiveFieldCanvas, ShapeThumb } from './FieldCanvas';
-import { SelectOnMapStatus, useSelectOnMap } from './SelectOnMap';
+import { SelectOnMapHint, SelectOnMapStatus, useSelectOnMap } from './SelectOnMap';
 import './strings';
 
 const DEFAULT_AREA_HA = 2;
@@ -73,39 +78,44 @@ function FieldRow({ parcel, current, tag, sub, onOpen, label }: { parcel: Parcel
   );
 }
 
-function Demos({ filter, sort }: { filter: string; sort: SortBy }) {
+/**
+ * The demo fields the list shows: the one the app offers, and a sample opened by a `?sample=<id>`
+ * deep link, so that the open field is always in the list.
+ */
+function useDemoRows(): SampleParcel[] {
+  const openId = useMission((s) => s.parcel?.id);
+  const open = openId && openId !== DEMO_FIELD.id ? getSampleParcel(openId) : undefined;
+  return open ? [DEMO_FIELD, open] : [DEMO_FIELD];
+}
+
+function Demos({ rows, sort }: { rows: SampleParcel[]; sort: SortBy }) {
   const t = useT();
   const lang = useLang();
   const lockSample = useMission((s) => s.lockSample);
   const current = useMission((s) => s.parcel?.id);
-  const q = filter.trim().toLowerCase();
-  const rows = SAMPLE_PARCELS.filter((p) => !q || `${p.name} ${p.place?.label ?? ''}`.toLowerCase().includes(q));
-  if (sort === 'area') rows.sort((a, b) => b.areaHa - a.areaHa);
-  if (sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = [...rows];
+  if (sort === 'area') sorted.sort((a, b) => b.areaHa - a.areaHa);
+  if (sort === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name));
   return (
     <section aria-labelledby="demo-title" className="flex flex-col pt-2">
       <h3 id="demo-title" className="px-4 pb-3 text-base leading-4 font-medium text-ink-1">
-        {t('field.demo.group')}
+        {t(sorted.length > 1 ? 'field.demo.groupMany' : 'field.demo.group')}
       </h3>
-      {rows.length === 0 ? (
-        <p className="t-caption px-4">{t('field.list.none')}</p>
-      ) : (
-        <ul className="flex flex-col">
-          {rows.map((p) => (
-            <li key={p.id}>
-              <FieldRow
-                parcel={p}
-                current={current === p.id}
-                tag={t('field.demo.tag')}
-                sub={[fmtArea(p.areaHa), placeLine(p.place)].filter(Boolean).join(' · ')}
-                label={t('field.demo.open', { name: p.name })}
-                onOpen={() => void lockSample(p.id)}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-      <span className="sr-only">{SAMPLE_PARCELS.map((p) => pick(p.tagline, lang)).join('. ')}</span>
+      <ul className="flex flex-col">
+        {sorted.map((p) => (
+          <li key={p.id}>
+            <FieldRow
+              parcel={p}
+              current={current === p.id}
+              tag={t('field.demo.tag')}
+              sub={[fmtArea(p.areaHa), placeLine(p.place)].filter(Boolean).join(' · ')}
+              label={t('field.demo.open', { name: p.name })}
+              onOpen={() => void lockSample(p.id)}
+            />
+          </li>
+        ))}
+      </ul>
+      <span className="sr-only">{sorted.map((p) => pick(p.tagline, lang)).join('. ')}</span>
     </section>
   );
 }
@@ -156,7 +166,7 @@ function LockForm({ place, defaultName }: { place?: PlaceInfo; defaultName?: str
   );
 }
 
-export function FindField() {
+export function FindField({ floating = false }: { floating?: boolean }) {
   const t = useT();
   const lang = useLang();
   const draft = useMission((s) => s.draft);
@@ -177,8 +187,11 @@ export function FindField() {
   const areaId = useId();
   const way = useMissionUi((s) => s.addWay);
   const setWay = useMissionUi((s) => s.setAddWay);
+  const setAddCard = useMissionUi((s) => s.setAddCard);
   const sel = useSelectOnMap(way === 'map');
   const placed = !!draft?.closed && !!chosen;
+  /** Floating only: the visitor asked for the whole step, so it no longer folds to one line. */
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     const query = q.trim();
@@ -205,7 +218,7 @@ export function FindField() {
     setQ(hit.label);
     setHits(null);
     if (ha == null) return;
-    flyToPlace(hit.location);
+    // No flight of its own: the globe frames the square in the free part of the screen when it lands.
     startDraw('coords');
     setDraft(squareDraft('coords', hit.location, ha));
   };
@@ -250,24 +263,61 @@ export function FindField() {
   const areaInvalid = area.trim() !== '' && areaOf(area) == null;
   const canSubmit = !!parseLatLon(q) || !!(chosen && chosen.label === q) || !!hits?.length;
 
-  return (
+  const switchWay = (v: 'address' | 'map') => {
+    cancelDraw();
+    setChosen(null);
+    setWay(v);
+  };
+  const leave = () => {
+    cancelDraw();
+    setListMode('list');
+  };
+
+  // Waiting for the click that picks the field: one line, so the map under it stays clear.
+  const waiting = way === 'map' && (sel.state.kind === 'idle' || sel.state.kind === 'zoomed' || sel.state.kind === 'detecting');
+  const card = floating && !(waiting && !expanded);
+  // The shell counts the card as covered map, so the outline is framed beside it.
+  useEffect(() => {
+    if (!floating) return;
+    setAddCard(card);
+    return () => setAddCard(false);
+  }, [floating, card, setAddCard]);
+  if (floating && !card) {
+    return (
+      <SelectOnMapHint
+        control={sel}
+        onAddress={() => {
+          setExpanded(true);
+          switchWay('address');
+        }}
+      />
+    );
+  }
+
+  const step = (
     <div className="flex flex-col gap-4 px-4">
-      <header className="flex flex-col gap-2">
-        <button type="button" onClick={() => (cancelDraw(), setListMode('list'))} className="-ml-1.5 flex h-8 items-center gap-1 self-start rounded-sm px-1.5 text-xs font-medium text-ink-2 hover:bg-surface-2 hover:text-ink-1 narrow:h-11 narrow:text-base">
-          <ArrowLeft size={16} aria-hidden />
-          {t('field.add.back')}
-        </button>
-        <h2 className="text-md leading-[21px] font-medium text-ink-1">{t('field.add.step')}</h2>
-      </header>
+      {floating ? (
+        <header className="flex items-center justify-between gap-2">
+          <h2 className="text-md leading-[21px] font-medium text-ink-1">{t('field.add.step')}</h2>
+          <IconButton label={t('field.add.close')} icon={<X />} size="md" onClick={leave} className="-mr-1.5" />
+        </header>
+      ) : (
+        <header className="flex flex-col gap-2">
+          <button type="button" onClick={leave} className="-ml-1.5 flex h-8 items-center gap-1 self-start rounded-sm px-1.5 text-xs font-medium text-ink-2 hover:bg-surface-2 hover:text-ink-1 narrow:h-11 narrow:text-base">
+            <ArrowLeft size={16} aria-hidden />
+            {t('field.add.back')}
+          </button>
+          <h2 className="text-md leading-[21px] font-medium text-ink-1">{t('field.add.step')}</h2>
+        </header>
+      )}
 
       <Segmented<'address' | 'map'>
         ariaLabel={t('field.select.way')}
         block
         value={way}
         onValueChange={(v) => {
-          cancelDraw();
-          setChosen(null);
-          setWay(v);
+          setExpanded(true);
+          switchWay(v);
         }}
         options={[
           { value: 'address', label: t('field.select.address') },
@@ -347,41 +397,42 @@ export function FindField() {
       )}
     </div>
   );
+  if (!floating) return step;
+  return (
+    <section
+      aria-label={t('field.add.step')}
+      data-panel-scroll
+      // Wide: a card on the left edge (ADD_CARD in uiState: 360 px, 16 px margins), clear of the credits under it. Narrow: a sheet in the finder's stack.
+      className="pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg narrow:static narrow:max-h-[45dvh] narrow:w-auto"
+    >
+      {step}
+    </section>
+  );
 }
 
-/** The list panel: title and total, search and sort, your field, the demo group, then the two cards. */
+/** The list panel: title, total and sort, your field, the demo field, then the two cards. */
 export function FieldList() {
   const t = useT();
   const parcel = useMission((s) => s.parcel);
   const setPhase = useMission((s) => s.setPhase);
+  const lockParcel = useMission((s) => s.lockParcel);
   const setAskOpen = useMission((s) => s.setAskOpen);
   const setListMode = useMissionUi((s) => s.setListMode);
   const setAddWay = useMissionUi((s) => s.setAddWay);
-  const isDemo = SAMPLE_PARCELS.some((p) => p.id === parcel?.id);
-  const [q, setQ] = useState('');
+  const own = useMissionUi((s) => s.ownField);
+  const demos = useDemoRows();
   const [sort, setSort] = useState<SortBy>('default');
-  const own = parcel && !isDemo ? parcel : null;
+  const count = demos.length + (own ? 1 : 0);
+  const area = demos.reduce((a, p) => a + p.areaHa, 0) + (own ? own.areaHa : 0);
+  const ownOpen = !!own && own.id === parcel?.id;
   return (
     <div className="flex min-h-full flex-col gap-3">
-      <header className="flex flex-col gap-2 border-b border-line-1 pb-2">
-        <div className="flex flex-col px-4">
+      <header className="flex items-start justify-between gap-2 border-b border-line-1 pr-2 pb-2 pl-4">
+        <div className="flex min-w-0 flex-col">
           <h2 className="text-md leading-[21px] font-medium text-ink-1">{t('field.list.title')}</h2>
-          <span className="text-xs leading-4 text-ink-3">
-            {t('field.list.total', {
-              n: SAMPLE_PARCELS.length + (own ? 1 : 0),
-              a: fmtNum(SAMPLE_PARCELS.reduce((a, p) => a + p.areaHa, 0) + (own ? own.areaHa : 0), 1),
-            })}
-          </span>
+          <span className="text-xs leading-4 text-ink-3">{t(count === 1 ? 'field.list.totalOne' : 'field.list.total', { n: count, a: fmtNum(area, 1) })}</span>
         </div>
-        <div className="mx-2 flex h-[34px] items-center gap-2 pl-2 narrow:h-11">
-          <Search size={20} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-3" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t('field.list.search')}
-            aria-label={t('field.list.search')}
-            className="h-full min-w-0 flex-1 bg-transparent text-xs text-ink-1 outline-none narrow:text-base"
-          />
+        <div className="flex shrink-0 items-center">
           <button
             type="button"
             onClick={() => setSort(NEXT_SORT[sort])}
@@ -397,10 +448,16 @@ export function FieldList() {
       {own && (
         <section className="flex flex-col pt-2">
           <h3 className="px-4 pb-3 text-base leading-4 font-medium text-ink-1">{t('field.list.yours')}</h3>
-          <FieldRow parcel={own} current sub={[fmtArea(own.areaHa), placeLine(own.place)].filter(Boolean).join(' · ')} label={own.name} onOpen={() => setPhase('locked')} />
+          <FieldRow
+            parcel={own}
+            current={ownOpen}
+            sub={[fmtArea(own.areaHa), placeLine(own.place)].filter(Boolean).join(' · ')}
+            label={own.name}
+            onOpen={() => (ownOpen ? setPhase('locked') : void lockParcel(own))}
+          />
         </section>
       )}
-      <Demos filter={q} sort={sort} />
+      <Demos rows={demos} sort={sort} />
       <div className="mx-3 flex min-h-56 flex-1 flex-col items-center justify-center gap-2 rounded-sm bg-surface-2 p-4 text-center">
         <SquarePlus size={24} strokeWidth={1.5} aria-hidden className="mb-2 text-ink-1" />
         <h3 className="text-md leading-[19px] font-medium text-ink-1">{t('field.add.title')}</h3>
