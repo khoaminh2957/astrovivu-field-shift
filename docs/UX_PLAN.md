@@ -58,7 +58,7 @@ Một người lần đầu vào web đi qua bốn bước, mỗi bước một 
 
 **Thay đổi.** Trước khi có ruộng (trang đầu và lúc dò trên bản đồ), mọi điều hướng nằm trong một hộp nổi ở dưới giữa: ô tìm kiếm, "Chọn trên bản đồ", "Ruộng mẫu", lối vào "Trồng rau đô thị" và "Hỏi đáp". Không còn thanh trái và bảng danh sách ở giai đoạn này.
 
-**Cần Bảo chốt.** Sau khi đã có ruộng, điều hướng ở đâu: (a) vẫn là hộp nổi dưới giữa, thu gọn, nằm trên dải thời gian; (b) trở lại thanh trái như OneSoil. Đề xuất (b): dải thời gian đã chiếm mép dưới, và thanh trái là thứ đã đo theo OneSoil.
+**Đã chốt (Bảo, 15/11).** Sau khi đã có ruộng, điều hướng trở lại thanh trái. Cột danh sách ruộng có thêm nút gom lại và mở ra; khi gom, bản đồ được thêm chỗ và ruộng được căn lại giữa phần còn trống.
 
 **Xong khi.** Ở giai đoạn đầu bản đồ chiếm toàn màn hình; không có lối vào nào bị mất.
 
@@ -92,13 +92,19 @@ Một người lần đầu vào web đi qua bốn bước, mỗi bước một 
 
 ### U7. Xoay bản đồ bằng chuột
 
-**Đang có.** Kéo bằng chuột phải (hoặc Ctrl + kéo) xoay và nghiêng; Alt + lăn chuột hoặc Alt + vuốt xoay; hai nút xoay 30° cạnh la bàn.
+**Đã chốt (Bảo, 15/11).** Bỏ hai nút xoay cạnh la bàn. Cử chỉ xoay là hai ngón: một ngón đi xuống, một ngón đi lên thì bản đồ xoay theo chiều kim đồng hồ, và ngược lại.
 
-**Thay đổi.** Thêm cách xoay mặt phẳng 2D theo chiều kim đồng hồ và ngược lại mà không làm nghiêng: giữ chuột phải và kéo ngang chỉ đổi hướng, độ nghiêng bị khoá khi bản đồ đang ở chế độ 2D; kéo la bàn để xoay tự do.
+**Thực tế kỹ thuật.**
 
-**Cần Bảo xác nhận** cử chỉ mong muốn: kéo chuột phải, hay lăn chuột kèm một phím.
+| Thiết bị | Cử chỉ vặn hai ngón |
+|---|---|
+| Màn hình cảm ứng (điện thoại, máy tính bảng, laptop cảm ứng) | có sẵn trong MapLibre (`touchZoomRotate`) |
+| Bàn rê của Mac trên Safari | Safari báo cử chỉ vặn cho trang web (`gesturechange`); thêm vào |
+| Bàn rê của Windows trên Chrome, Edge | trình duyệt chỉ chuyển cho trang web cử chỉ cuộn và chụm, không chuyển cử chỉ vặn; trang web không nhận biết được |
 
-**Xong khi.** Xoay 90° bằng một lần kéo, bản đồ vẫn phẳng; nút la bàn đưa về hướng bắc.
+Trên bàn rê Windows vẫn còn hai cách: giữ Alt rồi vuốt hai ngón, và kéo bằng chuột phải. Nút la bàn đưa về hướng bắc.
+
+**Xong khi.** Trên màn hình cảm ứng, vặn hai ngón xoay được bản đồ theo đúng chiều; thanh công cụ không còn hai nút xoay.
 
 ### U8. Trang luân canh
 
@@ -138,7 +144,7 @@ Một người lần đầu vào web đi qua bốn bước, mỗi bước một 
 |---|---|---|
 | 1 (đang làm) | U1, U2, U3 | không |
 | 2 | U5, U6 | chẩn đoán đất của Duy cho phần hiển thị dưới ô nhập; làm khung trước được |
-| 3 | U4, U7 | Bảo chốt hai câu hỏi |
+| 1 (đang làm, thêm vào) | U4, U7 | đã chốt |
 | 4 | U8, U9 | Bảo chốt câu hỏi ở U9 |
 | 5 | U10 và dùng thử | mascot của Uyên |
 
