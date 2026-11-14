@@ -1,6 +1,6 @@
 # Astrovivu — Field Shift
 
-Astrovivu is a decision-support tool that turns NASA Earth observations into crop-rotation guidance for one field. It is for farmers and the extension workers who advise them, anywhere on Earth, in English or Vietnamese, without an account or an API key. You lock a parcel on a 3D globe, read eight telemetry branches synchronised on one year of timeline, correct them with what you measured on the ground, and compare at least three rotation strategies, including the one you farm today, with their evidence, information gaps and risks that need local review. Built by Team Astrovivu for the NASA Space Apps Challenge 2026, challenge *Field Shift: Adapting Farms with NASA Data*.
+Astrovivu is a decision-support tool that turns NASA Earth observations into crop-rotation guidance for one field. It is for farmers and the extension workers who advise them, anywhere on Earth, in English or Vietnamese, without an account or an API key. You find a field on a 3D globe, read eight metrics synchronised on one year of timeline, each drawn inside the field at 10-30 m where imagery allows, correct them with what you measured on the ground, and compare at least three rotation strategies, including the one you farm today, with their evidence, information gaps and risks that need local review. Built by Team Astrovivu for the NASA Space Apps Challenge 2026, challenge *Field Shift: Adapting Farms with NASA Data*.
 
 Repository: https://github.com/quocbao271207/astrovivu-field-shift
 
@@ -20,20 +20,33 @@ Five rules shape the product (`docs/ARCHITECTURE.md` §1):
 
 ## What a user does
 
-The app is a state machine (`src/state/mission.ts`): `hero → explore → locked ⇄ advisory / tracking`, with `urban` reachable from any state.
+The app opens on a rotating globe (`src/ui/hero`) and then shows a light working shell (`src/App.tsx`, `src/ui/chrome`, `src/ui/field`; `docs/DESIGN.md`, "Shell"): an icon rail and field list on the left, the map in the middle with a tool column (zoom, north, tilt, fit, locate, base map and NASA overlays, distance and area measuring, motion, fullscreen) and a field panel on the right. Below 1100 px wide the map sits on top, one scrolling sheet under it and a bottom tab bar. The state machine is in `src/state/mission.ts`.
 
-| State | What the user sees and does | Code |
+| Step | What the user sees and does | Code |
 |---|---|---|
-| Hero | A rotating globe with the title. Click to start. | `src/ui/hero`, `src/globe` |
-| Explore | NASA layer toggles (MODIS NDVI, SMAP root-zone moisture, GPM IMERG rain, MODIS land surface temperature), four demo-field beacons, search, and three ways to draw a field: four taps, coordinates plus area, or GPS. Corners can be dragged. | `src/ui/dock`, `src/globe` |
-| Locked | One continuous fly-in from orbit to the field. The Radial HUD shows eight telemetry branches around a Center Productivity Hub: soil moisture, vegetation, surface heat, rainfall, light and weather (agromet), terrain, soil, risk. Each branch has a sparkline, a Confidence Badge and anomaly markers. | `src/ui/hud` |
-| Timeline and Ground-Truth Override | A one-year Master Timeline Scrubber drives the parcel colour, the NASA overlay date, all eight branches and the score together. The override panel takes measured pH, irrigation, crop and variety, sowing date, and the farmer's yield, price and cost; everything recalculates. | `src/ui/timeline`, `src/ui/override` |
-| Advisory | Rotation strategies compared side by side (current rotation plus alternatives), weighted by the farmer's priorities, with why, evidence, benefits, gaps and risks; irrigation schedule, pH plan, sowing-window shift; annual financial plan. | `src/ui/advisory`, `src/core/advisory` |
-| Tracking | Season journal, soil tests, year-over-year NDVI, plan versus actual. Demo-field history is simulated and labelled. | `src/ui/tracking`, `src/core/tracking` |
-| Urban Grower Companion | Side mission for balcony and rooftop growers: location, microclimate, preferences, plant picks, care calendar. | `src/ui/urban`, `src/core/urban` |
-| Crop-knowledge assistant | The Ask panel, available in every state after the hero, answers crop questions and questions about the locked field with citations. | `src/ui/ask`, `src/rag`, `server/` |
+| Find a field | Type an address and an area, or open one of four demo fields. The draft square can be dragged corner by corner on the map before it is locked. NASA GIBS overlays (MODIS NDVI, SMAP root-zone moisture, GPM IMERG rain, MODIS land surface temperature) are in the map's layer menu. | `src/ui/field/FindField.tsx`, `src/ui/chrome`, `src/globe` |
+| Lock | One continuous flight from orbit to the field. The parcel is drawn as the within-field picture of the selected metric over the satellite image. | `src/globe` (`docs/GLOBE.md` §3b) |
+| Status tab | Two field pictures, the productivity score, the crop, three charts on one month axis with one plain sentence each, and what changed (dated insights). | `src/ui/field/FieldSummary.tsx` |
+| Field report tab | Relative NDVI zones (high / medium / low) with a per-zone table and stable share, the real Sentinel-2 frames used, three field maps. | `src/ui/field/FieldReport.tsx`, `src/core/zones` |
+| Data tab | Eight metric cards (soil moisture, vegetation, surface heat, rainfall, agromet, terrain, soil, risk), each showing the field itself coloured by that metric at the timeline date. A card opens a detail with legend, frame date and age, a filmstrip of real frames, the series, facts, sources, caveats and the Confidence Badge. | `src/ui/field/MetricCards.tsx`, `CardDetail.tsx` |
+| Timeline | A one-year strip drives the field picture, the NASA overlay date, every card and the score together; the latency gap shows as pending and the forecast as forecast. | `src/ui/timeline` |
+| Ground truth tab | Measured pH and soil values, irrigation, crop, sowing date, current rotation, yield, price, cost. Everything recalculates; a calibration ledger shows each override's effect on the season score. | `src/ui/override` |
+| Rotation (rail) | At least three rotation strategies including the current one, re-ranked by the farmer's priorities, each with why, evidence, benefits, gaps and risks; irrigation schedule, pH plan, sowing-window shift, annual financial plan. | `src/ui/advisory`, `src/core/advisory` |
+| Notes (rail) | Long-term tracking: past seasons, journal, soil tests, alerts, year-over-year NDVI, plan versus actual. Demo-field history is simulated and labelled. | `src/ui/tracking`, `src/core/tracking` |
+| Urban (rail) | Urban Grower Companion for balcony and rooftop growers: site, light, preferences, plant picks, sowing months. | `src/ui/urban`, `src/core/urban` |
+| Ask | The crop-knowledge assistant answers crop questions and questions about the locked field, with citations. | `src/ui/ask`, `src/rag`, `server/` |
 
-**State of the advisory engine at the time of writing.** The screens for advisory, tracking and urban are built against the contracts in `src/contracts/advisory.ts` and `src/contracts/experience.ts`, but the rule-based engine behind them (`src/core/advisory`, `src/core/tracking`, `src/core/urban`) is still a placeholder that returns empty results (an insights module, `src/core/advisory/insights.ts`, is on disk but not yet wired into `index.ts`); it is landing from another team member. In development, `?fixture=1` fills these screens with layout fixtures that are marked as fixtures on screen (`src/ui/advisory/fixture.ts`); production builds drop that code. Scoring, economics, telemetry and the assistant are implemented and tested.
+### The advisory engine
+
+Rule-based and pure (`src/core/advisory`, `src/core/tracking`, `src/core/urban`; `docs/ADVISORY.md`; tests in `src/core/advisory/advisory.test.ts` on the four real demo samples).
+
+- **Insights** pinned to timeline dates: persistent departures of NDVI, root-zone moisture and surface temperature from their day-of-year baselines (z-scores held 14-24 days), 30-day rainfall against normal, dry spells, heat and frost against the crop's EcoCrop limits, growth-stage changes, score swings, forecast events, and a weather-based pest and disease pressure index that is labelled as needing scouting, never a diagnosis, with no products named.
+- **Rotation strategies**: the current rotation (from the farmer's entry, else the Cropland Data Layer history, else the selected crop repeated) against soil-health, water-saver, income and resilience strategies. Perennials are not rotated yearly; they get an inter-row legume cover, a companion tree, a partial conversion or a mix. Each strategy carries suitability, water use and water fit, an indicative nitrogen credit, ground-cover months, pest break, soil health, risk and economics, and five generated lists: why, evidence, benefits, gaps, risks (always including local extension review). Priority weights are 0.5 plus 3 / 2 / 1 for the farmer's first, second and third priority.
+- **Actions**: an FAO-56 irrigation schedule over the year and the forecast; a pH plan (lime or sulfur per pH unit by texture, always flagged to need a lab test); a sowing-window shift; drainage, organic-matter and erosion advisories; an annual cash plan for the first year of the best strategy.
+- **Tracking**: five past seasons for demo fields, driven by the real yearly climate with simulated yields and soil tests, all flagged `simulated: true`; alerts are the real insights. A user's own field gets alerts only.
+- **Urban**: curated container-friendly crops matched on temperature window, light and preferences.
+
+Limits (`docs/ADVISORY.md`): not verified against field data; thresholds are rules of thumb; reference prices drive the income strategy (for example potato in Iowa) and markets are not modelled; lime rates are typical extension rules of thumb; the first report takes 70-150 ms, repeat calls are memoised.
 
 ## Architecture
 
@@ -41,7 +54,7 @@ Five tiers talk only through typed contracts (`src/contracts/`) and one runtime 
 
 ```mermaid
 flowchart TB
-  APIs["NASA and partner APIs<br/>POWER, ORNL MODIS/VIIRS, GIBS, ClimateSERV,<br/>Open-Meteo ERA5, SoilGrids, SSURGO, Terrarium SRTM"]
+  APIs["NASA and partner APIs<br/>POWER, ORNL MODIS/VIIRS, GIBS, ClimateSERV,<br/>Planetary Computer Sentinel-2 / Landsat,<br/>Open-Meteo ERA5, SoilGrids, SSURGO, Terrarium SRTM"]
   T1["T1 Acquire and sync<br/>src/data: adapters, fallbacks, caches, demo samples"]
   T2["T2 Geo-processing and ground-truth calibration<br/>src/data/harmonize, src/core/scoring"]
   T3["T3 Scoring and economics<br/>src/core/scoring, src/core/economics, src/core/crops"]
@@ -56,7 +69,7 @@ flowchart TB
   T4 -- "lock parcel, cursor, overrides, priorities" --> S
 ```
 
-After a parcel is locked, `lockParcel` marks all branches loading, `data.loadTelemetry` reports each branch as it arrives, and `recompute()` runs scoring and advisory so the HUD fills in progressively. Moving the cursor re-reads values with `sampleAt` and `scoreAt` without recomputing (`docs/ARCHITECTURE.md` §7).
+After a parcel is locked, `lockParcel` marks all branches loading, `data.loadTelemetry` reports each branch as it arrives, and `recompute()` runs scoring and advisory so the field panel fills in progressively. Moving the cursor re-reads values with `sampleAt` and `scoreAt` without recomputing (`docs/ARCHITECTURE.md` §7).
 
 Runtime modes (`docs/ARCHITECTURE.md` §8): `cached` for the four demo fields (`public/data/samples/<id>.json`), `live` for any other parcel (the browser calls CORS-enabled APIs directly and caches in IndexedDB), `mock` when every source is unreachable or `VITE_DATA_MODE=mock` (labelled simulated). The API server is optional.
 
@@ -75,7 +88,8 @@ Names follow the challenge Resources page. "Series" means a point time series sa
 | **GPM IMERG** | rainfall | GIBS overlay only | ~10 km | daily | 1 day on GIBS | Map overlay synchronised to the timeline |
 | **SRTM** | terrain | AWS Terrarium tiles (browser), OpenTopoData SRTM 30 m (cache script) | 30 m | static | none | Elevation, slope, aspect, flow direction, lapse-rate correction, 3D terrain |
 | **ECOSTRESS** Evaporative Stress Index | thermal | ClimateSERV (4-week ESI); ECOSTRESS 70 m via AppEEARS needs a token | 4-week product | weekly values | last value July 2025 at the test point | Observed-condition term of the score where available |
-| **Landsat** (HLS) | map | GIBS HLS layers listed; not sampled | 30 m | 2-3 days | ~8 days | Not ingested as a series (see below) |
+| **Landsat** 8/9 Collection 2 L2 surface temperature | thermal (field picture) | Microsoft Planetary Computer STAC + data API, key-free | 30 m (100 m native thermal, resampled by USGS) | 8-16 days, cloud-free scenes only | days | Within-field surface temperature frames; cloud, shadow and snow masked by QA bits |
+| **Copernicus Sentinel-2** L2A | vegetation, soil moisture (field pictures) | Planetary Computer, key-free | 10 m NDVI, 20 m NDMI | ~5 days, cloud-free scenes only | days | Within-field NDVI frames and relative vegetation zones; NDMI, a canopy and surface moisture index (not soil moisture) |
 | **GRACE / GRACE-FO** | map context | GIBS layer | ~300 km | monthly | layer ends 2022-07 | Long-term water context only |
 
 **What is not available key-free, stated plainly.** No key-free point time series was found for GPM IMERG or SMAP (`docs/DATA_SOURCES.md` §1b): ClimateSERV returned empty series for the IMERG ids, POWER's `IMERG_PRECTOT` returned the fill value, AppEEARS does not offer IMERG, and ORNL answers "no data available" for SMAP at the test points. Therefore:
@@ -103,7 +117,7 @@ Names follow the challenge Resources page. "Series" means a point time series sa
 
 ### Resources-page datasets not used, and why
 
-From `docs/DATA_SOURCES.md` §4: **Landsat** (login and raster processing; represented by the HLS map layer and, with a token, HLS via AppEEARS); **USDA Ag Data Commons** (catalogue, no location query); **Web Soil Survey** (front end of SSURGO, which we query); **PRISM** (US only, file distribution); **NAIP** (US only, 1 m imagery every few years); **NLDAS/GLDAS** (point service discontinued); **FAO GAEZ** (pre-computed for a few dozen crops; we score 2,000+ species from EcoCrop and explain each factor); **CoCoRaHS** (station rain for validation in North America); **USDA AMS Market News**, **USDA NASS QuickStats** (keyed APIs; reference economics tables are used instead); **OpenET** (key required, western US only); **USFS LANDFIRE** (wildland fuels, not cropland); **GEDI** (canopy structure, weak signal over crops).
+From `docs/DATA_SOURCES.md` §4 (Landsat, listed there as not ingested, is now used through the Planetary Computer, see "Field rasters" in that file; HLS is not wired): **USDA Ag Data Commons** (catalogue, no location query); **Web Soil Survey** (front end of SSURGO, which we query); **PRISM** (US only, file distribution); **NAIP** (US only, 1 m imagery every few years); **NLDAS/GLDAS** (point service discontinued); **FAO GAEZ** (pre-computed for a few dozen crops; we score 2,000+ species from EcoCrop and explain each factor); **CoCoRaHS** (station rain for validation in North America); **USDA AMS Market News**, **USDA NASS QuickStats** (keyed APIs; reference economics tables are used instead); **OpenET** (key required, western US only); **USFS LANDFIRE** (wildland fuels, not cropland); **GEDI** (canopy structure, weak signal over crops).
 
 ## Spatial mismatch, temporal latency and the Confidence Badge
 
@@ -114,7 +128,9 @@ Spatial rules (`docs/ARCHITECTURE.md` §4.1):
 - Use coarse data as anomaly, not absolute: regional sources enter the score as departures from the same pixel's multi-year baseline.
 - Correct elevation: coarse-cell air temperature is lapse-rate adjusted (−6.5 °C/km) from the cell's mean elevation to the parcel's SRTM elevation.
 
-Temporal rules (`docs/ARCHITECTURE.md` §4.2): samples are stored at native cadence and never interpolated; each series shows its most recent valid observation at or before the cursor; an observation is held only for a cadence-dependent window (daily 3 d, 8-day 12 d, weekly 10 d, 16-day 24 d, monthly 45 d), after which it is stale; the not-yet-published end of the timeline is drawn as pending; forecasts are a distinct provenance; day-of-year baselines (mean, p10, p90) drive the anomaly markers.
+Within-field rasters (`docs/DATA_SOURCES.md`, "Field rasters"): small north-up grids over the parcel, at most 96 cells on the long side, one frame per real cloud-free acquisition (a scene is used when at least 70 % of the parcel cells are valid). Cloudy periods are left empty: frames are never interpolated or filled. The Sentinel-2 reflectance offset of processing baseline 04.00 is removed per scene. Checked on 2026-11-14: Sentinel-2 NDVI parcel means follow MODIS within about 0.1 on most dates (Iowa July 0.88 vs 0.91). Relative vegetation zones (`src/core/zones`) use fixed bands around each frame's field mean (below 0.93 low, above 1.07 high), so a uniform field stays mostly medium; they are not a yield map.
+
+Temporal rules (`docs/ARCHITECTURE.md` §4.2, `src/lib/series.ts`): samples are stored at native cadence and never interpolated; each series shows its most recent valid observation at or before the cursor; a reading becomes stale only beyond its cadence hold (daily 3 d, 8-day 12 d, weekly 10 d, 16-day 24 d, monthly 45 d) plus the source's normal publication delay; the not-yet-published end of the timeline is drawn as pending; forecasts are a distinct provenance; day-of-year baselines (mean, p10, p90) drive the anomaly markers.
 
 Confidence Badge (`docs/ARCHITECTURE.md` §4.3):
 
@@ -167,6 +183,8 @@ productivity(t) = compatibility x condition / 100
 expected yield fraction = (compatibility / water factor) x min(water factor, 1 - Ky (1 - ETa/ETm))
 ```
 
+**Perennials and off-season** (`docs/SCORING.md`, last section): a perennial is scored over its active season, with winter dormancy and a winter-survival gate; on fallow, pre-sowing and dormant days the productivity shown is the outlook (the compatibility), marked off-season. Each Ground-truth override appears in a calibration ledger with the season score with and without it. Demo fields start with an assumed farm profile (irrigation, water source, current rotation; `defaultGroundTruth` in `src/data/samples.ts`) that the user can change.
+
 **Reliability**: every year of the 20-year climate history is scored with its own months; a year counts when min(temperature, water, kill) ≥ 0.5.
 
 **Economics** (`docs/ECONOMICS.md` §1):
@@ -194,7 +212,7 @@ Inputs from `docs/SCORING.md` §5 and `docs/ECONOMICS.md` §2. Parcel: 190 m × 
 5. Compatibility = 0.72 × 1 × … ≈ **72**, limiting factor water (the regression test asserts 60-85). With full irrigation it exceeds 95.
 6. Economics, taking the fraction as 0.72 (the compatibility at the best window, as for a non-selected crop): yield = 2.97 t/ha × 0.72 = **2.14 t/ha**; production = 2.14 × 2.47 = **5.28 t**; revenue = 5.28 × 3,359 USD/t = **17,740 USD**; cost = 2,363 USD/ha × 2.47 = **5,837 USD**; margin = **11,900 USD** (67 %); break-even yield = 2,363 / 3,359 = **0.70 t/ha**.
 
-The in-app figure for the selected crop uses the season's daily water balance instead of step 6's shortcut, so it will differ. The robusta cost dates from the 2021 season and is a press figure.
+The in-app figure differs: the demo field starts with supplemental irrigation from a well (its assumed farm profile), and the selected crop uses the season's daily water balance instead of step 6's shortcut. Set irrigation to rainfed in the Ground truth tab to approach this example. The robusta cost dates from the 2021 season and is a press figure.
 
 ## The crop-knowledge assistant
 
@@ -234,6 +252,7 @@ Scripts (`package.json`):
 | Command | What it does |
 |---|---|
 | `npm run data:samples` | Rebuilds the demo-field caches in `public/data/samples/` from the live sources |
+| `npm run data:rasters` | Rebuilds the demo-field within-field rasters `public/data/samples/<id>.rasters.json` from the Planetary Computer (up to 24 frames) |
 | `npm run crops:build` | Rebuilds the crop catalogue from `data/ecocrop/` into `src/core/crops/curated.generated.ts` and `public/data/crops/` |
 | `npm run rag:build` | Rebuilds the knowledge index in `public/rag/` from local snapshots (`-- --fetch` downloads missing Wikipedia pages) |
 | `npm run server` | Starts the optional API server on port 8787 (proxied at `/api`): generative answers and token-protected NASA sources |
@@ -247,9 +266,9 @@ Scripts (`package.json`):
 | `/?sample=iowa-corn-soy` | Corn-soybean, Story County, Iowa: US layers (SSURGO, Cropland Data Layer) |
 | `/?sample=nevada-alfalfa` | Irrigated alfalfa pivot, Diamond Valley, Nevada: income with less groundwater |
 | `/?sample=daklak-coffee&phase=advisory&crop=glycine-max&lang=vi` | Advisory for soybean on the Đắk Lắk field, in Vietnamese |
-| `/?sample=<id>&phase=tracking` | Long-term tracking for a demo field |
-| `/?phase=explore`, `/?phase=urban` | Explore the globe; Urban Grower Companion |
-| `?motion=full`, `?motion=reduced` | Force globe motion on a machine with reduced motion switched on; or force the reduced-motion cuts |
+| `/?sample=<id>&phase=tracking` | Long-term tracking (Notes) for a demo field |
+| `/?phase=explore`, `/?phase=urban` | Find a field; Urban Grower Companion |
+| `?motion=reduced` | Motion is on by default, even when the system asks for reduced motion; this turns rotation off and makes flights cuts |
 | `#/styleguide`, `#/globe-lab` | Design system; globe performance bench |
 
 ## Project structure
@@ -258,10 +277,11 @@ Scripts (`package.json`):
 src/
   contracts/     typed interfaces between tiers (single source of truth)
   state/         mission store and state machine, deep links (mission.ts)
-  data/          adapters, fallbacks, caching, harmonisation, demo fields (samples.ts)
-  core/          pure logic: crops, scoring, economics, advisory, tracking, urban
-  globe/         MapLibre globe, terrain, NASA overlays, parcel drawing
-  ui/            hero, dock, hud, timeline, override, advisory, tracking, urban, ask, design
+  data/          adapters, fallbacks, caching, harmonisation, field rasters (rasters/), demo fields (samples.ts)
+  core/          pure logic: crops, scoring, economics, zones, advisory, tracking, urban
+  globe/         MapLibre globe, terrain, NASA overlays, field picture, map tools, parcel drawing
+  ui/            hero, chrome (shell, map tools, layers), field (find, status, report, data cards),
+                 timeline, override, advisory, tracking, urban, ask, design
   rag/           crop-knowledge retrieval and extractive answers
   i18n/          English and Vietnamese strings
 server/          optional Hono API server (generative answers)
@@ -278,12 +298,14 @@ docs/            architecture, data sources, scoring, economics, RAG, globe, des
 - **Coarse pixels.** SMAP (9 km), IMERG (10 km), MODIS LST (1 km) and POWER (~50 km) describe the area around a small field, not the field. MODIS NDVI at 250 m is a mixed pixel below about 6 ha. The Confidence Badge says so.
 - **Scoring weights, class scores (1 / 0.7 / 0.15), gate values, the 0.5 reliability threshold and the 0.7 / 0.3 model-observation blend are documented judgement**, not calibrated against observed yields (`docs/SCORING.md` §7). EcoCrop has one window per species and no varieties.
 - **Economics are partial.** Reference economics are complete for only part of the 73 curated crops; no Vietnamese cost per hectare was found for sesame, mung bean, cassava, pepper, arabica, cashew, tea, mango, banana, durian and others, so no margin is shown without the farmer's cost. All Vietnamese costs are press figures from single farms or demonstrations; soybean's is derived (`docs/ECONOMICS.md` §3). Price risk is not modelled.
-- **Demo-field boundaries are provisional** rectangles and a circle around verified centres, not traced field edges (`src/data/samples.ts`, `docs/GLOBE.md` §6).
-- **Tracking history for demo fields is simulated** and labelled as such; a user's own parcel starts empty.
-- **The advisory, tracking and urban engines** were still placeholders when this README was written (see "What a user does").
+- **Demo-field boundaries**: Iowa and Nevada were traced on Esri imagery (edges good to roughly 5-10 m); Đắk Lắk and Cần Thơ are still provisional rectangles around verified centres (`docs/GLOBE.md` §6).
+- **Demo fields start from an assumed farm profile** (irrigation, rotation), labelled and editable.
+- **Tracking history for demo fields is simulated** and labelled as such; a user's own parcel gets alerts only.
+- **Advisory engine**: rules of thumb, not verified against field data; reference prices drive the income strategy; lime rates are typical extension figures that a soil test must confirm. The real SSURGO pH 8.8 at the Nevada pivot makes alfalfa score low although it has grown there every year since 2019 (`docs/ADVISORY.md`, `docs/SCORING.md`).
+- **Within-field pictures** exist only on cloud-free dates (Cần Thơ 6-12 and Đắk Lắk 9-13 frames over the year); NDMI is a canopy and surface moisture index, not soil moisture; relative zones are not a yield map.
 - **Generative assistant mode is untested against a live model.** The extractive mode is tested. The retrieval eval is small and self-written.
 - **Live sources can be slow or fail**: ORNL subsets take 13-60 s and return intermittent 502s; SoilGrids timed out three times in a row for southern France on 2026-11-14, so the soil branch can end unavailable. Each fallback writes a visible note.
-- **Measured, with conditions.** Globe frame times: 60 fps at p50 16.7 ms while scrubbing the year with the SMAP overlay and terrain on, and 59.7 fps with one 49.9 ms frame during the Đắk Lắk fly-in, on one machine (AMD integrated graphics, 1800 × 1125 canvas, Chromium 156, dev server, warm tile cache); hero rotation, cold cache, production builds and phones were not measured (`docs/GLOBE.md` §5). Data-source timings are from live calls on 2026-11-13/14 (`docs/DATA_SOURCES.md`).
+- **Measured, with conditions** (`docs/GLOBE.md` §5). First pass, one machine (AMD integrated graphics, 1800 × 1125 canvas, Chromium 156, dev server, warm tile cache): 60 fps at p50 16.7 ms while scrubbing the year with the SMAP overlay and terrain on; 59.7 fps with one 49.9 ms frame during the Đắk Lắk fly-in. Smoothness pass, small browser-pane viewports (426 × 690 at DPR 2 and 426 × 295 at DPR 1.25), dev server: hero rotation 59.6-60 fps, drag and wheel 60 fps, fly-ins 59.0-59.2 fps with one 80-117 ms frame right after the lock (attributed to parsing field data on the main thread). Not measured: a production build, a full-size desktop window in the second pass, phones. Data-source timings are from live calls on 2026-11-13/14 (`docs/DATA_SOURCES.md`).
 - **Out of scope**: pest and disease models, varieties, market access, variable-rate prescriptions, automatic boundary detection.
 
 This tool supports farmer judgement and local expertise; it does not replace them.
@@ -300,9 +322,15 @@ This tool supports farmer judgement and local expertise; it does not replace the
 | FAO EcoCrop | © FAO, used with attribution for a non-commercial project (`data/ecocrop/README.md`) |
 | Wikipedia EN/VI excerpts in `public/rag/` | CC BY-SA 4.0, each passage links to its revision (`data/rag/ATTRIBUTION.md`) |
 | Astrovivu glossary | CC BY 4.0 |
+| Copernicus Sentinel-2 L2A (via Microsoft Planetary Computer) | Copernicus open data licence; "contains modified Copernicus Sentinel data 2025-2026" |
+| Landsat 8/9 Collection 2 (via Microsoft Planetary Computer) | USGS public domain |
 | Esri World Imagery | Esri terms, attribution shown on the map |
 | Sentinel-2 cloudless (EOX) | CC BY-NC-SA 4.0, contains modified Copernicus Sentinel data 2020 |
 | Map labels | OpenFreeMap / OpenStreetMap contributors, ODbL |
+
+## Interface model
+
+The working shell's structure and proportions (icon rail, field list, map with a tool column, field panel with tabs) follow OneSoil's web app. They were measured from its public interface (`docs/DESIGN.md`, "Shell"), at the user's request and with the organisers' agreement that teams may build on an existing interface. The name, mark, icons, code and wording are our own; no OneSoil code, asset or data service is used.
 
 ## Use of AI
 
@@ -310,7 +338,7 @@ The code and documentation were written with AI coding agents working under the 
 
 ## Tóm tắt tiếng Việt
 
-Astrovivu là công cụ hỗ trợ quyết định, biến dữ liệu quan sát Trái Đất của NASA thành gợi ý luân canh cho từng thửa ruộng. Người dùng chọn một thửa trên quả địa cầu 3D, xem tám nhánh dữ liệu (độ ẩm đất, thảm thực vật, nhiệt bề mặt, lượng mưa, khí tượng nông nghiệp, địa hình, đất, rủi ro) đồng bộ trên một dòng thời gian một năm, nhập số đo thực địa của mình (pH, tưới, cây trồng, ngày gieo, năng suất, giá, chi phí) để thay giá trị vệ tinh, và so sánh ít nhất ba phương án luân canh kèm lý do, bằng chứng, khoảng trống thông tin và rủi ro cần chuyên gia địa phương xem xét. Mỗi con số có nguồn, độ phân giải, tuổi dữ liệu và huy hiệu độ tin cậy. Không có chuỗi thời gian SMAP hay IMERG miễn khóa: độ ẩm đất dùng ERA5-Land (mô hình), lượng mưa dùng CHIRPS và ERA5; SMAP và IMERG hiển thị dưới dạng lớp bản đồ. Ứng dụng chạy bằng tiếng Anh hoặc tiếng Việt (`?lang=vi`), không cần tài khoản hay khóa API. Công cụ hỗ trợ, không thay thế, kinh nghiệm của nông dân và chuyên gia địa phương.
+Astrovivu là công cụ hỗ trợ quyết định, biến dữ liệu quan sát Trái Đất của NASA thành gợi ý luân canh cho từng thửa ruộng. Người dùng tìm thửa ruộng bằng địa chỉ và diện tích (hoặc chọn ruộng mẫu), xem tám chỉ số (độ ẩm đất, thảm thực vật, nhiệt bề mặt, lượng mưa, khí tượng nông nghiệp, địa hình, đất, rủi ro) đồng bộ trên một dòng thời gian một năm, vẽ ngay trong thửa ruộng ở độ phân giải 10-30 m từ Sentinel-2 và Landsat khi trời quang, nhập số đo thực địa của mình (pH, tưới, cây trồng, ngày gieo, năng suất, giá, chi phí) để thay giá trị vệ tinh, và so sánh ít nhất ba phương án luân canh kèm lý do, bằng chứng, khoảng trống thông tin và rủi ro cần chuyên gia địa phương xem xét. Mỗi con số có nguồn, độ phân giải, tuổi dữ liệu và huy hiệu độ tin cậy. Không có chuỗi thời gian SMAP hay IMERG miễn khóa: độ ẩm đất dùng ERA5-Land (mô hình), lượng mưa dùng CHIRPS và ERA5; SMAP và IMERG hiển thị dưới dạng lớp bản đồ. Ứng dụng chạy bằng tiếng Anh hoặc tiếng Việt (`?lang=vi`), không cần tài khoản hay khóa API. Công cụ hỗ trợ, không thay thế, kinh nghiệm của nông dân và chuyên gia địa phương.
 
 ## Team
 
