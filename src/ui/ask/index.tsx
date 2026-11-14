@@ -9,7 +9,6 @@ import type { AskResult, FieldContext, Lang } from '@/contracts';
 import { useT } from '@/i18n';
 import { ask, buildFieldContext, suggestQuestions, warmUp } from '@/rag';
 import { useMission } from '@/state/mission';
-import { useMissionUi } from '@/ui/chrome/uiState';
 import { Button, ConfidenceBars, IconButton, ScrollArea, SkeletonText, Tag, cn, confidenceLevel } from '@/ui/design';
 import { AnswerText, SourceDetail } from './Answer';
 import './strings';
@@ -39,7 +38,6 @@ function useFieldContext(enabled: boolean): FieldContext | undefined {
 }
 
 export function AskPanel() {
-  const t = useT();
   const phase = useMission((s) => s.phase);
   const open = useMission((s) => s.askOpen);
   const setOpen = useMission((s) => s.setAskOpen);

@@ -28,7 +28,7 @@ interface Point {
   max: number;
 }
 
-function s2Points(raster: FieldRaster | undefined, parcel: Parcel | null): Point[] {
+export function s2Points(raster: FieldRaster | undefined, parcel: Parcel | null): Point[] {
   if (!raster || !parcel) return [];
   const out: Point[] = [];
   for (const f of raster.frames) {
@@ -38,7 +38,7 @@ function s2Points(raster: FieldRaster | undefined, parcel: Parcel | null): Point
   return out;
 }
 
-export function NdviChart({ modis }: { modis: Series | undefined }) {
+export function NdviChart({ modis, bare }: { modis: Series | undefined; bare?: boolean }) {
   const t = useT();
   const lang = useLang();
   const parcel = useMission((s) => s.parcel);
@@ -72,6 +72,7 @@ export function NdviChart({ modis }: { modis: Series | undefined }) {
 
   return (
     <div className="flex flex-col gap-1">
+      {!bare && (<>
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-medium text-ink-1">{t('field.ndvi.title')}</span>
         <span className="t-value text-base text-ink-1">{latest ? fmtNum(latest.mean, 2) : '--'}</span>
@@ -81,6 +82,7 @@ export function NdviChart({ modis }: { modis: Series | undefined }) {
           ? t('field.ndvi.note', { d: fmtDate(latest.t, lang), n: age ?? 0, m: mean == null ? '--' : fmtNum(mean, 2), k: pts.length })
           : t('field.ndvi.none')}
       </p>
+      </>)}
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-24 w-full overflow-visible" role="img" aria-label={t('field.ndvi.aria', { k: pts.length })}>
         {[0.25, 0.5, 0.75].map((v) => (
           <line key={v} x1={0} x2={W} y1={y(v)} y2={y(v)} stroke="var(--color-line-1)" strokeWidth={1} vectorEffect="non-scaling-stroke" />

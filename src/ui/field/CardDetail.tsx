@@ -20,7 +20,7 @@ import '@/ui/hud/strings';
 import { FrameCanvas, LiveFieldCanvas } from './FieldCanvas';
 import { ScaleLegend } from './ScaleLegend';
 import { usePictureCaption, usePictureState } from './MetricCards';
-import { frameShown, rampGradient, rasterFor } from './picture';
+import { frameShown, rasterFor } from './picture';
 import './strings';
 
 function Section({ title, children }: { title: ReactNode; children: ReactNode }) {

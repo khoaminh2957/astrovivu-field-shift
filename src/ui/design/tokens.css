@@ -242,8 +242,8 @@
 
 :root {
   --rail-w: 56px;
-  --left-w: 300px;
-  --right-w: 500px;
+  --left-w: 280px;
+  --right-w: 580px;
   --strip-h: 64px;
   --tabbar-h: 60px;
   --map-h: 45dvh;

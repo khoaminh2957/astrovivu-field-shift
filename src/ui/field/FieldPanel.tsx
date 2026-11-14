@@ -1,55 +1,52 @@
 /**
- * Field panel: header with the field and its actions, then three tabs.
- *   Status        two field pictures side by side, stacked charts on one month axis, the score.
- *   Data          the eight metric cards; opening one shows its gallery of real frames.
- *   Ground truth  the override form and the calibration ledger.
+ * Field panel, laid out the way OneSoil lays out a field: a header (thumbnail, name, area and
+ * crop, one score line, actions, close) and four tabs.
+ *   Status        crop / planting date / weather cards, "Satellite data" (the field picture with a
+ *                 metric selector beside the satellite image, a date control), three chart cards.
+ *   Field report  the score in detail, then zones, stable area, frames, comparison maps.
+ *   Data          the eight metric cards; details only after opening one.
+ *   Ground truth  the override form and ledger.
  */
-import { useMemo } from 'react';
-import { ClipboardPen, Replace } from 'lucide-react';
-import { type BranchId, type Series, pick } from '@/contracts';
+import { useMemo, type ReactNode } from 'react';
+import { ChevronLeft, ChevronRight, ClipboardPen, CloudSun, Pencil, X } from 'lucide-react';
+import { BRANCHES, type BranchId, type Series, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
-import { findSeries, primarySeries } from '@/lib/series';
+import { BRANCH_TITLES, findSeries, primarySeries, scoreAt } from '@/lib/series';
+import { diffDays } from '@/lib/time';
 import { useMission } from '@/state/mission';
-import { BranchIcon, Button, Sparkline, StatusTag, TabPanel, Tabs, cn } from '@/ui/design';
+import { IconButton, Sparkline, StatusTag, TabPanel, Tabs, cn } from '@/ui/design';
 import { useMissionUi } from '@/ui/chrome/uiState';
-import { cropName, digitsFor, fmtDate, fmtNum, unitFor } from '@/ui/hud/format';
+import { cropName, fmtDate, fmtNum } from '@/ui/hud/format';
 import { rainSum } from '@/ui/hud/readings';
 import { GroundTruthForm } from '@/ui/override';
 import { CardDetail } from './CardDetail';
+import { LiveFieldCanvas, ShapeThumb } from './FieldCanvas';
+import { FieldReport } from './FieldReport';
+import { CropSelect, ScoreBlock } from './FieldSummary';
+import { MetricGrid, usePictureState, useSelectBranch } from './MetricCards';
+import { rasterFor } from './picture';
 import { SatelliteCanvas } from './SatelliteCanvas';
 import { ScaleLegend } from './ScaleLegend';
-import { NdviChart, gddBase, gddNote, gddSeries } from './StatusCharts';
-import { FieldReport } from './FieldReport';
-import { LiveFieldCanvas, ShapeThumb } from './FieldCanvas';
-import { CropSelect, ScoreBlock, WhatChanged } from './FieldSummary';
-import { MetricGrid, usePictureCaption, usePictureState, useSelectBranch } from './MetricCards';
-import { rampGradient, rasterFor } from './picture';
+import { NdviChart, gddBase, gddNote, gddSeries, s2Points } from './StatusCharts';
 import './strings';
 
 export type FieldTab = 'status' | 'report' | 'data' | 'truth';
 
-/** Today at the field: max temperature, rain and wind from the agromet and rainfall series. */
-function WeatherChip() {
+function ScoreLine() {
   const t = useT();
-  const tel = useMission((s) => s.telemetry);
-  if (!tel) return null;
-  const today = tel.window.today;
-  const last = (key: string, b: 'agromet' | 'rainfall') => {
-    const ser = findSeries(tel.branches[b], key);
-    const x = ser?.samples.filter((v) => v.t <= today && v.v != null).at(-1);
-    return x?.v ?? null;
-  };
-  const tmax = last('t2m_max', 'agromet');
-  const rain = last('rain', 'rainfall');
-  const wind = last('wind', 'agromet');
-  if (tmax == null && rain == null) return null;
+  const lang = useLang();
+  const score = useMission((s) => s.score);
+  const cursor = useMission((s) => s.timeline.cursor);
+  const setTab = useMissionUi((s) => s.setFieldTab);
+  const snap = scoreAt(score, cursor);
+  if (!snap) return <span className="skeleton mt-1 h-4 w-48" />;
+  const lim = snap.limiting ? snap.factors.find((f) => f.key === snap.limiting) : null;
   return (
-    <span className="t-meta inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-line-1 bg-surface-2 px-2.5 py-1 text-ink-2" title={t('field.weather')}>
-      {tmax != null && <span>{fmtNum(tmax, 0)} °C</span>}
-      {rain != null && <span>{fmtNum(rain, 1)} mm</span>}
-      {wind != null && <span>{fmtNum(wind, 1)} m/s</span>}
-    </span>
+    <button type="button" onClick={() => setTab('report')} className="mt-1 self-start text-left text-sm text-ink-2 hover:text-signal">
+      {snap.offSeason ? t('field.line.outlook') : t('field.line.productivity')} <span className="t-value font-medium text-ink-1">{Math.round(snap.productivity)}</span>
+      {lim ? ` · ${t('field.line.limited', { f: pick(lim.label, lang).toLowerCase() })}` : ''}
+    </button>
   );
 }
 
@@ -61,141 +58,144 @@ function Header() {
   const mode = useMission((s) => s.telemetry?.mode);
   const unlock = useMission((s) => s.unlockParcel);
   const setTab = useMissionUi((s) => s.setFieldTab);
-  const sowing = useMission((s) => s.groundTruth.sowingDate);
   if (!parcel) return null;
   const crop = getCrop(cropId);
   return (
     <header className="flex items-start gap-3">
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-sm bg-ink-1">
-        <ShapeThumb parcel={parcel} size={40} light />
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-sm bg-ink-1">
+        <ShapeThumb parcel={parcel} size={36} light />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        <h2 className="t-title truncate text-lg" title={parcel.name}>
+        <h2 className="truncate text-lg leading-6 font-semibold text-ink-1" title={parcel.name}>
           {parcel.name}
         </h2>
-        <span className="t-caption truncate">{[`${fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha`, crop ? cropName(crop.names, lang) : t('field.crop.none'), parcel.place?.label].filter(Boolean).join(' · ')}</span>
-        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <WeatherChip />
-          {!crop && (
-            <Button size="sm" variant="ghost" className="text-signal" onClick={() => setTab('status')}>
-              {t('field.addCrop')}
-            </Button>
-          )}
-          {!sowing && (
-            <Button size="sm" variant="ghost" className="text-signal" onClick={() => setTab('truth')}>
-              {t('field.addSowing')}
-            </Button>
-          )}
-          {mode === 'mock' && <StatusTag status="simulated" />}
+        <span className="truncate text-sm text-ink-2">
+          <span className="font-medium text-ink-1">{fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha</span>
+          {crop ? `, ${cropName(crop.names, lang)}` : ''}
+          {mode === 'mock' ? <StatusTag status="simulated" compact className="ml-2 align-middle" /> : null}
         </span>
+        <ScoreLine />
       </div>
-      <div className="flex shrink-0 gap-1.5">
-        <Button size="sm" variant="secondary" icon={<ClipboardPen />} onClick={() => setTab('truth')}>
-          <span className="narrow:sr-only">{t('field.gt')}</span>
-        </Button>
-        <Button size="sm" variant="secondary" icon={<Replace />} onClick={unlock}>
-          <span className="narrow:sr-only">{t('field.change')}</span>
-        </Button>
+      <div className="flex shrink-0 items-center gap-1">
+        <IconButton label={t('field.gt')} icon={<ClipboardPen />} onClick={() => setTab('truth')} />
+        <IconButton label={t('field.close')} icon={<X />} onClick={unlock} />
       </div>
     </header>
   );
 }
 
-/** A field picture tile with its title and legend, like a map card. Clicking selects the metric. */
-function PictureTile({ branch }: { branch: BranchId }) {
-  const lang = useLang();
-  const raster = useMission((s) => rasterFor(s.rasters, branch));
-  const title = useMission((s) => s.telemetry?.branches[branch]?.title);
-  const active = useMission((s) => s.focusBranch === branch);
-  const pic = usePictureState(branch);
-  const caption = usePictureCaption(branch);
-  const select = useSelectBranch();
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={() => select(branch)}
-      className={cn('flex min-w-0 flex-col gap-1.5 rounded-md border bg-surface-0 p-2 text-left shadow-sm', active ? 'border-signal' : 'border-line-1 hover:border-line-2')}
-    >
-      <span className="flex items-center gap-1.5 text-sm font-medium text-ink-1">
-        <BranchIcon branch={branch} size={14} colored />
-        <span className="truncate">{raster ? pick(raster.label, lang) : title ? pick(title, lang) : branch}</span>
+/** One of the three small cards at the top of Status (crop, planting date, weather). */
+function InfoCard({ label, children, onClick, action }: { label: string; children: ReactNode; onClick?: () => void; action?: string }) {
+  const body = (
+    <>
+      <span className="flex items-center justify-between gap-2 text-xs text-ink-3">
+        {label}
+        {onClick && <Pencil size={13} aria-hidden className="text-ink-4" />}
       </span>
-      <span className="relative block aspect-square overflow-hidden rounded-sm bg-ink-1">
-        {pic === 'loading' ? <span className="skeleton absolute inset-3 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={branch} pad={12} />}
-      </span>
-      {raster && <ScaleLegend raster={raster} compact />}
-      <span className="t-caption truncate">{caption}</span>
+      <span className="min-w-0 truncate text-sm font-medium text-ink-1">{children}</span>
+    </>
+  );
+  const cls = 'flex min-w-0 flex-col gap-1 rounded-md border border-line-1 bg-surface-0 px-3 py-2.5 text-left';
+  return onClick ? (
+    <button type="button" aria-label={action} onClick={onClick} className={cn(cls, 'hover:border-line-2')}>
+      {body}
     </button>
+  ) : (
+    <div className={cls}>{body}</div>
   );
 }
 
-function Chart({ series, accumulate, branch, note }: { series: Series; accumulate?: boolean; branch: BranchId; note?: string }) {
-  const lang = useLang();
+function TopCards() {
   const t = useT();
-  const telemetry = useMission((s) => s.telemetry)!;
-  const cursor = useMission((s) => s.timeline.cursor);
-  // Accumulated rainfall from the window start, so the chart reads like a season total.
-  const samples = useMemo(() => {
-    if (!accumulate) return series.samples;
-    let sum = 0;
-    return series.samples.map((s) => ({ ...s, v: s.v == null ? null : (sum += s.v) }));
-  }, [series, accumulate]);
-  const range = useMemo<[number, number] | undefined>(() => (accumulate ? [0, Math.max(1, ...samples.map((s) => s.v ?? 0))] : series.range), [accumulate, samples, series.range]);
-  const at = [...samples].reverse().find((s) => s.t <= cursor && s.v != null)?.v;
-  const value = accumulate ? rainSum(series.samples, cursor, 9999) : at;
+  const lang = useLang();
+  const cropId = useMission((s) => s.cropId);
+  const sowing = useMission((s) => s.groundTruth.sowingDate);
+  const tel = useMission((s) => s.telemetry);
+  const setTab = useMissionUi((s) => s.setFieldTab);
+  const crop = getCrop(cropId);
+  const last = (key: string, b: 'agromet' | 'rainfall') => {
+    if (!tel) return null;
+    const x = findSeries(tel.branches[b], key)?.samples.filter((v) => v.t <= tel.window.today && v.v != null).at(-1);
+    return x?.v ?? null;
+  };
+  const tmax = last('t2m_max', 'agromet');
+  const rain = last('rain', 'rainfall');
+  const wind = last('wind', 'agromet');
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-ink-1">{accumulate ? t('field.chart.rainAcc') : pick(series.label, lang)}</span>
-        <span className="flex items-baseline gap-1">
-          <span className="t-value text-base text-ink-1">{fmtNum(value, accumulate ? 0 : digitsFor(series.unit, series.key))}</span>
-          <span className="t-unit">{accumulate ? 'mm' : unitFor(series.unit, series.key)}</span>
+    <div className="grid grid-cols-3 gap-2 narrow:grid-cols-2">
+      <InfoCard label={t('field.crop')} onClick={() => setTab('truth')} action={t('field.addCrop')}>
+        {crop ? cropName(crop.names, lang) : <span className="text-signal">{t('field.addCrop')}</span>}
+      </InfoCard>
+      <InfoCard label={t('field.sowing')} onClick={() => setTab('truth')} action={t('field.addSowing')}>
+        {sowing ? fmtDate(sowing, lang) : <span className="text-signal">{t('field.addSowing')}</span>}
+      </InfoCard>
+      <InfoCard label={t('field.weather')}>
+        <span className="inline-flex items-center gap-2">
+          <CloudSun size={16} aria-hidden className="text-ink-3" />
+          {tmax != null ? `${fmtNum(tmax, 0)} °C` : '--'}
+          <span className="t-meta">{[rain != null ? `${fmtNum(rain, 1)} mm` : null, wind != null ? `${fmtNum(wind, 1)} m/s` : null].filter(Boolean).join(' · ')}</span>
         </span>
-      </div>
-      {note && <p className="t-caption -mt-0.5">{note}</p>}
-      <Sparkline
-        samples={samples}
-        domain={[telemetry.window.start, telemetry.window.end]}
-        range={range}
-        cadence={series.cadence}
-        baseline={accumulate ? undefined : series.baseline}
-        cursor={cursor}
-        today={telemetry.window.today}
-        tone={branch}
-        variant="line"
-        provenance={telemetry.mode === 'mock' ? 'simulated' : undefined}
-        height={56}
-        points={false}
-        label={accumulate ? t('field.chart.rainAcc') : pick(series.label, lang)}
-        unit={accumulate ? 'mm' : series.unit}
-      />
+      </InfoCard>
     </div>
   );
 }
 
-/** One plain sentence per chart, from our own data over the window. */
-function chartNotes(veg: Series | undefined, rain: Series | undefined, temp: Series | undefined, t: (k: string, v?: Record<string, string | number>) => string) {
-  const vals = (s?: Series) => (s?.samples ?? []).filter((x) => x.v != null) as { t: string; v: number }[];
-  const out: { veg?: string; rain?: string; temp?: string } = {};
-  const v = vals(veg);
-  if (v.length) {
-    const mean = v.reduce((a, x) => a + x.v, 0) / v.length;
-    const peak = v.reduce((a, x) => (x.v > a.v ? x : a));
-    out.veg = t('field.chart.vegNote', { m: fmtNum(mean, 2), p: fmtNum(peak.v, 2), n: v.length });
-  }
-  const r = vals(rain);
-  if (r.length) {
-    const days = r.length;
-    const wet = r.filter((x) => x.v >= 1).length;
-    out.rain = t('field.chart.rainNote', { n: days, w: wet });
-  }
-  const m = vals(temp);
-  if (m.length) {
-    const ok = m.filter((x) => x.v >= 10 && x.v <= 30).length;
-    out.temp = t('field.chart.tempNote', { k: ok, n: m.length });
-  }
-  return out;
+/** Dark pill with the date shown and steps to the previous and next real frame. */
+function DatePill() {
+  const lang = useLang();
+  const t = useT();
+  const cursor = useMission((s) => s.timeline.cursor);
+  const focus = useMission((s) => s.focusBranch);
+  const raster = useMission((s) => rasterFor(s.rasters, focus ?? 'vegetation'));
+  const setCursor = useMission((s) => s.setCursor);
+  const setPlaying = useMissionUi((s) => s.setPlaying);
+  const dates = raster?.frames.map((f) => f.t) ?? [];
+  const prev = [...dates].reverse().find((d) => d < cursor);
+  const next = dates.find((d) => d > cursor);
+  const go = (d?: string) => d && (setPlaying(false), setCursor(d));
+  return (
+    <div className="flex items-center gap-1 rounded-full bg-ink-1 p-1 text-white">
+      <button type="button" aria-label={t('field.frame.prev')} disabled={!prev} onClick={() => go(prev)} className="flex size-7 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-40">
+        <ChevronLeft size={16} aria-hidden />
+      </button>
+      <span className="t-value px-1 text-sm">{fmtDate(cursor, lang)}</span>
+      <button type="button" aria-label={t('field.frame.next')} disabled={!next} onClick={() => go(next)} className="flex size-7 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-40">
+        <ChevronRight size={16} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+/** Left tile: the field picture with a metric selector in its corner and the legend under it. */
+function PictureTile() {
+  const t = useT();
+  const lang = useLang();
+  const focus = useMission((s) => s.focusBranch);
+  const branch: BranchId = focus ?? 'vegetation';
+  const raster = useMission((s) => rasterFor(s.rasters, branch));
+  const titles = useMission((s) => s.telemetry?.branches);
+  const pic = usePictureState(branch);
+  const select = useSelectBranch();
+  const title = (b: BranchId) => pick(titles?.[b]?.title ?? BRANCH_TITLES[b], lang);
+  return (
+    <figure className="flex min-w-0 flex-col gap-2">
+      <span className="relative block aspect-square overflow-hidden rounded-md bg-ink-1">
+        {pic === 'loading' ? <span className="skeleton absolute inset-6 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={branch} pad={20} />}
+        <label className="absolute top-2 left-2 flex items-center rounded-full bg-black/60 pr-1 text-xs font-medium text-white">
+          <span className="sr-only">{t('field.metric')}</span>
+          <select value={branch} onChange={(e) => select(e.target.value as BranchId)} className="h-7 max-w-[11rem] cursor-pointer appearance-none truncate rounded-full bg-transparent pr-2 pl-3 outline-offset-2">
+            {BRANCHES.map((b) => (
+              <option key={b} value={b} className="text-ink-1">
+                {title(b)}
+              </option>
+            ))}
+          </select>
+          <ChevronRight size={12} aria-hidden className="rotate-90" />
+        </label>
+      </span>
+      {raster ? <ScaleLegend raster={raster} compact /> : <span className="t-caption">{t('field.pic.singleNoRes')}</span>}
+    </figure>
+  );
 }
 
 function SatelliteTile() {
@@ -203,67 +203,140 @@ function SatelliteTile() {
   const parcel = useMission((s) => s.parcel);
   if (!parcel) return null;
   return (
-    <figure className="flex min-w-0 flex-col gap-1.5 rounded-md border border-line-1 bg-surface-0 p-2 shadow-sm">
-      <figcaption className="text-sm font-medium text-ink-1">{t('field.sat.title')}</figcaption>
-      <span className="relative block aspect-square overflow-hidden rounded-sm bg-ink-1">
-        <SatelliteCanvas parcel={parcel} />
+    <figure className="flex min-w-0 flex-col gap-2">
+      <span className="relative block aspect-square overflow-hidden rounded-md bg-ink-1">
+        <SatelliteCanvas parcel={parcel} pad={20} />
+        <span className="absolute top-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">{t('field.sat.title')}</span>
       </span>
-      <span className="t-caption truncate">{t('field.sat.credit')}</span>
+      <span className="t-caption">{t('field.sat.credit')}</span>
     </figure>
+  );
+}
+
+/** A chart card: the plot on the left, title, one large value and one sentence on the right. */
+function ChartCard({ title, value, unit, note, children }: { title: string; value: string; unit: string; note: string; children: ReactNode }) {
+  return (
+    <section className="grid grid-cols-[minmax(0,1fr)_11rem] gap-4 rounded-md border border-line-1 bg-surface-0 p-4 narrow:grid-cols-1">
+      <div className="min-w-0 self-center">{children}</div>
+      <div className="flex flex-col gap-1 narrow:order-first">
+        <h4 className="text-sm font-medium text-ink-1">{title}</h4>
+        <span className="flex items-baseline gap-1">
+          <span className="t-value text-2xl text-ink-1">{value}</span>
+          <span className="t-unit">{unit}</span>
+        </span>
+        <p className="t-caption">{note}</p>
+      </div>
+    </section>
+  );
+}
+
+function SeriesPlot({ series, samples, range, branch }: { series: Series; samples: Series['samples']; range?: [number, number]; branch: BranchId }) {
+  const lang = useLang();
+  const telemetry = useMission((s) => s.telemetry)!;
+  const cursor = useMission((s) => s.timeline.cursor);
+  return (
+    <Sparkline
+      samples={samples}
+      domain={[telemetry.window.start, telemetry.window.end]}
+      range={range}
+      cadence={series.cadence}
+      cursor={cursor}
+      today={telemetry.window.today}
+      tone={branch}
+      variant="line"
+      height={72}
+      points={false}
+      label={pick(series.label, lang)}
+      unit={series.unit}
+    />
+  );
+}
+
+function StatusCharts() {
+  const t = useT();
+  const lang = useLang();
+  const telemetry = useMission((s) => s.telemetry);
+  const cursor = useMission((s) => s.timeline.cursor);
+  const parcel = useMission((s) => s.parcel);
+  const ndvi = useMission((s) => rasterFor(s.rasters, 'vegetation'));
+  const cropId = useMission((s) => s.cropId);
+  const crop = getCrop(cropId);
+  const base = gddBase(crop);
+  const modis = telemetry ? primarySeries(telemetry.branches.vegetation) : undefined;
+  const rain = telemetry ? (findSeries(telemetry.branches.rainfall, 'rain') ?? primarySeries(telemetry.branches.rainfall)) : undefined;
+  const gdd = useMemo(() => (telemetry ? gddSeries(telemetry.branches.agromet, base) : null), [telemetry, base]);
+  const pts = useMemo(() => s2Points(ndvi, parcel), [ndvi, parcel]);
+  const rainAcc = useMemo(() => {
+    let sum = 0;
+    return (rain?.samples ?? []).map((s) => ({ ...s, v: s.v == null ? null : (sum += s.v) }));
+  }, [rain]);
+  if (!telemetry) return null;
+
+  const latest = [...pts].reverse().find((p) => p.t <= cursor);
+  const ndviNote = latest ? t('field.ndvi.short', { d: fmtDate(latest.t, lang), n: diffDays(cursor, latest.t) }) : t('field.ndvi.none');
+  const rainTotal = rain ? rainSum(rain.samples, cursor, 9999) : null;
+  const rainDays = rain ? diffDays(cursor, telemetry.window.start) : 0;
+  const gddNow = gdd?.samples.filter((s) => s.t <= cursor && s.v != null).at(-1)?.v ?? null;
+  return (
+    <div className="flex flex-col gap-3">
+      <ChartCard title={t('field.ndvi.card')} value={latest ? fmtNum(latest.mean, 2) : '--'} unit="NDVI" note={ndviNote}>
+        <NdviChart modis={modis} bare />
+      </ChartCard>
+      {rain && (
+        <ChartCard title={t('field.chart.rainAcc')} value={fmtNum(rainTotal, 0)} unit="mm" note={t('field.rain.short', { n: rainDays })}>
+          <SeriesPlot series={rain} samples={rainAcc} range={[0, Math.max(1, rainAcc.at(-1)?.v ?? 1)]} branch="rainfall" />
+        </ChartCard>
+      )}
+      {gdd && (
+        <ChartCard title={t('field.gdd.title')} value={gddNow == null ? '--' : `+${fmtNum(gddNow, 0)}`} unit="°C·d" note={gddNote(t, lang, crop, base)}>
+          <SeriesPlot series={gdd} samples={gdd.samples} range={gdd.range} branch="thermal" />
+        </ChartCard>
+      )}
+    </div>
   );
 }
 
 function StatusTab() {
   const t = useT();
-  const lang = useLang();
-  const telemetry = useMission((s) => s.telemetry);
-  const cursor = useMission((s) => s.timeline.cursor);
-  const focus = useMission((s) => s.focusBranch);
-  const left: BranchId = focus ?? 'vegetation';
-  const veg = telemetry ? primarySeries(telemetry.branches.vegetation) : undefined;
-  const rain = telemetry ? (findSeries(telemetry.branches.rainfall, 'rain') ?? primarySeries(telemetry.branches.rainfall)) : undefined;
-  const temp = telemetry ? (findSeries(telemetry.branches.agromet, 't2m_max') ?? findSeries(telemetry.branches.agromet, 't2m')) : undefined;
-  const notes = useMemo(() => chartNotes(veg, rain, temp, t), [veg, rain, temp, t]);
-  const cropId = useMission((s) => s.cropId);
-  const crop = getCrop(cropId);
-  const base = gddBase(crop);
-  const gdd = useMemo(() => (telemetry ? gddSeries(telemetry.branches.agromet, base) : null), [telemetry, base]);
   return (
     <div className="flex flex-col gap-6">
+      <TopCards />
       <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <h3 className="t-title text-lg">{t('field.status.pictures')}</h3>
-          <span className="t-meta">{fmtDate(cursor, lang)}</span>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-lg font-medium text-ink-1">{t('field.status.satellite')}</h3>
+          <DatePill />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <PictureTile branch={left} />
+          <PictureTile />
           <SatelliteTile />
         </div>
       </section>
-      <ScoreBlock />
-      <CropSelect />
-      {telemetry && (
-        <section className="flex flex-col gap-4">
-          <h3 className="t-title text-lg">{t('field.status.charts')}</h3>
-          <NdviChart modis={veg} />
-          {rain && <Chart series={rain} branch="rainfall" accumulate note={notes.rain} />}
-          {gdd && <Chart series={gdd} branch="thermal" note={`${gddNote(t, lang, crop, base)} ${notes.temp ?? ''}`} />}
-        </section>
-      )}
-      <WhatChanged />
+      <StatusCharts />
     </div>
   );
 }
 
 function DataTab() {
-  const t = useT();
   const focus = useMission((s) => s.focusBranch);
   const select = useSelectBranch();
   if (focus) return <CardDetail branch={focus} onBack={() => select(null)} />;
+  return <MetricGrid />;
+}
+
+function ReportTab() {
   return (
-    <div className="flex flex-col gap-3">
-      <p className="t-caption">{t('field.metrics.lede')}</p>
-      <MetricGrid />
+    <div className="flex flex-col gap-6">
+      <ScoreBlock />
+      <FieldReport />
+    </div>
+  );
+}
+
+function TruthTab() {
+  return (
+    <div className="flex flex-col gap-5">
+      <CropSelect />
+      <GroundTruthForm />
     </div>
   );
 }
@@ -290,13 +363,13 @@ export function FieldPanel() {
           <StatusTab />
         </TabPanel>
         <TabPanel value="report" className="pt-5">
-          <FieldReport />
+          <ReportTab />
         </TabPanel>
         <TabPanel value="data" className="pt-5">
           <DataTab />
         </TabPanel>
         <TabPanel value="truth" className="pt-5">
-          <GroundTruthForm />
+          <TruthTab />
         </TabPanel>
       </Tabs>
     </div>

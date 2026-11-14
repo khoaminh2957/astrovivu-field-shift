@@ -3,15 +3,14 @@
  * through `setGroundTruth` / `setCrop`, the store recomputes, and the calibration ledger shows
  * what the estimate was, what replaced it and what that changed.
  */
-import { type ReactNode, useId, useMemo, useState } from 'react';
-import { Check, RotateCcw, Search, X } from 'lucide-react';
+import { type ReactNode, useId, useState } from 'react';
+import { RotateCcw, X } from 'lucide-react';
 import type { DrainageClass, GroundTruth, IrrigationMode, TextureClass } from '@/contracts';
 import { pick } from '@/contracts';
-import { getCrop, searchCrops } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { useMission } from '@/state/mission';
-import { Button, Dialog, Field, IconButton, Input, Segmented, Select, StatusTag, cn } from '@/ui/design';
-import { cropName, fmtNum } from '@/ui/hud/format';
+import { Button, Dialog, Field, IconButton, Input, Segmented, Select, StatusTag } from '@/ui/design';
+import { fmtNum } from '@/ui/hud/format';
 import { factOf } from '@/ui/hud/readings';
 import '@/ui/hud/strings';
 import './strings';

@@ -201,10 +201,11 @@ function RightPanel() {
 }
 
 function WideField({ locked }: { locked: boolean }) {
+  const listMode = useMissionUi((s) => s.listMode);
   return (
     <>
       <aside className="absolute inset-y-0 left-(--rail-w) z-(--z-panel) w-(--left-w) overflow-y-auto rounded-l-sm border-r border-line-1 bg-surface-0 px-4 py-4">
-        {locked ? <FieldList /> : <FindField />}
+        {listMode === 'add' ? <FindField /> : <FieldList />}
       </aside>
       <div className={cn('pointer-events-none absolute top-3 z-(--z-map-ui) flex justify-center', 'left-[calc(var(--rail-w)+var(--left-w)+12px)]', locked ? 'right-[calc(var(--right-w)+64px)]' : 'right-16')}>
         <MapNotice />
@@ -224,6 +225,7 @@ function WideField({ locked }: { locked: boolean }) {
 function NarrowField({ locked }: { locked: boolean }) {
   const t = useT();
   const full = useMissionUi((s) => s.sheetFull);
+  const listMode = useMissionUi((s) => s.listMode);
   const setFull = useMissionUi((s) => s.setSheetFull);
   return (
     <>
@@ -257,11 +259,7 @@ function NarrowField({ locked }: { locked: boolean }) {
             {full ? <ChevronsDown size={16} aria-hidden /> : <ChevronsUp size={16} aria-hidden />}
           </button>
         </div>
-        {locked ? (
-          <FieldPanel />
-        ) : (
-          <FindField />
-        )}
+        {locked ? <FieldPanel /> : listMode === 'add' ? <FindField /> : <FieldList />}
       </section>
       {locked && <TimelineScrubber className="absolute inset-x-0 bottom-(--tabbar-h) z-(--z-dock) h-(--strip-h) border-t border-line-1" />}
     </>
@@ -295,6 +293,15 @@ export function Shell() {
   const narrow = useNarrow();
   const locked = phase === 'locked' && hasParcel;
   useReportInsets(narrow, locked, phase);
+  const setListMode = useMissionUi((s) => s.setListMode);
+  const setFieldTab = useMissionUi((s) => s.setFieldTab);
+  const parcelId = useMission((s) => s.parcel?.id);
+  // A newly selected field opens on Status, and the list panel goes back to the list.
+  useEffect(() => {
+    if (!parcelId) return;
+    setListMode('list');
+    setFieldTab('status');
+  }, [parcelId, setListMode, setFieldTab]);
   if (phase === 'hero') return null;
   const fieldPhase = phase === 'explore' || phase === 'locked';
   const view = phase === 'advisory' ? <AdvisoryPanel /> : phase === 'tracking' ? <TrackingView /> : phase === 'urban' ? <UrbanCompanion /> : null;

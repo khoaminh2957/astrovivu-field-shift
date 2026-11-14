@@ -4,7 +4,7 @@
  * under a divider.
  */
 import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowRight, LocateFixed, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, ArrowRight, LocateFixed, MapPin, Plus, Search } from 'lucide-react';
 import type { LngLat, PlaceHit, PlaceInfo } from '@/contracts';
 import { pick } from '@/contracts';
 import { SAMPLE_PARCELS, reverseGeocode, searchPlace } from '@/data';
@@ -15,6 +15,7 @@ import { Button, Field, IconButton, Input, cn } from '@/ui/design';
 import { cropName, fmtNum } from '@/ui/hud/format';
 import { getCrop } from '@/core/crops';
 import { ShapeThumb } from './FieldCanvas';
+import { useMissionUi } from '@/ui/chrome/uiState';
 import './strings';
 
 const DEFAULT_AREA_HA = 2;
@@ -40,8 +41,8 @@ function Demos() {
   const current = useMission((s) => s.parcel?.id);
   return (
     <section aria-labelledby="demo-title" className="flex flex-col gap-2">
-      <h3 id="demo-title" className="t-heading">
-        {t('field.demo.title')}
+      <h3 id="demo-title" className="text-sm font-medium text-ink-2">
+        {t('field.demo.group')}
       </h3>
       <ul className="flex flex-col">
         {SAMPLE_PARCELS.map((p) => {
@@ -59,7 +60,8 @@ function Demos() {
                   <ShapeThumb parcel={p} size={36} light />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-base font-medium text-ink-1 [font-stretch:var(--stretch-semi)]">{p.name}</span>
+                  <span className="truncate text-sm font-medium text-ink-1">{p.name}</span>
+                  <span className="mt-0.5 self-start rounded-full bg-signal px-1.5 text-[11px] leading-4 font-medium text-on-signal narrow:text-xs">{t('field.demo.tag')}</span>
                   <span className="t-caption truncate">
                     {[p.place?.label, crop ? cropName(crop.names, lang) : null].filter(Boolean).join(' · ')}
                   </span>
@@ -70,7 +72,6 @@ function Demos() {
           );
         })}
       </ul>
-      <p className="t-caption">{t('field.demo.note')}</p>
       <span className="sr-only">{SAMPLE_PARCELS.map((p) => pick(p.tagline, lang)).join('. ')}</span>
     </section>
   );
@@ -124,6 +125,8 @@ export function FindField() {
   const t = useT();
   const lang = useLang();
   const draft = useMission((s) => s.draft);
+  const cancelDraw = useMission((s) => s.cancelDraw);
+  const setListMode = useMissionUi((s) => s.setListMode);
   const startDraw = useMission((s) => s.startDraw);
   const setDraft = useMission((s) => s.setDraft);
   const [q, setQ] = useState('');
@@ -211,9 +214,13 @@ export function FindField() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h2 className="t-title text-lg">{t('field.find.title')}</h2>
-        <p className="t-caption text-ink-2">{t('field.find.lede')}</p>
+      <header className="flex flex-col gap-2">
+        <button type="button" onClick={() => (cancelDraw(), setListMode('list'))} className="flex items-center gap-1 self-start text-sm text-ink-2 hover:text-ink-1">
+          <ArrowLeft size={16} aria-hidden />
+          {t('field.add.back')}
+        </button>
+        <h2 className="text-lg font-semibold text-ink-1">{t('field.add.step')}</h2>
+        <p className="text-sm text-ink-3">{t('field.add.lede')}</p>
       </header>
 
       <form
@@ -276,45 +283,44 @@ export function FindField() {
 
       {placed && <LockForm place={chosen ? { label: chosen.label, country: chosen.country, admin1: chosen.admin1 } : undefined} defaultName={chosen?.label.split(',')[0]} />}
 
-      <div className={cn('border-t border-line-1 pt-5')}>
-        <Demos />
-      </div>
     </div>
   );
 }
 
-/** The list panel with a field locked: that field selected, a way to add another, the demos. */
+/** The list panel: your field, the demo group, and the card that starts the add-field step. */
 export function FieldList() {
   const t = useT();
   const lang = useLang();
   const parcel = useMission((s) => s.parcel);
   const cropId = useMission((s) => s.cropId);
-  const unlock = useMission((s) => s.unlockParcel);
+  const setPhase = useMission((s) => s.setPhase);
+  const setListMode = useMissionUi((s) => s.setListMode);
   const isDemo = SAMPLE_PARCELS.some((p) => p.id === parcel?.id);
   const crop = getCrop(cropId);
   return (
     <div className="flex flex-col gap-5">
-      <h2 className="t-title text-lg">{t('field.list.title')}</h2>
+      <h2 className="text-lg font-semibold text-ink-1">{t('field.list.title')}</h2>
       {parcel && !isDemo && (
         <section className="flex flex-col gap-2">
-          <h3 className="t-heading">{t('field.list.yours')}</h3>
-          <div aria-current className="flex min-h-14 items-center gap-3 rounded-sm bg-signal/10 px-2 py-2">
+          <h3 className="text-sm font-medium text-ink-2">{t('field.list.yours')}</h3>
+          <button type="button" aria-current onClick={() => setPhase('locked')} className="flex min-h-14 items-center gap-3 rounded-sm bg-signal/10 px-2 py-2 text-left">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-sm bg-ink-1">
               <ShapeThumb parcel={parcel} size={36} light />
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-base font-medium text-ink-1">{parcel.name}</span>
-              <span className="t-caption truncate">{[parcel.place?.label, crop ? cropName(crop.names, lang) : null].filter(Boolean).join(' · ')}</span>
+              <span className="truncate text-sm font-medium text-ink-1">{parcel.name}</span>
+              <span className="t-caption truncate">{[`${fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha`, crop ? cropName(crop.names, lang) : null].filter(Boolean).join(', ')}</span>
             </span>
-            <span className="t-meta shrink-0">{fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha</span>
-          </div>
+          </button>
         </section>
       )}
       <Demos />
-      <div className="flex flex-col gap-3 rounded-md border border-line-1 bg-surface-2 p-4">
-        <p className="t-caption text-ink-2">{t('field.find.lede')}</p>
-        <Button variant="primary" onClick={unlock}>
-          {t('field.list.add')}
+      <div className="flex flex-col items-center gap-2 rounded-md bg-surface-2 px-5 py-8 text-center">
+        <Plus size={20} aria-hidden className="text-ink-2" />
+        <h3 className="text-base font-semibold text-ink-1">{t('field.add.title')}</h3>
+        <p className="text-sm text-ink-3">{t('field.add.lede')}</p>
+        <Button variant="primary" icon={<Plus />} className="mt-2" onClick={() => setListMode('add')}>
+          {t('field.add.button')}
         </Button>
       </div>
     </div>

@@ -17,6 +17,9 @@ export interface MissionUiState {
   /** Narrow: the sheet covers the map except a strip at the top. */
   sheetFull: boolean;
   setSheetFull(on: boolean): void;
+  /** List panel: the list of fields, or the add-field step. */
+  listMode: 'list' | 'add';
+  setListMode(mode: 'list' | 'add'): void;
   /** Which map-toolbar popover is open. */
   mapPopover: MapPopover;
   /** Playback driven by requestAnimationFrame in the scrubber (smoother than the store's interval). */
@@ -37,6 +40,8 @@ export const useMissionUi = create<MissionUiState>()((set) => ({
   fieldTab: 'status',
   setFieldTab: (fieldTab) => set({ fieldTab }),
   mapPopover: null,
+  listMode: 'list',
+  setListMode: (listMode) => set({ listMode }),
   sheetFull: false,
   setSheetFull: (sheetFull) => set({ sheetFull }),
   playing: false,
