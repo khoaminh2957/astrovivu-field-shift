@@ -9,6 +9,7 @@ import { computeInsights } from './insights';
 import { buildRotations } from './rotation';
 
 export { annualPlan } from './actions';
+export { type CustomRotationSpec, evaluateCustomRotation, slotCropChoices, swapRotationSeason } from './customRotation';
 
 /** What changed on the field, pinned to dates on the timeline (anomalies, stage changes, events). */
 export function buildInsights(input: ModelInput, score: ScoreTimeline): Insight[] {

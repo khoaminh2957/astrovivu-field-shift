@@ -4,13 +4,14 @@
  * current practice, the five lists that explain it, then the year plan and the action advisories.
  * Everything is read from the mission store; the engine lives in src/core/advisory.
  */
-import { useMemo, useState } from 'react';
-import { ClipboardList, Compass, Info, MapPinned } from 'lucide-react';
-import type { AdvisoryReport, FarmerPriority } from '@/contracts';
+import { useCallback, useMemo, useState } from 'react';
+import { ClipboardList, Compass, Info, MapPinned, RotateCcw } from 'lucide-react';
+import type { AdvisoryReport, FarmerPriority, ModelInput } from '@/contracts';
 import { pick } from '@/contracts';
+import { type CustomRotationSpec, annualPlan, evaluateCustomRotation, slotCropChoices, swapRotationSeason } from '@/core/advisory';
 import { getCrop } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
-import { useMission } from '@/state/mission';
+import { toModelInput, useMission } from '@/state/mission';
 import { Button, EmptyState, Panel, Skeleton, SkeletonText, StatusGlyph, cn } from '@/ui/design';
 import { AdvisoryCard, AdvisoryBody, AdvisoryPlate, IrrigationView, PhView, SowingView } from './ActionPlans';
 import { AnnualPlanView } from './AnnualPlanView';
@@ -31,6 +32,7 @@ export function AdvisoryPanel() {
   const t = useT();
   const lang = useLang();
   const parcel = useMission((s) => s.parcel);
+  const telemetry = useMission((s) => s.telemetry);
   const live = useMission((s) => s.advisory);
   const priorities = useMission((s) => s.priorities);
   const setPriorities = useMission((s) => s.setPriorities);
@@ -43,6 +45,10 @@ export function AdvisoryPanel() {
 
   const fixture = useFixture(import.meta.env.DEV ? () => import('./__fixtures__/advisory').then((m) => m.advisoryFixture) : null);
   const report: AdvisoryReport | null = fixture ? fixture(priorities) : live;
+  const modelInput = useMemo(
+    () => (fixture ? null : toModelInput({ parcel, telemetry, cropId, groundTruth, priorities })),
+    [fixture, parcel, telemetry, cropId, groundTruth, priorities],
+  );
   const loading = !report && Object.values(branchStatus).some((s) => s === 'loading');
   const crop = getCrop(report?.cropId ?? cropId);
 
@@ -85,7 +91,15 @@ export function AdvisoryPanel() {
         ) : loading ? (
           <LoadingLayout />
         ) : (
-          <Body key={parcel.id} report={report} currency={currency} priorities={priorities} today={today} sowingMonth={groundTruth.sowingDate ? Number(groundTruth.sowingDate.slice(5, 7)) : null} />
+          <Body
+            key={parcel.id}
+            report={report}
+            modelInput={modelInput}
+            currency={currency}
+            priorities={priorities}
+            today={today}
+            sowingMonth={groundTruth.sowingDate ? Number(groundTruth.sowingDate.slice(5, 7)) : null}
+          />
         )}
 
         <footer className="border-t border-line-1 pt-4">
@@ -156,13 +170,14 @@ function LoadingLayout() {
 
 interface BodyProps {
   report: AdvisoryReport | null;
+  modelInput: ModelInput | null;
   currency: CurrencyCode;
   priorities: FarmerPriority[];
   today: string;
   sowingMonth: number | null;
 }
 
-function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
+function Body({ report, modelInput, currency, priorities, today, sowingMonth }: BodyProps) {
   const t = useT();
   const lang = useLang();
   const setPhase = useMission((s) => s.setPhase);
@@ -170,9 +185,34 @@ function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
   const climate = useMemo(() => climateOf(telemetry), [telemetry]);
   // Only what the farmer picked is remembered; until then the page follows the ranking.
   const [picked, setPicked] = useState<string | null>(null);
-  const rotations = useMemo(() => orderStrategies(report?.rotations ?? []), [report]);
+  const [customSpec, setCustomSpec] = useState<CustomRotationSpec | null>(null);
+  const rotations = useMemo(() => {
+    const base = report?.rotations ?? [];
+    if (!customSpec || !modelInput || !base.length) return orderStrategies(base);
+    return orderStrategies(evaluateCustomRotation(modelInput, base, customSpec));
+  }, [report, customSpec, modelInput]);
   const advisories = report?.advisories ?? [];
   const nothing = !report || (!rotations.length && !advisories.length && !report.irrigation && !report.ph && !report.sowing?.length && !report.annualPlan);
+
+  const selected = rotations.find((r) => r.id === picked) ?? rotations.find((r) => r.id === defaultSelection(rotations)) ?? null;
+  const getChoices = useCallback(
+    (seasonIndex: number) => (modelInput && selected ? slotCropChoices(modelInput, selected, seasonIndex) : []),
+    [modelInput, selected],
+  );
+  const handleSwap = useCallback(
+    (seasonIndex: number, newCropId: string) => {
+      if (!modelInput || !report || !selected) return;
+      const next = swapRotationSeason(modelInput, report.rotations, selected, seasonIndex, newCropId, customSpec);
+      if (!next) return;
+      setCustomSpec(next.spec);
+      setPicked('custom');
+    },
+    [modelInput, report, selected, customSpec],
+  );
+  const activePlan = useMemo(
+    () => (selected?.kind === 'custom' && modelInput ? annualPlan(modelInput, selected) : (report?.annualPlan ?? null)),
+    [selected, modelInput, report],
+  );
 
   if (nothing) {
     return (
@@ -186,8 +226,7 @@ function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
   }
 
   const current = rotations.find((r) => r.kind === 'current') ?? null;
-  const selected = rotations.find((r) => r.id === picked) ?? rotations.find((r) => r.id === defaultSelection(rotations)) ?? null;
-  const planStrategy = report.annualPlan ? rotations.find((r) => r.id === report.annualPlan!.strategyId) : undefined;
+  const planStrategy = activePlan ? rotations.find((r) => r.id === activePlan.strategyId) : undefined;
   const usesReference = rotations.some((r) => r.economics?.seasons?.some((s) => s.usesReferenceValues));
   const byKind = (k: string) => [...advisories].filter((a) => a.kind === k).sort((a, b) => a.priority - b.priority)[0];
   const irrAdv = byKind('irrigation');
@@ -197,6 +236,10 @@ function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
   const others = advisories.filter((a) => !shown.has(a.id)).sort((a, b) => a.priority - b.priority);
   const reviewCount = selected ? selected.gaps.length + selected.risks.length : 0;
   const selectedName = selected ? pick(selected.name, lang) : '';
+  const resetCustom = () => {
+    setCustomSpec(null);
+    if (picked === 'custom') setPicked(null);
+  };
 
   return (
     <>
@@ -213,7 +256,7 @@ function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
               onSelect={setPicked}
               priorities={priorities}
               currency={currency}
-              planStrategyId={report.annualPlan?.strategyId}
+              planStrategyId={activePlan?.strategyId}
             />
             {usesReference && (
               <p className="t-caption flex max-w-[96ch] items-start gap-1.5">
@@ -230,10 +273,28 @@ function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
       {selected && (
         <>
           <section aria-labelledby="adv-cal">
-            <SectionHead id="adv-cal" title={t('advisory.cal.title')} sub={selected.id === current?.id || !current ? t('advisory.cal.subAlone', { name: selectedName }) : t('advisory.cal.sub', { name: selectedName })} />
+            <SectionHead
+              id="adv-cal"
+              title={t('advisory.cal.title')}
+              sub={selected.id === current?.id || !current ? t('advisory.cal.subAlone', { name: selectedName }) : t('advisory.cal.sub', { name: selectedName })}
+              actions={
+                customSpec && (
+                  <Button variant="secondary" size="sm" icon={<RotateCcw size={14} strokeWidth={1.75} aria-hidden />} onClick={resetCustom}>
+                    {t('advisory.custom.reset')}
+                  </Button>
+                )
+              }
+            />
             <Panel pad="none">
               <div className="p-4 narrow:p-2.5">
-                <SeasonCalendar current={current} selected={selected} climate={climate} currency={currency} />
+                <SeasonCalendar
+                  current={current}
+                  selected={selected}
+                  climate={climate}
+                  currency={currency}
+                  getChoices={modelInput ? getChoices : undefined}
+                  onSwap={modelInput ? handleSwap : undefined}
+                />
               </div>
             </Panel>
           </section>
@@ -277,8 +338,8 @@ function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
         />
         <Panel pad="none">
           <div className="p-4 narrow:p-2.5">
-            {report.annualPlan ? (
-              <AnnualPlanView plan={report.annualPlan} currency={currency} usesReference={usesReference} />
+            {activePlan ? (
+              <AnnualPlanView plan={activePlan} currency={currency} usesReference={usesReference} />
             ) : (
               <EmptyState layout="inline" icon={<ClipboardList />} title={t('advisory.empty.noPlan')} body={t('advisory.empty.noPlanBody')} />
             )}

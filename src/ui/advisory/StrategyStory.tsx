@@ -90,7 +90,7 @@ function Evidence({ items }: { items: EvidenceItem[] }) {
               <span className="min-w-0 flex-1 text-xs text-ink-2">{pick(e.label, lang)}</span>
               {e.branch && <ArrowUpRight size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-ink-3" />}
             </span>
-            <span className="t-value text-sm text-ink-1">{e.value}</span>
+            <span className="t-value text-sm text-ink-1">{pick(e.value, lang)}</span>
             {e.sourceId && <span className="t-meta truncate">{sourceName(e.sourceId)}</span>}
           </>
         );

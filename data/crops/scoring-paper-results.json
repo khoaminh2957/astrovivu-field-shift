@@ -1,0 +1,1279 @@
+{
+  "generatedAt": "2026-11-14T00:00:00Z",
+  "engineVersion": "Astrovivu-AEZ v2.0",
+  "experiment1_ahp": {
+    "exact": {
+      "weights": {
+        "temperature": 0.225118,
+        "water": 0.225118,
+        "ph": 0.117518,
+        "salinity": 0.117518,
+        "drainage": 0.117518,
+        "texture": 0.0538,
+        "depth": 0.0538,
+        "fertility": 0.044804,
+        "slope": 0.044804
+      },
+      "exponents": {
+        "temperature": 1,
+        "water": 1,
+        "ph": 0.522,
+        "salinity": 0.522,
+        "drainage": 0.522,
+        "texture": 0.239,
+        "depth": 0.239,
+        "fertility": 0.199,
+        "slope": 0.199
+      },
+      "lambdaMax": 9.034306,
+      "ci": 0.004288,
+      "cr": 0.002957
+    },
+    "domainShares": {
+      "climaticPrimary": 0.4502,
+      "edaphicChemHydro": 0.3526,
+      "edaphicPhysical": 0.1076,
+      "fertilityTopography": 0.0896
+    },
+    "monteCarlo": {
+      "runs": 1000,
+      "perturbationLogHalfWidth": 0.25,
+      "crMean": 0.00865,
+      "crP95": 0.01185,
+      "crMax": 0.01499,
+      "shareCrBelow010": 1,
+      "tierOrderPreservedShare": 1,
+      "factors": {
+        "temperature": {
+          "exactWeight": 0.225118,
+          "exactExponent": 1,
+          "mcMeanExp": 0.9739,
+          "mcSdExp": 0.0367,
+          "ci95": [
+            0.88,
+            1
+          ]
+        },
+        "water": {
+          "exactWeight": 0.225118,
+          "exactExponent": 1,
+          "mcMeanExp": 0.9761,
+          "mcSdExp": 0.0353,
+          "ci95": [
+            0.8758,
+            1
+          ]
+        },
+        "ph": {
+          "exactWeight": 0.117518,
+          "exactExponent": 0.522,
+          "mcMeanExp": 0.5125,
+          "mcSdExp": 0.0317,
+          "ci95": [
+            0.4536,
+            0.5762
+          ]
+        },
+        "salinity": {
+          "exactWeight": 0.117518,
+          "exactExponent": 0.522,
+          "mcMeanExp": 0.51,
+          "mcSdExp": 0.0307,
+          "ci95": [
+            0.4527,
+            0.5721
+          ]
+        },
+        "drainage": {
+          "exactWeight": 0.117518,
+          "exactExponent": 0.522,
+          "mcMeanExp": 0.5093,
+          "mcSdExp": 0.0311,
+          "ci95": [
+            0.4522,
+            0.5724
+          ]
+        },
+        "texture": {
+          "exactWeight": 0.0538,
+          "exactExponent": 0.239,
+          "mcMeanExp": 0.2341,
+          "mcSdExp": 0.0146,
+          "ci95": [
+            0.2066,
+            0.2629
+          ]
+        },
+        "depth": {
+          "exactWeight": 0.0538,
+          "exactExponent": 0.239,
+          "mcMeanExp": 0.2338,
+          "mcSdExp": 0.0146,
+          "ci95": [
+            0.2068,
+            0.2663
+          ]
+        },
+        "fertility": {
+          "exactWeight": 0.044804,
+          "exactExponent": 0.199,
+          "mcMeanExp": 0.1942,
+          "mcSdExp": 0.0123,
+          "ci95": [
+            0.1711,
+            0.2196
+          ]
+        },
+        "slope": {
+          "exactWeight": 0.044804,
+          "exactExponent": 0.199,
+          "mcMeanExp": 0.1945,
+          "mcSdExp": 0.012,
+          "ci95": [
+            0.1711,
+            0.2179
+          ]
+        }
+      }
+    }
+  },
+  "experiment2_parametricOperators": {
+    "canonicalResults": [
+      {
+        "id": "lethal-drought",
+        "name": "Lethal drought (water = 0, others = 1)",
+        "scores": {
+          "wlc": 0.7749,
+          "storie": 0,
+          "khiddir": 0,
+          "ecocrop-gaez": 0,
+          "astrovivu-v2": 0
+        }
+      },
+      {
+        "id": "single-acid-ph",
+        "name": "Single moderate acidity (pH = 0.60, others = 1)",
+        "scores": {
+          "wlc": 0.953,
+          "storie": 0.6,
+          "khiddir": 0.6,
+          "ecocrop-gaez": 0.7659,
+          "astrovivu-v2": 0.7659
+        }
+      },
+      {
+        "id": "compound-edaphic",
+        "name": "Compound manageable soil limits (7 soil/slope = 0.70..0.80, climate = 1)",
+        "scores": {
+          "wlc": 0.8572,
+          "storie": 0.1152,
+          "khiddir": 0.284,
+          "ecocrop-gaez": 0.4777,
+          "astrovivu-v2": 0.615
+        }
+      },
+      {
+        "id": "daklak-archetype",
+        "name": "Tropical highland dry-spell archetype (water = 0.72, pH = 0.92, fert = 0.85, slope = 0.88)",
+        "scores": {
+          "wlc": 0.9155,
+          "storie": 0.4955,
+          "khiddir": 0.5973,
+          "ecocrop-gaez": 0.6506,
+          "astrovivu-v2": 0.6639
+        }
+      },
+      {
+        "id": "nevada-pivot-archetype",
+        "name": "Arid alkaline irrigated basin (temp = 0.95, water = 1, pH = 0.60, sal = 0.82, fert = 0.65)",
+        "scores": {
+          "wlc": 0.9049,
+          "storie": 0.3038,
+          "khiddir": 0.4269,
+          "ecocrop-gaez": 0.6021,
+          "astrovivu-v2": 0.6436
+        }
+      }
+    ],
+    "benchmarkCount": 56,
+    "methodMetrics": {
+      "wlc": {
+        "n": 56,
+        "positives": 31,
+        "negatives": 25,
+        "rocAuc": 0.9961,
+        "brierScore": 0.0755,
+        "fprAtS2_60": 0.2,
+        "recallAt45": 1,
+        "specificityAt45": 0.72,
+        "youdenJAt45": 0.72
+      },
+      "storie": {
+        "n": 56,
+        "positives": 31,
+        "negatives": 25,
+        "rocAuc": 0.9548,
+        "brierScore": 0.1072,
+        "fprAtS2_60": 0,
+        "recallAt45": 0.8387,
+        "specificityAt45": 1,
+        "youdenJAt45": 0.8387
+      },
+      "khiddir": {
+        "n": 56,
+        "positives": 31,
+        "negatives": 25,
+        "rocAuc": 0.9548,
+        "brierScore": 0.1007,
+        "fprAtS2_60": 0,
+        "recallAt45": 0.8387,
+        "specificityAt45": 1,
+        "youdenJAt45": 0.8387
+      },
+      "ecocrop-gaez": {
+        "n": 56,
+        "positives": 31,
+        "negatives": 25,
+        "rocAuc": 0.9548,
+        "brierScore": 0.0761,
+        "fprAtS2_60": 0,
+        "recallAt45": 0.871,
+        "specificityAt45": 1,
+        "youdenJAt45": 0.871
+      },
+      "astrovivu-v2": {
+        "n": 56,
+        "positives": 31,
+        "negatives": 25,
+        "rocAuc": 0.9548,
+        "brierScore": 0.0759,
+        "fprAtS2_60": 0,
+        "recallAt45": 0.871,
+        "specificityAt45": 1,
+        "youdenJAt45": 0.871
+      }
+    },
+    "sampleCases": [
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "coffea-canephora",
+        "irrigation": "supplemental",
+        "viable": 1,
+        "basis": "Dominant commercial perennial of Đắk Lắk (FAOSTAT/MARD)",
+        "scores": {
+          "wlc": 1,
+          "storie": 1,
+          "khiddir": 1,
+          "ecocrop-gaez": 1,
+          "astrovivu-v2": 1
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "coffea-canephora",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Viable rainfed robusta with moderate dry-season deficit",
+        "scores": {
+          "wlc": 0.9177,
+          "storie": 0.74,
+          "khiddir": 0.74,
+          "ecocrop-gaez": 0.74,
+          "astrovivu-v2": 0.74
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "piper-nigrum",
+        "irrigation": "full",
+        "viable": 1,
+        "basis": "Major irrigated intercrop in Central Highlands",
+        "scores": {
+          "wlc": 0.9504,
+          "storie": 0.7,
+          "khiddir": 0.7,
+          "ecocrop-gaez": 0.8301,
+          "astrovivu-v2": 0.8301
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "piper-nigrum",
+        "irrigation": "rainfed",
+        "viable": 0,
+        "basis": "Fails rainfed: 4-month dry spell well below 2000 mm minimum",
+        "scores": {
+          "wlc": 0.6339,
+          "storie": 0,
+          "khiddir": 0,
+          "ecocrop-gaez": 0,
+          "astrovivu-v2": 0
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "oryza-sativa",
+        "irrigation": "rainfed",
+        "viable": 0,
+        "basis": "Upland basalt parcel lacks season rainfall for rainfed paddy",
+        "scores": {
+          "wlc": 0.6868,
+          "storie": 0.0422,
+          "khiddir": 0.0478,
+          "ecocrop-gaez": 0.0514,
+          "astrovivu-v2": 0.0514
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "zea-mays",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Standard wet-season hybrid maize in Central Highlands",
+        "scores": {
+          "wlc": 0.9636,
+          "storie": 0.5474,
+          "khiddir": 0.619,
+          "ecocrop-gaez": 0.8744,
+          "astrovivu-v2": 0.8871
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "glycine-max",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Wet-season upland legume rotation in Đắk Lắk",
+        "scores": {
+          "wlc": 0.9636,
+          "storie": 0.5474,
+          "khiddir": 0.619,
+          "ecocrop-gaez": 0.8744,
+          "astrovivu-v2": 0.8871
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "arachis-hypogaea",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Well-adapted rainfed legume on friable basalt soil",
+        "scores": {
+          "wlc": 0.9636,
+          "storie": 0.5474,
+          "khiddir": 0.619,
+          "ecocrop-gaez": 0.8744,
+          "astrovivu-v2": 0.8871
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "manihot-esculenta",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Major rainfed root crop across Central Highlands",
+        "scores": {
+          "wlc": 0.961,
+          "storie": 0.543,
+          "khiddir": 0.6165,
+          "ecocrop-gaez": 0.8674,
+          "astrovivu-v2": 0.88
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "anacardium-occidentale",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Drought-tolerant tree crop widely grown in region",
+        "scores": {
+          "wlc": 0.9773,
+          "storie": 0.7,
+          "khiddir": 0.7,
+          "ecocrop-gaez": 0.9183,
+          "astrovivu-v2": 0.9183
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "durio-zibethinus",
+        "irrigation": "full",
+        "viable": 1,
+        "basis": "High-value irrigated orchard crop in Đắk Lắk",
+        "scores": {
+          "wlc": 0.9564,
+          "storie": 0.6538,
+          "khiddir": 0.6765,
+          "ecocrop-gaez": 0.8577,
+          "astrovivu-v2": 0.8577
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "ipomoea-batatas",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Major wet-season tuber crop in Đắk Lắk",
+        "scores": {
+          "wlc": 0.9851,
+          "storie": 0.782,
+          "khiddir": 0.782,
+          "ecocrop-gaez": 0.9522,
+          "astrovivu-v2": 0.9522
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "triticum-aestivum",
+        "irrigation": "rainfed",
+        "viable": 0,
+        "basis": "Temperate cereal: tropical temperatures exceed 20 °C optimum",
+        "scores": {
+          "wlc": 0.3643,
+          "storie": 0.0625,
+          "khiddir": 0.1118,
+          "ecocrop-gaez": 0.1547,
+          "astrovivu-v2": 0.162
+        }
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "avena-sativa",
+        "irrigation": "rainfed",
+        "viable": 0,
+        "basis": "Cool-temperate oat unsuitable in tropical Aw climate",
+        "scores": {
+          "wlc": 0.4457,
+          "storie": 0.2737,
+          "khiddir": 0.3155,
+          "ecocrop-gaez": 0.3333,
+          "astrovivu-v2": 0.3333
+        }
+      },
+      {
+        "parcelId": "cantho-rice",
+        "cropId": "oryza-sativa",
+        "irrigation": "full",
+        "viable": 1,
+        "basis": "Triple-cropped irrigated Mekong Delta staple (MARD)",
+        "scores": {
+          "wlc": 1,
+          "storie": 1,
+          "khiddir": 1,
+          "ecocrop-gaez": 1,
+          "astrovivu-v2": 1
+        }
+      },
+      {
+        "parcelId": "cantho-rice",
+        "cropId": "oryza-sativa",
+        "irrigation": "rainfed",
+        "viable": 1,
+        "basis": "Monsoon wet-season rainfed rice viable in An Giang",
+        "scores": {
+          "wlc": 0.7901,
+          "storie": 0.337,
+          "khiddir": 0.337,
+          "ecocrop-gaez": 0.337,
+          "astrovivu-v2": 0.337
+        }
+      }
+    ]
+  },
+  "experiment3_physiologicalAblation": {
+    "kcAblation": [
+      {
+        "parcelId": "nevada-alfalfa",
+        "cropId": "medicago-sativa",
+        "kcMidTabulated": 0.95,
+        "meanWindMs": 2.33,
+        "meanRhMinPct": 32.1,
+        "kcMidClimateAdjusted": 0.9899,
+        "deltaKcMidPct": 4.2,
+        "seasonEtcMm": 652,
+        "seasonEtaMm": 652,
+        "seasonIrrigationMm": 706
+      },
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "coffea-canephora",
+        "kcMidTabulated": 0.95,
+        "meanWindMs": 0.22,
+        "meanRhMinPct": 65.1,
+        "kcMidClimateAdjusted": 0.8385,
+        "deltaKcMidPct": -11.74,
+        "seasonEtcMm": 1040,
+        "seasonEtaMm": 1040,
+        "seasonIrrigationMm": 466
+      },
+      {
+        "parcelId": "cantho-rice",
+        "cropId": "oryza-sativa",
+        "kcMidTabulated": 1.2,
+        "meanWindMs": 2.34,
+        "meanRhMinPct": 63.1,
+        "kcMidClimateAdjusted": 1.1579,
+        "deltaKcMidPct": -3.51,
+        "seasonEtcMm": 670,
+        "seasonEtaMm": 670,
+        "seasonIrrigationMm": 642
+      },
+      {
+        "parcelId": "iowa-corn-soy",
+        "cropId": "zea-mays",
+        "kcMidTabulated": 1.2,
+        "meanWindMs": 3.16,
+        "meanRhMinPct": 55.6,
+        "kcMidClimateAdjusted": 1.2019,
+        "deltaKcMidPct": 0.16,
+        "seasonEtcMm": 383,
+        "seasonEtaMm": 380,
+        "seasonIrrigationMm": 0
+      }
+    ],
+    "rootAblation": [
+      {
+        "cropId": "zea-mays",
+        "isPerennial": false,
+        "zrMaxM": 1.35,
+        "rootDevDays": 58,
+        "zrDay5M": 0.189,
+        "zrDay20M": 0.503,
+        "tawStaticMm": 216,
+        "tawDay5DynamicMm": 30.2,
+        "earlyTawOverestimationRatioInV1": 7.15
+      },
+      {
+        "cropId": "glycine-max",
+        "isPerennial": false,
+        "zrMaxM": 0.95,
+        "rootDevDays": 47,
+        "zrDay5M": 0.185,
+        "zrDay20M": 0.478,
+        "tawStaticMm": 152,
+        "tawDay5DynamicMm": 29.6,
+        "earlyTawOverestimationRatioInV1": 5.13
+      },
+      {
+        "cropId": "allium-cepa",
+        "isPerennial": false,
+        "zrMaxM": 0.45,
+        "rootDevDays": 35,
+        "zrDay5M": 0.171,
+        "zrDay20M": 0.339,
+        "tawStaticMm": 72,
+        "tawDay5DynamicMm": 27.3,
+        "earlyTawOverestimationRatioInV1": 2.63
+      },
+      {
+        "cropId": "coffea-canephora",
+        "isPerennial": true,
+        "zrMaxM": 1.2,
+        "rootDevDays": 123,
+        "zrDay5M": 1.2,
+        "zrDay20M": 1.2,
+        "tawStaticMm": 192,
+        "tawDay5DynamicMm": 192,
+        "earlyTawOverestimationRatioInV1": 1
+      }
+    ],
+    "aerationAblation": [
+      {
+        "cropId": "oryza-sativa",
+        "poorDrainageCompatibility": 13,
+        "wellDrainageCompatibility": 5,
+        "poorDrainageExpectedYieldPct": 13.4,
+        "wellDrainageExpectedYieldPct": 5,
+        "deltaExpectedYieldPct": -8.4,
+        "minAerationFactorPoor": 1,
+        "waterloggedDaysCount": 0
+      },
+      {
+        "cropId": "glycine-max",
+        "poorDrainageCompatibility": 78,
+        "wellDrainageCompatibility": 92,
+        "poorDrainageExpectedYieldPct": 67.4,
+        "wellDrainageExpectedYieldPct": 79.1,
+        "deltaExpectedYieldPct": 11.7,
+        "minAerationFactorPoor": 0.3,
+        "waterloggedDaysCount": 65
+      },
+      {
+        "cropId": "zea-mays",
+        "poorDrainageCompatibility": 35,
+        "wellDrainageCompatibility": 92,
+        "poorDrainageExpectedYieldPct": 32.7,
+        "wellDrainageExpectedYieldPct": 85.9,
+        "deltaExpectedYieldPct": 53.2,
+        "minAerationFactorPoor": 0.3,
+        "waterloggedDaysCount": 69
+      },
+      {
+        "cropId": "arachis-hypogaea",
+        "poorDrainageCompatibility": 35,
+        "wellDrainageCompatibility": 92,
+        "poorDrainageExpectedYieldPct": 30.2,
+        "wellDrainageExpectedYieldPct": 79.2,
+        "deltaExpectedYieldPct": 49,
+        "minAerationFactorPoor": 0.3,
+        "waterloggedDaysCount": 66
+      }
+    ],
+    "eoCoverage": [
+      {
+        "parcelId": "daklak-coffee",
+        "cropId": "coffea-canephora",
+        "totalDays": 365,
+        "activeNdviDays": 292,
+        "esiDays": 0,
+        "smRootDays": 365,
+        "lstCanopyStressDays": 18,
+        "confidence": 0.42
+      },
+      {
+        "parcelId": "cantho-rice",
+        "cropId": "oryza-sativa",
+        "totalDays": 365,
+        "activeNdviDays": 357,
+        "esiDays": 0,
+        "smRootDays": 365,
+        "lstCanopyStressDays": 96,
+        "confidence": 0.4
+      },
+      {
+        "parcelId": "iowa-corn-soy",
+        "cropId": "zea-mays",
+        "totalDays": 365,
+        "activeNdviDays": 125,
+        "esiDays": 0,
+        "smRootDays": 365,
+        "lstCanopyStressDays": 31,
+        "confidence": 0.57
+      },
+      {
+        "parcelId": "nevada-alfalfa",
+        "cropId": "medicago-sativa",
+        "totalDays": 365,
+        "activeNdviDays": 125,
+        "esiDays": 0,
+        "smRootDays": 365,
+        "lstCanopyStressDays": 6,
+        "confidence": 0.58
+      }
+    ]
+  },
+  "experiment4_salinityMaasHoffman": {
+    "ecGridDsM": [
+      0,
+      1,
+      1.5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      10,
+      12
+    ],
+    "totalPoints": 72,
+    "overallRmseV1Step": 0.2655,
+    "overallRmseV2MaasHoffman": 0.2268,
+    "overallMaeV1Step": 0.1743,
+    "overallMaeV2MaasHoffman": 0.1583,
+    "rmseReductionPct": 14.56,
+    "perCrop": [
+      {
+        "cropId": "phaseolus-vulgaris",
+        "name": "Common bean",
+        "ecocropClasses": {
+          "opt": "low",
+          "abs": "low"
+        },
+        "faoThresholdDsM": 1,
+        "faoSlopePerDsM": 0.19,
+        "rmseV1Step": 0.1551,
+        "rmseV2MaasHoffman": 0.2994
+      },
+      {
+        "cropId": "allium-cepa",
+        "name": "Onion",
+        "ecocropClasses": {
+          "opt": "low",
+          "abs": "medium"
+        },
+        "faoThresholdDsM": 1.2,
+        "faoSlopePerDsM": 0.16,
+        "rmseV1Step": 0.3559,
+        "rmseV2MaasHoffman": 0.3411
+      },
+      {
+        "cropId": "zea-mays",
+        "name": "Maize",
+        "ecocropClasses": {
+          "opt": "low",
+          "abs": "medium"
+        },
+        "faoThresholdDsM": 1.7,
+        "faoSlopePerDsM": 0.12,
+        "rmseV1Step": 0.2526,
+        "rmseV2MaasHoffman": 0.2188
+      },
+      {
+        "cropId": "oryza-sativa",
+        "name": "Rice",
+        "ecocropClasses": {
+          "opt": "low",
+          "abs": "low"
+        },
+        "faoThresholdDsM": 3,
+        "faoSlopePerDsM": 0.12,
+        "rmseV1Step": 0.335,
+        "rmseV2MaasHoffman": 0.0444
+      },
+      {
+        "cropId": "glycine-max",
+        "name": "Soybean",
+        "ecocropClasses": {
+          "opt": "low",
+          "abs": "medium"
+        },
+        "faoThresholdDsM": 5,
+        "faoSlopePerDsM": 0.2,
+        "rmseV1Step": 0.2332,
+        "rmseV2MaasHoffman": 0.1631
+      },
+      {
+        "cropId": "hordeum-vulgare",
+        "name": "Barley",
+        "ecocropClasses": {
+          "opt": "low",
+          "abs": "high"
+        },
+        "faoThresholdDsM": 8,
+        "faoSlopePerDsM": 0.05,
+        "rmseV1Step": 0.2041,
+        "rmseV2MaasHoffman": 0.1619
+      }
+    ]
+  },
+  "experiment5_globalSensitivitySobolMorris": {
+    "quasiMonteCarloSequence": "Halton radical-inverse (first 18 primes)",
+    "parameterBounds": [
+      {
+        "key": "temperature",
+        "min": 10,
+        "max": 36
+      },
+      {
+        "key": "water",
+        "min": 250,
+        "max": 2400
+      },
+      {
+        "key": "ph",
+        "min": 4.2,
+        "max": 8.6
+      },
+      {
+        "key": "salinity",
+        "min": 0,
+        "max": 8
+      },
+      {
+        "key": "drainage",
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "texture",
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "depth",
+        "min": 15,
+        "max": 180
+      },
+      {
+        "key": "fertility",
+        "min": 3,
+        "max": 32
+      },
+      {
+        "key": "slope",
+        "min": 0,
+        "max": 25
+      }
+    ],
+    "crops": {
+      "zea-mays": {
+        "sampleSizeN": 1024,
+        "totalEvaluations": 11264,
+        "outputMean": 0.1716,
+        "outputVariance": 0.05121,
+        "sumFirstOrderSi": 0.7199,
+        "sumTotalEffectSTi": 1.3367,
+        "nonAdditiveInteractionFraction": 0.2801,
+        "factors": {
+          "temperature": {
+            "firstOrderSi": 0.0598,
+            "totalEffectSTi": 0.1652,
+            "interactionShare": 0.1055,
+            "morrisMuStar": 0.2291,
+            "morrisSigma": 0.5531
+          },
+          "water": {
+            "firstOrderSi": 0.4682,
+            "totalEffectSTi": 0.7304,
+            "interactionShare": 0.2622,
+            "morrisMuStar": 0.7111,
+            "morrisSigma": 1.3894
+          },
+          "ph": {
+            "firstOrderSi": 0.1149,
+            "totalEffectSTi": 0.2276,
+            "interactionShare": 0.1127,
+            "morrisMuStar": 0.468,
+            "morrisSigma": 1.0953
+          },
+          "salinity": {
+            "firstOrderSi": 0.001,
+            "totalEffectSTi": 0.0057,
+            "interactionShare": 0.0048,
+            "morrisMuStar": 0.0299,
+            "morrisSigma": 0.054
+          },
+          "drainage": {
+            "firstOrderSi": 0.0719,
+            "totalEffectSTi": 0.1702,
+            "interactionShare": 0.0984,
+            "morrisMuStar": 0.1272,
+            "morrisSigma": 0.591
+          },
+          "texture": {
+            "firstOrderSi": 0,
+            "totalEffectSTi": 0.0011,
+            "interactionShare": 0.0011,
+            "morrisMuStar": 0.0365,
+            "morrisSigma": 0.094
+          },
+          "depth": {
+            "firstOrderSi": 0.0012,
+            "totalEffectSTi": 0.0069,
+            "interactionShare": 0.0058,
+            "morrisMuStar": 0.0325,
+            "morrisSigma": 0.2316
+          },
+          "fertility": {
+            "firstOrderSi": 0,
+            "totalEffectSTi": 0,
+            "interactionShare": 0,
+            "morrisMuStar": 0.0028,
+            "morrisSigma": 0.008
+          },
+          "slope": {
+            "firstOrderSi": 0.003,
+            "totalEffectSTi": 0.0294,
+            "interactionShare": 0.0264,
+            "morrisMuStar": 0.0498,
+            "morrisSigma": 0.1236
+          }
+        }
+      },
+      "oryza-sativa": {
+        "sampleSizeN": 1024,
+        "totalEvaluations": 11264,
+        "outputMean": 0.1239,
+        "outputVariance": 0.03117,
+        "sumFirstOrderSi": 0.6853,
+        "sumTotalEffectSTi": 1.2551,
+        "nonAdditiveInteractionFraction": 0.3147,
+        "factors": {
+          "temperature": {
+            "firstOrderSi": 0.1152,
+            "totalEffectSTi": 0.22,
+            "interactionShare": 0.1048,
+            "morrisMuStar": 0.3817,
+            "morrisSigma": 0.7781
+          },
+          "water": {
+            "firstOrderSi": 0.3912,
+            "totalEffectSTi": 0.5898,
+            "interactionShare": 0.1986,
+            "morrisMuStar": 0.3238,
+            "morrisSigma": 0.6913
+          },
+          "ph": {
+            "firstOrderSi": 0.0816,
+            "totalEffectSTi": 0.1591,
+            "interactionShare": 0.0774,
+            "morrisMuStar": 0.2107,
+            "morrisSigma": 0.507
+          },
+          "salinity": {
+            "firstOrderSi": 0.0018,
+            "totalEffectSTi": 0.014,
+            "interactionShare": 0.0122,
+            "morrisMuStar": 0.0393,
+            "morrisSigma": 0.0725
+          },
+          "drainage": {
+            "firstOrderSi": 0.0845,
+            "totalEffectSTi": 0.2371,
+            "interactionShare": 0.1526,
+            "morrisMuStar": 0.1239,
+            "morrisSigma": 0.6078
+          },
+          "texture": {
+            "firstOrderSi": 0,
+            "totalEffectSTi": 0.0108,
+            "interactionShare": 0.0108,
+            "morrisMuStar": 0.081,
+            "morrisSigma": 0.3534
+          },
+          "depth": {
+            "firstOrderSi": 0.0009,
+            "totalEffectSTi": 0.0032,
+            "interactionShare": 0.0022,
+            "morrisMuStar": 0.0146,
+            "morrisSigma": 0.0734
+          },
+          "fertility": {
+            "firstOrderSi": 0,
+            "totalEffectSTi": 0.0001,
+            "interactionShare": 0.0001,
+            "morrisMuStar": 0.0036,
+            "morrisSigma": 0.0145
+          },
+          "slope": {
+            "firstOrderSi": 0.01,
+            "totalEffectSTi": 0.021,
+            "interactionShare": 0.011,
+            "morrisMuStar": 0.032,
+            "morrisSigma": 0.0825
+          }
+        }
+      },
+      "coffea-canephora": {
+        "sampleSizeN": 1024,
+        "totalEvaluations": 11264,
+        "outputMean": 0.1511,
+        "outputVariance": 0.04804,
+        "sumFirstOrderSi": 0.6496,
+        "sumTotalEffectSTi": 1.3704,
+        "nonAdditiveInteractionFraction": 0.3504,
+        "factors": {
+          "temperature": {
+            "firstOrderSi": 0.1381,
+            "totalEffectSTi": 0.3285,
+            "interactionShare": 0.1904,
+            "morrisMuStar": 0.5273,
+            "morrisSigma": 1.0217
+          },
+          "water": {
+            "firstOrderSi": 0.3283,
+            "totalEffectSTi": 0.614,
+            "interactionShare": 0.2857,
+            "morrisMuStar": 0.3013,
+            "morrisSigma": 0.5554
+          },
+          "ph": {
+            "firstOrderSi": 0.1256,
+            "totalEffectSTi": 0.2889,
+            "interactionShare": 0.1632,
+            "morrisMuStar": 0.3225,
+            "morrisSigma": 0.6882
+          },
+          "salinity": {
+            "firstOrderSi": 0.0053,
+            "totalEffectSTi": 0.0162,
+            "interactionShare": 0.0109,
+            "morrisMuStar": 0.0477,
+            "morrisSigma": 0.0889
+          },
+          "drainage": {
+            "firstOrderSi": 0.0416,
+            "totalEffectSTi": 0.096,
+            "interactionShare": 0.0544,
+            "morrisMuStar": 0.1302,
+            "morrisSigma": 0.5502
+          },
+          "texture": {
+            "firstOrderSi": 0.0012,
+            "totalEffectSTi": 0.0108,
+            "interactionShare": 0.0096,
+            "morrisMuStar": 0.1098,
+            "morrisSigma": 0.3891
+          },
+          "depth": {
+            "firstOrderSi": 0.0013,
+            "totalEffectSTi": 0.0052,
+            "interactionShare": 0.0039,
+            "morrisMuStar": 0.0224,
+            "morrisSigma": 0.1541
+          },
+          "fertility": {
+            "firstOrderSi": 0,
+            "totalEffectSTi": 0.0001,
+            "interactionShare": 0.0001,
+            "morrisMuStar": 0.0022,
+            "morrisSigma": 0.0073
+          },
+          "slope": {
+            "firstOrderSi": 0.0082,
+            "totalEffectSTi": 0.0108,
+            "interactionShare": 0.0027,
+            "morrisMuStar": 0.0507,
+            "morrisSigma": 0.1268
+          }
+        }
+      },
+      "glycine-max": {
+        "sampleSizeN": 1024,
+        "totalEvaluations": 11264,
+        "outputMean": 0.1951,
+        "outputVariance": 0.06096,
+        "sumFirstOrderSi": 0.7242,
+        "sumTotalEffectSTi": 1.2423,
+        "nonAdditiveInteractionFraction": 0.2758,
+        "factors": {
+          "temperature": {
+            "firstOrderSi": 0.0875,
+            "totalEffectSTi": 0.2167,
+            "interactionShare": 0.1292,
+            "morrisMuStar": 0.3697,
+            "morrisSigma": 0.7966
+          },
+          "water": {
+            "firstOrderSi": 0.462,
+            "totalEffectSTi": 0.6805,
+            "interactionShare": 0.2185,
+            "morrisMuStar": 0.7215,
+            "morrisSigma": 1.5559
+          },
+          "ph": {
+            "firstOrderSi": 0.1568,
+            "totalEffectSTi": 0.3001,
+            "interactionShare": 0.1433,
+            "morrisMuStar": 0.6085,
+            "morrisSigma": 1.1134
+          },
+          "salinity": {
+            "firstOrderSi": 0.0051,
+            "totalEffectSTi": 0.0051,
+            "interactionShare": 0,
+            "morrisMuStar": 0.0327,
+            "morrisSigma": 0.0563
+          },
+          "drainage": {
+            "firstOrderSi": 0.0062,
+            "totalEffectSTi": 0.0064,
+            "interactionShare": 0.0002,
+            "morrisMuStar": 0.0372,
+            "morrisSigma": 0.1546
+          },
+          "texture": {
+            "firstOrderSi": 0,
+            "totalEffectSTi": 0.001,
+            "interactionShare": 0.001,
+            "morrisMuStar": 0.0394,
+            "morrisSigma": 0.0969
+          },
+          "depth": {
+            "firstOrderSi": 0.0047,
+            "totalEffectSTi": 0.0061,
+            "interactionShare": 0.0014,
+            "morrisMuStar": 0.0304,
+            "morrisSigma": 0.2002
+          },
+          "fertility": {
+            "firstOrderSi": 0,
+            "totalEffectSTi": 0,
+            "interactionShare": 0,
+            "morrisMuStar": 0.0034,
+            "morrisSigma": 0.0098
+          },
+          "slope": {
+            "firstOrderSi": 0.0019,
+            "totalEffectSTi": 0.0264,
+            "interactionShare": 0.0244,
+            "morrisMuStar": 0.0556,
+            "morrisSigma": 0.1318
+          }
+        }
+      }
+    }
+  },
+  "experiment6_fullEcoCropCatalogue": {
+    "totalSpecies": 2063,
+    "curatedSpecies": 73,
+    "totalCropSitePairs": 8252,
+    "totalMonthlyWindowsEvaluated": 99024,
+    "wallClockMs": 6410,
+    "microsecondsPerPair": 776.8,
+    "biomes": {
+      "daklak-coffee": {
+        "irrigationRegime": "rainfed",
+        "speciesEvaluated": 2063,
+        "suitabilityClasses": {
+          "S1_80_100": 245,
+          "S2_60_79": 311,
+          "S3_40_59": 415,
+          "N1_20_39": 348,
+          "N2_0_19": 744
+        },
+        "viableS1S2Count": 556,
+        "viableS1S2SharePct": 26.95,
+        "topLimitingFactors": [
+          {
+            "factor": "ph",
+            "count": 562,
+            "sharePct": 27.2
+          },
+          {
+            "factor": "water",
+            "count": 414,
+            "sharePct": 20.1
+          },
+          {
+            "factor": "texture",
+            "count": 356,
+            "sharePct": 17.3
+          },
+          {
+            "factor": "temperature",
+            "count": 311,
+            "sharePct": 15.1
+          },
+          {
+            "factor": "climateZone",
+            "count": 175,
+            "sharePct": 8.5
+          }
+        ]
+      },
+      "cantho-rice": {
+        "irrigationRegime": "full",
+        "speciesEvaluated": 2063,
+        "suitabilityClasses": {
+          "S1_80_100": 527,
+          "S2_60_79": 325,
+          "S3_40_59": 352,
+          "N1_20_39": 259,
+          "N2_0_19": 600
+        },
+        "viableS1S2Count": 852,
+        "viableS1S2SharePct": 41.3,
+        "topLimitingFactors": [
+          {
+            "factor": "texture",
+            "count": 513,
+            "sharePct": 24.9
+          },
+          {
+            "factor": "temperature",
+            "count": 507,
+            "sharePct": 24.6
+          },
+          {
+            "factor": "ph",
+            "count": 395,
+            "sharePct": 19.1
+          },
+          {
+            "factor": "water",
+            "count": 185,
+            "sharePct": 9
+          },
+          {
+            "factor": "photoperiod",
+            "count": 171,
+            "sharePct": 8.3
+          }
+        ]
+      },
+      "iowa-corn-soy": {
+        "irrigationRegime": "rainfed",
+        "speciesEvaluated": 2063,
+        "suitabilityClasses": {
+          "S1_80_100": 61,
+          "S2_60_79": 56,
+          "S3_40_59": 76,
+          "N1_20_39": 106,
+          "N2_0_19": 1764
+        },
+        "viableS1S2Count": 117,
+        "viableS1S2SharePct": 5.67,
+        "topLimitingFactors": [
+          {
+            "factor": "temperature",
+            "count": 777,
+            "sharePct": 37.7
+          },
+          {
+            "factor": "winterSurvival",
+            "count": 659,
+            "sharePct": 31.9
+          },
+          {
+            "factor": "frost",
+            "count": 242,
+            "sharePct": 11.7
+          },
+          {
+            "factor": "water",
+            "count": 198,
+            "sharePct": 9.6
+          },
+          {
+            "factor": "ph",
+            "count": 78,
+            "sharePct": 3.8
+          }
+        ]
+      },
+      "nevada-alfalfa": {
+        "irrigationRegime": "full",
+        "speciesEvaluated": 2063,
+        "suitabilityClasses": {
+          "S1_80_100": 1,
+          "S2_60_79": 2,
+          "S3_40_59": 2,
+          "N1_20_39": 8,
+          "N2_0_19": 2050
+        },
+        "viableS1S2Count": 3,
+        "viableS1S2SharePct": 0.15,
+        "topLimitingFactors": [
+          {
+            "factor": "winterSurvival",
+            "count": 658,
+            "sharePct": 31.9
+          },
+          {
+            "factor": "temperature",
+            "count": 650,
+            "sharePct": 31.5
+          },
+          {
+            "factor": "ph",
+            "count": 471,
+            "sharePct": 22.8
+          },
+          {
+            "factor": "frost",
+            "count": 280,
+            "sharePct": 13.6
+          },
+          {
+            "factor": "latitude",
+            "count": 1,
+            "sharePct": 0
+          }
+        ]
+      }
+    }
+  }
+}

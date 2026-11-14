@@ -24,24 +24,24 @@ The app opens on a rotating globe (`src/ui/hero`) and then shows a light working
 
 | Step | What the user sees and does | Code |
 |---|---|---|
-| Find a field | Type an address and an area, or open one of four demo fields. The draft square can be dragged corner by corner on the map before it is locked. NASA GIBS overlays (MODIS NDVI, SMAP root-zone moisture, GPM IMERG rain, MODIS land surface temperature) are in the map's layer menu. | `src/ui/field/FindField.tsx`, `src/ui/chrome`, `src/globe` |
-| Lock | One continuous flight from orbit to the field. The parcel is drawn as the within-field picture of the selected metric over the satellite image. | `src/globe` (`docs/GLOBE.md` §3b) |
-| Status tab | Two field pictures, the productivity score, the crop, three charts on one month axis with one plain sentence each, and what changed (dated insights). | `src/ui/field/FieldSummary.tsx` |
+| Find a field | Type an address and an area, click inside farmland on the map to detect its boundary from Sentinel-2 NDVI (`detectFieldBoundary`), or open one of four demo fields from the list or map. Corners of any draft outline can be dragged before locking. Touchpad: vertical swipe/pinch zooms, horizontal swipe spins the globe or pans, `Alt` + swipe (or toolbar turn buttons) rotates bearing. NASA GIBS overlays (MODIS NDVI, SMAP root-zone moisture, GPM IMERG rain, MODIS land surface temperature) are in the map's layer menu. | `src/ui/field/FindField.tsx`, `SelectOnMap.tsx`, `src/data/boundary`, `src/globe` |
+| Lock | One continuous flight from orbit to the field. The parcel is drawn as the within-field picture of the selected metric fitted to the parcel outline over the satellite image. | `src/globe` (`docs/GLOBE.md` §3b) |
+| Status tab | Two field pictures, the productivity score ("Growing conditions" until a crop is chosen), the crop, three charts on one month axis with one plain sentence each, and what changed (dated insights). | `src/ui/field/FieldSummary.tsx` |
 | Field report tab | Relative NDVI zones (high / medium / low) with a per-zone table and stable share, the real Sentinel-2 frames used, three field maps. | `src/ui/field/FieldReport.tsx`, `src/core/zones` |
 | Data tab | Eight metric cards (soil moisture, vegetation, surface heat, rainfall, agromet, terrain, soil, risk), each showing the field itself coloured by that metric at the timeline date. A card opens a detail with legend, frame date and age, a filmstrip of real frames, the series, facts, sources, caveats and the Confidence Badge. | `src/ui/field/MetricCards.tsx`, `CardDetail.tsx` |
 | Timeline | A one-year strip drives the field picture, the NASA overlay date, every card and the score together; the latency gap shows as pending and the forecast as forecast. | `src/ui/timeline` |
 | Ground truth tab | Measured pH and soil values, irrigation, crop, sowing date, current rotation, yield, price, cost. Everything recalculates; a calibration ledger shows each override's effect on the season score. | `src/ui/override` |
-| Rotation (rail) | At least three rotation strategies including the current one, re-ranked by the farmer's priorities, each with why, evidence, benefits, gaps and risks; irrigation schedule, pH plan, sowing-window shift, annual financial plan. | `src/ui/advisory`, `src/core/advisory` |
+| Rotation (rail) | Strategy cards with `Current practice` pinned first as the baseline, a 12-month season calendar over the field's 20-year ERA5 rain and temperature normals (click any season block on the selected strategy to swap its crop and re-score a custom rotation live), a dumbbell trade-off chart against current, the five required lists (why, clickable branch evidence, benefits, gaps, risks), the annual cash-flow plan on the same month axis, and irrigation, pH and sowing advisories. | `src/ui/advisory`, `src/core/advisory` |
 | Notes (rail) | Long-term tracking: past seasons, journal, soil tests, alerts, year-over-year NDVI, plan versus actual. Demo-field history is simulated and labelled. | `src/ui/tracking`, `src/core/tracking` |
-| Urban (rail) | Urban Grower Companion for balcony and rooftop growers: site, light, preferences, plant picks, sowing months. | `src/ui/urban`, `src/core/urban` |
+| Urban (rail) | Urban Grower Companion for balcony, windowsill and rooftop growers: illustrated space and sun-hour tiles, a 12-month local temperature, rain and PAR strip, and plant cards with linked FAO EcoCrop photographs, sowing-month strip and care sheets (showing the next open sowing month when none fit now). | `src/ui/urban`, `src/core/urban` |
 | Ask | The crop-knowledge assistant answers crop questions and questions about the locked field, with citations. | `src/ui/ask`, `src/rag`, `server/` |
 
 ### The advisory engine
 
-Rule-based and pure (`src/core/advisory`, `src/core/tracking`, `src/core/urban`; `docs/ADVISORY.md`; tests in `src/core/advisory/advisory.test.ts` on the four real demo samples).
+Rule-based and pure (`src/core/advisory`, `src/core/tracking`, `src/core/urban`; `docs/ADVISORY.md`; tests in `src/core/advisory/advisory.test.ts`, `seasonDetail.test.ts` and `customRotation.test.ts` on the four real demo samples).
 
 - **Insights** pinned to timeline dates: persistent departures of NDVI, root-zone moisture and surface temperature from their day-of-year baselines (z-scores held 14-24 days), 30-day rainfall against normal, dry spells, heat and frost against the crop's EcoCrop limits, growth-stage changes, score swings, forecast events, and a weather-based pest and disease pressure index that is labelled as needing scouting, never a diagnosis, with no products named.
-- **Rotation strategies**: the current rotation (from the farmer's entry, else the Cropland Data Layer history, else the selected crop repeated) against soil-health, water-saver, income and resilience strategies. Perennials are not rotated yearly; they get an inter-row legume cover, a companion tree, a partial conversion or a mix. Each strategy carries suitability, water use and water fit, an indicative nitrogen credit, ground-cover months, pest break, soil health, risk and economics, and five generated lists: why, evidence, benefits, gaps, risks (always including local extension review). Priority weights are 0.5 plus 3 / 2 / 1 for the farmer's first, second and third priority.
+- **Rotation strategies**: the current rotation (from the farmer's entry, else the Cropland Data Layer history, else the selected crop repeated) against soil-health, water-saver, income and resilience strategies, plus an interactive `custom` strategy whenever the farmer swaps a crop in any season slot on the calendar. Tree perennials get an inter-row legume cover, a companion tree, a partial conversion or a mix; multi-year forage/sugarcane stands renew with break crops or clean fallow rest years when soil chemistry rules out other families (Nevada pH 8.8). Every season carries its own suitability, water need against normal rain, expected yield, margin, N credit and bilingual reason; each strategy carries five generated lists: why, evidence, benefits, gaps, risks (always including local extension review). Priority weights are 0.5 plus 3 / 2 / 1 for the farmer's first, second and third priority.
 - **Actions**: an FAO-56 irrigation schedule over the year and the forecast; a pH plan (lime or sulfur per pH unit by texture, always flagged to need a lab test); a sowing-window shift; drainage, organic-matter and erosion advisories; an annual cash plan for the first year of the best strategy.
 - **Tracking**: five past seasons for demo fields, driven by the real yearly climate with simulated yields and soil tests, all flagged `simulated: true`; alerts are the real insights. A user's own field gets alerts only.
 - **Urban**: curated container-friendly crops matched on temperature window, light and preferences.
@@ -89,7 +89,7 @@ Names follow the challenge Resources page. "Series" means a point time series sa
 | **SRTM** | terrain | AWS Terrarium tiles (browser), OpenTopoData SRTM 30 m (cache script) | 30 m | static | none | Elevation, slope, aspect, flow direction, lapse-rate correction, 3D terrain |
 | **ECOSTRESS** Evaporative Stress Index | thermal | ClimateSERV (4-week ESI); ECOSTRESS 70 m via AppEEARS needs a token | 4-week product | weekly values | last value July 2025 at the test point | Observed-condition term of the score where available |
 | **Landsat** 8/9 Collection 2 L2 surface temperature | thermal (field picture) | Microsoft Planetary Computer STAC + data API, key-free | 30 m (100 m native thermal, resampled by USGS) | 8-16 days, cloud-free scenes only | days | Within-field surface temperature frames; cloud, shadow and snow masked by QA bits |
-| **Copernicus Sentinel-2** L2A | vegetation, soil moisture (field pictures) | Planetary Computer, key-free | 10 m NDVI, 20 m NDMI | ~5 days, cloud-free scenes only | days | Within-field NDVI frames and relative vegetation zones; NDMI, a canopy and surface moisture index (not soil moisture) |
+| **Copernicus Sentinel-2** L2A | vegetation, soil moisture (field pictures), parcel boundary | Planetary Computer, key-free | 10 m NDVI, 20 m NDMI (and 20 m fallback for > 65 ha boundary detection) | ~5 days, cloud-free scenes only | days | Within-field NDVI frames, relative vegetation zones and click-to-select field boundary detection; NDMI, a canopy and surface moisture index (not soil moisture) |
 | **GRACE / GRACE-FO** | map context | GIBS layer | ~300 km | monthly | layer ends 2022-07 | Long-term water context only |
 
 **What is not available key-free, stated plainly.** No key-free point time series was found for GPM IMERG or SMAP (`docs/DATA_SOURCES.md` §1b): ClimateSERV returned empty series for the IMERG ids, POWER's `IMERG_PRECTOT` returned the fill value, AppEEARS does not offer IMERG, and ORNL answers "no data available" for SMAP at the test points. Therefore:
@@ -212,7 +212,7 @@ Inputs from `docs/SCORING.md` §5 and `docs/ECONOMICS.md` §2. Parcel: 190 m × 
 5. Compatibility = 0.72 × 1 × … ≈ **72**, limiting factor water (the regression test asserts 60-85). With full irrigation it exceeds 95.
 6. Economics, taking the fraction as 0.72 (the compatibility at the best window, as for a non-selected crop): yield = 2.97 t/ha × 0.72 = **2.14 t/ha**; production = 2.14 × 2.47 = **5.28 t**; revenue = 5.28 × 3,359 USD/t = **17,740 USD**; cost = 2,363 USD/ha × 2.47 = **5,837 USD**; margin = **11,900 USD** (67 %); break-even yield = 2,363 / 3,359 = **0.70 t/ha**.
 
-The in-app figure differs: the demo field starts with supplemental irrigation from a well (its assumed farm profile), and the selected crop uses the season's daily water balance instead of step 6's shortcut. Set irrigation to rainfed in the Ground truth tab to approach this example. The robusta cost dates from the 2021 season and is a press figure.
+The in-app figure differs: the live `daklak-coffee` polygon in `src/data/samples.ts` is now the 2.0 ha Sentinel-2 detected parcel nearby (rather than the earlier 2.47 ha rectangle used in `docs/SCORING.md` §5), starts with supplemental irrigation from a well (its assumed farm profile), and scores the selected crop with the season's daily water balance instead of step 6's shortcut. Set irrigation to rainfed in the Ground truth tab to compare per-hectare compatibility. The robusta cost dates from the 2021 season and is a press figure.
 
 ## The crop-knowledge assistant
 
@@ -261,10 +261,10 @@ Scripts (`package.json`):
 
 | Link | Opens |
 |---|---|
-| `/?sample=daklak-coffee` | Robusta coffee, Đắk Lắk, Vietnam: dry-season water is the limit |
-| `/?sample=cantho-rice` | Triple-cropped rice, Cần Thơ, Vietnam: should the third crop become a legume or vegetable season? |
-| `/?sample=iowa-corn-soy` | Corn-soybean, Story County, Iowa: US layers (SSURGO, Cropland Data Layer) |
-| `/?sample=nevada-alfalfa` | Irrigated alfalfa pivot, Diamond Valley, Nevada: income with less groundwater |
+| `/?sample=daklak-coffee` | Robusta coffee, Đắk Lắk, Vietnam (2.0 ha): dry-season water is the limit |
+| `/?sample=cantho-rice` | Triple-cropped rice, An Giang (Mekong Delta), Vietnam (1.4 ha, sample id `cantho-rice`): should the third crop become a legume or vegetable season? |
+| `/?sample=iowa-corn-soy` | Corn-soybean, Story County, Iowa (29.3 ha): US layers (SSURGO, Cropland Data Layer) |
+| `/?sample=nevada-alfalfa` | Irrigated alfalfa pivot, Diamond Valley, Nevada (48.9 ha): income with less groundwater |
 | `/?sample=daklak-coffee&phase=advisory&crop=glycine-max&lang=vi` | Advisory for soybean on the Đắk Lắk field, in Vietnamese |
 | `/?sample=<id>&phase=tracking` | Long-term tracking (Notes) for a demo field |
 | `/?phase=explore`, `/?phase=urban` | Find a field; Urban Grower Companion |
@@ -277,7 +277,7 @@ Scripts (`package.json`):
 src/
   contracts/     typed interfaces between tiers (single source of truth)
   state/         mission store and state machine, deep links (mission.ts)
-  data/          adapters, fallbacks, caching, harmonisation, field rasters (rasters/), demo fields (samples.ts)
+  data/          adapters, fallbacks, caching, harmonisation, field rasters (rasters/), boundary detection (boundary/), demo fields (samples.ts)
   core/          pure logic: crops, scoring, economics, zones, advisory, tracking, urban
   globe/         MapLibre globe, terrain, NASA overlays, field picture, map tools, parcel drawing
   ui/            hero, chrome (shell, map tools, layers), field (find, status, report, data cards),
@@ -298,15 +298,15 @@ docs/            architecture, data sources, scoring, economics, RAG, globe, des
 - **Coarse pixels.** SMAP (9 km), IMERG (10 km), MODIS LST (1 km) and POWER (~50 km) describe the area around a small field, not the field. MODIS NDVI at 250 m is a mixed pixel below about 6 ha. The Confidence Badge says so.
 - **Scoring weights, class scores (1 / 0.7 / 0.15), gate values, the 0.5 reliability threshold and the 0.7 / 0.3 model-observation blend are documented judgement**, not calibrated against observed yields (`docs/SCORING.md` §7). EcoCrop has one window per species and no varieties.
 - **Economics are partial.** Reference economics are complete for only part of the 73 curated crops; no Vietnamese cost per hectare was found for sesame, mung bean, cassava, pepper, arabica, cashew, tea, mango, banana, durian and others, so no margin is shown without the farmer's cost. All Vietnamese costs are press figures from single farms or demonstrations; soybean's is derived (`docs/ECONOMICS.md` §3). Price risk is not modelled.
-- **Demo-field boundaries**: Iowa and Nevada were traced on Esri imagery (edges good to roughly 5-10 m); Đắk Lắk and Cần Thơ are still provisional rectangles around verified centres (`docs/GLOBE.md` §6).
+- **Demo-field boundaries**: Iowa (29.3 ha) and Nevada (48.9 ha pivot) were traced on Esri imagery (edges good to roughly 5-10 m); Đắk Lắk (2.0 ha) and An Giang (`cantho-rice`, 1.4 ha) are real field polygons detected from Sentinel-2 NDVI (`detectFieldBoundary`), though the crops on those two Vietnamese fields are assumed rather than verified on the ground (`docs/GLOBE.md` §6).
 - **Demo fields start from an assumed farm profile** (irrigation, rotation), labelled and editable.
 - **Tracking history for demo fields is simulated** and labelled as such; a user's own parcel gets alerts only.
 - **Advisory engine**: rules of thumb, not verified against field data; reference prices drive the income strategy; lime rates are typical extension figures that a soil test must confirm. The real SSURGO pH 8.8 at the Nevada pivot makes alfalfa score low although it has grown there every year since 2019 (`docs/ADVISORY.md`, `docs/SCORING.md`).
-- **Within-field pictures** exist only on cloud-free dates (Cần Thơ 6-12 and Đắk Lắk 9-13 frames over the year); NDMI is a canopy and surface moisture index, not soil moisture; relative zones are not a yield map.
+- **Within-field pictures and boundary detection** depend on cloud-free Sentinel-2 / Landsat dates (An Giang 6-12 and Đắk Lắk 9-13 clear frames over the year); adjacent plots worked on identical schedules with no visible bund can merge during `detectFieldBoundary` and require dragging corners before locking; NDMI is a canopy and surface moisture index, not soil moisture; relative zones are not a yield map.
 - **Generative assistant mode is untested against a live model.** The extractive mode is tested. The retrieval eval is small and self-written.
-- **Live sources can be slow or fail**: ORNL subsets take 13-60 s and return intermittent 502s; SoilGrids timed out three times in a row for southern France on 2026-11-14, so the soil branch can end unavailable. Each fallback writes a visible note.
-- **Measured, with conditions** (`docs/GLOBE.md` §5). First pass, one machine (AMD integrated graphics, 1800 × 1125 canvas, Chromium 156, dev server, warm tile cache): 60 fps at p50 16.7 ms while scrubbing the year with the SMAP overlay and terrain on; 59.7 fps with one 49.9 ms frame during the Đắk Lắk fly-in. Smoothness pass, small browser-pane viewports (426 × 690 at DPR 2 and 426 × 295 at DPR 1.25), dev server: hero rotation 59.6-60 fps, drag and wheel 60 fps, fly-ins 59.0-59.2 fps with one 80-117 ms frame right after the lock (attributed to parsing field data on the main thread). Not measured: a production build, a full-size desktop window in the second pass, phones. Data-source timings are from live calls on 2026-11-13/14 (`docs/DATA_SOURCES.md`).
-- **Out of scope**: pest and disease models, varieties, market access, variable-rate prescriptions, automatic boundary detection.
+- **Live sources can be slow or fail**: ORNL subsets take 13-60 s and return intermittent 502s; SoilGrids timed out three times in a row for southern France on 2026-11-14 (though it succeeded for both Vietnamese demo fields), so the soil branch can end unavailable live. Each fallback writes a visible note.
+- **Measured, with conditions** (`docs/GLOBE.md` §5). First pass, one machine (AMD integrated graphics, 1800 × 1125 canvas, Chromium 156, dev server, warm tile cache): 60 fps at p50 16.7 ms while scrubbing the year with the SMAP overlay and terrain on; 59.7 fps with one 49.9 ms frame during the Đắk Lắk fly-in. Smoothness pass, small browser-pane viewports (426 × 690 at DPR 2 and 426 × 295 at DPR 1.25), dev server: hero rotation 59.6-60 fps, drag and wheel 60 fps, fly-ins 59.0-59.2 fps with one 80-117 ms frame right after the lock (attributed to parsing field data on the main thread). Not measured: a production build, a full-size desktop window in the second pass, phones or physical multi-touch screens. Data-source timings are from live calls on 2026-11-13/14 (`docs/DATA_SOURCES.md`).
+- **Out of scope**: pest and disease models, varieties, market access, variable-rate prescriptions.
 
 This tool supports farmer judgement and local expertise; it does not replace them.
 
@@ -319,7 +319,7 @@ This tool supports farmer judgement and local expertise; it does not replace the
 | ERA5 / ERA5-Land via Open-Meteo | Copernicus Climate Change Service; Open-Meteo CC BY 4.0, non-commercial free tier |
 | SoilGrids (ISRIC) | CC BY 4.0 |
 | USDA SSURGO, Cropland Data Layer | US Government public domain |
-| FAO EcoCrop | © FAO, used with attribution for a non-commercial project (`data/ecocrop/README.md`) |
+| FAO EcoCrop (species table and linked species photographs) | © FAO, used with attribution for a non-commercial project (`data/ecocrop/README.md`, `docs/DATA_SOURCES.md`) |
 | Wikipedia EN/VI excerpts in `public/rag/` | CC BY-SA 4.0, each passage links to its revision (`data/rag/ATTRIBUTION.md`) |
 | Astrovivu glossary | CC BY 4.0 |
 | Copernicus Sentinel-2 L2A (via Microsoft Planetary Computer) | Copernicus open data licence; "contains modified Copernicus Sentinel data 2025-2026" |
@@ -338,7 +338,7 @@ The code and documentation were written with AI coding agents working under the 
 
 ## Tóm tắt tiếng Việt
 
-Astrovivu là công cụ hỗ trợ quyết định, biến dữ liệu quan sát Trái Đất của NASA thành gợi ý luân canh cho từng thửa ruộng. Người dùng tìm thửa ruộng bằng địa chỉ và diện tích (hoặc chọn ruộng mẫu), xem tám chỉ số (độ ẩm đất, thảm thực vật, nhiệt bề mặt, lượng mưa, khí tượng nông nghiệp, địa hình, đất, rủi ro) đồng bộ trên một dòng thời gian một năm, vẽ ngay trong thửa ruộng ở độ phân giải 10-30 m từ Sentinel-2 và Landsat khi trời quang, nhập số đo thực địa của mình (pH, tưới, cây trồng, ngày gieo, năng suất, giá, chi phí) để thay giá trị vệ tinh, và so sánh ít nhất ba phương án luân canh kèm lý do, bằng chứng, khoảng trống thông tin và rủi ro cần chuyên gia địa phương xem xét. Mỗi con số có nguồn, độ phân giải, tuổi dữ liệu và huy hiệu độ tin cậy. Không có chuỗi thời gian SMAP hay IMERG miễn khóa: độ ẩm đất dùng ERA5-Land (mô hình), lượng mưa dùng CHIRPS và ERA5; SMAP và IMERG hiển thị dưới dạng lớp bản đồ. Ứng dụng chạy bằng tiếng Anh hoặc tiếng Việt (`?lang=vi`), không cần tài khoản hay khóa API. Công cụ hỗ trợ, không thay thế, kinh nghiệm của nông dân và chuyên gia địa phương.
+Astrovivu là công cụ hỗ trợ quyết định, biến dữ liệu quan sát Trái Đất của NASA thành gợi ý luân canh cho từng thửa ruộng. Người dùng thêm thửa ruộng bằng địa chỉ và diện tích, bấm trực tiếp vào ruộng trên bản đồ để nhận diện ranh giới từ ảnh Sentinel-2, hoặc chọn ruộng mẫu; xem tám chỉ số (độ ẩm đất, thảm thực vật, nhiệt bề mặt, lượng mưa, khí tượng nông nghiệp, địa hình, đất, rủi ro) đồng bộ trên dòng thời gian một năm, vẽ ngay trong thửa ruộng ở độ phân giải 10-30 m từ Sentinel-2 và Landsat khi trời quang; nhập số đo thực địa của mình (pH, tưới, cây trồng, ngày gieo, năng suất, giá, chi phí) để thay giá trị vệ tinh; và so sánh các phương án luân canh trên lịch mùa vụ gắn với mưa/nhiệt 20 năm của thửa (có thể bấm vào từng vụ để tự đổi cây và chấm điểm lại trực tiếp), kèm biểu đồ được-mất, lý do, bằng chứng, khoảng trống thông tin và rủi ro cần chuyên gia địa phương xem xét. Mỗi con số có nguồn, độ phân giải, tuổi dữ liệu và huy hiệu độ tin cậy. Không có chuỗi thời gian SMAP hay IMERG miễn khóa: độ ẩm đất dùng ERA5-Land (mô hình), lượng mưa dùng CHIRPS và ERA5; SMAP và IMERG hiển thị dưới dạng lớp bản đồ. Ứng dụng chạy bằng tiếng Anh hoặc tiếng Việt (`?lang=vi`), không cần tài khoản hay khóa API. Công cụ hỗ trợ, không thay thế, kinh nghiệm của nông dân và chuyên gia địa phương.
 
 ## Team
 

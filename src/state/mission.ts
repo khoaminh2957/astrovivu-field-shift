@@ -101,6 +101,8 @@ export interface MissionState {
 
   setCrop(cropId: string | null): void;
   setGroundTruth(patch: Partial<GroundTruth>): void;
+  /** Crop and ground truth together (the season planner sets both), with one recompute. */
+  setCropPlan(cropId: string | null, patch: Partial<GroundTruth>): void;
   resetGroundTruth(): void;
   setPriorities(priorities: FarmerPriority[]): void;
   recompute(): void;
@@ -312,6 +314,10 @@ export const useMission = create<MissionState>()((set, get) => ({
   },
   setGroundTruth: (patch) => {
     set((s) => ({ groundTruth: { ...s.groundTruth, ...patch } }));
+    get().recompute();
+  },
+  setCropPlan: (cropId, patch) => {
+    set((s) => ({ cropId, groundTruth: { ...s.groundTruth, ...patch } }));
     get().recompute();
   },
   resetGroundTruth: () => {

@@ -31,7 +31,7 @@ export function AdvisoryBody({ adv, currency, hideSummary, showTitle }: { adv: A
             <li key={i} className="grid grid-cols-[5.5rem_1fr_auto] items-baseline gap-x-3 border-b border-line-1 py-1.5 text-sm last:border-b-0">
               <span className="font-medium text-ink-1">{pick(a.when, lang)}</span>
               <span className="text-ink-2">{pick(a.what, lang)}</span>
-              <span className="t-value text-xs text-ink-1">{a.amount ?? ''}</span>
+              <span className="t-value text-xs text-ink-1">{a.amount ? pick(a.amount, lang) : ''}</span>
             </li>
           ))}
         </ol>

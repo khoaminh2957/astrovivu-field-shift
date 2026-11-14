@@ -276,8 +276,10 @@ export function FindField() {
       />
       {way === 'map' ? (
         <>
-          <SelectOnMapStatus state={sel.state} />
-          {sel.state.kind === 'found' && draft?.closed && <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />}
+          <SelectOnMapStatus control={sel} />
+          {(sel.state.kind === 'found' || sel.state.kind === 'manual') && draft?.closed && (
+            <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />
+          )}
         </>
       ) : (
         <>

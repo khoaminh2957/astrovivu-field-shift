@@ -11,7 +11,7 @@ import { cropSeasonDetail, fallowSeasons, sumNormal } from './seasonDetail';
 import { climateNormals, cropText, effectiveIrrigation, factNum, meanKc, monthEn, monthVi, monthsFrom, r0, resolutionM, sourceName, tx, wrapMonth } from './util';
 
 /** One planned season. `share` < 1 marks an inter-row or partial-area crop standing beside the main one. */
-interface Plan {
+export interface Plan {
   cropId: string;
   start: number;
   len: number;
@@ -22,7 +22,7 @@ interface Plan {
   forN?: boolean;
 }
 
-interface Ctx {
+export interface Ctx {
   input: ModelInput;
   irrigation: 'rainfed' | 'supplemental' | 'full';
   irrigationInferred: boolean;
@@ -54,8 +54,8 @@ const CDL: [RegExp, string][] = [
 ];
 const cdlCrop = (name: string) => CDL.find(([re]) => re.test(name))?.[1];
 
-const isStand = (c: CropProfile) => c.lifeSpan !== 'annual' && (c.category === 'forage' || c.category === 'cover' || c.id === 'saccharum-officinarum');
-const isTree = (c: CropProfile) => c.lifeSpan === 'perennial' && !isStand(c);
+export const isStand = (c: CropProfile) => c.lifeSpan !== 'annual' && (c.category === 'forage' || c.category === 'cover' || c.id === 'saccharum-officinarum');
+export const isTree = (c: CropProfile) => c.lifeSpan === 'perennial' && !isStand(c);
 const hasEcon = (id: string, input: ModelInput) => {
   const r = referenceEconomics(id, input.parcel);
   return !!r && r.refYieldTHa != null && r.priceUsdPerT != null && r.costUsdPerHa != null;
@@ -88,12 +88,34 @@ function currentPlans(ctx: Ctx): { plans: Plan[]; years: number } {
   const cr = input.groundTruth.currentRotation?.filter((s) => getCrop(s.cropId) || s.cropId === 'fallow');
   if (cr?.length) {
     ctx.currentSource = 'ground-truth';
-    const plans = cr.filter((s) => s.cropId !== 'fallow').map((s) => ({ cropId: s.cropId, start: s.startMonth, len: getCrop(s.cropId)?.lifeSpan !== 'annual' && s.startMonth === wrapMonth(s.endMonth + 1) ? 12 : ((s.endMonth - s.startMonth + 12) % 12) + 1, year: 0, share: 1 }));
+    const kept = cr.filter((s) => s.cropId !== 'fallow');
+    // Crops entered in the same season grow side by side: same year, area split between them.
+    const groupKey = (s: (typeof kept)[number], i: number) => (s.season != null ? `s${s.season}` : `i${i}`);
+    const keys = kept.map(groupKey);
+    const size = (k: string) => keys.filter((x) => x === k).length;
+    const plans: Plan[] = kept.map((s, i) => {
+      const n = size(keys[i]);
+      const rank = keys.slice(0, i).filter((x) => x === keys[i]).length;
+      const share = s.share != null && s.share > 0 && s.share <= 1 ? s.share : 1 / n;
+      return {
+        cropId: s.cropId,
+        start: s.startMonth,
+        len: getCrop(s.cropId)?.lifeSpan !== 'annual' && s.startMonth === wrapMonth(s.endMonth + 1) ? 12 : ((s.endMonth - s.startMonth + 12) % 12) + 1,
+        year: 0,
+        share,
+        ...(n > 1 && rank > 0 ? { role: 'companion' as const } : {}),
+      };
+    });
     // Entries that overlap an earlier entry's months are later years of the rotation (e.g. corn then soybean).
     for (let i = 1; i < plans.length; i++) {
+      const sibling = keys.findIndex((k, j) => j < i && k === keys[i]);
+      if (sibling >= 0) {
+        plans[i].year = plans[sibling].year;
+        continue;
+      }
       let y = plans[i - 1].year;
       const ms = monthsFrom(plans[i].start, plans[i].len);
-      while (plans.some((q, j) => j < i && q.year === y && monthsFrom(q.start, q.len).some((m) => ms.includes(m)))) y++;
+      while (plans.some((q, j) => j < i && keys[j] !== keys[i] && q.year === y && monthsFrom(q.start, q.len).some((m) => ms.includes(m)))) y++;
       plans[i].year = y;
     }
     return { plans, years: Math.max(...plans.map((q) => q.year)) + 1 };
@@ -222,7 +244,7 @@ function bestBy(ctx: Ctx, list: CropProfile[], value: (c: CropProfile, s: number
   return best;
 }
 
-interface Candidate {
+export interface Candidate {
   kind: RotationKind;
   plans: Plan[];
   years: number;
@@ -307,7 +329,21 @@ function perennialCandidates(ctx: Ctx, main: CropProfile): Candidate[] {
   // Paddy rice needs flooded basins, so it is never proposed as a break crop on an upland stand.
   const pickCash = (v: (c: CropProfile, s: number, m: number) => number) => bestBy(ctx, cash, v, 40, ['oryza-sativa']) ?? bestBy(ctx, cash, v, 20, ['oryza-sativa']);
   const brk = pickCash((c, s) => s / 100 + (c.rotation!.family === 'Poaceae' ? 0.3 : 0));
-  if (brk) out.push({ kind: 'soil-health', plans: fill(ctx, [...standYears(life), mkSeason(ctx, brk.id, life, 'break')], life, soilChooser, { maxAdd: 1 }), years: life + 1, why: [tx(`${mn.en} is a multi-year stand, not a yearly crop. Renewing it after ${life} years with a break crop (${cropText(brk.id).en}) uses the nitrogen the stand left behind and breaks its disease and pest cycle before re-seeding.`, `${mn.vi} là cây nhiều năm, không trồng theo năm. Trồng lại sau ${life} năm với cây cắt vòng (${cropText(brk.id).vi}) tận dụng đạm để lại và cắt vòng sâu bệnh trước khi gieo lại.`)] });
+  if (brk) {
+    out.push({ kind: 'soil-health', plans: fill(ctx, [...standYears(life), mkSeason(ctx, brk.id, life, 'break')], life, soilChooser, { maxAdd: 1 }), years: life + 1, why: [tx(`${mn.en} is a multi-year stand, not a yearly crop. Renewing it after ${life} years with a break crop (${cropText(brk.id).en}) uses the nitrogen the stand left behind and breaks its disease and pest cycle before re-seeding.`, `${mn.vi} là cây nhiều năm, không trồng theo năm. Trồng lại sau ${life} năm với cây cắt vòng (${cropText(brk.id).vi}) tận dụng đạm để lại và cắt vòng sâu bệnh trước khi gieo lại.`)] });
+  } else {
+    out.push({
+      kind: 'soil-health',
+      plans: standYears(life),
+      years: life + 1,
+      why: [
+        tx(
+          `${mn.en} is a multi-year stand, and no annual break crop from another plant family reaches 20/100 on this soil without a field test. Resting the field for one year after ${life} years breaks autotoxicity and root pests before re-seeding, and cuts average annual water use by a fifth.`,
+          `${mn.vi} là cây nhiều năm, và chưa có cây cắt vòng họ khác nào đạt 20/100 trên nền đất này khi chưa xét nghiệm đất tại ruộng. Cho đất nghỉ một năm sau ${life} năm giúp giải độc tự thân và cắt vòng sâu bệnh rễ trước khi gieo lại, đồng thời giảm một phần năm lượng nước dùng trung bình năm.`,
+        ),
+      ],
+    });
+  }
   const dry = pickCash((c, s, m) => (c.rotation!.waterUse === 'high' ? -Infinity : s / 100 - etcMm(ctx, c, m, windowMonths(c)) / 500));
   if (dry) out.push({ kind: 'water-saver', plans: [...standYears(life - 1), mkSeason(ctx, dry.id, life - 1, 'break'), mkSeason(ctx, dry.id, life, 'break')], years: life + 1, why: [tx(`Shortens the stand to ${life - 1} years and grows ${cropText(dry.id).en} for two years: a short-season crop that needs far less water than a full ${mn.en} season.`, `Rút ngắn chu kỳ còn ${life - 1} năm và trồng ${cropText(dry.id).vi} trong hai năm: cây ngắn ngày cần ít nước hơn nhiều so với một năm ${mn.vi}.`)] });
   const inc = pickCash((c, s) => marginOf(ctx, c.id, s));
@@ -334,11 +370,11 @@ function perennialCandidates(ctx: Ctx, main: CropProfile): Candidate[] {
 
 const N_CREDIT = (c: CropProfile): number => (!c.rotation?.nitrogenFixing ? 0 : c.category === 'cover' ? 90 : c.category === 'forage' ? 150 : 40);
 
-interface Evaluated extends Omit<RotationStrategy, 'score'> {
+export interface Evaluated extends Omit<RotationStrategy, 'score'> {
   costPerYear: number;
 }
 
-function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: string): Evaluated {
+export function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: string): Evaluated {
   const { input } = ctx;
   const t = input.telemetry;
   const area = input.parcel.areaHa;
@@ -453,7 +489,21 @@ function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: string):
     name: NAMES[cand.kind],
     years,
     // Crop seasons in plan order, then one fallow season per uncovered run of months so the calendar can explain the gaps.
-    seasons: [...plans.map((p, i): RotationSeason => ({ cropId: p.cropId, label: label(p), startMonth: p.start, endMonth: wrapMonth(p.start + p.len - 1), year: p.year, detail: details[i] })), ...fallowSeasons(covered, mainOf, ctx.normals)],
+    seasons: [
+      ...plans.map(
+        (p, i): RotationSeason => ({
+          cropId: p.cropId,
+          label: label(p),
+          startMonth: p.start,
+          endMonth: wrapMonth(p.start + p.len - 1),
+          year: p.year,
+          ...(p.share < 1 ? { share: p.share } : {}),
+          ...(p.role ? { slotRole: p.role } : {}),
+          detail: details[i],
+        }),
+      ),
+      ...fallowSeasons(covered, mainOf, ctx.normals),
+    ],
     metrics,
     economics,
     ...lists,
@@ -467,6 +517,7 @@ const NAMES: Record<RotationKind, I18nText> = {
   'water-saver': tx('Water-saver rotation', 'Luân canh tiết kiệm nước'),
   income: tx('Income rotation', 'Luân canh tăng thu nhập'),
   resilience: tx('Resilience rotation', 'Luân canh chống chịu rủi ro'),
+  custom: tx('Your custom rotation', 'Luân canh bạn tự chỉnh'),
 };
 
 function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], crops: CropProfile[], cur: Evaluated | null, noEcon: Set<string>, usesRef: boolean) {
@@ -485,14 +536,48 @@ function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], c
     const mo = c.lifeSpan === 'annual' ? p.start : ctx.best(p.cropId).month;
     const rel = f.rel[mo - 1];
     const yrs = t.climateHistory?.length ?? 0;
-    evidence.push({ label: tx(`Climate and soil fit of ${c.names.en}${c.lifeSpan === 'annual' ? ` sown in ${monthEn(mo)}` : ''}`, `Mức phù hợp khí hậu và đất của ${c.names.vi ?? c.names.en}${c.lifeSpan === 'annual' ? ` gieo ${monthVi(mo)}` : ''}`), value: `${c.lifeSpan === 'annual' ? f.s[mo - 1] : Math.max(...f.s)}/100${rel != null && yrs ? `, needs met in ~${Math.round(rel * yrs)} of ${yrs} years` : ''}`, sourceId: climSrc, branch: 'agromet' });
+    const fitScore = c.lifeSpan === 'annual' ? f.s[mo - 1] : Math.max(...f.s);
+    const met = rel != null && yrs ? Math.round(rel * yrs) : null;
+    evidence.push({
+      label: tx(`Climate and soil fit of ${c.names.en}${c.lifeSpan === 'annual' ? ` sown in ${monthEn(mo)}` : ''}`, `Mức phù hợp khí hậu và đất của ${c.names.vi ?? c.names.en}${c.lifeSpan === 'annual' ? ` gieo ${monthVi(mo)}` : ''}`),
+      value: met != null ? tx(`${fitScore}/100, needs met in ~${met} of ${yrs} years`, `${fitScore}/100, đáp ứng nhu cầu trong ~${met}/${yrs} năm`) : `${fitScore}/100`,
+      sourceId: climSrc,
+      branch: 'agromet',
+    });
   }
   const ph = gt.ph ?? factNum(t, 'ph');
-  if (ph != null) evidence.push({ label: tx('Soil pH', 'pH đất'), value: `${ph}${gt.ph != null ? ' (your measurement)' : ` (${sourceName(t, soilSrc)})`}`, sourceId: gt.ph != null ? undefined : soilSrc, branch: 'soil' });
+  if (ph != null) {
+    const src = sourceName(t, soilSrc);
+    evidence.push({
+      label: tx('Soil pH', 'pH đất'),
+      value: gt.ph != null ? tx(`${ph} (your measurement)`, `${ph} (số bạn đo)`) : `${ph} (${src})`,
+      sourceId: gt.ph != null ? undefined : soilSrc,
+      branch: 'soil',
+    });
+  }
   const n = climateNormals(t);
-  if (n) evidence.push({ label: tx('Normal annual rainfall', 'Lượng mưa trung bình năm'), value: `${r0(n.reduce((a, x) => a + x.rainMm, 0))} mm; modelled crop water use ${m.waterUseMm} mm/yr`, sourceId: climSrc, branch: 'rainfall' });
-  if (cand.kind === 'current' && ctx.currentSource === 'crop-history') evidence.push({ label: tx('Crops recorded on this field', 'Cây trồng ghi nhận trên thửa ruộng'), value: (t.cropHistory ?? []).map((h) => `${h.year} ${h.crop}`).join(', '), sourceId: t.cropHistory?.[0]?.sourceId, branch: 'vegetation' });
-  evidence.push({ label: tx('Margin per hectare and year', 'Lãi mỗi hecta mỗi năm'), value: `${m.marginUsdPerHaYr} USD${usesRef ? ' (reference values)' : ''}`, sourceId: 'reference-economics' });
+  if (n) {
+    const rainYr = r0(n.reduce((a, x) => a + x.rainMm, 0));
+    evidence.push({
+      label: tx('Normal annual rainfall', 'Lượng mưa trung bình năm'),
+      value: tx(`${rainYr} mm; modelled crop water use ${m.waterUseMm} mm/yr`, `${rainYr} mm; lượng nước cây dùng mô hình ${m.waterUseMm} mm/năm`),
+      sourceId: climSrc,
+      branch: 'rainfall',
+    });
+  }
+  if (cand.kind === 'current' && ctx.currentSource === 'crop-history') {
+    const histEn = (t.cropHistory ?? []).map((h) => `${h.year} ${h.crop}`).join(', ');
+    const histVi = (t.cropHistory ?? []).map((h) => {
+      const id = cdlCrop(h.crop);
+      return `${h.year} ${id ? cropText(id).vi : h.crop}`;
+    }).join(', ');
+    evidence.push({ label: tx('Crops recorded on this field', 'Cây trồng ghi nhận trên thửa ruộng'), value: tx(histEn, histVi), sourceId: t.cropHistory?.[0]?.sourceId, branch: 'vegetation' });
+  }
+  evidence.push({
+    label: tx('Margin per hectare and year', 'Lãi mỗi hecta mỗi năm'),
+    value: usesRef ? tx(`${m.marginUsdPerHaYr} USD (reference values)`, `${m.marginUsdPerHaYr} USD (giá trị tham chiếu)`) : `${m.marginUsdPerHaYr} USD`,
+    sourceId: 'reference-economics',
+  });
 
   const benefits: I18nText[] = [];
   if (!cur) {
@@ -573,7 +658,7 @@ export function buildRotations(input: ModelInput): RotationStrategy[] {
   return res;
 }
 
-function compute(input: ModelInput): RotationStrategy[] {
+export function makeCtx(input: ModelInput): Ctx {
   const irr = effectiveIrrigation(input);
   const cache = new Map<string, { s: number[]; rel: (number | null)[]; known: boolean }>();
   const fit = (id: string) => {
@@ -591,36 +676,47 @@ function compute(input: ModelInput): RotationStrategy[] {
     for (let i = 1; i < 12; i++) if (s[i] > s[bm] || (s[i] === s[bm] && (rel[i] ?? 0) > (rel[bm] ?? 0))) bm = i;
     return { month: bm + 1, s: s[bm] };
   };
-  const ctx: Ctx = { input, irrigation: irr.mode, irrigationInferred: irr.inferred, fit, best, normals: monthlyNormals(input.telemetry.climateHistory), currentSource: 'assumed', main: getCrop(input.cropId) };
-  const cur = currentPlans(ctx);
-  const curMain = getCrop(cur.plans[0]?.cropId) ?? ctx.main;
-  const curCand: Candidate = { kind: 'current', plans: cur.plans.length ? cur.plans : [mkSeason(ctx, bestOverall(ctx), 0)], years: cur.years, why: [tx('The reference every alternative is compared with.', 'Mốc để so sánh mọi phương án khác.')] };
-  const current = evaluate(ctx, curCand, null, 'current');
-  const main = curMain ?? getCrop(curCand.plans[0].cropId)!;
-  const cands = main.lifeSpan !== 'annual' ? perennialCandidates(ctx, main) : annualCandidates(ctx, curCand.plans, cur.years);
-  const sig = (c: { plans?: Plan[]; seasons?: RotationSeason[] }) => JSON.stringify((c.plans ?? c.seasons ?? []).map((p) => ('cropId' in p ? [p.cropId, 'start' in p ? p.start : p.startMonth, p.year] : [])).sort());
-  const seen = new Set([sig({ plans: curCand.plans })]);
-  const alts: Evaluated[] = [];
-  for (const c of cands) {
-    if (!c.plans.length) continue;
-    const s = sig({ seasons: c.plans.map((p) => ({ cropId: p.cropId, label: tx(''), startMonth: p.start, endMonth: 0, year: p.year })) });
-    if (seen.has(s)) continue;
-    seen.add(s);
-    alts.push(evaluate(ctx, c, current, c.kind));
-  }
-  // Guarantee two alternatives: fall back to the main crop followed by a fallow break with a cover.
-  if (alts.length < 2) {
-    const cover = bestBy(ctx, pool(ctx, 'cover'), (_c, s) => s, 0);
-    const fb: Candidate = { kind: alts.some((a) => a.kind === 'soil-health') ? 'resilience' : 'soil-health', plans: [...curCand.plans, ...(cover ? [{ ...mkSeason(ctx, cover.id, 0, 'cover'), start: wrapMonth(curCand.plans[0].start + curCand.plans[0].len) }] : [])], years: curCand.years, why: [tx('Keeps the current crops and protects the soil between seasons with a cover crop.', 'Giữ cây hiện tại và bảo vệ đất giữa các vụ bằng cây che phủ.')] };
-    if (fb.plans.length > curCand.plans.length) alts.push(evaluate(ctx, fb, current, `${fb.kind}-fallback`));
-  }
-  const all = [current, ...alts];
-  const pri = input.priorities.length ? input.priorities : (['profit', 'water', 'soil'] as FarmerPriority[]);
+  return { input, irrigation: irr.mode, irrigationInferred: irr.inferred, fit, best, normals: monthlyNormals(input.telemetry.climateHistory), currentSource: 'assumed', main: getCrop(input.cropId) };
+}
+
+export function scoreAll(all: Evaluated[], priorities: FarmerPriority[]): RotationStrategy[] {
+  const pri = priorities.length ? priorities : (['profit', 'water', 'soil'] as FarmerPriority[]);
   const weights = Object.fromEntries((Object.keys(PRIORITY_METRIC) as FarmerPriority[]).map((k) => [k, 0.5 + (pri.indexOf(k) >= 0 ? 3 - pri.indexOf(k) : 0)])) as Record<FarmerPriority, number>;
   const wSum = Object.values(weights).reduce((a, b) => a + b, 0);
   return all.map(({ costPerYear: _c, ...e }, i) => {
     const s = (Object.keys(weights) as FarmerPriority[]).reduce((a, k) => a + weights[k] * PRIORITY_METRIC[k](all[i], all), 0) / wSum;
     return { ...e, score: r0(100 * Math.max(0, Math.min(1, s))) };
   });
+}
+
+function compute(input: ModelInput): RotationStrategy[] {
+  const ctx = makeCtx(input);
+  const cur = currentPlans(ctx);
+  const curMain = getCrop(cur.plans[0]?.cropId) ?? ctx.main;
+  const curCand: Candidate = { kind: 'current', plans: cur.plans.length ? cur.plans : [mkSeason(ctx, bestOverall(ctx), 0)], years: cur.years, why: [tx('The reference every alternative is compared with.', 'Mốc để so sánh mọi phương án khác.')] };
+  const current = evaluate(ctx, curCand, null, 'current');
+  const main = curMain ?? getCrop(curCand.plans[0].cropId)!;
+  const cands = main.lifeSpan !== 'annual' ? perennialCandidates(ctx, main) : annualCandidates(ctx, curCand.plans, cur.years);
+  const sig = (c: { plans?: Plan[]; seasons?: RotationSeason[]; years?: number }) => JSON.stringify([c.years ?? 1, (c.plans ?? c.seasons ?? []).map((p) => ('cropId' in p ? [p.cropId, 'start' in p ? p.start : p.startMonth, p.year] : [])).sort()]);
+  const seen = new Set([sig({ plans: curCand.plans, years: curCand.years })]);
+  const alts: Evaluated[] = [];
+  for (const c of cands) {
+    if (!c.plans.length) continue;
+    const s = sig({ seasons: c.plans.map((p) => ({ cropId: p.cropId, label: tx(''), startMonth: p.start, endMonth: 0, year: p.year })), years: c.years });
+    if (seen.has(s)) continue;
+    seen.add(s);
+    alts.push(evaluate(ctx, c, current, c.kind));
+  }
+  // Guarantee two alternatives without overlapping an already occupied month.
+  if (alts.length < 2) {
+    const kind: RotationKind = alts.some((a) => a.kind === 'soil-health') ? 'resilience' : 'soil-health';
+    const withCover = fill(ctx, curCand.plans, 0, soilChooser, { maxAdd: 1 });
+    if (withCover.length > curCand.plans.length) {
+      alts.push(evaluate(ctx, { kind, plans: withCover, years: curCand.years, why: [tx('Keeps the current crops and protects the soil between seasons with a cover crop.', 'Giữ cây hiện tại và bảo vệ đất giữa các vụ bằng cây che phủ.')] }, current, `${kind}-fallback`));
+    } else {
+      alts.push(evaluate(ctx, { kind, plans: curCand.plans, years: curCand.years + 1, why: [tx('Adds a fallow rest year after the current cycle to break pest build-up and lower average water demand.', 'Thêm một năm đất nghỉ sau chu kỳ hiện tại để cắt vòng sâu bệnh và giảm nhu cầu nước trung bình.')] }, current, `${kind}-fallback`));
+    }
+  }
+  return scoreAll([current, ...alts], input.priorities);
 }
 

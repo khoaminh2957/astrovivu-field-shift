@@ -5,7 +5,7 @@
  * of its months.
  */
 import { useState } from 'react';
-import type { RotationStrategy } from '@/contracts';
+import type { RotationStrategy, SlotCropChoice } from '@/contracts';
 import { pick } from '@/contracts';
 import { useLang, useT } from '@/i18n';
 import { cn } from '@/ui/design';
@@ -24,17 +24,19 @@ interface Props {
   selected: RotationStrategy;
   climate: ClimateStripProps | null;
   currency: CurrencyCode;
+  getChoices?: (seasonIndex: number) => SlotCropChoice[];
+  onSwap?: (seasonIndex: number, cropId: string) => void;
 }
 
 const usesReference = (r: RotationStrategy) => r.economics?.seasons?.some((s) => s.usesReferenceValues) ?? false;
 
-export function SeasonCalendar({ current, selected, climate, currency }: Props) {
+export function SeasonCalendar({ current, selected, climate, currency, getChoices, onSwap }: Props) {
   const t = useT();
   const lang = useLang();
   const [open, setOpen] = useState<OpenBlock | null>(null);
   const groups = [
-    ...(current && current.id !== selected.id ? [{ strategy: current, title: t('advisory.current') }] : []),
-    { strategy: selected, title: selected.kind === 'current' ? t('advisory.current') : t('advisory.cal.selected') },
+    ...(current && current.id !== selected.id ? [{ strategy: current, title: t('advisory.current'), editable: false }] : []),
+    { strategy: selected, title: selected.kind === 'current' ? t('advisory.current') : t('advisory.cal.selected'), editable: true },
   ].map((g) => ({ ...g, rows: layoutRotation(g.strategy.seasons, g.strategy.years) }));
   const used = new Set<CropGroup>(groups.flatMap((g) => g.strategy.seasons.map((s) => cropGroup(s.cropId))));
   const anyEmpty = groups.some((g) => g.rows.some((r) => emptyMonths(r).length > 0));
@@ -52,7 +54,16 @@ export function SeasonCalendar({ current, selected, climate, currency }: Props) 
                 label={row.year === 0 ? g.title : undefined}
                 sub={g.rows.length > 1 ? t('advisory.yearN', { n: row.year + 1 }) : t('advisory.cal.everyYear')}
               >
-                <YearTrack row={row} rowKey={`${g.strategy.id}:${row.year}`} open={open} setOpen={setOpen} currency={currency} usesReference={usesReference(g.strategy)} />
+                <YearTrack
+                  row={row}
+                  rowKey={`${g.strategy.id}:${row.year}`}
+                  open={open}
+                  setOpen={setOpen}
+                  currency={currency}
+                  usesReference={usesReference(g.strategy)}
+                  getChoices={g.editable ? getChoices : undefined}
+                  onSwap={g.editable ? onSwap : undefined}
+                />
               </MonthRow>
             ))}
           </div>
@@ -78,6 +89,7 @@ export function SeasonCalendar({ current, selected, climate, currency }: Props) 
         </ul>
         <p className="t-caption">
           {t('advisory.cal.hint')}
+          {onSwap && ` ${t('advisory.custom.hint')}`}
           {anyWrap && ` ${t('advisory.cal.wrap')}`}
         </p>
       </figcaption>
@@ -86,7 +98,25 @@ export function SeasonCalendar({ current, selected, climate, currency }: Props) 
 }
 
 /** One rotation year: twelve month cells with the season blocks laid over them in lanes. */
-function YearTrack({ row, rowKey, open, setOpen, currency, usesReference }: { row: YearRow; rowKey: string; open: OpenBlock | null; setOpen: (o: OpenBlock | null) => void; currency: CurrencyCode; usesReference: boolean }) {
+function YearTrack({
+  row,
+  rowKey,
+  open,
+  setOpen,
+  currency,
+  usesReference,
+  getChoices,
+  onSwap,
+}: {
+  row: YearRow;
+  rowKey: string;
+  open: OpenBlock | null;
+  setOpen: (o: OpenBlock | null) => void;
+  currency: CurrencyCode;
+  usesReference: boolean;
+  getChoices?: (seasonIndex: number) => SlotCropChoice[];
+  onSwap?: (seasonIndex: number, cropId: string) => void;
+}) {
   const lanes = Math.max(1, row.lanes.length);
   return (
     <div className={cn(MONTH_COLS, 'gap-y-0.5')} style={{ gridTemplateRows: `repeat(${lanes}, ${LANE_PX}px)` }}>
@@ -103,6 +133,8 @@ function YearTrack({ row, rowKey, open, setOpen, currency, usesReference }: { ro
             setOpen={setOpen}
             currency={currency}
             usesReference={usesReference}
+            getChoices={getChoices}
+            onSwap={onSwap}
             style={{ gridColumn: `${seg.col + 1} / span ${seg.span}`, gridRow: li + 1 }}
           />
         )),

@@ -7,7 +7,7 @@ Where Astrovivu answers each part of the *Field Shift: Adapting Farms with NASA 
 | Challenge item | Where the product answers it | Status |
 |---|---|---|
 | Decision-support tool combining NASA Earth observations with local agricultural information | Whole app: eight metrics (`src/data`), Ground truth tab (`src/ui/override`), advisory (`src/core/advisory`); `docs/ARCHITECTURE.md` | done |
-| Use the named NASA datasets | Series: MODIS, VIIRS, NASA POWER, SRTM. Within-field: Landsat 30 m surface temperature, SRTM terrain. Overlays: SMAP, GPM IMERG, MODIS. (`docs/DATA_SOURCES.md`) | partial: no key-free SMAP or IMERG point series (overlays only); SMAP AppEEARS adapter never run; ECOSTRESS only as ClimateSERV ESI (stale since 2025-07); GRACE overlay ends 2022 |
+| Use the named NASA datasets | Series: MODIS, VIIRS, NASA POWER, SRTM. Within-field & boundary: Sentinel-2 10-20 m NDVI/NDMI and parcel boundary, Landsat 30 m surface temperature, SRTM terrain. Overlays: SMAP, GPM IMERG, MODIS. (`docs/DATA_SOURCES.md`) | partial: no key-free SMAP or IMERG point series (overlays only); SMAP AppEEARS adapter never run; ECOSTRESS only as ClimateSERV ESI (stale since 2025-07); GRACE overlay ends 2022 |
 | Temperature, heat stress, frost risk | Agromet and thermal cards, Landsat field picture, heat and frost insights against crop limits (`docs/ADVISORY.md` §1), kill-temperature and winter-survival gates (`docs/SCORING.md`) | done |
 | Rainfall, extreme precipitation | Rainfall card (CHIRPS + ERA5, 30-day anomaly), dry-spell and heavy-rain insights, forecast events | done (not from an IMERG series) |
 | Soil moisture, evaporation, water balance | Soil-moisture card (ERA5-Land, POWER wetness, labelled modelled), Sentinel-2 NDMI field picture, MODIS ET, FAO-56 balance in scoring and the irrigation schedule | done (modelled, not SMAP) |
@@ -16,8 +16,8 @@ Where Astrovivu answers each part of the *Field Shift: Adapting Farms with NASA 
 | Local soil information | SoilGrids, SSURGO in the US, Ground truth soil values with calibration ledger | done |
 | Crop characteristics | FAO EcoCrop, 2,062 scorable species, 73 curated (`docs/SCORING.md` §2) | done |
 | Farmer priorities (water, forage, N-fixing, erosion, organic matter, market) | Priority ranking re-weights strategies (0.5 + 3/2/1); metrics for water, N credit, ground cover, soil health, margin (`docs/ADVISORY.md` §2) | partial: markets not modelled; N credits are indicative literature values |
-| Bare-field periods, vulnerable seasons | Ground-cover months per strategy, rotation calendar (`src/ui/advisory/RotationCalendar.tsx`), off-season marking, insights | done |
-| Compare at least three rotation strategies including the existing one, with why, evidence, benefits, gaps, risks | Current + soil-health, water-saver, income, resilience; five generated lists each (`src/core/advisory`, `src/ui/advisory/RotationCompare.tsx`) | done |
+| Bare-field periods, vulnerable seasons | Ground-cover months and explicit fallow seasons per strategy, 12-month season calendar over 20-year ERA5 rain and temperature (`src/ui/advisory/SeasonCalendar.tsx`, `SeasonBlock.tsx`, `ClimateStrip.tsx`), off-season marking, insights | done |
+| Compare at least three rotation strategies including the existing one, with why, evidence, benefits, gaps, risks | Current + soil-health, water-saver, income, resilience (plus interactive `custom` season swaps); strategy cards, dumbbell trade-offs and five generated lists (`src/core/advisory`, `src/ui/advisory/StrategyCards.tsx`, `TradeOffs.tsx`, `StrategyStory.tsx`) | done |
 | Supportive, does not replace farmer judgement | Every strategy's risks include local extension review; gates set "needs local review"; assistant rules (`docs/SYSTEM_INSTRUCTIONS.md`) | done |
 | C1 Explain ET, soil-moisture anomaly, NDVI, frost risk, water balance; satellite vs ground | Assistant glossary EN/VI (`data/rag/glossary.en.md`, `data/rag/glossary.vi.md`), card details with sources and caveats | done |
 | C1 Combining satellite and ground improves accuracy | Ground truth tab, calibration ledger with each override's score effect, rain-gauge bias factor (`docs/ARCHITECTURE.md` §4.4) | done |
@@ -29,7 +29,7 @@ Where Astrovivu answers each part of the *Field Shift: Adapting Farms with NASA 
 | C3 Explain N-fixing, cover, deep-rooting, drought-tolerant crops | Strategy "why" lists, curated rotation traits, assistant | partial: deep rooting not a separate metric |
 | C4 Interactive map over time, overlays | MapLibre globe, time-synced GIBS overlays, within-field picture per date (`docs/GLOBE.md` §3b) | done |
 | C4 Field-level vulnerabilities, timelines | Field pictures, relative NDVI zones (`src/core/zones`), timeline with insights, pending and forecast ranges | done |
-| C4 Scenario sliders | Ground truth inputs (irrigation, pH, sowing date, rotation, economics) and priority ranking, all recomputing | done |
+| C4 Scenario sliders | Ground truth inputs (irrigation, pH, sowing date, rotation, economics), priority ranking, and per-season crop swapping on the Rotation calendar (`src/core/advisory/customRotation.ts`), all recomputing live | done |
 | C5 Interpretable for non-technical farmers | One plain sentence per chart, decisions first, English and Vietnamese | done (no user testing with farmers) |
 | C5 Farmer inputs for priorities and constraints | Ground truth tab, priorities, economics overrides | done |
 | C5 Reminders that the tool supports local expertise | Risks lists, gates, assistant rules, closing statement in the UI and docs | done |
@@ -51,6 +51,6 @@ Where Astrovivu answers each part of the *Field Shift: Adapting Farms with NASA 
 - Generative assistant mode has not been exercised against a live model.
 - Scoring weights, gates and advisory thresholds are documented judgement, not calibrated against yields or field data.
 - Reference economics cover part of the curated crops; Vietnamese costs are press figures; reference prices drive the income strategy.
-- Đắk Lắk and Cần Thơ boundaries are provisional rectangles; Iowa and Nevada were traced.
+- Đắk Lắk (2.0 ha) and An Giang (`cantho-rice`, 1.4 ha) outlines are real parcels detected from Sentinel-2 NDVI (`detectFieldBoundary`), though the crops grown on them are assumed rather than verified on the ground; Iowa and Nevada were traced on Esri imagery.
 - Demo tracking history is simulated and labelled; demo fields start from an assumed farm profile.
 - No testing with farmers.

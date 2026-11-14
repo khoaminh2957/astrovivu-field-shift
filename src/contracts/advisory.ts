@@ -68,7 +68,7 @@ export interface AnnualPlan {
 
 export interface EvidenceItem {
   label: I18nText;
-  value: string;
+  value: string | I18nText;
   sourceId?: string;
   branch?: BranchId;
 }
@@ -76,7 +76,7 @@ export interface EvidenceItem {
 export interface ActionStep {
   when: I18nText;
   what: I18nText;
-  amount?: string;
+  amount?: string | I18nText;
 }
 
 export type AdvisoryKind = 'irrigation' | 'ph' | 'sowing' | 'rotation' | 'risk' | 'fertility' | 'drainage' | 'erosion';
@@ -96,6 +96,8 @@ export interface Advisory {
   needsLocalReview: boolean;
 }
 
+export type SeasonSlotRole = 'inter-row' | 'companion' | 'converted' | 'break' | 'cover';
+
 export interface RotationSeason {
   /** A crop id, or `fallow`. Cover crops are ordinary crop ids with category `cover`. */
   cropId: string;
@@ -107,6 +109,10 @@ export interface RotationSeason {
    * seasons out in order, treating a 12-month season as standing across every year (a perennial).
    */
   year?: number;
+  /** Share of the parcel area occupied by this crop (0..1); 1 when omitted. */
+  share?: number;
+  /** Structural slot role when part of an intercrop, partial conversion, stand break or cover slot. */
+  slotRole?: SeasonSlotRole;
   /**
    * Per-season detail for the rotation calendar. All optional: a report computed before these
    * existed, a fixture, or a fallow season simply omits them and the UI shows the block without them.
@@ -136,7 +142,17 @@ export interface RotationSeasonDetail {
   reason?: I18nText;
 }
 
-export type RotationKind = 'current' | 'soil-health' | 'water-saver' | 'income' | 'resilience';
+export type RotationKind = 'current' | 'soil-health' | 'water-saver' | 'income' | 'resilience' | 'custom';
+
+/** One option when swapping the crop of a season slot on the rotation calendar. */
+export interface SlotCropChoice {
+  cropId: string;
+  label: I18nText;
+  /** 0..100 climate and soil fit in the months it would take; null for fallow or unscored crops. */
+  suitability: number | null;
+  startMonth: number;
+  cycleMonths: number;
+}
 
 /**
  * One rotation strategy. The challenge requires comparing at least three (including the existing

@@ -119,6 +119,8 @@ export function irrigationPlan(input: ModelInput, score: ScoreTimeline): Irrigat
  */
 const LIME: Record<TextureClass, [number, number] | null> = { light: [1.5, 3], medium: [3, 5], heavy: [5, 8], organic: null };
 const SULFUR: Record<TextureClass, [number, number] | null> = { light: [0.4, 0.8], medium: [0.8, 1.5], heavy: [1.5, 2.5], organic: null };
+const TEX_VI: Record<TextureClass, string> = { light: 'nhẹ', medium: 'thịt trung bình', heavy: 'nặng', organic: 'hữu cơ' };
+const DRAIN_VI: Record<string, string> = { poor: 'kém', well: 'tốt', excessive: 'quá nhanh' };
 
 export function phPlan(input: ModelInput): PhPlan | undefined {
   const c = getCrop(input.cropId);
@@ -136,7 +138,7 @@ export function phPlan(input: ModelInput): PhPlan | undefined {
     const per = LIME[tex];
     const delta = Math.min(1.5, target - current);
     caveats.push(tx('Apply lime 1-3 months before sowing and work it into the soil; split rates above 4 t/ha over two seasons.', 'Bón vôi 1-3 tháng trước khi gieo và trộn vào đất; chia làm hai vụ nếu trên 4 t/ha.'));
-    return { current, target, amendment: 'lime', rateTHa: per ? [r1(per[0] * delta), r1(per[1] * delta)] : null, basis: tx(`${c.names.en} grows best at pH ${lo}-${hi}. Rate range for a ${tex} soil from typical extension liming tables (t CaCO3 equivalent per ha per pH unit, top ~20 cm).`, `${c.names.vi ?? c.names.en} phát triển tốt nhất ở pH ${lo}-${hi}. Khoảng liều cho đất ${tex} theo bảng bón vôi khuyến nông thông dụng (t CaCO3 tương đương/ha cho mỗi đơn vị pH, lớp đất ~20 cm).`), caveats };
+    return { current, target, amendment: 'lime', rateTHa: per ? [r1(per[0] * delta), r1(per[1] * delta)] : null, basis: tx(`${c.names.en} grows best at pH ${lo}-${hi}. Rate range for a ${tex} soil from typical extension liming tables (t CaCO3 equivalent per ha per pH unit, top ~20 cm).`, `${c.names.vi ?? c.names.en} phát triển tốt nhất ở pH ${lo}-${hi}. Khoảng liều cho đất ${TEX_VI[tex]} theo bảng bón vôi khuyến nông thông dụng (t CaCO3 tương đương/ha cho mỗi đơn vị pH, lớp đất ~20 cm).`), caveats };
   }
   if (current > hi) {
     const target = r1(Math.max(lo, hi - 0.3));
@@ -145,7 +147,7 @@ export function phPlan(input: ModelInput): PhPlan | undefined {
     const per = calcareous ? null : SULFUR[tex];
     const delta = Math.min(1, current - target);
     if (calcareous) caveats.push(tx(`At pH ${current} the soil is probably calcareous (free lime): lowering pH is slow and rarely economic. Prefer tolerant crops and acidifying fertilisers; a carbonate test is needed.`, `Ở pH ${current} đất có thể chứa vôi tự do: hạ pH chậm và hiếm khi kinh tế. Ưu tiên cây chịu được và phân có tính axit; cần kiểm tra cacbonat.`));
-    return { current, target, amendment: 'sulfur', rateTHa: per ? [r1(per[0] * delta), r1(per[1] * delta)] : null, basis: tx(`${c.names.en} grows best at pH ${lo}-${hi}. ${per ? `Elemental sulfur range for a ${tex} soil from typical extension tables (t S per ha per pH unit).` : 'No rate is given: it cannot be estimated responsibly without a lab test.'}`, `${c.names.vi ?? c.names.en} phát triển tốt nhất ở pH ${lo}-${hi}. ${per ? `Khoảng liều lưu huỳnh nguyên tố cho đất ${tex} theo bảng khuyến nông thông dụng (t S/ha cho mỗi đơn vị pH).` : 'Không đưa liều: không thể ước tính có trách nhiệm khi chưa phân tích đất.'}`), caveats };
+    return { current, target, amendment: 'sulfur', rateTHa: per ? [r1(per[0] * delta), r1(per[1] * delta)] : null, basis: tx(`${c.names.en} grows best at pH ${lo}-${hi}. ${per ? `Elemental sulfur range for a ${tex} soil from typical extension tables (t S per ha per pH unit).` : 'No rate is given: it cannot be estimated responsibly without a lab test.'}`, `${c.names.vi ?? c.names.en} phát triển tốt nhất ở pH ${lo}-${hi}. ${per ? `Khoảng liều lưu huỳnh nguyên tố cho đất ${TEX_VI[tex]} theo bảng khuyến nông thông dụng (t S/ha cho mỗi đơn vị pH).` : 'Không đưa liều: không thể ước tính có trách nhiệm khi chưa phân tích đất.'}`), caveats };
   }
   return { current, target: current, amendment: 'none', rateTHa: null, basis: tx(`pH ${current} is inside the ${lo}-${hi} range ${c.names.en} prefers: no amendment needed.`, `pH ${current} nằm trong khoảng ${lo}-${hi} mà ${c.names.vi ?? c.names.en} ưa thích: không cần cải tạo.`), caveats };
 }
@@ -199,7 +201,7 @@ export function advisories(input: ModelInput, score: ScoreTimeline, irr: Irrigat
       summary: ph.basis,
       actions: [
         { when: tx('Before the next season', 'Trước vụ tới'), what: tx('Take a composite soil sample (15-20 cores, 0-20 cm) for pH and buffer pH', 'Lấy mẫu đất hỗn hợp (15-20 mũi khoan, 0-20 cm) để phân tích pH và pH đệm') },
-        ...(ph.rateTHa ? [{ when: tx('1-3 months before sowing', '1-3 tháng trước gieo'), what: ph.amendment === 'lime' ? tx('Spread agricultural lime and incorporate it', 'Rải vôi nông nghiệp và trộn vào đất') : tx('Apply elemental sulfur and incorporate it', 'Bón lưu huỳnh nguyên tố và trộn vào đất'), amount: `${ph.rateTHa[0]}-${ph.rateTHa[1]} t/ha (indicative)` }] : [{ when: tx('After the soil test', 'Sau khi phân tích đất'), what: tx('Decide with an agronomist whether amending is worthwhile or a tolerant crop is better', 'Cùng chuyên gia quyết định có nên cải tạo hay chọn cây chịu được') }]),
+        ...(ph.rateTHa ? [{ when: tx('1-3 months before sowing', '1-3 tháng trước gieo'), what: ph.amendment === 'lime' ? tx('Spread agricultural lime and incorporate it', 'Rải vôi nông nghiệp và trộn vào đất') : tx('Apply elemental sulfur and incorporate it', 'Bón lưu huỳnh nguyên tố và trộn vào đất'), amount: tx(`${ph.rateTHa[0]}-${ph.rateTHa[1]} t/ha (indicative)`, `${ph.rateTHa[0]}-${ph.rateTHa[1]} t/ha (tham khảo)`) }] : [{ when: tx('After the soil test', 'Sau khi phân tích đất'), what: tx('Decide with an agronomist whether amending is worthwhile or a tolerant crop is better', 'Cùng chuyên gia quyết định có nên cải tạo hay chọn cây chịu được') }]),
       ],
       impact: delta('ph') != null ? { scoreDelta: delta('ph') } : {},
       evidence: [{ label: tx('Soil pH', 'pH đất'), value: String(ph.current), sourceId: input.groundTruth.ph != null ? undefined : soilSrc, branch: 'soil' }],
@@ -211,6 +213,7 @@ export function advisories(input: ModelInput, score: ScoreTimeline, irr: Irrigat
 
   const sow = wi.find((w) => w.changedFactor === 'sowing');
   if (c && sow && sow.delta >= 3) {
+    const yrs = t.climateHistory?.length ?? 0;
     out.push({
       id: 'sowing',
       kind: 'sowing',
@@ -219,7 +222,7 @@ export function advisories(input: ModelInput, score: ScoreTimeline, irr: Irrigat
       summary: tx(`Moving the sowing date raises the expected season outcome of ${cn.en} from ${sow.before} to ${sow.after}.`, `Dời thời vụ gieo nâng kết quả vụ dự kiến của ${cn.vi} từ ${sow.before} lên ${sow.after}.`),
       actions: [{ when: sow.label, what: tx('Prepare land and seed for the new window', 'Chuẩn bị đất và giống cho thời vụ mới') }],
       impact: { scoreDelta: sow.delta },
-      evidence: [{ label: tx('Climate record used', 'Chuỗi khí hậu sử dụng'), value: `${t.climateHistory?.length ?? 0} years`, sourceId: t.climateSourceId, branch: 'agromet' }],
+      evidence: [{ label: tx('Climate record used', 'Chuỗi khí hậu sử dụng'), value: tx(`${yrs} years`, `${yrs} năm`), sourceId: t.climateSourceId, branch: 'agromet' }],
       confidence: r1(0.4 + 0.4 * branchConf(t, ['agromet'])),
       caveats: [tx('Based on monthly climate averages over a coarse grid; check local frost and flood calendars.', 'Dựa trên khí hậu trung bình tháng trên ô lưới thô; kiểm tra lịch sương giá và lũ địa phương.')],
       needsLocalReview: true,
@@ -228,7 +231,8 @@ export function advisories(input: ModelInput, score: ScoreTimeline, irr: Irrigat
 
   const dr = wi.find((w) => w.changedFactor === 'drainage');
   if (c && dr && dr.delta > 0) {
-    out.push({ id: 'drainage', kind: 'drainage', priority: dr.delta >= 10 ? 1 : 2, title: tx('Improve field drainage', 'Cải thiện thoát nước'), summary: tx(`Better drainage raises the expected outcome from ${dr.before} to ${dr.after}.`, `Thoát nước tốt hơn nâng kết quả dự kiến từ ${dr.before} lên ${dr.after}.`), actions: [{ when: tx('Before the rainy season', 'Trước mùa mưa'), what: tx('Open field drains or raise beds', 'Đào rãnh thoát nước hoặc lên liếp') }], impact: { scoreDelta: dr.delta }, evidence: [{ label: tx('Drainage class', 'Cấp thoát nước'), value: String(findFact(t, 'drainage_class')?.value ?? input.groundTruth.drainage ?? '?'), sourceId: soilSrc, branch: 'soil' }], confidence: 0.5, caveats: [tx('Drainage class is a map value; walk the field after heavy rain.', 'Cấp thoát nước lấy từ bản đồ; hãy kiểm tra ruộng sau mưa lớn.')], needsLocalReview: true });
+    const dc = String(findFact(t, 'drainage_class')?.value ?? input.groundTruth.drainage ?? '?');
+    out.push({ id: 'drainage', kind: 'drainage', priority: dr.delta >= 10 ? 1 : 2, title: tx('Improve field drainage', 'Cải thiện thoát nước'), summary: tx(`Better drainage raises the expected outcome from ${dr.before} to ${dr.after}.`, `Thoát nước tốt hơn nâng kết quả dự kiến từ ${dr.before} lên ${dr.after}.`), actions: [{ when: tx('Before the rainy season', 'Trước mùa mưa'), what: tx('Open field drains or raise beds', 'Đào rãnh thoát nước hoặc lên liếp') }], impact: { scoreDelta: dr.delta }, evidence: [{ label: tx('Drainage class', 'Cấp thoát nước'), value: tx(dc, DRAIN_VI[dc] ?? dc), sourceId: soilSrc, branch: 'soil' }], confidence: 0.5, caveats: [tx('Drainage class is a map value; walk the field after heavy rain.', 'Cấp thoát nước lấy từ bản đồ; hãy kiểm tra ruộng sau mưa lớn.')], needsLocalReview: true });
   }
 
   const cur = rotations.find((r) => r.kind === 'current');
@@ -266,7 +270,7 @@ export function advisories(input: ModelInput, score: ScoreTimeline, irr: Irrigat
 
   const om = factNum(t, 'om_pct') ?? (factNum(t, 'soc_gkg') != null ? (factNum(t, 'soc_gkg')! * 1.724) / 10 : null);
   if (om != null && om < 2) {
-    out.push({ id: 'fertility-om', kind: 'fertility', priority: 3, title: tx(`Build soil organic matter (about ${r1(om)} %)`, `Tăng chất hữu cơ trong đất (khoảng ${r1(om)} %)`), summary: tx('Low organic matter lowers water holding and nutrient supply. Residue retention, manure or compost and cover crops raise it slowly over years.', 'Chất hữu cơ thấp làm giảm khả năng giữ nước và cung cấp dinh dưỡng. Giữ lại tàn dư, bón phân chuồng hoặc phân ủ và trồng cây che phủ giúp tăng dần qua nhiều năm.'), actions: [{ when: tx('Every harvest', 'Mỗi lần thu hoạch'), what: tx('Leave crop residue on the field instead of burning it', 'Để lại tàn dư cây trồng thay vì đốt') }, { when: tx('Between seasons', 'Giữa các vụ'), what: tx('Sow a cover crop or apply well-rotted manure or compost', 'Gieo cây che phủ hoặc bón phân chuồng hoai mục, phân ủ'), amount: '5-10 t/ha (indicative)' }], impact: {}, evidence: [{ label: tx('Organic matter', 'Chất hữu cơ'), value: `${r1(om)} %`, sourceId: soilSrc, branch: 'soil' }], confidence: r1(0.6 * branchConf(t, ['soil'])), caveats: [tx('Map estimate, not a field measurement.', 'Ước tính từ bản đồ, không phải đo tại ruộng.')], needsLocalReview: false });
+    out.push({ id: 'fertility-om', kind: 'fertility', priority: 3, title: tx(`Build soil organic matter (about ${r1(om)} %)`, `Tăng chất hữu cơ trong đất (khoảng ${r1(om)} %)`), summary: tx('Low organic matter lowers water holding and nutrient supply. Residue retention, manure or compost and cover crops raise it slowly over years.', 'Chất hữu cơ thấp làm giảm khả năng giữ nước và cung cấp dinh dưỡng. Giữ lại tàn dư, bón phân chuồng hoặc phân ủ và trồng cây che phủ giúp tăng dần qua nhiều năm.'), actions: [{ when: tx('Every harvest', 'Mỗi lần thu hoạch'), what: tx('Leave crop residue on the field instead of burning it', 'Để lại tàn dư cây trồng thay vì đốt') }, { when: tx('Between seasons', 'Giữa các vụ'), what: tx('Sow a cover crop or apply well-rotted manure or compost', 'Gieo cây che phủ hoặc bón phân chuồng hoai mục, phân ủ'), amount: tx('5-10 t/ha (indicative)', '5-10 t/ha (tham khảo)') }], impact: {}, evidence: [{ label: tx('Organic matter', 'Chất hữu cơ'), value: `${r1(om)} %`, sourceId: soilSrc, branch: 'soil' }], confidence: r1(0.6 * branchConf(t, ['soil'])), caveats: [tx('Map estimate, not a field measurement.', 'Ước tính từ bản đồ, không phải đo tại ruộng.')], needsLocalReview: false });
   }
   const slope = factNum(t, 'slope_deg');
   const cover = cur?.metrics.groundCoverPct ?? 100;

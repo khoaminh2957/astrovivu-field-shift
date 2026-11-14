@@ -1,6 +1,6 @@
 # Advisory engine (Tier 5, rule-based core)
 
-Code: `src/core/advisory` (insights, rotations, actions), `src/core/tracking`, `src/core/urban`. All functions are pure functions of `ModelInput`. `buildAdvisoryReport` and the rotation search are memoised on the telemetry object plus the value of crop, ground truth, priorities, parcel and date. Tests: `src/core/advisory/advisory.test.ts` and `seasonDetail.test.ts` load the four real demo samples.
+Code: `src/core/advisory` (insights, rotations, custom season swaps, actions), `src/core/tracking`, `src/core/urban`. All functions are pure functions of `ModelInput`. `buildAdvisoryReport` and the rotation search are memoised on the telemetry object plus the value of crop, ground truth, priorities, parcel and date. Tests: `src/core/advisory/advisory.test.ts`, `seasonDetail.test.ts` and `customRotation.test.ts` load the four real demo samples.
 
 ## 1. Insights (Anomaly Markers)
 
@@ -20,7 +20,7 @@ Resolution: sources with pixels >= 1 km are described as "across the area around
 
 ## 2. Rotation strategies
 
-Current strategy: `groundTruth.currentRotation` (entries whose months overlap an earlier entry become later years, e.g. corn then soybean), else the last two years of `cropHistory` (CDL names mapped to catalogue ids), else the selected crop repeated in back-to-back windows that score >= 60 (flagged as assumed in the gaps).
+Current strategy: `groundTruth.currentRotation` (entries whose months overlap an earlier entry become later years, e.g. corn then soybean; entries with the same `season` number grow side by side in that season, each on `share` of the area, by default split equally, the second and later ones labelled as companion crops), else the last two years of `cropHistory` (CDL names mapped to catalogue ids), else the selected crop repeated in back-to-back windows that score >= 60 (flagged as assumed in the gaps). The farmer enters the rotation as seasons in the Ground truth tab (`src/ui/field/SeasonPlanner.tsx`): each season has months, one or more crops and an optional sowing date; the first crop of the season running today becomes the field's crop and that season's sowing date becomes `groundTruth.sowingDate`.
 
 Fit per crop and sowing month comes from `scanSowingWindows` with the effective irrigation (the farmer's entry; else full irrigation is inferred when normal rain < 350 mm and the field is cropped, and said so). Annual systems fill free months greedily (cash crops need fit >= 55, covers >= 35, no pest group back to back):
 
@@ -29,11 +29,18 @@ Fit per crop and sowing month comes from `scanSowingWindows` with the effective 
 - income: highest reference margin per season, then best-paying fillers.
 - resilience: up to three years and three families, weighted by reliability.
 
-Perennials are not rotated yearly. Tree crops get an inter-row N-fixing cover (~25 % area), a companion tree (~20 %), a partial conversion (~30 %) to a lower-water crop, or a mix. Stands (forage, sugarcane) are renewed after 4 years with break crops (paddy rice excluded); when no break crop reaches a fit of 20, those years stay fallow and the strategy text says so (Nevada demo field). Area shares are written in the season label.
+Perennials are not rotated yearly. Tree crops get an inter-row N-fixing cover (~25 % area), a companion tree (~20 %), a partial conversion (~30 %) to a lower-water crop, or a mix. Stands (forage, sugarcane) are renewed after 4 years with break crops (paddy rice excluded); when no break crop from another family reaches a fit of 20 (Nevada demo field at SSURGO pH 8.8), `soil-health` renews after 4 stand years with 1 fallow rest year and `resilience` after 3 stand years with 2 rest years, and the strategy text says so. If fewer than two alternatives survive deduplication, the fallback fills only free months in year 0 or appends a rest year rather than overlapping a full-area season. Fractional area shares are stored in `RotationSeason.share` (with `slotRole`) and written in the season label.
 
 Metrics: suitability = month- and area-weighted fit; water use = Σ mean Kc (FAO-56 stage-weighted) × normal monthly ET0 per year; water fit = min(1, (0.8 × rain + irrigation supply) / ETc); N = indicative credit 40 (grain legume), 90 (cover legume), 150 (forage legume) kg/ha per season × area share; ground cover = covered months; pest break = 1 for a different family, 0.5 same family other pest group, 0 same pest group, over consecutive seasons (perennial mixes capped at 60); soil health = 30 cover + 20 N + 20 residue + 15 family diversity + 15 cover/perennial; risk = 50 (1 - reliability) + 25 / families + 25 (1 - water fit). Economics: `seasonEconomics` with yield fraction = fit at the sowing month and reference values, `strategyEconomics` over the rotation years. Score: each priority metric normalised 0..1 (margin and cost min-max across the strategies), weight 0.5 + 3/2/1 for the first/second/third priority.
 
-The five lists are generated from the field: evidence cites the climate source, soil source, CDL history and reference economics; gaps name the missing soil test, coarse climate pixel, reference prices, irrigation assumptions, assumed rotation, perennial establishment, cover-crop literature values; risks name market and seed checks, upland crops after paddy, cover-crop timing, frost calendars, limiting soil chemistry, intercropping, monoculture, low suitability, and always local extension review.
+The five lists are generated from the field: evidence cites the climate source, soil source, CDL history and reference economics (with `EvidenceItem.value` and `ActionStep.amount` localised in both English and Vietnamese); gaps name the missing soil test, coarse climate pixel, reference prices, irrigation assumptions, assumed rotation, perennial establishment, cover-crop literature values; risks name market and seed checks, upland crops after paddy, cover-crop timing, frost calendars, limiting soil chemistry, intercropping, monoculture, low suitability, and always local extension review.
+
+### Custom season swaps (`src/core/advisory/customRotation.ts`)
+
+Clicking a season block (crop or fallow) on the selected strategy lets the farmer test another crop in that slot without altering the baseline `current` strategy:
+
+- `slotCropChoices(input, strategy, seasonIndex)` finds the contiguous free calendar months around a full-area slot (merging adjacent fallow months, excluding paddy rice on upland forage stands) or the valid crop pool for a fractional tree/cover slot (`share < 1`), scores every curated crop that fits the window, and offers `'fallow'` when at least one other crop season remains.
+- `swapRotationSeason` and `evaluateCustomRotation` build a `Candidate` with `kind: 'custom'` (`id: 'custom'`) and run the same `evaluate` and `scoreAll` pipeline alongside the engine strategies so metrics, priority scores, trade-offs, the five lists and `annualPlan(input, custom)` stay consistent.
 
 ### Per-season detail
 
@@ -51,7 +58,7 @@ Every season of every strategy (the current one included) carries `detail`, fill
 | `nitrogenKgHa` | indicative N credit | the per-season credit of the metrics (40 / 90 / 150 kg N/ha) for any N-fixing crop, whatever its role | the crop fixes no nitrogen |
 | `reason` | one sentence, EN and VI | built from the fields above, wording by role (below) | never |
 
-Units are per hectare of the area the crop occupies. For a full-area strategy the seasons add up to the metrics: length-weighted suitability and summed nitrogen match exactly, water need and margin to within rounding (half a unit per season). For a tree-crop mix (labels with "~N % of area") each figure must be weighted by that share first; the share is not a separate field.
+Units are per hectare of the area the crop occupies. For a full-area strategy the seasons add up to the metrics: length-weighted suitability and summed nitrogen match exactly, water need and margin to within rounding (half a unit per season). For a tree-crop mix (`RotationSeason.share < 1`, also written in the label as "~N % of area") each figure must be weighted by that share first.
 
 Reason wording. Cash: "sits inside the rains" when season rain >= water need; otherwise rain against need, and where the rest comes from (irrigation, supplemental irrigation plus stored soil water, or stored soil water when rainfed); "best-fitting month" only when the sowing month is the crop's best one. Legume: the N credit and the next harvested crop in the sequence (covers skipped). Cover: "through the wet months" when the season's rain per month is above the annual monthly mean, else "between cash crops"; an inter-row cover names the host crop and its share. Perennial: annual rain against annual use, plus the months whose normal rain is below Kc × ET0. Fallow: a whole bare year is called a rest year; a run with a monthly mean temperature below 5 °C is called the cold season and quotes that temperature; otherwise rain against what the year's longest full-area crop would use over those months (Kc × ET0), called the dry season when rain per month is under half the annual monthly mean; with rain above that use only the rain is stated. A fallow season carries `role`, `rainMm` and `reason` only.
 

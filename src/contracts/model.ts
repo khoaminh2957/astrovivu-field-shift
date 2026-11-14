@@ -30,8 +30,22 @@ export interface GroundTruth {
   waterReliability?: 'year-round' | 'dry-season-short' | 'often-short' | 'unknown';
   variety?: string;
   sowingDate?: ISODate;
-  /** The rotation the farmer runs today; months are 1-12. */
-  currentRotation?: { cropId: string; startMonth: number; endMonth: number }[];
+  /**
+   * The rotation the farmer runs today; months are 1-12. Entries whose months overlap an earlier
+   * entry are later years of the rotation, unless they share the same `season` number: those grow
+   * side by side in one season (intercrop or a split field), each on `share` of the area.
+   */
+  currentRotation?: {
+    cropId: string;
+    startMonth: number;
+    endMonth: number;
+    /** Season number; entries with the same number grow at the same time on one field. */
+    season?: number;
+    /** Fraction of the field (0-1). Default: the season's area split equally between its crops. */
+    share?: number;
+    /** Exact sowing date when the farmer knows it. */
+    sowingDate?: ISODate;
+  }[];
   issues?: FieldIssue[];
   measuredSoilMoisture?: FieldMeasurement[];
   measuredRain?: FieldMeasurement[];

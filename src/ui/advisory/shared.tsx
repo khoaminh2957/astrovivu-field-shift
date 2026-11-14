@@ -39,7 +39,7 @@ export function EvidenceList({ items, className }: { items: EvidenceItem[]; clas
         <li key={i} className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-baseline justify-between gap-2">
             <span className="min-w-0 text-sm text-ink-2">{pick(e.label, lang)}</span>
-            <span className="t-value shrink-0 text-right text-xs text-ink-1">{e.value}</span>
+            <span className="t-value shrink-0 text-right text-xs text-ink-1">{pick(e.value, lang)}</span>
           </div>
           {(e.sourceId || e.branch) && (
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">

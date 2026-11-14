@@ -24,12 +24,14 @@ import { GroundTruthForm } from '@/ui/override';
 import { CardDetail } from './CardDetail';
 import { LiveFieldCanvas } from './FieldCanvas';
 import { FieldReport } from './FieldReport';
-import { CropSelect, ScoreBlock } from './FieldSummary';
+import { ScoreBlock } from './FieldSummary';
 import { InfoCard } from './InfoCard';
 import { MetricGrid, usePictureState, useSelectBranch } from './MetricCards';
 import { rasterFor } from './picture';
 import { SatelliteCanvas } from './SatelliteCanvas';
 import { TileLegend } from './ScaleLegend';
+import { SeasonPlanner, useSeasonRows } from './SeasonPlanner';
+import { activeRow, seasonName } from './seasons';
 import { AccumChart, NdviChart, gddBase, gddNote, gddSeries, s2Points } from './StatusCharts';
 import './strings';
 
@@ -105,26 +107,27 @@ function Header() {
 function TopCards() {
   const t = useT();
   const lang = useLang();
-  const cropId = useMission((s) => s.cropId);
-  const sowing = useMission((s) => s.groundTruth.sowingDate);
   const setTab = useMissionUi((s) => s.setFieldTab);
   const w = useWeatherNow();
-  const crop = getCrop(cropId);
+  const { rows, month, tropical } = useSeasonRows();
+  const ai = activeRow(rows, month);
+  const now = ai >= 0 ? rows[ai] : null;
   const add = (label: string) => <span className="text-signal-strong">{label}</span>;
+  const names = now?.crops.map((id) => getCrop(id)).filter((c) => c != null).map((c) => cropName(c.names, lang)) ?? [];
   return (
     <div className="grid grid-cols-3 gap-4 compact:gap-2 narrow:grid-cols-2">
-      <InfoCard label={t('field.crop')} onClick={() => setTab('truth')} action={t('field.addCrop')}>
-        {crop ? (
+      <InfoCard label={now ? `${t('season.card.now')} · ${t(`season.name.${seasonName(now, tropical)}`, { n: ai + 1 })}` : t('season.card.now')} onClick={() => setTab('truth')} action={t('season.card.add')}>
+        {names.length ? (
           <span className="inline-flex max-w-full items-center gap-1.5">
             <span aria-hidden className="size-3 shrink-0 rounded-full border border-signal bg-signal/30" />
-            <span className="truncate">{cropName(crop.names, lang)}</span>
+            <span className="truncate">{names.join(' + ')}</span>
           </span>
         ) : (
-          add(t('field.addCrop'))
+          add(t('season.card.add'))
         )}
       </InfoCard>
       <InfoCard label={t('field.sowing')} onClick={() => setTab('truth')} action={t('field.addSowing')}>
-        {sowing ? fmtDate(sowing, lang) : add(t('field.addSowing'))}
+        {now?.sowingDate ? fmtDate(now.sowingDate, lang) : now ? t('season.card.from', { m: t('season.month', { m: now.start }) }) : add(t('field.addSowing'))}
       </InfoCard>
       <div title={t('field.weather')} className="flex min-h-[62px] min-w-0 items-center justify-center gap-3 overflow-hidden rounded-sm border border-line-1 px-3 py-2 compact:gap-2 compact:px-2 narrow:col-span-2 narrow:gap-3">
         <CloudSun size={30} strokeWidth={1.5} aria-hidden className="shrink-0 text-branch-rainfall" />
@@ -356,7 +359,7 @@ function ReportTab() {
 function TruthTab() {
   return (
     <div className="flex flex-col gap-5">
-      <CropSelect />
+      <SeasonPlanner />
       <GroundTruthForm />
     </div>
   );

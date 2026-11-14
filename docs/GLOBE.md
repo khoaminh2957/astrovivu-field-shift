@@ -32,7 +32,7 @@ Bottom to top. Ids are in `style.ts`.
 | Layer | Source | Notes |
 |---|---|---|
 | `stars` | custom WebGL | Canvas is transparent outside the planet; CSS gradient behind it. |
-| `ocean` | background | A globe with no tile yet is still a planet. |
+| `ocean` | background | Dark space/ocean from orbit, fading to light grey once zoomed in so missing imagery never leaves dark navy holes under the light shell. |
 | `blue-marble` | GIBS `BlueMarble_ShadedRelief_Bathymetry`, level 8 | The view from orbit. Subdued in the hero (backdrop for the title), full contrast from explore on. Greyed and darkened when satellite is switched off. |
 | `sat-fallback` | EOX Sentinel-2 cloudless, level 14 | Added only if Esri fails six times in a row. |
 | `sat` | Esri World Imagery, level 19 | Not requested below zoom 4; fades in between zoom 4.2 and 6.2. |
@@ -41,7 +41,7 @@ Bottom to top. Ids are in `style.ts`.
 | `parcel-dim` | GeoJSON, world polygon with the parcel cut out | Faint dimming of the surroundings from zoom 9.5 (14 % at zoom 13). |
 | `halo` | custom WebGL | Atmosphere from orbit. |
 | labels | OpenFreeMap vector tiles, Esri reference raster as fallback | Loaded on first use, in the interface language. |
-| Field raster | DOM canvas, `fieldRaster.ts` | Within-field picture of the selected metric, clipped to the parcel, placed by a CSS `matrix3d` homography from its four projected corners. |
+| Field raster | DOM canvas, `fieldRaster.ts` | Within-field picture of the selected metric, clipped to the parcel, fitted by a least-squares `matrix3d` homography to the projected parcel outline so corner terrain cannot shift it. |
 | SVG overlay | DOM, inside the canvas container | Locked parcel (single-colour fill when there is no raster, honesty texture, faint casing, thin light outline), reticle during the descent, draft outline, measure tool. |
 | Markers | DOM | Demo-field beacons (buttons), draft handles. |
 
@@ -72,11 +72,16 @@ The parcel is drawn the way field-monitoring apps draw a field: the picture of t
 - If `rasters` holds a raster whose `key === layers.parcelMetric` (with frames), it is drawn: painted at its own size with `paintRaster` (blending between frames), upscaled with smoothing into a canvas of about 384 px on its long side, clipped there to the parcel ring, at 88 % opacity. The repaint is coalesced to one per displayed frame and skipped when the cursor day has not changed; following the camera is one `transform` write per frame. The raster wins over `focusBranch` (rule as briefed). A raster whose source is `simulated` (or a mock telemetry) gets the dotted texture.
 - Otherwise the single-colour fill from the series (`paintForSeries`) as before, at 62 % opacity.
 - `useParcelPaint()` gives the legend: source (`raster` / `series`), key, label, unit, `rampCss`, range, date of the frame shown and the frame it is blending toward. It changes only when one of those changes. `rasterRampCss(rampId)` is exported; ramps the design system lacks (terrain, soil, light, risk) have local stops in `fieldRaster.ts`.
-- Limit: the picture lies on the plane through its four corners, so relief inside the field is ignored; the outline still follows terrain. The grid is assumed north-up (as the contract says).
+- Limit: the picture is fitted by a projective transform to the projected parcel outline (`fieldRaster.ts`), so corner relief outside the parcel cannot offset it, though strong relief curvature inside a steep parcel is still approximated by one projective plane; the outline itself follows terrain every 30 m. The grid is assumed north-up (as the contract says).
 
-## 3c. Map tools and insets
+## 3c. Map tools, touchpad gestures and insets
 
-`tools.ts` implements the toolbar contract on the active engine: `zoomBy`, `resetNorth`, `setTilt` (pitch 54 / 0), `fitParcel` (parcel, else the draft), `locateMe` (browser geolocation, 10 s timeout; flies to zoom 15.5, or 12 when the fix is coarser than 500 m; resolves null on refusal), `setMotion`, `startMeasure` / `stopMeasure` (`measure.ts`: click points; a click on the first point closes an area; haversine metres, `polygonAreaHa` hectares; double-click zoom is off while measuring), `useMapView` (rAF-coalesced, rounded, written only on change) and `useMeasure`.
+`tools.ts` implements the toolbar contract on the active engine: `zoomBy`, `rotateBy`, `resetNorth`, `setTilt` (pitch 54 / 0), `fitParcel` (parcel, else the draft), `locateMe` (browser geolocation, 10 s timeout; flies to zoom 15.5, or 12 when the fix is coarser than 500 m; resolves null on refusal), `setMotion`, `startMeasure` / `stopMeasure` (`measure.ts`: click points; a click on the first point closes an area; haversine metres, `polygonAreaHa` hectares; double-click zoom is off while measuring), `onMapClick` (delivers unhandled map clicks to the UI: clicking a demo field selects it, and "Select on the map" runs `detectFieldBoundary`), `useMapView` (rAF-coalesced, rounded, written only on change) and `useMeasure`.
+
+Touchpad and wheel handling (`engine.ts`):
+- Container `resize` re-frames the camera only when the container's CSS width or height actually changes, so `setPixelRatio` no longer triggers a snap-back 160 ms after wheel zoom; pixel-ratio reduction while moving runs only above DPR 1.5, avoiding canvas resize hitches on standard screens.
+- Horizontal two-finger touchpad swipe (or `Shift` + wheel) locks axis at gesture start: from orbit it spins the globe left/right, and at field/regional zoom it pans horizontally.
+- `Alt` + two-finger swipe (or `Alt` + wheel) and the turn-left / turn-right toolbar buttons beside the compass rotate map bearing on Windows touchpads, which do not report two-finger twist events to the browser.
 
 `insets` from the store are the camera padding (plus 12 px) for the fly-in, `fitParcel`, `refocusParcel`, `flyToPlace` and draft framing; the padding is shrunk so at least 120 px of map stay free each way. With insets the parcel fills 62 % of the free area. A change of insets eases (360 ms): the whole framing when the camera is still near the parcel view, only the padding when the user has wandered off. Without insets the old design-token estimate is used. Hero and explore poses do not use insets yet.
 
@@ -126,8 +131,8 @@ The one long frame left in each fly-in (80-117 ms, at zoom about 1.7, right afte
 
 ## 6. Known limits
 
-- **Demo polygons** (`src/data/samples.ts`): Nevada is now the single pivot circle under the verified point (centre -115.96894, 39.71961, radius 395 m, 48.9 ha) and Iowa the field block between the section roads minus the farmstead (29.3 ha), both traced on Esri imagery at zoom 14 (about 4 m per pixel, so edges are good to roughly 5-10 m; the Iowa south edge is a faint line). Dak Lak and Can Tho are still provisional rectangles: the coffee plots under tree cover and the rice-paddy dikes could not be told apart on the imagery.
-- Seen working in the browser: hero, explore, beacons, lock fly-in from explore and from a deep link, parcel fill and textures, anchor, quad taps, corner drag, coords draft, lock from a draft, NDVI / SMAP / IMERG / LST overlays, terrain toggle. The composed app was checked once with `/?sample=daklak-coffee`: parcel between the HUD columns, hub on the anchor, credits above the timeline. Written but not exercised: midpoint insert, corner delete, keyboard nudging, GPS with a real fix, labels, satellite off, the Sentinel-2 fallback, the no-WebGL message, the reduced-motion cut, and `/?phase=explore` in the composed app (explore was checked in the bench only).
+- **Demo polygons** (`src/data/samples.ts`): Nevada is the single pivot circle under the verified point (centre -115.96894, 39.71961, radius 395 m, 48.9 ha) and Iowa the field block between the section roads minus the farmstead (29.3 ha), both traced on Esri imagery at zoom 14 (about 4 m per pixel, so edges are good to roughly 5-10 m; the Iowa south edge is a faint line). Đắk Lắk (2.0 ha, confidence 0.87) and An Giang (`cantho-rice`, 1.4 ha Mekong paddy, confidence 0.82) are real field polygons detected from Sentinel-2 NDVI (`detectFieldBoundary`, `scripts/data/boundary-demo.ts`); the crop grown on those two Vietnamese fields is assumed rather than verified on the ground.
+- Seen working in the browser: hero, explore (`/?phase=explore`), beacons, click-to-select demo fields and Sentinel-2 boundary detection on live farmland (including > 65 ha US Midwest fields via the 20 m fallback), address + area draft, corner drag, lock fly-in from explore and from a deep link, wheel zoom without snap-back, synthetic horizontal touchpad swipe, parcel raster fitted to the outline, NDVI / SMAP / IMERG / LST overlays, terrain toggle. Written and synthetic-tested, not exercised on physical multi-touch hardware: real touchscreen two-finger twist and physical laptop touchpad inertia. Written, not exercised: midpoint insert, corner delete, keyboard nudging, GPS with a real fix, labels, satellite off, the Sentinel-2 cloudless fallback, the no-WebGL message.
 - No unit tests yet for the pure modules (`overlays`, `draft`, `ramps`, `camera`).
 - With the camera at rest after a deep link, MapLibre once left the raster layers out of the last frame; the engine now repaints once after loading settles. The cause was not found.
 - A product switch at globe scale fills tile by tile (GIBS answers in about 300 ms per tile, four at a time).
@@ -136,4 +141,5 @@ The one long frame left in each fly-in (80-117 ms, at zoom about 1.7, right afte
 - Terrain exaggeration is 1.25: slopes look a quarter steeper than they are.
 - The lighter pixel ratio while moving shows as a slight softening on DPR 2 screens during a drag; at DPR 1.25 the moving ratio is 1.
 - Measure tool: no undo of the last point and no editing; the UI should offer Escape or a stop button.
+- **Interactive field picking** (`setPickMode`, `setPickTarget`, `setPromptMarkers`): in "Chọn trên bản đồ" the map shows a crosshair cursor, a pulsing reticle while Sentinel-2 loads, and green `+` / red `−` prompt pins for the multi-point refinement in `src/ui/field/SelectOnMap.tsx`. `onMapClick` listeners receive `{ altKey, shiftKey }` so `Alt + click` adds a negative prompt. A positive click that cannot join the current polygon (separate farm across a road) restarts the selection on that farm; pins that end up outside the polygon are dropped. Checked in the browser on Story County farmland (1 click, 2nd `+`, `−`, Regularise ×2, Undo); not checked on a touchscreen, where there is no Alt key and the `+ / −` toggle is the only way to switch.
 - `locateMe` was not exercised with a real fix. GIBS overlays and labels are not held back during a flight.

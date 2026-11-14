@@ -1,10 +1,16 @@
 /**
- * Tier 3 public API: productivity scoring. Pure TypeScript; formulas and sources in docs/SCORING.md.
+ * Tier 3 public API: Astrovivu-AEZ v2 productivity scoring. Pure TypeScript; mathematical
+ * derivations, peer-reviewed sources and empirical benchmarks in docs/SCORING_PAPER.md and
+ * docs/SCORING.md.
  *
- *   compatibility  static crop-site fit: EcoCrop trapezoids on the growing window (worst month for
- *                  temperature, season total for water), soil factors damped by their weight, gates
- *   condition(t)   FAO-56 root-zone water balance x thermal index, blended with what satellites
- *                  see against their own baseline
+ *   compatibility  static crop-site fit: EcoCrop trapezoids on the growing window, Maas-Hoffman
+ *                  continuous salinity, Oldfield Michaelis-Menten SOC/CEC fertility, Saaty AHP
+ *                  eigenvector weights (CR = 0.0030) with Khiddir-GAEZ rank-damped edaphic
+ *                  combination, plus non-compensatory bioclimatic gates
+ *   condition(t)   FAO-56 daily root-zone water balance (Borg-Grimes dynamic root depth Zr(t),
+ *                  climatic Kc adjustment eq. 62/65, Feddes/AquaCrop aeration stress Kaer) x
+ *                  asymmetric reproductive heat/cold index x Monteith PAR light factor, fused
+ *                  with multi-sensor satellite observations (NDVI, ESI, SM_root, LST)
  *   productivity   compatibility x condition
  */
 import type {
@@ -31,17 +37,63 @@ import { tx } from '@/contracts';
 import { getCrop, listCrops } from '@/core/crops';
 import { findSeries } from '@/lib/series';
 import { addDays, dayOfYear, diffDays } from '@/lib/time';
+import {
+  adjustKcClimate,
+  aggregateSuitability,
+  AHP_PAIRWISE_MATRIX,
+  AHP_SOLUTION,
+  assimilateSatelliteCondition,
+  asymmetricHeatFactor,
+  borgGrimesRootDepth,
+  cropCanopyHeightM,
+  drainagePercolationMmDay,
+  estimateRhMin,
+  feddesAerationFactor,
+  isHydrophyticCrop,
+  maasHoffmanSalinity,
+  monteithRadiationFactor,
+  oldfieldFertilityIndex,
+  scoreFertilityContinuous,
+  solveAhpMatrix,
+  type AggregationItem,
+  type AhpSolution,
+  type ParametricMethod,
+} from './literature';
 import { clamp, clamp01, quantile, round, trapezoid } from './math';
 
 export { trapezoid } from './math';
+export {
+  adjustKcClimate,
+  aggregateSuitability,
+  AHP_PAIRWISE_MATRIX,
+  AHP_SOLUTION,
+  assimilateSatelliteCondition,
+  asymmetricHeatFactor,
+  borgGrimesRootDepth,
+  cropCanopyHeightM,
+  drainagePercolationMmDay,
+  estimateRhMin,
+  feddesAerationFactor,
+  GRADED_FACTOR_KEYS,
+  isHydrophyticCrop,
+  maasHoffmanSalinity,
+  monteithRadiationFactor,
+  oldfieldFertilityIndex,
+  scoreFertilityContinuous,
+  solveAhpMatrix,
+  type AggregationItem,
+  type AhpSolution,
+  type GradedFactorKey,
+  type ParametricMethod,
+} from './literature';
 
 // ------------------------------------------------------------------------------------------------
-// Constants (docs/SCORING.md gives the source of each)
+// Constants (docs/SCORING.md & docs/SCORING_PAPER.md give the literature source of each)
 // ------------------------------------------------------------------------------------------------
 
-/** Importance of each graded factor; the exponent is weight / largest weight, so temperature and water act at full strength. */
-export const FACTOR_WEIGHTS = { temperature: 1, water: 1, ph: 0.5, salinity: 0.5, drainage: 0.5, texture: 0.25, depth: 0.25, fertility: 0.2, slope: 0.2 } as const;
-/** Class scores for categorical soil factors: optimal, tolerated, outside the tolerated classes. */
+/** Max-normalized Saaty AHP eigenvector exponents (CR = 0.0030 << 0.10); primary climate acts at 1.0. */
+export const FACTOR_WEIGHTS = AHP_SOLUTION.exponents;
+/** Sys, Van Ranst & Debaveye (1991) parametric ratings for categorical optimal / tolerated / unsuitable classes. */
 const CLASS_SCORE = { opt: 1, abs: 0.7, out: 0.15 } as const;
 const GATE = { zoneCurated: 0.5, zoneRaw: 0.7, photoperiodMin: 0.7, latitude: 0.7, altitude: 0.8 } as const;
 /** Ramirez-Villegas et al. 2013: a month whose mean minimum is below Tkill + 4 °C contains a killing night. */
@@ -180,9 +232,10 @@ interface Climate {
   rain: Float64Array;
   tMean: Float64Array;
   tMin: Float64Array;
+  tMax: Float64Array;
   et0: Float64Array;
   /** 12-month means, used alone and to fill the months before the first year. */
-  clim: { rain: number[]; tMean: number[]; tMin: number[]; et0: number[] };
+  clim: { rain: number[]; tMean: number[]; tMin: number[]; tMax: number[]; et0: number[] };
   zones: string[];
 }
 
@@ -195,8 +248,18 @@ interface Daily {
   tMean: Float64Array;
   tMin: Float64Array;
   tMax: Float64Array;
+  tMean7: Float64Array;
+  tMax3: Float64Array;
+  wind7: Float64Array;
+  rhMin7: Float64Array;
+  par7: Float64Array;
   ndviScore: Float64Array;
   esiScore: Float64Array;
+  smRaw: Float64Array;
+  smMean: Float64Array;
+  smP10: Float64Array;
+  smScore: Float64Array;
+  lstScore: Float64Array;
   hasWater: boolean;
   hasTemp: boolean;
 }
@@ -212,7 +275,7 @@ function buildClimate(t: FieldTelemetry, lat: number): Climate | null {
   if (!hist?.length) return null;
   const years = hist.length;
   const mk = () => new Float64Array(years * 12).fill(NaN);
-  const c: Climate = { years, rain: mk(), tMean: mk(), tMin: mk(), et0: mk(), clim: { rain: [], tMean: [], tMin: [], et0: [] }, zones: [] };
+  const c: Climate = { years, rain: mk(), tMean: mk(), tMin: mk(), tMax: mk(), et0: mk(), clim: { rain: [], tMean: [], tMin: [], tMax: [], et0: [] }, zones: [] };
   hist.forEach((y, yi) => {
     for (const m of y.months) {
       const i = yi * 12 + m.month - 1;
@@ -220,6 +283,7 @@ function buildClimate(t: FieldTelemetry, lat: number): Climate | null {
       c.rain[i] = m.rainMm ?? NaN;
       c.tMean[i] = m.tMean ?? (m.tMin != null && m.tMax != null ? (m.tMin + m.tMax) / 2 : NaN);
       c.tMin[i] = m.tMin ?? NaN;
+      c.tMax[i] = m.tMax ?? NaN;
       const d = DAYS_IN_MONTH[m.month - 1];
       c.et0[i] = m.et0Mm ?? (m.tMean != null && m.tMin != null && m.tMax != null ? hargreaves(m.tMean, m.tMax, m.tMin, lat, MID_DOY[m.month - 1]) * d : NaN);
     }
@@ -237,6 +301,7 @@ function buildClimate(t: FieldTelemetry, lat: number): Climate | null {
     c.clim.rain.push(monthMean(c.rain, m));
     c.clim.tMean.push(monthMean(c.tMean, m));
     c.clim.tMin.push(monthMean(c.tMin, m));
+    c.clim.tMax.push(monthMean(c.tMax, m));
     c.clim.et0.push(monthMean(c.et0, m));
   }
   c.zones = climateZones(c.clim.tMean, c.clim.rain, lat);
@@ -269,24 +334,73 @@ export function climateZones(tMean: number[], rain: number[], lat: number): stri
   return out;
 }
 
-function nearestBaseline(series: Series | undefined): { mean: Float64Array; p10: Float64Array } | null {
+function nearestBaseline(series: Series | undefined): { mean: Float64Array; p10: Float64Array; p90: Float64Array } | null {
   if (!series?.baseline?.length) return null;
   const mean = new Float64Array(367).fill(NaN);
   const p10 = new Float64Array(367).fill(NaN);
+  const p90 = new Float64Array(367).fill(NaN);
   for (let d = 1; d <= 366; d++) {
     let best = series.baseline[0];
     for (const b of series.baseline) if (Math.abs(b.doy - d) < Math.abs(best.doy - d)) best = b;
     mean[d] = best.mean;
     p10[d] = best.p10;
+    p90[d] = best.p90;
   }
-  return { mean, p10 };
+  return { mean, p10, p90 };
+}
+
+function precomputeTrailing(src: Float64Array, windowLen: number): Float64Array {
+  const n = src.length;
+  const out = new Float64Array(n).fill(NaN);
+  let sum = 0;
+  let cnt = 0;
+  for (let i = 0; i < n; i++) {
+    const addV = src[i];
+    if (!Number.isNaN(addV)) {
+      sum += addV;
+      cnt++;
+    }
+    const dropIdx = i - windowLen;
+    if (dropIdx >= 0) {
+      const remV = src[dropIdx];
+      if (!Number.isNaN(remV)) {
+        sum -= remV;
+        cnt--;
+      }
+    }
+    if (cnt > 0) out[i] = sum / cnt;
+  }
+  return out;
 }
 
 function buildDaily(t: FieldTelemetry, lat: number, climate: Climate | null): Daily {
   const start = t.window.start;
   const n = Math.max(1, diffDays(t.window.end, start) + 1);
   const arr = () => new Float64Array(n).fill(NaN);
-  const d: Daily = { n, start, doy: new Int16Array(n), rain: arr(), et0: arr(), tMean: arr(), tMin: arr(), tMax: arr(), ndviScore: arr(), esiScore: arr(), hasWater: false, hasTemp: false };
+  const d: Daily = {
+    n,
+    start,
+    doy: new Int16Array(n),
+    rain: arr(),
+    et0: arr(),
+    tMean: arr(),
+    tMin: arr(),
+    tMax: arr(),
+    tMean7: arr(),
+    tMax3: arr(),
+    wind7: arr(),
+    rhMin7: arr(),
+    par7: arr(),
+    ndviScore: arr(),
+    esiScore: arr(),
+    smRaw: arr(),
+    smMean: arr(),
+    smP10: arr(),
+    smScore: arr(),
+    lstScore: arr(),
+    hasWater: false,
+    hasTemp: false,
+  };
   const doy0 = dayOfYear(start);
   const leap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
   let doy = doy0;
@@ -302,7 +416,8 @@ function buildDaily(t: FieldTelemetry, lat: number, climate: Climate | null): Da
       if (smp.v == null || smp.t < start) continue;
       const i = diffDays(smp.t, start);
       if (i >= n) break;
-      for (let k = i; k < Math.min(n, i + hold); k++) target[k] = map(smp.v, k);
+      const startK = Math.max(0, i);
+      for (let k = startK; k < Math.min(n, i + hold); k++) target[k] = map(smp.v, k);
       any = true;
     }
     return any;
@@ -313,12 +428,20 @@ function buildDaily(t: FieldTelemetry, lat: number, climate: Climate | null): Da
   put(d.tMin, findSeries(agromet, 't2m_min'), 1);
   put(d.tMean, findSeries(agromet, 't2m'), 1);
   const hasEt0 = put(d.et0, findSeries(agromet, 'et0'), 1);
+  const rhRaw = arr();
+  const windRaw = arr();
+  const parRaw = arr();
+  put(rhRaw, findSeries(agromet, 'rh'), 1);
+  put(windRaw, findSeries(agromet, 'wind'), 1);
+  put(parRaw, findSeries(agromet, 'par'), 1);
+
   const month = (i: number) => {
     let m = 0;
     let rest = d.doy[i];
     while (m < 11 && rest > DAYS_IN_MONTH[m]) rest -= DAYS_IN_MONTH[m++];
     return m;
   };
+  const rhMinDaily = arr();
   let tempDays = 0;
   for (let i = 0; i < n; i++) {
     if (Number.isNaN(d.tMean[i]) && !Number.isNaN(d.tMax[i]) && !Number.isNaN(d.tMin[i])) d.tMean[i] = (d.tMax[i] + d.tMin[i]) / 2;
@@ -328,20 +451,55 @@ function buildDaily(t: FieldTelemetry, lat: number, climate: Climate | null): Da
     const m = month(i);
     if (Number.isNaN(d.et0[i]) && climate) d.et0[i] = climate.clim.et0[m] / DAYS_IN_MONTH[m];
     if (Number.isNaN(d.rain[i]) && climate && hasRain) d.rain[i] = climate.clim.rain[m] / DAYS_IN_MONTH[m];
+    if (!Number.isNaN(rhRaw[i])) rhMinDaily[i] = estimateRhMin(rhRaw[i], d.tMin[i], d.tMax[i]);
   }
+  d.tMean7 = precomputeTrailing(d.tMean, 7);
+  d.tMax3 = precomputeTrailing(d.tMax, 3);
+  d.wind7 = precomputeTrailing(windRaw, 7);
+  d.rhMin7 = precomputeTrailing(rhMinDaily, 7);
+  d.par7 = precomputeTrailing(parRaw, 7);
+
   d.hasTemp = tempDays > n / 2;
   d.hasWater = hasRain && (hasEt0 || d.hasTemp || climate != null) && !d.et0.some(Number.isNaN) && !d.rain.some(Number.isNaN);
 
-  // Vegetation and evaporative stress enter as departures from the pixel's own normal (rule S3).
+  // Vegetation, evaporative stress, root-zone soil moisture and canopy LST enter as departures
+  // from each pixel's own DOY climatology (rule S3; Anderson et al. 2011; Ines et al. 2013).
   const ndvi = findSeries(t.branches.vegetation, 'ndvi');
-  const base = nearestBaseline(ndvi);
-  if (base)
+  const ndviBase = nearestBaseline(ndvi);
+  if (ndviBase)
     put(d.ndviScore, ndvi, 24, (v, i) => {
-      const mean = base.mean[d.doy[i]];
-      const p10 = base.p10[d.doy[i]];
+      const mean = ndviBase.mean[d.doy[i]];
+      const p10 = ndviBase.p10[d.doy[i]];
       return v >= mean || !(mean > p10) ? 1 : clamp01(0.5 + (0.5 * (v - p10)) / (mean - p10));
     });
   put(d.esiScore, findSeries(t.branches.thermal, 'esi'), 10, (v) => clamp01((v + 3) / 2.5));
+
+  const sm = findSeries(t.branches.soilMoisture, 'sm_root');
+  const smBase = nearestBaseline(sm) ?? nearestBaseline(findSeries(t.branches.soilMoisture, 'sm_root_era5'));
+  if (sm && smBase) {
+    put(d.smRaw, sm, 3);
+    for (let i = 0; i < n; i++) {
+      const mean = smBase.mean[d.doy[i]];
+      const p10 = smBase.p10[d.doy[i]];
+      d.smMean[i] = mean;
+      d.smP10[i] = p10;
+      const v = d.smRaw[i];
+      if (!Number.isNaN(v) && !Number.isNaN(mean)) {
+        d.smScore[i] = v >= mean || !(mean > p10) ? 1 : clamp01(0.5 + (0.5 * (v - p10)) / (mean - p10));
+      }
+    }
+  }
+
+  const lst = findSeries(t.branches.thermal, 'lst_day');
+  const lstBase = nearestBaseline(lst);
+  if (lst && lstBase) {
+    put(d.lstScore, lst, 12, (v, i) => {
+      const mean = lstBase.mean[d.doy[i]];
+      const p90 = lstBase.p90[d.doy[i]];
+      if (Number.isNaN(mean) || v <= mean || !(p90 > mean)) return 1;
+      return clamp01(1 - (0.5 * (v - mean)) / Math.max(1.5, p90 - mean));
+    });
+  }
   return d;
 }
 
@@ -377,6 +535,8 @@ interface SeasonFit {
   restKill: number | null;
   photo: number | null;
   quad: Quad;
+  /** Seasonal thermal units (Growing Degree Days above T_absMin, °C·d). */
+  gdd: number | null;
 }
 
 /**
@@ -394,13 +554,18 @@ function seasonFit(crop: CropProfile, c: Climate, start: number, useClim: boolea
   let rainOk = true;
   let kill: number | null = null;
   let photoHits = 0;
+  let gdd = 0;
+  let gddOk = false;
   const classes = crop.req.photoperiod;
   for (let k = 0; k < n; k++) {
     const i = start + k;
+    const mIdx = ((i % 12) + 12) % 12;
     const tm = at(c.tMean, c.clim.tMean, i);
     if (!Number.isNaN(tm)) {
       const s = trapezoid(tm, crop.req.tempC);
       if (temp == null || s < temp) (temp = s), (tempAt = tm);
+      gdd += Math.max(0, tm - crop.req.tempC[0]) * DAYS_IN_MONTH[mIdx];
+      gddOk = true;
     }
     const r = at(c.rain, c.clim.rain, i);
     if (Number.isNaN(r)) rainOk = false;
@@ -408,7 +573,7 @@ function seasonFit(crop: CropProfile, c: Climate, start: number, useClim: boolea
     const tn = at(c.tMin, c.clim.tMin, i);
     if (crop.req.killTempC != null && !Number.isNaN(tn)) kill = Math.min(kill ?? 1, tn < crop.req.killTempC + KILL_MARGIN_C ? 0 : 1);
     if (classes?.length) {
-      const h = dayLengthHours(site.lat, MID_DOY[((i % 12) + 12) % 12]);
+      const h = dayLengthHours(site.lat, MID_DOY[mIdx]);
       if (classes.includes(h < 12 ? 'short' : h <= 14 ? 'neutral' : 'long')) photoHits++;
     }
   }
@@ -453,6 +618,7 @@ function seasonFit(crop: CropProfile, c: Climate, start: number, useClim: boolea
     restKill,
     photo: classes?.length && classes.length < 3 ? GATE.photoperiodMin + (1 - GATE.photoperiodMin) * (photoHits / n) : null,
     quad,
+    gdd: gddOk ? Math.round(gdd) : null,
   };
 }
 
@@ -468,7 +634,7 @@ export function activeSeason(crop: CropProfile, tMean: number[]): { active: bool
   return months >= 12 ? null : { active, months };
 }
 
-const ORDER = { depth: ['very-shallow', 'shallow', 'medium', 'deep'], salinity: ['none', 'low', 'medium', 'high'], fertility: ['low', 'moderate', 'high'] } as const;
+const ORDER = { depth: ['very-shallow', 'shallow', 'medium', 'deep'] } as const;
 
 interface Fit {
   score: number;
@@ -483,12 +649,47 @@ function fmt(q: Quad, digits = 0): string {
   return `${round(q[1], digits)}-${round(q[2], digits)}`;
 }
 
-/** Static crop-site fit for a sowing month (1-12): graded factors, gates, the product and the limiting factor. */
-function fitFor(crop: CropProfile, site: Site, climate: Climate | null, month: number, irrigation: GroundTruth['irrigation'], src: { soil?: string; climate?: string; terrain?: string }): Fit {
+/** Static crop-site fit for a sowing month (1-12): graded factors, gates, parametric combination and limiting factor. */
+function fitFor(
+  crop: CropProfile,
+  site: Site,
+  climate: Climate | null,
+  month: number,
+  irrigation: GroundTruth['irrigation'],
+  src: { soil?: string; climate?: string; terrain?: string },
+  method: ParametricMethod = 'astrovivu-v2',
+): Fit {
   const factors: FactorScore[] = [];
-  const add = (key: string, label: I18nText, score: number | null, weight: number, actual: number | string | null, ideal: string, kind: FactorKind, branch: BranchId, unit?: string, note?: I18nText) => {
+  const aggItems: AggregationItem[] = [];
+  const add = (
+    key: string,
+    label: I18nText,
+    score: number | null,
+    weight: number,
+    actual: number | string | null,
+    ideal: string,
+    kind: FactorKind,
+    branch: BranchId,
+    isGate: boolean,
+    unit?: string,
+    note?: I18nText,
+  ) => {
     const ground = site.groundKeys.has(key);
-    factors.push({ key, label, score: score == null ? null : round(score, 3), weight, actual, ideal, kind, branch, ...(unit ? { unit } : {}), sourceId: ground ? 'ground-truth' : branch === 'soil' ? src.soil : branch === 'terrain' ? src.terrain : src.climate, ...(note ? { note } : {}) });
+    const rounded = score == null ? null : round(score, 3);
+    factors.push({
+      key,
+      label,
+      score: rounded,
+      weight: round(weight, 3),
+      actual,
+      ideal,
+      kind,
+      branch,
+      ...(unit ? { unit } : {}),
+      sourceId: ground ? 'ground-truth' : branch === 'soil' ? src.soil : branch === 'terrain' ? src.terrain : src.climate,
+      ...(note ? { note } : {}),
+    });
+    aggItems.push({ key, score: rounded, weight, isGate });
   };
   const w = FACTOR_WEIGHTS;
   const req = crop.req;
@@ -497,21 +698,37 @@ function fitFor(crop: CropProfile, site: Site, climate: Climate | null, month: n
   const n = windowMonths(crop);
 
   const dorm = climate ? activeSeason(crop, climate.clim.tMean) : null;
-  add('temperature', tx('Temperature in the growing window', 'Nhiệt độ trong vụ'), season?.temp ?? null, w.temperature, season?.tempAt != null ? round(season.tempAt, 1) : null, fmt(req.tempC), 'fixed', 'agromet', '°C', season?.temp == null ? missing : dorm ? tx(`Worst month of the ${n}-month growth window inside the active season; dormant months are judged on survival only.`, `Tháng bất lợi nhất trong ${n} tháng sinh trưởng của mùa hoạt động; tháng cây nghỉ chỉ xét khả năng sống sót.`) : tx(`Worst month of the ${n}-month window.`, `Tháng bất lợi nhất trong ${n} tháng của vụ.`));
+  add(
+    'temperature',
+    tx('Temperature in the growing window', 'Nhiệt độ trong vụ'),
+    season?.temp ?? null,
+    w.temperature,
+    season?.tempAt != null ? round(season.tempAt, 1) : null,
+    fmt(req.tempC),
+    'fixed',
+    'agromet',
+    false,
+    '°C',
+    season?.temp == null
+      ? missing
+      : dorm
+        ? tx(`Worst month of the ${n}-month growth window inside the active season; dormant months are judged on survival only.`, `Tháng bất lợi nhất trong ${n} tháng sinh trưởng của mùa hoạt động; tháng cây nghỉ chỉ xét khả năng sống sót.`)
+        : tx(`Worst month of the ${n}-month window.`, `Tháng bất lợi nhất trong ${n} tháng của vụ.`),
+  );
   const waterNote =
     season?.water == null
       ? missing
       : irrigation === 'full' && season.supplyMm != null && season.supplyMm < season.quad[1]
         ? tx(`Rain and stored soil water supply ${Math.round(season.supplyMm)} mm; irrigation covers the rest.`, `Mưa và ẩm trữ trong đất cung cấp ${Math.round(season.supplyMm)} mm; tưới bù phần còn lại.`)
         : tx(`Rain in the window ${Math.round(season.rainMm ?? 0)} mm + stored soil water ${Math.round(season.storedMm)} mm.`, `Mưa trong vụ ${Math.round(season.rainMm ?? 0)} mm + ẩm trữ trong đất ${Math.round(season.storedMm)} mm.`);
-  add('water', tx('Water over the growing window', 'Nước trong vụ'), season?.water ?? null, w.water, season?.supplyMm != null ? Math.round(season.supplyMm) : null, fmt(season?.quad ?? req.rainMm), 'manageable', 'rainfall', 'mm', waterNote);
+  add('water', tx('Water over the growing window', 'Nước trong vụ'), season?.water ?? null, w.water, season?.supplyMm != null ? Math.round(season.supplyMm) : null, fmt(season?.quad ?? req.rainMm), 'manageable', 'rainfall', false, 'mm', waterNote);
 
   const phMissing = crop.flags?.includes('ph-missing');
-  add('ph', tx('Soil pH', 'pH đất'), site.ph != null && !phMissing ? trapezoid(site.ph, req.ph) : null, w.ph, site.ph, phMissing ? '?' : fmt(req.ph, 1), 'manageable', 'soil', undefined, site.ph == null || phMissing ? missing : undefined);
+  add('ph', tx('Soil pH', 'pH đất'), site.ph != null && !phMissing ? trapezoid(site.ph, req.ph) : null, w.ph, site.ph, phMissing ? '?' : fmt(req.ph, 1), 'manageable', 'soil', false, undefined, site.ph == null || phMissing ? missing : undefined);
   const cls = <T extends string>(have: T | null, need: { opt: readonly T[]; abs: readonly T[] } | undefined) => (have == null || !need ? null : need.opt.includes(have) ? CLASS_SCORE.opt : need.abs.includes(have) ? CLASS_SCORE.abs : CLASS_SCORE.out);
-  add('texture', tx('Soil texture', 'Thành phần cơ giới'), cls(site.texture, req.texture), w.texture, site.texture, req.texture?.opt.join(', ') ?? '?', 'fixed', 'soil', undefined, cls(site.texture, req.texture) == null ? missing : undefined);
-  add('drainage', tx('Drainage', 'Thoát nước'), cls(site.drainage, req.drainage), w.drainage, site.drainage, req.drainage?.opt.join(', ') ?? '?', 'manageable', 'soil', undefined, cls(site.drainage, req.drainage) == null ? missing : undefined);
-  // Ordered classes: at least the optimal class = 1, at least the tolerated class = 0.7, below = 0.15.
+  add('texture', tx('Soil texture', 'Thành phần cơ giới'), cls(site.texture, req.texture), w.texture, site.texture, req.texture?.opt.join(', ') ?? '?', 'fixed', 'soil', false, undefined, cls(site.texture, req.texture) == null ? missing : undefined);
+  add('drainage', tx('Drainage', 'Thoát nước'), cls(site.drainage, req.drainage), w.drainage, site.drainage, req.drainage?.opt.join(', ') ?? '?', 'manageable', 'soil', false, undefined, cls(site.drainage, req.drainage) == null ? missing : undefined);
+
   const rank = <T extends string>(order: readonly T[], have: T | null, need: { opt: T; abs: T } | undefined, higherIsBetter: boolean) => {
     if (have == null || !need) return null;
     const [h, o, a] = [order.indexOf(have), order.indexOf(need.opt), order.indexOf(need.abs)];
@@ -519,56 +736,73 @@ function fitFor(crop: CropProfile, site: Site, climate: Climate | null, month: n
     return ok(o) ? CLASS_SCORE.opt : ok(a) ? CLASS_SCORE.abs : CLASS_SCORE.out;
   };
   const depthClass = site.depthCm == null ? null : site.depthCm < 20 ? 'very-shallow' : site.depthCm < 50 ? 'shallow' : site.depthCm <= 150 ? 'medium' : 'deep';
-  add('depth', tx('Soil depth', 'Độ sâu tầng đất'), rank(ORDER.depth, depthClass, req.depth, true), w.depth, site.depthCm, req.depth?.opt ?? '?', 'fixed', 'soil', 'cm', depthClass == null ? missing : undefined);
-  const salClass = site.ecDsM == null ? null : site.ecDsM < 2 ? 'none' : site.ecDsM < 4 ? 'low' : site.ecDsM <= 10 ? 'medium' : 'high';
-  add('salinity', tx('Salinity', 'Độ mặn'), rank(ORDER.salinity, salClass, req.salinity, false), w.salinity, site.ecDsM, req.salinity?.opt ?? '?', 'manageable', 'soil', 'dS/m', salClass == null ? missing : undefined);
-  // Fertility proxy: organic carbon (0 at 4 g/kg, 1 at 20) and CEC (0 at 4 cmol/kg, 1 at 20), averaged.
-  const parts = [site.socGkg != null ? clamp01((site.socGkg - 4) / 16) : null, site.cec != null ? clamp01((site.cec - 4) / 16) : null].filter((v): v is number => v != null);
-  const fert = parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : null;
-  const fertClass = fert == null ? null : fert < 1 / 3 ? 'low' : fert < 2 / 3 ? 'moderate' : 'high';
-  add('fertility', tx('Soil fertility (organic carbon, CEC)', 'Độ phì (carbon hữu cơ, CEC)'), rank(ORDER.fertility, fertClass, req.fertility, true), w.fertility, fertClass, req.fertility?.opt ?? '?', 'manageable', 'soil', undefined, fertClass == null ? missing : undefined);
+  add('depth', tx('Soil depth', 'Độ sâu tầng đất'), rank(ORDER.depth, depthClass, req.depth, true), w.depth, site.depthCm, req.depth?.opt ?? '?', 'fixed', 'soil', false, 'cm', depthClass == null ? missing : undefined);
+
+  // Continuous Maas-Hoffman (1977) threshold-slope salinity response (FAO-56 Table 23).
+  const salScore = maasHoffmanSalinity(site.ecDsM, req.salinity);
+  add('salinity', tx('Salinity', 'Độ mặn'), salScore, w.salinity, site.ecDsM, req.salinity?.opt ?? '?', 'manageable', 'soil', false, 'dS/m', salScore == null ? missing : undefined);
+
+  // Continuous Oldfield et al. (2019) & Sanchez et al. (2003) Michaelis-Menten SOC/CEC fertility curve.
+  const fertIdx = oldfieldFertilityIndex(site.socGkg, site.cec);
+  const fertClass = fertIdx == null ? null : fertIdx < 0.35 ? 'low' : fertIdx < 0.68 ? 'moderate' : 'high';
+  const fertScore = scoreFertilityContinuous(fertIdx, req.fertility);
+  add('fertility', tx('Soil fertility (organic carbon, CEC)', 'Độ phì (carbon hữu cơ, CEC)'), fertScore, w.fertility, fertClass, req.fertility?.opt ?? '?', 'manageable', 'soil', false, undefined, fertScore == null ? missing : undefined);
+
   const flat = crop.lifeSpan === 'perennial' ? 9 : 4.6; // 16 % and 8 % slope (GAEZ v4 terrain classes)
   const steep = crop.lifeSpan === 'perennial' ? 24 : 16.7; // 45 % and 30 %
-  add('slope', tx('Slope', 'Độ dốc'), site.slopeDeg == null ? null : site.slopeDeg <= flat ? 1 : Math.max(0.15, 1 - (0.85 * (site.slopeDeg - flat)) / (steep - flat)), w.slope, site.slopeDeg, `<= ${flat}`, 'fixed', 'terrain', '°', site.slopeDeg == null ? missing : undefined);
+  add('slope', tx('Slope', 'Độ dốc'), site.slopeDeg == null ? null : site.slopeDeg <= flat ? 1 : Math.max(0.15, 1 - (0.85 * (site.slopeDeg - flat)) / (steep - flat)), w.slope, site.slopeDeg, `<= ${flat}`, 'fixed', 'terrain', false, '°', site.slopeDeg == null ? missing : undefined);
 
-  // Gates: multipliers outside the weighted product. Each one asks for local review.
+  // Non-compensatory bioclimatic & geographical gates outside the graded parametric product.
   const reviewNote = tx('Outside what the crop database records for this crop: needs local review.', 'Nằm ngoài phạm vi cơ sở dữ liệu ghi nhận cho cây này: cần chuyên gia địa phương xem xét.');
   const dormancy = climate ? activeSeason(crop, climate.clim.tMean) : null;
-  // Evergreen perennials keep one combined kill gate (window and rest months), as before.
   if (!dormancy && season && season.restKill != null) season.kill = Math.min(season.kill ?? 1, season.restKill);
   if (dormancy) {
-    // A perennial with a dormant season: winter is judged only on survival, and the active season must be long enough.
     const restT = req.killTempRestC;
-    add('winterSurvival', tx('Winter survival (dormant season)', 'Sống sót qua mùa nghỉ'), season?.restKill ?? null, 1, null, restT != null ? `> ${restT + KILL_MARGIN_C} °C` : '?', 'fixed', 'agromet', undefined,
+    add(
+      'winterSurvival',
+      tx('Winter survival (dormant season)', 'Sống sót qua mùa nghỉ'),
+      season?.restKill ?? null,
+      1,
+      null,
+      restT != null ? `> ${restT + KILL_MARGIN_C} °C` : '?',
+      'fixed',
+      'agromet',
+      true,
+      undefined,
       restT == null
         ? tx('Winter survival not checked: the crop database records no killing temperature for the rest period.', 'Chưa kiểm tra khả năng sống qua mùa nghỉ: cơ sở dữ liệu không ghi nhiệt độ gây chết khi cây nghỉ.')
         : season?.restKill === 0
           ? tx('Winter nights are cold enough to kill the dormant stand.', 'Đêm mùa đông đủ lạnh để làm chết cây đang nghỉ.')
-          : tx(`Dormant for ${12 - dormancy.months} months; winter nights stay above the rest-period killing temperature.`, `Nghỉ ${12 - dormancy.months} tháng; đêm mùa đông vẫn trên ngưỡng nhiệt gây chết khi cây nghỉ.`));
-    add('activeSeason', tx('Length of the active season', 'Độ dài mùa sinh trưởng'), dormancy.months >= n ? 1 : dormancy.months / n, 1, dormancy.months, `>= ${n}`, 'fixed', 'agromet', 'months',
-      tx(`${dormancy.months} months warm enough for growth (mean above ${req.tempC[0]} °C); the crop needs ${n}.`, `${dormancy.months} tháng đủ ấm để sinh trưởng (trung bình trên ${req.tempC[0]} °C); cây cần ${n}.`));
+          : tx(`Dormant for ${12 - dormancy.months} months; winter nights stay above the rest-period killing temperature.`, `Nghỉ ${12 - dormancy.months} tháng; đêm mùa đông vẫn trên ngưỡng nhiệt gây chết khi cây nghỉ.`),
+    );
+    add(
+      'activeSeason',
+      tx('Length of the active season', 'Độ dài mùa sinh trưởng'),
+      dormancy.months >= n ? 1 : dormancy.months / n,
+      1,
+      dormancy.months,
+      `>= ${n}`,
+      'fixed',
+      'agromet',
+      true,
+      'months',
+      tx(`${dormancy.months} months warm enough for growth (mean above ${req.tempC[0]} °C); the crop needs ${n}.`, `${dormancy.months} tháng đủ ấm để sinh trưởng (trung bình trên ${req.tempC[0]} °C); cây cần ${n}.`),
+    );
   }
-  if (season?.kill != null) add('frost', tx('Killing temperature', 'Nhiệt độ gây chết'), season.kill, 1, null, `> ${(req.killTempC ?? 0) + KILL_MARGIN_C} °C`, 'fixed', 'agromet', undefined, season.kill === 0 ? tx('A month of the season has nights cold enough to kill the crop.', 'Có tháng trong vụ đêm lạnh đến mức làm chết cây.') : undefined);
+  if (season?.kill != null) add('frost', tx('Killing temperature', 'Nhiệt độ gây chết'), season.kill, 1, null, `> ${(req.killTempC ?? 0) + KILL_MARGIN_C} °C`, 'fixed', 'agromet', true, undefined, season.kill === 0 ? tx('A month of the season has nights cold enough to kill the crop.', 'Có tháng trong vụ đêm lạnh đến mức làm chết cây.') : undefined);
   if (climate?.zones.length && req.climateZones?.length) {
     const ok = climate.zones.some((z) => req.climateZones!.includes(z));
-    add('climateZone', tx('Climate zone', 'Vùng khí hậu'), ok ? 1 : crop.curated ? GATE.zoneCurated : GATE.zoneRaw, 1, climate.zones.join('/'), req.climateZones.join(' '), 'fixed', 'agromet', undefined, ok ? undefined : reviewNote);
+    add('climateZone', tx('Climate zone', 'Vùng khí hậu'), ok ? 1 : crop.curated ? GATE.zoneCurated : GATE.zoneRaw, 1, climate.zones.join('/'), req.climateZones.join(' '), 'fixed', 'agromet', true, undefined, ok ? undefined : reviewNote);
   }
-  if (season?.photo != null) add('photoperiod', tx('Day length', 'Độ dài ngày'), season.photo, 1, null, req.photoperiod!.join(', '), 'choice', 'agromet', undefined, season.photo < 1 ? reviewNote : undefined);
+  if (season?.photo != null) add('photoperiod', tx('Day length', 'Độ dài ngày'), season.photo, 1, null, req.photoperiod!.join(', '), 'choice', 'agromet', true, undefined, season.photo < 1 ? reviewNote : undefined);
   if (req.latitudeAbs) {
     const limit = site.lat >= 0 ? req.latitudeAbs[1] : req.latitudeAbs[0];
-    if (Math.abs(site.lat) > limit + 3) add('latitude', tx('Latitude', 'Vĩ độ'), GATE.latitude, 1, round(site.lat, 1), `<= ${limit}°`, 'fixed', 'terrain', '°', reviewNote);
+    if (Math.abs(site.lat) > limit + 3) add('latitude', tx('Latitude', 'Vĩ độ'), GATE.latitude, 1, round(site.lat, 1), `<= ${limit}°`, 'fixed', 'terrain', true, '°', reviewNote);
   }
-  if (req.altitudeMaxM != null && site.elevationM != null && site.elevationM > req.altitudeMaxM * 1.1) add('altitude', tx('Altitude', 'Độ cao'), GATE.altitude, 1, site.elevationM, `<= ${req.altitudeMaxM}`, 'fixed', 'terrain', 'm', reviewNote);
+  if (req.altitudeMaxM != null && site.elevationM != null && site.elevationM > req.altitudeMaxM * 1.1) add('altitude', tx('Altitude', 'Độ cao'), GATE.altitude, 1, site.elevationM, `<= ${req.altitudeMaxM}`, 'fixed', 'terrain', true, 'm', reviewNote);
 
-  let score = 1;
-  let limiting: FactorScore | null = null;
-  let worst = 1;
-  for (const f of factors) {
-    if (f.score == null) continue;
-    const contribution = f.score ** f.weight;
-    score *= contribution;
-    if (contribution < worst - 1e-9) (worst = contribution), (limiting = f);
-  }
+  const { score, limitingIndex } = aggregateSuitability(aggItems, method);
+  const limiting = limitingIndex >= 0 ? factors[limitingIndex] : null;
   return { score, factors, limiting, season, month, review: !crop.curated || factors.some((f) => f.note === reviewNote) };
 }
 
@@ -577,7 +811,7 @@ interface YearStats {
   yearsTotal: number;
   scores: number[];
 }
-/** EcoCrop climate score (min of temperature, water and the kill gate) of every year for one sowing month. */
+/** Multi-year agro-climatic reliability & annual climate scores across the 20-year ERA5 history. */
 function yearStats(crop: CropProfile, site: Site, c: Climate, month: number, irrigation: GroundTruth['irrigation']): YearStats {
   const n = windowMonths(crop);
   const scores: number[] = [];
@@ -613,6 +847,8 @@ export interface CropAssessment {
   /** Rain plus stored soil water over the window, and the crop's optimal minimum, mm (null without climate). */
   waterSupplyMm: number | null;
   waterNeedMm: number;
+  /** Seasonal thermal units (Growing Degree Days above T_absMin, °C·d) over the growing window. */
+  seasonalGdd?: number | null;
   needsLocalReview: boolean;
 }
 
@@ -620,17 +856,20 @@ export interface AssessOptions {
   /** 1-12; overrides the ground-truth sowing date and the best-window search. */
   sowingMonth?: number;
   irrigation?: GroundTruth['irrigation'];
+  /** Parametric suitability aggregation operator (default `astrovivu-v2`). */
+  method?: ParametricMethod;
 }
 
 const sources = (t: FieldTelemetry) => ({ soil: t.branches.soil?.sources[0], terrain: t.branches.terrain?.sources[0], climate: t.climateSourceId });
 
 function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Climate | null, opts: AssessOptions = {}): CropAssessment & { fits: Fit[]; stats: (YearStats | null)[] } {
   const irrigation = opts.irrigation ?? input.groundTruth.irrigation ?? 'rainfed';
+  const method = opts.method ?? 'astrovivu-v2';
   const src = sources(input.telemetry);
   const fits: Fit[] = [];
   const stats: (YearStats | null)[] = [];
   for (let m = 1; m <= 12; m++) {
-    fits.push(fitFor(crop, site, climate, m, irrigation, src));
+    fits.push(fitFor(crop, site, climate, m, irrigation, src, method));
     stats.push(climate ? yearStats(crop, site, climate, m, irrigation) : null);
   }
   const rel = (i: number) => (stats[i]?.yearsTotal ? stats[i]!.yearsOk / stats[i]!.yearsTotal : 0);
@@ -639,22 +878,18 @@ function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Clima
   if (!dormancy) {
     for (let i = 1; i < 12; i++) if (fits[i].score > fits[best].score + 1e-9 || (Math.abs(fits[i].score - fits[best].score) <= 1e-9 && rel(i) > rel(best) + 1e-9)) best = i;
   } else {
-    // A dormant perennial is not re-sown each year: its growth window sits inside the active season,
-    // placed on temperature first so that a water deficit is reported as water, not as a winter month.
     const n = Math.min(windowMonths(crop), dormancy.months);
     const pool = Array.from({ length: 12 }, (_, i) => i).filter((i) => Array.from({ length: n }, (_, k) => dormancy.active[(i + k) % 12]).every(Boolean));
     const temp = (i: number) => fits[i].season?.temp ?? 0;
     best = pool[0] ?? 0;
     for (const i of pool) if (temp(i) > temp(best) + 1e-9 || (Math.abs(temp(i) - temp(best)) <= 1e-9 && fits[i].score > fits[best].score + 1e-9)) best = i;
   }
-  // The planting date of a perennial stand does not move its growth window.
   const gtMonth = input.groundTruth.sowingDate && !dormancy ? Number(input.groundTruth.sowingDate.slice(5, 7)) : undefined;
   const month = opts.sowingMonth ?? gtMonth ?? best + 1;
   const fit = fits[month - 1];
   const st = stats[month - 1];
   const factors = [...fit.factors];
   let limiting = fit.limiting;
-  // The sowing date is a free choice: show what the chosen month costs against the best one.
   if (climate && fits[best].score > 0) {
     const ratio = clamp01(fit.score / fits[best].score);
     const sow: FactorScore = {
@@ -667,7 +902,7 @@ function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Clima
       unit: 'month',
       kind: 'choice',
       branch: 'agromet',
-      note: tx('Share of the best window\'s score reached by this sowing month; already inside temperature and water.', 'Tỉ lệ điểm so với thời vụ tốt nhất; đã nằm trong điểm nhiệt độ và nước.'),
+      note: tx("Share of the best window's score reached by this sowing month; already inside temperature and water.", 'Tỉ lệ điểm so với thời vụ tốt nhất; đã nằm trong điểm nhiệt độ và nước.'),
     };
     factors.push(sow);
     if (ratio < 0.98 && (!limiting || ratio < (limiting.score ?? 1) ** limiting.weight)) limiting = sow;
@@ -686,6 +921,7 @@ function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Clima
     yearScores: st?.scores ?? [],
     waterSupplyMm: fit.season?.supplyMm ?? null,
     waterNeedMm: Math.round(fit.season?.quad[1] ?? crop.req.rainMm[1]),
+    seasonalGdd: fit.season?.gdd ?? null,
     needsLocalReview: fit.review,
     fits,
     stats,
@@ -711,13 +947,13 @@ export interface CropRanking {
 }
 
 /** Second-stage ranking of the curated crops (or `cropIds`) at their best sowing window. */
-export function rankCrops(input: ModelInput, opts: { limit?: number; cropIds?: string[]; irrigation?: GroundTruth['irrigation'] } = {}): CropRanking[] {
+export function rankCrops(input: ModelInput, opts: { limit?: number; cropIds?: string[]; irrigation?: GroundTruth['irrigation']; method?: ParametricMethod } = {}): CropRanking[] {
   const site = buildSite(input);
   const climate = prepare(input).climate;
   const avoid = new Set(input.groundTruth.avoidCropIds ?? []);
   const crops = (opts.cropIds?.map((id) => getCrop(id)).filter((c): c is CropProfile => !!c) ?? listCrops()).filter((c) => !avoid.has(c.id));
   const out = crops.map((crop) => {
-    const a = assess(crop, { ...input, groundTruth: { ...input.groundTruth, sowingDate: undefined } }, site, climate, { irrigation: opts.irrigation });
+    const a = assess(crop, { ...input, groundTruth: { ...input.groundTruth, sowingDate: undefined } }, site, climate, { irrigation: opts.irrigation, method: opts.method });
     const reliability = a.reliability ? a.reliability.yearsOk / a.reliability.yearsTotal : null;
     return { cropId: crop.id, compatibility: round(a.bestCompatibility, 3), reliability, bestSowingMonth: a.bestSowingMonth, limiting: a.limiting?.key ?? null, rankScore: round(a.bestCompatibility * (0.5 + 0.5 * (reliability ?? 0.5)), 4) };
   });
@@ -754,20 +990,23 @@ export function stageAt(crop: CropProfile, dayInSeason: number): GrowthStage {
   return mk(dayInSeason >= 365 - 21 ? 'pre-sowing' : 'fallow', 0, null);
 }
 
-function kcAt(crop: CropProfile, stage: GrowthStage): number {
+/** FAO-56 single Kc curve with climatic adjustment of Kc,mid and Kc,end (eq. 62 & 65) when RH and wind exist. */
+function kcAtClimatic(crop: CropProfile, stage: GrowthStage, u2Ms: number, rhMinPct: number, heightM: number): number {
   const w = crop.water;
   const kc = w?.kc ?? { ini: 0.5, mid: 1.05, end: 0.7 };
   const [a, b, c, d] = w?.stages ?? DEFAULT_STAGES;
+  const kcMid = adjustKcClimate(kc.mid, u2Ms, rhMinPct, heightM);
+  const kcEnd = adjustKcClimate(kc.end, u2Ms, rhMinPct, heightM);
   const f = stage.progress;
   switch (stage.id) {
     case 'initial':
       return kc.ini;
     case 'development':
-      return kc.ini + ((kc.mid - kc.ini) * (f - a)) / b;
+      return kc.ini + ((kcMid - kc.ini) * (f - a)) / b;
     case 'mid-season':
-      return kc.mid;
+      return kcMid;
     case 'late-season':
-      return kc.mid + ((kc.end - kc.mid) * (f - a - b - c)) / d;
+      return kcMid + ((kcEnd - kcMid) * (f - a - b - c)) / d;
     default:
       return crop.lifeSpan === 'perennial' ? kc.ini : FALLOW_KC;
   }
@@ -775,27 +1014,56 @@ function kcAt(crop: CropProfile, stage: GrowthStage): number {
 
 interface Balance {
   ks: Float64Array;
+  kAer: Float64Array;
   /** Sums over in-season days. */
   eta: number;
   etc: number;
+  /** Stage-sensitivity weighted seasonal relative evapotranspiration (Jensen 1968 / FAO-66). */
+  etaWeightedRatio: number | null;
   irrigationMm: number;
   irrigation: Float64Array;
 }
 
-/** FAO-56 daily root-zone water balance (eq. 82-86) with curve-number runoff; two passes so the start is not arbitrary. */
-function waterBalance(d: Daily, kc: Float64Array, inSeason: Uint8Array, seasonStart: Uint8Array, taw: number, pTable: number, cn: number, irrigation: GroundTruth['irrigation'], budgetMm: number, rainFactor: number): Balance {
+/**
+ * FAO-56 daily root-zone water balance (eq. 82-86) extended with Borg & Grimes (1986) dynamic root
+ * depth Zr(t), curve-number runoff and Feddes/AquaCrop anaerobiosis waterlogging factor Kaer; two
+ * passes so the initial soil water state is independent of an arbitrary guess.
+ */
+function waterBalance(
+  d: Daily,
+  kc: Float64Array,
+  zrDaily: Float64Array,
+  stageSens: Float64Array,
+  inSeason: Uint8Array,
+  seasonStart: Uint8Array,
+  awc: number,
+  pTable: number,
+  cn: number,
+  percMaxMm: number,
+  hydrophytic: boolean,
+  irrigation: GroundTruth['irrigation'],
+  budgetMm: number,
+  rainFactor: number,
+): Balance {
   const ks = new Float64Array(d.n).fill(1);
+  const kAer = new Float64Array(d.n).fill(1);
   const irr = new Float64Array(d.n);
   const s = 25400 / cn - 254;
-  let dr = taw / 2;
+  let dr = (1000 * awc * zrDaily[0]) / 2;
+  let surplus = 0;
   let eta = 0;
   let etc = 0;
+  let etaW = 0;
+  let etcW = 0;
   let total = 0;
   let budget = budgetMm;
   for (let pass = 0; pass < 2; pass++) {
-    eta = etc = total = 0;
+    eta = etc = etaW = etcW = total = 0;
     for (let i = 0; i < d.n; i++) {
       if (seasonStart[i]) budget = budgetMm;
+      const zr = zrDaily[i];
+      const taw = Math.max(15, 1000 * awc * zr);
+      dr = clamp(dr, 0, taw);
       const demand = kc[i] * d.et0[i];
       const raw = clamp(pTable + 0.04 * (5 - demand), 0.1, 0.8) * taw;
       let water = 0;
@@ -805,25 +1073,37 @@ function waterBalance(d: Daily, kc: Float64Array, inSeason: Uint8Array, seasonSt
         dr -= water;
       }
       const k = dr > raw ? Math.max(0, (taw - dr) / (taw - raw)) : 1;
+      const aer = feddesAerationFactor(surplus, zr, hydrophytic);
+      const kEff = k * aer;
       const p = d.rain[i] * rainFactor;
       const runoff = p > 0.2 * s ? (p - 0.2 * s) ** 2 / (p + 0.8 * s) : 0;
       const effective = p < 0.2 * d.et0[i] ? 0 : p - runoff; // FAO-56: tiny showers evaporate
-      dr = clamp(dr - effective + k * demand, 0, taw);
+      const nextDr = dr - effective + kEff * demand;
+      if (nextDr < 0) {
+        const excess = -nextDr;
+        const maxSurplus = Math.max(20, 1000 * 0.08 * zr);
+        surplus = clamp(surplus + excess - percMaxMm, 0, maxSurplus);
+        dr = 0;
+      } else {
+        surplus = Math.max(0, surplus - percMaxMm);
+        dr = Math.min(taw, nextDr);
+      }
       if (pass === 1) {
         ks[i] = k;
+        kAer[i] = aer;
         irr[i] = water;
-        if (inSeason[i]) (eta += k * demand), (etc += demand), (total += water);
+        if (inSeason[i]) {
+          eta += kEff * demand;
+          etc += demand;
+          const sw = stageSens[i];
+          etaW += sw * kEff * demand;
+          etcW += sw * demand;
+          total += water;
+        }
       }
     }
   }
-  return { ks, eta, etc, irrigationMm: total, irrigation: irr };
-}
-
-function trailingMean(a: Float64Array, i: number, n: number): number {
-  let s = 0;
-  let c = 0;
-  for (let k = Math.max(0, i - n + 1); k <= i; k++) if (!Number.isNaN(a[k])) (s += a[k]), c++;
-  return c ? s / c : NaN;
+  return { ks, kAer, eta, etc, etaWeightedRatio: etcW > 0 ? etaW / etcW : null, irrigationMm: total, irrigation: irr };
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -859,6 +1139,33 @@ function rainBias(input: ModelInput, d: Daily, calibration: CalibrationNote[]): 
   return factor;
 }
 
+function soilMoistureBias(input: ModelInput, d: Daily, calibration: CalibrationNote[]): number {
+  const m = input.groundTruth.measuredSoilMoisture;
+  if (!m?.length) return 1;
+  let sat = 0;
+  let ground = 0;
+  let count = 0;
+  for (const s of m) {
+    const i = diffDays(s.t, d.start);
+    if (i >= 0 && i < d.n && !Number.isNaN(d.smRaw[i]) && d.smRaw[i] > 0 && s.v >= 0) {
+      sat += d.smRaw[i];
+      ground += s.v;
+      count++;
+    }
+  }
+  if (!count || !(sat > 0) || !(ground > 0)) return 1;
+  const factor = clamp(ground / sat, 0.35, 3);
+  calibration.push({
+    key: 'soilMoisture',
+    label: tx('Soil moisture', 'Độ ẩm đất'),
+    satellite: round(sat / count, 3),
+    ground: round(ground / count, 3),
+    delta: round((ground - sat) / count, 3),
+    effect: tx(`Satellite root-zone soil moisture is bias-scaled by ${round(factor, 2)}.`, `Độ ẩm vùng rễ vệ tinh được hiệu chỉnh hệ số ${round(factor, 2)}.`),
+  });
+  return factor;
+}
+
 /** Lower-cases only the first letter, so units and symbols inside a label survive ("Soil pH" -> "soil pH"). */
 const lowerFirst = (s: string): string => s.charAt(0).toLowerCase() + s.slice(1);
 
@@ -872,6 +1179,7 @@ const OVERRIDE_FIELDS: Record<string, (keyof GroundTruth)[]> = {
   irrigation: ['irrigation', 'waterSource', 'waterReliability'],
   sowing: ['sowingDate'],
   rain: ['measuredRain'],
+  soilMoisture: ['measuredSoilMoisture'],
 };
 
 function withoutOverride(gt: GroundTruth, key: string): GroundTruth | null {
@@ -900,68 +1208,86 @@ function scoreLedger(input: ModelInput, notes: CalibrationNote[], withScore: num
   });
 }
 
-export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolean; ledger?: boolean } = {}): ScoreDetail {
+export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolean; ledger?: boolean; method?: ParametricMethod } = {}): ScoreDetail {
   const { telemetry: t, groundTruth: gt } = input;
   const crop = getCrop(input.cropId);
   const site = buildSite(input);
   const { climate, daily: d } = prepare(input);
-  const a = crop ? assess(crop, input, site, climate) : null;
+  const a = crop ? assess(crop, input, site, climate, { method: opts.method }) : null;
   const irrigation = gt.irrigation ?? 'rainfed';
   const calibration = [...site.calibration];
-  if (gt.irrigation && gt.irrigation !== 'rainfed') calibration.push({ key: 'irrigation', label: tx('Irrigation', 'Tưới'), satellite: 'rainfed', ground: gt.irrigation, effect: gt.irrigation === 'full' ? tx('Rainfall is no longer a limiting factor; the water balance irrigates on demand.', 'Mưa không còn là yếu tố giới hạn; cân bằng nước tưới theo nhu cầu.') : tx('Irrigation closes part of the deficit, up to 30 % of the crop\'s optimal season water.', 'Tưới bù một phần thiếu hụt, tối đa 30 % nhu cầu nước tối ưu của vụ.') });
+  if (gt.irrigation && gt.irrigation !== 'rainfed')
+    calibration.push({
+      key: 'irrigation',
+      label: tx('Irrigation', 'Tưới'),
+      satellite: 'rainfed',
+      ground: gt.irrigation,
+      effect: gt.irrigation === 'full' ? tx('Rainfall is no longer a limiting factor; the water balance irrigates on demand.', 'Mưa không còn là yếu tố giới hạn; cân bằng nước tưới theo nhu cầu.') : tx("Irrigation closes part of the deficit, up to 30 % of the crop's optimal season water.", 'Tưới bù một phần thiếu hụt, tối đa 30 % nhu cầu nước tối ưu của vụ.'),
+    });
   if (crop && a && !a.sowingAssumed && gt.sowingDate) calibration.push({ key: 'sowing', label: tx('Sowing date', 'Ngày gieo'), satellite: `month ${a.bestSowingMonth} (best window)`, ground: gt.sowingDate, effect: tx('Growth stages are anchored on this date.', 'Các giai đoạn sinh trưởng được tính từ ngày này.') });
   const bias = rainBias(input, d, calibration);
+  const smFactor = soilMoistureBias(input, d, calibration);
 
-  // Stage calendar: the farmer's sowing date, else day 1 of the best month, repeated every year.
   const sowDoy = crop && a ? (gt.sowingDate ? dayOfYear(gt.sowingDate) : dayOfYear(`2025-${String(a.sowingMonth).padStart(2, '0')}-01`)) : 1;
   const stages: (GrowthStage | null)[] = new Array(d.n).fill(null);
   const kc = new Float64Array(d.n).fill(1);
+  const zrMax = crop?.water?.rootDepthM ?? 1;
+  const zrDaily = new Float64Array(d.n).fill(zrMax);
+  const stageSens = new Float64Array(d.n).fill(1);
   const inSeason = new Uint8Array(d.n);
   const seasonStart = new Uint8Array(d.n);
-  // A perennial with a dormant season rests outside its growth window: dormant, not fallow and not failing.
   const dormancy = crop && climate ? activeSeason(crop, climate.clim.tMean) : null;
   const dormantStage: GrowthStage = { id: 'dormant', label: STAGE_LABEL.dormant, progress: 0, dayInSeason: null };
-  // An evergreen tree between two cycles keeps growing: not fallow, not off-season.
   const restStage: GrowthStage = { id: 'fallow', label: tx('Between cycles (tree rest)', 'Giữa hai chu kỳ (cây nghỉ)'), progress: 0, dayInSeason: null };
-  // An annual the farmer grows several times a year (the rotation lists it more than once, or in given
-  // months) follows that calendar: each block starts on the 1st of its first month.
   const blocks = crop && crop.lifeSpan !== 'perennial' && !gt.sowingDate ? (gt.currentRotation ?? []).filter((b) => b.cropId === crop.id && b.startMonth >= 1 && b.startMonth <= 12) : [];
   const blockStartDoy = blocks.map((b) => dayOfYear(`2025-${String(b.startMonth).padStart(2, '0')}-01`));
   if (crop) {
     const cache = new Map<number, GrowthStage>();
+    const len = cycleLength(crop);
+    const [sIni, sDev] = crop.water?.stages ?? DEFAULT_STAGES;
+    const rootDevDays = Math.max(15, Math.round((sIni + sDev) * len));
+    const isPerennial = crop.lifeSpan === 'perennial';
+    const heightM = cropCanopyHeightM(crop);
     for (let i = 0; i < d.n; i++) {
       const doy = Math.min(d.doy[i], 365);
-      // Days since the most recent block start (or the single sowing day).
       const dis = blocks.length ? Math.min(...blockStartDoy.map((b) => (doy - b + 365) % 365)) : (doy - sowDoy + 365) % 365;
       let st = cache.get(dis);
       if (!st) cache.set(dis, (st = stageAt(crop, dis)));
-      if (st.dayInSeason == null && crop.lifeSpan === 'perennial') st = dormancy ? dormantStage : restStage;
+      if (st.dayInSeason == null && isPerennial) st = dormancy ? dormantStage : restStage;
       stages[i] = st;
-      kc[i] = kcAt(crop, st);
-      inSeason[i] = st.dayInSeason != null && st.id !== 'harvest' ? 1 : 0;
+      const activeDay = st.dayInSeason != null && st.id !== 'harvest';
+      inSeason[i] = activeDay ? 1 : 0;
       seasonStart[i] = dis === 0 ? 1 : 0;
+      kc[i] = kcAtClimatic(crop, st, d.wind7[i], d.rhMin7[i], heightM);
+      zrDaily[i] = borgGrimesRootDepth(st.dayInSeason, rootDevDays, zrMax, isPerennial);
+      stageSens[i] = activeDay ? (STAGE_SENSITIVITY[st.id] ?? 1) : 0.5;
     }
   } else inSeason.fill(1);
 
   const tempC = crop?.req.tempC ?? GENERIC_TEMP;
   const texture = site.texture ?? 'medium';
-  const zr = crop?.water?.rootDepthM ?? 1;
   const optWater = crop ? crop.req.rainMm[1] * Math.min(1, windowMonths(crop) / 4) : 0;
   const reliable = gt.waterReliability === 'often-short' ? SUPPLEMENTAL_SHARE : gt.waterReliability === 'dry-season-short' ? 2 * SUPPLEMENTAL_SHARE : Infinity;
   const budget = !crop ? Infinity : irrigation === 'supplemental' ? SUPPLEMENTAL_SHARE * optWater : reliable * optWater;
-  const bal = d.hasWater ? waterBalance(d, kc, inSeason, seasonStart, 1000 * site.awc * zr, crop?.water?.depletionFraction ?? 0.5, CN_BY_TEXTURE[texture], crop ? irrigation : 'rainfed', budget, bias) : null;
+  const percMaxMm = drainagePercolationMmDay(site.drainage, texture);
+  const hydrophytic = isHydrophyticCrop(crop);
+  const bal = d.hasWater
+    ? waterBalance(d, kc, zrDaily, stageSens, inSeason, seasonStart, site.awc, crop?.water?.depletionFraction ?? 0.5, CN_BY_TEXTURE[texture], percMaxMm, hydrophytic, crop ? irrigation : 'rainfed', budget, bias)
+    : null;
   const ky = Math.min(1.5, crop?.water?.ky ?? 1);
 
-  // Season outcome: soil and temperature fit x the more limiting of rainfall adequacy and the FAO-33 response.
+  // Season outcome: non-water compatibility x the more limiting of seasonal rainfall adequacy and
+  // stage-weighted FAO-33/FAO-66 water-aeration response (Jensen 1968; Steduto et al. 2012).
   const waterFactor = a?.factors.find((f) => f.key === 'water')?.score ?? null;
-  const f33 = bal && bal.etc > 0 ? clamp01(1 - ky * (1 - bal.eta / bal.etc)) : null;
+  const etRatio = bal && bal.etc > 0 ? 0.5 * (bal.eta / bal.etc) + 0.5 * (bal.etaWeightedRatio ?? bal.eta / bal.etc) : null;
+  const f33 = etRatio != null ? clamp01(1 - ky * (1 - etRatio)) : null;
   const nonWater = a ? (waterFactor != null && waterFactor > 0 ? a.compatibility / waterFactor : waterFactor === 0 ? 0 : a.compatibility) : null;
   const expected = a && nonWater != null ? clamp01(nonWater * Math.min(waterFactor ?? 1, f33 ?? 1)) : null;
-  const yieldFractions = a && nonWater != null ? a.yearScores.map((s) => clamp01(nonWater * Math.min(s, 1) * (a.factors.find((f) => f.key === 'temperature')?.score ? 1 : 1))) : [];
+  const yieldFractions = a && nonWater != null ? a.yearScores.map((s) => clamp01(nonWater * Math.min(s, 1))) : [];
 
   const compat = a ? a.compatibility : null;
   const confStatic = a ? (climate ? 0.5 * branchConfidence(t, ['agromet', 'rainfall']) : 0) + 0.5 * (site.groundKeys.size ? Math.max(0.9, branchConfidence(t, ['soil'])) : branchConfidence(t, ['soil'])) : 0;
-  const confDyn = (bal ? 0.5 * branchConfidence(t, ['rainfall', 'agromet']) : 0) + (d.hasTemp ? 0.3 * branchConfidence(t, ['agromet']) : 0) + 0.2 * branchConfidence(t, ['vegetation']);
+  const confDyn = (bal ? 0.45 * branchConfidence(t, ['rainfall', 'agromet']) : 0) + (d.hasTemp ? 0.25 * branchConfidence(t, ['agromet']) : 0) + 0.3 * branchConfidence(t, ['vegetation', 'thermal', 'soilMoisture']);
   const confidence = round(clamp01(a ? 0.5 * confStatic + 0.5 * confDyn : confDyn), 2);
 
   const snapshots: ScoreSnapshot[] = [];
@@ -974,23 +1300,36 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
   for (let i = 0; i < d.n; i++) {
     const stage = stages[i];
     const active = !crop || inSeason[i] === 1;
-    const t7 = trailingMean(d.tMean, i, 7);
-    const heat = Number.isNaN(t7) ? null : t7 > tempC[2] ? clamp01((tempC[3] - t7) / (tempC[3] - tempC[2])) : 1;
-    let cold = Number.isNaN(t7) ? null : t7 < tempC[1] ? clamp01((t7 - tempC[0]) / (tempC[1] - tempC[0])) : 1;
+    const t7 = d.tMean7[i];
+    const heat = asymmetricHeatFactor(t7, d.tMax3[i], tempC, stage?.id, active);
+    let cold = Number.isNaN(t7) ? null : t7 < tempC[1] ? clamp01((t7 - tempC[0]) / Math.max(1, tempC[1] - tempC[0])) : 1;
     if (cold != null && crop?.req.killTempC != null && active && !Number.isNaN(d.tMin[i]) && d.tMin[i] <= crop.req.killTempC) cold = Math.min(cold, 0.1);
     const ksNow = bal ? bal.ks[i] : null;
-    const sens = active && stage ? (STAGE_SENSITIVITY[stage.id] ?? 1) : 0.5;
-    const waterIdx = ksNow == null ? null : clamp01(1 - ky * sens * (1 - ksNow));
+    const aerNow = bal ? bal.kAer[i] : 1;
+    const sens = stageSens[i];
+    const waterIdx = ksNow == null ? null : clamp01(1 - ky * sens * (1 - ksNow * aerNow));
+    const radIdx = active ? monteithRadiationFactor(d.par7[i], crop) : null;
     const thermal = heat == null || cold == null ? null : Math.min(heat, cold);
-    const model = waterIdx == null && thermal == null ? null : (waterIdx ?? 1) * (thermal ?? 1);
+    const radTerm = radIdx == null ? 1 : radIdx ** 0.35;
+    const model = waterIdx == null && thermal == null ? null : (waterIdx ?? 1) * (thermal ?? 1) * radTerm;
+
     const ndvi = active && !Number.isNaN(d.ndviScore[i]) ? d.ndviScore[i] : null;
     const esi = !Number.isNaN(d.esiScore[i]) ? d.esiScore[i] : null;
-    const observed = ndvi == null && esi == null ? null : ((ndvi ?? 0) * (ndvi == null ? 0 : 0.65) + (esi ?? 0) * (esi == null ? 0 : 0.35)) / ((ndvi == null ? 0 : 0.65) + (esi == null ? 0 : 0.35));
-    // No dynamic data at all is "no stress detected", shown with zero dynamic confidence.
+    let smObs: number | null = null;
+    if (!Number.isNaN(d.smScore[i])) {
+      if (smFactor === 1) smObs = d.smScore[i];
+      else {
+        const vCal = d.smRaw[i] * smFactor;
+        const m = d.smMean[i];
+        const p10 = d.smP10[i];
+        smObs = vCal >= m || !(m > p10) ? 1 : clamp01(0.5 + (0.5 * (vCal - p10)) / (m - p10));
+      }
+    }
+    const lstObs = active && !Number.isNaN(d.lstScore[i]) ? d.lstScore[i] : null;
+    const observed = assimilateSatelliteCondition({ ndvi, esi, smRoot: smObs, lstCanopy: lstObs });
+
     const k = model == null ? (observed ?? 1) : observed == null ? model : (1 - OBSERVED_BLEND) * model + OBSERVED_BLEND * observed;
     const condition = Math.round(100 * k);
-    // No crop in the ground (fallow, before sowing, dormant): the headline carries the outlook for the
-    // next season, not a reading of a crop that is not there.
     const offSeason = !!crop && stage != null && (stage.id === 'dormant' || (crop.lifeSpan !== 'perennial' && (stage.id === 'fallow' || stage.id === 'pre-sowing')));
     const productivity = compat == null ? condition : offSeason ? Math.round(100 * compat) : Math.round(100 * compat * k);
     if (active) (sum += productivity), count++;
@@ -999,11 +1338,16 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
     if (opts.snapshots === false) continue;
 
     const factors: FactorScore[] = [...staticFactors];
-    if (ksNow != null) factors.push(dyn('rootWater', tx('Root-zone water (water balance)', 'Nước vùng rễ (cân bằng nước)'), waterIdx!, 1, round(ksNow, 2), 'Ks = 1', 'manageable', 'rainfall'));
+    if (ksNow != null) factors.push(dyn('rootWater', tx('Root-zone water (water balance)', 'Nước vùng rễ (cân bằng nước)'), waterIdx!, 1, round(ksNow * aerNow, 2), 'Ks = 1', 'manageable', 'rainfall'));
+    if (aerNow < 0.99) factors.push(dyn('waterlogging', tx('Root-zone aeration (waterlogging)', 'Thông khí vùng rễ (ngập úng)'), aerNow, 0.7, round(aerNow, 2), 'Kaer = 1', 'manageable', 'soil'));
     if (heat != null) factors.push(dyn('heat', tx('Heat stress', 'Stress nóng'), heat, 1, round(t7, 1), `<= ${tempC[2]}`, 'fixed', 'agromet', '°C'));
     if (cold != null) factors.push(dyn('cold', tx('Cold stress', 'Stress lạnh'), cold, 1, round(t7, 1), `>= ${tempC[1]}`, 'fixed', 'agromet', '°C'));
-    if (ndvi != null) factors.push(dyn('vigor', tx('Vegetation vigour against its own normal', 'Sức sống thảm thực vật so với mức thường năm'), ndvi, OBSERVED_BLEND * 0.65, null, 'NDVI >= normal', 'fixed', 'vegetation'));
-    if (esi != null) factors.push(dyn('evapStress', tx('Evaporative stress', 'Stress bốc thoát hơi'), esi, OBSERVED_BLEND * 0.35, null, 'ESI >= -0.5', 'fixed', 'thermal', 'σ'));
+    if (radIdx != null) factors.push(dyn('radiation', tx('Solar radiation (PAR)', 'Bức xạ quang hợp (PAR)'), radIdx, 0.35, round(d.par7[i], 1), 'PAR >= sat', 'fixed', 'agromet', 'MJ/m²/d'));
+    if (ndvi != null) factors.push(dyn('vigor', tx('Vegetation vigour against its own normal', 'Sức sống thảm thực vật so với mức thường năm'), ndvi, round(OBSERVED_BLEND * 0.42, 3), null, 'NDVI >= normal', 'fixed', 'vegetation'));
+    if (esi != null) factors.push(dyn('evapStress', tx('Evaporative stress', 'Stress bốc thoát hơi'), esi, round(OBSERVED_BLEND * 0.24, 3), null, 'ESI >= -0.5', 'fixed', 'thermal', 'σ'));
+    if (smObs != null) factors.push(dyn('soilMoistureObs', tx('Observed root-zone moisture vs normal', 'Độ ẩm vùng rễ quan sát so với thường năm'), smObs, round(OBSERVED_BLEND * 0.2, 3), null, 'SM >= normal', 'manageable', 'soilMoisture'));
+    if (lstObs != null && lstObs < 0.99) factors.push(dyn('canopyTemp', tx('Daytime canopy thermal anomaly', 'Dị thường nhiệt tán lá ban ngày'), lstObs, round(OBSERVED_BLEND * 0.14, 3), null, 'LST <= normal', 'fixed', 'thermal', '°C'));
+
     let limiting: FactorScore | null = null;
     let worst = 0.98;
     for (const f of factors) {
@@ -1011,7 +1355,6 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
       const c = f.score ** Math.min(1, f.weight);
       if (c < worst) (worst = c), (limiting = f);
     }
-    // Off-season, today's weather limits nothing that is growing; the limit is the static one of the next season.
     if (offSeason) limiting = a?.limiting ? (factors.find((f) => f.key === a.limiting!.key) ?? null) : null;
     if (limiting) factors[factors.indexOf(limiting)] = { ...limiting, limiting: true };
     snapshots.push({ t: addDays(d.start, i), productivity, condition, compatibility: compat == null ? null : Math.round(100 * compat), stage, factors, limiting: limiting?.key ?? null, confidence, ...(offSeason ? { offSeason: true } : {}) });

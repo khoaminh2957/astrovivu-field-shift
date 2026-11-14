@@ -8,7 +8,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './globe.css';
 import './strings';
-import { Map as MapLibreMap, setMaxParallelImageRequests, setWorkerUrl, type ErrorEvent, type GeoJSONSource, type MapMovementEvent } from 'maplibre-gl';
+import { Map as MapLibreMap, Marker, setMaxParallelImageRequests, setWorkerUrl, type ErrorEvent, type GeoJSONSource, type MapMovementEvent } from 'maplibre-gl';
 // MapLibre 6 ships its worker as a separate module and finds it next to its own file, which a
 // bundler moves. Vite's `?url` gives the address the file really has, in dev and in the build.
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
@@ -176,6 +176,9 @@ export class GlobeEngine {
   private ratioTimer: ReturnType<typeof setTimeout> | null = null;
   private viewRaf = 0;
   private paintKey = '';
+  private pickMarker: Marker | null = null;
+  private pickMarkerEl: HTMLDivElement | null = null;
+  private promptMarkers: Marker[] = [];
   private readonly warned = new Set<string>();
 
   constructor(host: HTMLElement, opts: { motion?: MotionPref } = {}) {
@@ -282,6 +285,56 @@ export class GlobeEngine {
     if (this.ready) this.measure.stop();
   }
 
+  /** Crosshair targeting cursor while "Select on the map" is active. */
+  setPickMode(on: boolean): void {
+    if (this.destroyed) return;
+    this.mapEl.classList.toggle('is-picking', on);
+    if (!on) {
+      this.setPickTarget(null);
+      this.setPromptMarkers([]);
+    }
+  }
+
+  /** Render LabelMe / SAM-style `+` (include) and `−` (exclude) prompt pins on the map. */
+  setPromptMarkers(points: readonly { at: LngLat; kind: 'positive' | 'negative' }[]): void {
+    for (const m of this.promptMarkers) m.remove();
+    this.promptMarkers = [];
+    if (!this.ready || this.destroyed || !points.length) return;
+    for (const p of points) {
+      const el = document.createElement('div');
+      el.className = `globe-prompt-pin globe-prompt-pin--${p.kind}`;
+      el.setAttribute('aria-hidden', 'true');
+      el.textContent = p.kind === 'positive' ? '+' : '−';
+      const marker = new Marker({ element: el, anchor: 'center', subpixelPositioning: true }).setLngLat(p.at).addTo(this.map);
+      this.promptMarkers.push(marker);
+    }
+  }
+
+  /** Live pin at the clicked coordinate (pulsing while Sentinel-2 analyses, settled once found). */
+  setPickTarget(at: LngLat | null, busy = false): void {
+    if (!at || !this.ready || this.destroyed) {
+      this.pickMarker?.remove();
+      this.pickMarker = null;
+      this.pickMarkerEl = null;
+      return;
+    }
+    if (!this.pickMarker || !this.pickMarkerEl) {
+      const el = document.createElement('div');
+      el.className = 'globe-pick-target';
+      el.setAttribute('aria-hidden', 'true');
+      const pulse = document.createElement('span');
+      pulse.className = 'globe-pick-target__pulse';
+      const dot = document.createElement('span');
+      dot.className = 'globe-pick-target__dot';
+      el.append(pulse, dot);
+      this.pickMarkerEl = el;
+      this.pickMarker = new Marker({ element: el, anchor: 'center', subpixelPositioning: true }).setLngLat(at).addTo(this.map);
+    } else {
+      this.pickMarker.setLngLat(at);
+    }
+    this.pickMarkerEl.classList.toggle('is-busy', busy);
+  }
+
   /** Returns the camera to the locked parcel after the user has wandered off. */
   refocus(): void {
     const { parcel } = this.state;
@@ -305,6 +358,11 @@ export class GlobeEngine {
     if (this.ratioTimer) clearTimeout(this.ratioTimer);
     for (const fn of this.cleanups) fn();
     this.cleanups = [];
+    this.pickMarker?.remove();
+    this.pickMarker = null;
+    this.pickMarkerEl = null;
+    for (const m of this.promptMarkers) m.remove();
+    this.promptMarkers = [];
     if (this.ready) {
       this.imagery.destroy();
       this.overlay.destroy();
@@ -365,7 +423,7 @@ export class GlobeEngine {
       },
     });
     // Plain clicks go to the UI (field selection, select on the map).
-    map.on('click', (ev) => emitMapClick([ev.lngLat.lng, ev.lngLat.lat]));
+    map.on('click', (ev) => emitMapClick([ev.lngLat.lng, ev.lngLat.lat], ev.originalEvent));
     this.beacons = new Beacons(map, SAMPLE_PARCELS, (id) => void useMission.getState().lockSample(id), mission.lang);
     this.overlay = new OverlayController(map, {
       beforeLayer: () => LAYER.dim,
@@ -716,6 +774,7 @@ export class GlobeEngine {
     const padding = this.explore(viewport, center).padding;
     const zoom = clamp(fitZoom(vertices, center[1], viewport, padding, 0, 0, 0.42), ...DRAFT_ZOOM_RANGE);
     const p = map.project(center);
+    if (!force && this.mapEl.classList.contains('is-picking') && p.x > 40 && p.x < viewport.width - 40 && p.y > 40 && p.y < viewport.height - 40) return;
     const inView = p.x > viewport.width * 0.2 && p.x < viewport.width * 0.8 && p.y > viewport.height * 0.15 && p.y < viewport.height * 0.75;
     if (!force && inView && Math.abs(map.getZoom() - zoom) < 0.9 && map.getPitch() < 20) return;
     this.fly({ center, zoom, pitch: 0, bearing: 0, padding }, 'level');

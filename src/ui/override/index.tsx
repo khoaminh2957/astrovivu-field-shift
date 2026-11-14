@@ -188,13 +188,6 @@ export function GroundTruthForm() {
         <p className="t-caption text-ink-2">{t('gt.description')}</p>
         {demo && <p className="t-caption text-ink-2">{t('gt.demoProfile')}</p>}
 
-        <Field label={t('gt.sowing')} htmlFor={sowId} hint={t('gt.sowingHint')} aside={gt.sowingDate ? <StatusTag status="ground-truth" compact /> : undefined}>
-          <div className="flex items-center gap-1">
-            <Input id={sowId} type="date" numeric className="flex-1" value={gt.sowingDate ?? ''} onChange={(e) => setGroundTruth({ sowingDate: e.target.value || undefined })} />
-            {gt.sowingDate && <IconButton label={t('gt.clear')} icon={<X />} size="sm" onClick={() => setGroundTruth({ sowingDate: undefined })} />}
-          </div>
-        </Field>
-
         <Field label={t('gt.irrigation')} htmlFor={`${sowId}-irr`} aside={gt.irrigation ? <StatusTag status="ground-truth" compact /> : undefined}>
           <Segmented<IrrigationMode>
             ariaLabel={t('gt.irrigation')}

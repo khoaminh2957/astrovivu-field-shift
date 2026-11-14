@@ -4,7 +4,12 @@
  */
 import type { LngLat } from '@/contracts';
 
-type Listener = (at: LngLat) => void;
+export interface MapClickMods {
+  altKey: boolean;
+  shiftKey: boolean;
+}
+
+type Listener = (at: LngLat, mods: MapClickMods) => void;
 const listeners = new Set<Listener>();
 
 export function onMapClick(fn: Listener): () => void {
@@ -12,6 +17,7 @@ export function onMapClick(fn: Listener): () => void {
   return () => listeners.delete(fn);
 }
 
-export function emitMapClick(at: LngLat): void {
-  for (const fn of [...listeners]) fn(at);
+export function emitMapClick(at: LngLat, ev?: MouseEvent): void {
+  const mods: MapClickMods = { altKey: !!ev?.altKey, shiftKey: !!ev?.shiftKey };
+  for (const fn of [...listeners]) fn(at, mods);
 }

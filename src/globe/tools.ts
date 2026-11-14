@@ -70,6 +70,18 @@ export function stopMeasure(): void {
   getActiveGlobe()?.stopMeasure();
 }
 
+export function setPickMode(on: boolean): void {
+  getActiveGlobe()?.setPickMode(on);
+}
+
+export function setPickTarget(at: LngLat | null, busy = false): void {
+  getActiveGlobe()?.setPickTarget(at, busy);
+}
+
+export function setPromptMarkers(points: readonly { at: LngLat; kind: 'positive' | 'negative' }[]): void {
+  getActiveGlobe()?.setPromptMarkers(points);
+}
+
 /** Camera state for the toolbar, updated at most once per animation frame. */
 export function useMapView(): MapViewState {
   return useMapViewStore();
