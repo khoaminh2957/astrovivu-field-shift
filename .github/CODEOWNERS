@@ -25,6 +25,9 @@
 /src/core/crops/                    @quocthai2711
 /docs/CROP_DATA.md                  @quocthai2711
 
+# Urban grower logic (the screen itself stays with the UI lead).
+/src/core/urban/                    @quocthai2711
+
 # Model: suitability scoring and profit optimisation.
 /src/core/scoring/                  @khoaminh2957
 /src/core/economics/                @khoaminh2957
@@ -34,3 +37,15 @@
 /docs/SCORING.md                    @khoaminh2957
 /docs/SCORING_PAPER.md              @khoaminh2957
 /docs/ECONOMICS.md                  @khoaminh2957
+
+# Chatbot: retrieval, table lookups, server.
+/src/rag/                           @khoaminh2957
+/server/                            @khoaminh2957
+/scripts/rag/                       @khoaminh2957
+/data/rag/                          @khoaminh2957
+/public/rag/                        @khoaminh2957
+/docs/RAG.md                        @khoaminh2957
+
+# Soil improvement from soil data.
+/src/core/soil/                     @MinDuy314
+/docs/SOIL.md                       @MinDuy314

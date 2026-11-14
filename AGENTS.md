@@ -4,14 +4,15 @@ Astrovivu is built by several agents in parallel in **one working tree**. These 
 
 ## People
 
-Four people also work on this repository, each on their own branch through pull requests: `CONTRIBUTING.md` describes that workflow and `.github/CODEOWNERS` records who reviews which paths.
+Five people also work on this repository, each on their own branch through pull requests: `CONTRIBUTING.md` describes that workflow and `.github/CODEOWNERS` records who reviews which paths.
 
 | Person | Area | Paths |
 |---|---|---|
 | `quocbao271207` | UI/UX end to end, map, contracts, merges | `src/ui/**` (not `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
 | `thuyyen03052008` | Mascot | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
-| `quocthai2711` | Crop data: catalogue, regional prevalence, costs and prices per country | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `docs/CROP_DATA.md` |
-| `khoaminh2957` | Model: suitability scoring and profit optimisation | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md` |
+| `quocthai2711` | Crop data (catalogue, regional prevalence, costs and prices per country) and the urban grower logic | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `src/core/urban/**`, `docs/CROP_DATA.md` |
+| `khoaminh2957` | Model (suitability scoring, profit optimisation) and the chatbot | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `src/rag/**`, `server/**`, `scripts/rag/**`, `data/rag/**`, `public/rag/**`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md`, `docs/RAG.md` |
+| `MinDuy314` | Soil improvement from soil data | `src/core/soil/**`, `docs/SOIL.md` |
 
 An agent works for one person, on that person's branch. Before touching a path another person owns, say so and let its owner review the pull request; never push to `main`, never merge a pull request, and never rewrite a branch someone else has pushed. Rule 1 below (no git writes) is for agents sharing one working tree under an orchestrator; an agent working alone on a person's branch commits there when that person asks.
 

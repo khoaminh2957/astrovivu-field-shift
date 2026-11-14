@@ -8,8 +8,9 @@ Nhóm Astrovivu làm trên một repo: <https://github.com/quocbao271207/astrovi
 |---|---|---|---|
 | Bảo | `quocbao271207` | UI/UX toàn bộ, bản đồ, hợp đồng dữ liệu, gộp nhánh | `src/ui/**` (trừ `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
 | Uyên | `thuyyen03052008` | Mascot | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
-| Thái | `quocthai2711` | Dữ liệu cây trồng | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `docs/CROP_DATA.md` |
-| Khoa | `khoaminh2957` | Mô hình: độ phù hợp và tối ưu lợi nhuận | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md` |
+| Thái | `quocthai2711` | Dữ liệu cây trồng, giá và chi phí; công cụ trồng rau đô thị | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `src/core/urban/**`, `docs/CROP_DATA.md` |
+| Khoa | `khoaminh2957` | Mô hình: độ phù hợp và tối ưu lợi nhuận; chatbot | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `src/rag/**`, `server/**`, `scripts/rag/**`, `data/rag/**`, `public/rag/**`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md`, `docs/RAG.md` |
+| Duy | `MinDuy314` | Cải tạo đất từ dữ liệu đất | `src/core/soil/**`, `docs/SOIL.md` |
 
 `.github/CODEOWNERS` ghi lại bảng này cho GitHub: pull request chạm vào thư mục nào thì người phụ trách thư mục đó được mời review.
 
@@ -80,6 +81,9 @@ Không commit thẳng lên `main`. Mỗi việc một nhánh, xong thì mở pul
 | `mascot/` | mascot | `mascot/first-poses` |
 | `data/` | dữ liệu cây trồng | `data/cost-by-country` |
 | `model/` | chấm điểm, kinh tế | `model/profit-optimizer` |
+| `chat/` | chatbot | `chat/table-lookups` |
+| `urban/` | trồng rau đô thị | `urban/sun-hours` |
+| `soil/` | cải tạo đất | `soil/diagnosis` |
 | `fix/` | sửa lỗi nhỏ ở bất kỳ đâu | `fix/calendar-label` |
 | `docs/` | chỉ tài liệu | `docs/demo-script` |
 
@@ -137,6 +141,10 @@ Sau khi sửa nguồn: `npm run crops:build`, rồi ba lệnh kiểm tra ở m�
 **Quy tắc của phần lõi.** `src/core` là hàm thuần: không gọi mạng, không đụng DOM, không dùng `Date.now()` (ngày hôm nay được truyền vào). Mỗi thay đổi công thức đi kèm test trong cùng thư mục và một đoạn trong `docs/SCORING.md` hoặc `docs/ECONOMICS.md` ghi công thức, nguồn và giới hạn. Test hiện có là hành vi đã chốt; nếu một test phải đổi vì công thức đổi thì nói rõ trong pull request là đổi gì và vì sao.
 
 **Thử nghiệm.** Mã thử để trong `scripts/` (chạy bằng `npx tsx`), kết quả để trong `data/crops/` hoặc `docs/`. Dự án không dùng Python; nếu cần sổ tay Python cho nghiên cứu thì để ngoài repo hoặc hỏi Bảo trước.
+
+### Chatbot (Khoa), trồng rau đô thị (Thái), cải tạo đất (Duy)
+
+Việc cần làm, từng bước và "xong là thế nào": `docs/PLAN.md` mục 6, 7 và 8. Cả ba phần đều là hàm thuần trong `src/core` hoặc `src/rag`; phần giao diện tương ứng (`src/ui/ask`, `src/ui/urban`, thẻ thửa ruộng) do Bảo giữ, nên khi cần hiển thị thêm thứ gì thì ghi trong pull request.
 
 ### UI/UX (Bảo)
 
