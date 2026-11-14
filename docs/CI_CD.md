@@ -130,7 +130,7 @@ git tag v1.0.0 && git push origin v1.0.0
 - [ ] Mục 5: environments, variables, secrets (khi muốn dùng cơ sở dữ liệu).
 - [ ] Settings → Branches → quy tắc của `main`: giữ `Typecheck, test, build`; nên thêm `Preview smoke test`, `Secret scan`, `Database migrations and tests`, `Lint workflows` vào danh sách bắt buộc (hai job cuối khi không chạy được tính là đạt). Bật **Require review from Code Owners** nếu muốn người phụ trách thư mục phải là người duyệt.
 - [ ] Settings → General: chỉ cho **Squash merging**, bật **Automatically delete head branches** (đúng với `CONTRIBUTING.md`).
-- [ ] Settings → Code security: bật Dependabot alerts, Secret scanning và Push protection.
+- [ ] Settings → Code security: bật **Dependency graph** (đang tắt; job `New dependencies` chỉ cảnh báo chứ chưa kiểm được gì cho đến khi bật), Dependabot alerts, Secret scanning và Push protection.
 - [ ] Nếu đổi tên miền: đặt variable `PRODUCTION_URL`.
 
 **Đừng đổi tên job `Typecheck, test, build`** trong `ci.yml` mà không sửa quy tắc bảo vệ nhánh cùng lúc: GitHub chờ đúng tên đó, đổi tên là mọi pull request bị treo.
@@ -146,6 +146,7 @@ Căn cứ của thiết kế (đo ngày 15/11/2026):
 | Commit trên `main` có trạng thái `Vercel` do `vercel[bot]` ghi; repo không có GitHub Deployment nào | Vercel tự triển khai: workflow không triển khai lần hai, chỉ kiểm tra sau đó, kích hoạt bằng sự kiện `status` |
 | Toàn bộ lịch sử của repo (44 commit lúc quét) không có khoá bí mật (gitleaks 8.30.1) | job dò khoá bắt đầu từ trạng thái sạch |
 | Bản build hiện tại là một tệp script 2,5 MB | tóm tắt CI ghi kích thước mỗi lần để thấy khi nó tăng; chưa đặt ngưỡng chặn |
+| Dependency graph của repo đang tắt (API trả 403) | job `New dependencies` tự kiểm điều này: tắt thì cảnh báo và đạt, bật thì chạy thật |
 
 Đã kiểm trên máy trước khi mở pull request: toàn bộ lệnh của job `Typecheck, test, build`, `Preview smoke test` và `Database migrations and tests` trong container Linux với Node 24; actionlint và zizmor trên mọi workflow; gitleaks trên toàn bộ lịch sử; bài smoke test trên trang thật.
 

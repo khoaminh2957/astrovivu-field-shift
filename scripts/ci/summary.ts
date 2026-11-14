@@ -6,7 +6,7 @@
  *
  *   npx tsx scripts/ci/summary.ts
  */
-import { appendFileSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { appendFileSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -42,10 +42,11 @@ export interface BuiltFile {
 export function builtFiles(dist: string): BuiltFile[] {
   const out: BuiltFile[] = [];
   const walk = (dir: string): void => {
-    for (const name of readdirSync(dir)) {
-      const file = path.join(dir, name);
-      if (statSync(file).isDirectory()) walk(file);
-      else if (/\.(js|css)$/.test(name)) {
+    // The directory listing says what each entry is: no second look at the path before reading it.
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(file);
+      else if (/\.(js|css)$/.test(entry.name)) {
         const content = readFileSync(file);
         out.push({ file: path.relative(dist, file).replaceAll(path.sep, '/'), bytes: content.length, gzipBytes: gzipSync(content).length });
       }
@@ -79,9 +80,18 @@ export function summary(junit: string | null, dist: BuiltFile[] | null): string 
   return `${lines.join('\n')}\n`;
 }
 
+/** The result of reading, or null when the file or folder is not there. */
+function attempt<T>(read: () => T): T | null {
+  try {
+    return read();
+  } catch {
+    return null;
+  }
+}
+
 function main(): void {
-  const junit = existsSync('reports/junit.xml') ? readFileSync('reports/junit.xml', 'utf8') : null;
-  const dist = existsSync('dist') ? builtFiles('dist') : null;
+  const junit = attempt(() => readFileSync('reports/junit.xml', 'utf8'));
+  const dist = attempt(() => builtFiles('dist'));
   const text = summary(junit, dist);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, text);
   else console.log(text);
