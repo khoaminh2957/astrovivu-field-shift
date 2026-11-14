@@ -63,7 +63,7 @@ Không commit thẳng lên `main`. Mỗi việc một nhánh, xong thì mở pul
    git push -u origin data/crop-prevalence-vn
    ```
 
-4. Mở pull request vào `main` trên GitHub và điền mẫu có sẵn. CI phải xanh và người phụ trách phần bị chạm phải duyệt thì mới gộp. Gộp bằng **Squash and merge**, rồi xoá nhánh.
+4. Mở pull request vào `main` trên GitHub và điền mẫu có sẵn. Nhánh `main` được bảo vệ: GitHub chỉ cho gộp khi CI xanh và có ít nhất một người khác duyệt (người phụ trách phần bị chạm được mời tự động). Không ai đẩy thẳng, đẩy đè (force push) hay xoá `main` được; riêng chủ repo đẩy thẳng được khi cần. Gộp bằng **Squash and merge**, rồi xoá nhánh.
 
 5. Nhánh sống lâu hơn một ngày thì cập nhật từ `main` trước khi làm tiếp:
 
