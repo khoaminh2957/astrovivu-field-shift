@@ -4,11 +4,11 @@
  * decide when to call it (a store subscription, never a React render per frame).
  */
 import type { BranchId, FieldRaster, ISODate, LngLat, Parcel, RampId } from '@/contracts';
-import { paintForSeries, colorForValue } from '@/globe';
+import { colorForValue, isFieldRange, paintForSeries, rasterRampColor, rasterRampStops } from '@/globe';
 import { type RampColor, framesAt, paintRaster } from '@/lib/raster';
 import { primarySeries, sampleAt } from '@/lib/series';
 import type { MissionState } from '@/state/mission';
-import { BRANCH_HEX, RAMPS } from '@/ui/design';
+import { BRANCH_HEX } from '@/ui/design';
 
 /** The raster each branch prefers when several share it. */
 const PREFERRED: Partial<Record<BranchId, string>> = { vegetation: 'ndvi', soilMoisture: 'ndmi', thermal: 'lst', terrain: 'elevation' };
@@ -20,46 +20,21 @@ export function rasterFor(rasters: FieldRaster[], branch: BranchId): FieldRaster
   return mine.find((r) => r.key === PREFERRED[branch]) ?? mine[0];
 }
 
-// Terrain and soil have no ColorBrewer ramp in the design system: a quiet earth ramp, dark to light.
-const EARTH = ['#3b3328', '#5b4d3a', '#7d6a4f', '#a08a68', '#c3ad88', '#e4d4b2'];
+/**
+ * The cards and tiles use the stops the map paints with (`src/globe/fieldRaster`), so a picture in
+ * the panel and the field on the map are always the same colours. `relative` selects the ramp for
+ * a picture stretched to the field's own range.
+ */
+export const rampStops = (ramp: RampId, relative = false): readonly string[] => rasterRampStops(ramp, relative);
 
-export function rampStops(ramp: RampId): readonly string[] {
-  switch (ramp) {
-    case 'vegetation':
-      return RAMPS.vegetation.sequential.stops;
-    case 'moisture':
-      return RAMPS.moisture.sequential.stops;
-    case 'rain':
-      return RAMPS.rain.sequential.stops;
-    case 'heat':
-    case 'light':
-    case 'risk':
-      return RAMPS.heat.sequential.stops;
-    default:
-      return EARTH;
-  }
-}
+/** The ramp as a CSS gradient; `dir` turns it for a vertical legend (low at the bottom). */
+export const rampGradient = (ramp: RampId, relative = false, dir: 'right' | 'up' = 'right'): string =>
+  `linear-gradient(${dir === 'up' ? '0deg' : '90deg'}, ${rampStops(ramp, relative).join(', ')})`;
 
-export const rampGradient = (ramp: RampId): string => `linear-gradient(90deg, ${rampStops(ramp).join(', ')})`;
+export const rampColorFn = (ramp: RampId, relative = false): RampColor => rasterRampColor(ramp, relative);
 
-const hex = (h: string): [number, number, number] => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-const colorFns = new Map<RampId, RampColor>();
-
-export function rampColorFn(ramp: RampId): RampColor {
-  let fn = colorFns.get(ramp);
-  if (fn) return fn;
-  const stops = rampStops(ramp).map(hex);
-  fn = (p) => {
-    const x = Math.max(0, Math.min(1, p)) * (stops.length - 1);
-    const i = Math.min(stops.length - 2, Math.floor(x));
-    const f = x - i;
-    const a = stops[i];
-    const b = stops[i + 1];
-    return [Math.round(a[0] + (b[0] - a[0]) * f), Math.round(a[1] + (b[1] - a[1]) * f), Math.round(a[2] + (b[2] - a[2]) * f)];
-  };
-  colorFns.set(ramp, fn);
-  return fn;
-}
+/** True when a raster is shown on the field's own range rather than its fixed one. */
+export const isRelative = (raster: FieldRaster, range: readonly [number, number] | undefined): boolean => !!range && isFieldRange(raster, range);
 
 /** Outer ring and holes of the parcel. */
 export const ringsOf = (parcel: Pick<Parcel, 'polygon'>): LngLat[][] => parcel.polygon.coordinates as LngLat[][];
@@ -176,7 +151,7 @@ export function drawFieldPicture(canvas: HTMLCanvasElement, o: DrawOptions): Pic
   if (o.raster) {
     const r = o.raster;
     const { canvas: off, img } = rasterCanvas(r);
-    if (paintRaster(r, o.t, o.color ?? rampColorFn(r.ramp), img.data, o.blend ?? true, o.range)) {
+    if (paintRaster(r, o.t, o.color ?? rampColorFn(r.ramp, isRelative(r, o.range)), img.data, o.blend ?? true, o.range)) {
       off.getContext('2d')?.putImageData(img, 0, 0);
       const [x0, y0] = pr.toPx(r.corners[0]);
       const [x1, y1] = pr.toPx(r.corners[2]);

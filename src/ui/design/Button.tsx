@@ -8,24 +8,24 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const base =
-  'inline-flex shrink-0 select-none items-center justify-center gap-2 rounded-full border font-medium whitespace-nowrap ' +
+  'inline-flex shrink-0 select-none items-center justify-center gap-1.5 rounded-full border font-medium whitespace-nowrap ' +
   'transition-colors duration-(--dur-instant) ease-out disabled:opacity-45 aria-disabled:opacity-45';
 
 const variants: Record<ButtonVariant, string> = {
-  // Inverse video: the brightest solid on screen is the thing the operator is about to do.
-  primary: 'border-signal bg-signal text-on-signal shadow-md hover:brightness-110 active:brightness-95',
-  secondary: 'border-line-2 bg-surface-0 text-ink-1 shadow-sm hover:bg-surface-2 active:bg-surface-3',
+  // The one green pill of a panel. White on this green is below 4.5:1, so the label is weight 600.
+  primary: 'border-signal bg-signal font-bold text-on-signal shadow-md hover:border-signal-strong hover:bg-signal-strong active:brightness-95',
+  secondary: 'border-line-1 bg-surface-0 text-ink-1 hover:bg-surface-2 active:bg-surface-3',
   ghost: 'border-transparent bg-transparent text-ink-2 hover:bg-surface-2 hover:text-ink-1 active:bg-surface-3',
   danger: 'border-alert/60 bg-transparent text-alert hover:bg-alert/12 active:bg-alert/20',
 };
 
 const sizes: Record<ButtonSize, string> = {
   sm: 'h-7 px-2.5 text-xs',
-  md: 'h-8 px-3 text-sm',
-  lg: 'h-11 px-4 text-base',
+  md: 'h-8 px-3 text-xs',
+  lg: 'h-10 px-4 text-base narrow:h-11',
 };
 
-const iconSizes: Record<ButtonSize, string> = { sm: 'size-7', md: 'size-8', lg: 'size-11' };
+const iconSizes: Record<ButtonSize, string> = { sm: 'size-7', md: 'size-8', lg: 'size-10 narrow:size-11' };
 const glyph: Record<ButtonSize, string> = { sm: '[&_svg]:size-3.5', md: '[&_svg]:size-4', lg: '[&_svg]:size-5' };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -86,8 +86,9 @@ export function IconButton({ label, icon, variant = 'ghost', size = 'md', presse
           variants[variant],
           iconSizes[size],
           glyph[size],
-          'px-0',
-          pressed && variant !== 'primary' && 'border-signal bg-signal text-on-signal hover:bg-ink-1 hover:text-on-signal',
+          // Icon buttons are rounded squares; only labelled buttons are pills.
+          'rounded-sm px-0',
+          pressed && variant !== 'primary' && 'border-transparent bg-surface-3 text-signal-strong hover:bg-surface-3 hover:text-signal-strong',
           className,
         )}
         {...rest}

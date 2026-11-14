@@ -1,31 +1,31 @@
 /**
- * The app shell after the hero. Wide screens (1100 px and up): an icon rail on the far left, the
- * field panel beside it, the map in the rest with its toolbar and a slim timeline strip, and the
- * eight metric cards on the right once a field is locked. Narrow screens: the map keeps the top
- * of the screen, one scrolling sheet holds the panels, the timeline is pinned above a tab bar.
- * The shell reports the space its panels cover (`setInsets`) so the globe frames the parcel in what
- * is left.
+ * The app shell after the hero. Wide screens (1100 px and up): a grey icon rail on the far left,
+ * the white list panel beside it, the map in the rest with a search and its tools floating on it,
+ * and, once a field is locked, the field panel floating over the map's right side with a slim
+ * timeline strip in the gap. Narrow screens: the map keeps the top of the screen, one scrolling
+ * sheet holds the panels, the timeline is pinned above a tab bar.
+ * The shell reports the space its panels cover (`setInsets`) so the globe frames the parcel, or a
+ * place the camera flies to, in what is left.
  */
 import { useEffect, type ReactNode } from 'react';
-import { ChevronsDown, ChevronsUp, CalendarCheck, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
+import { CalendarCheck, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { BRANCHES } from '@/contracts';
+import { SAMPLE_PARCELS } from '@/data';
+import { onMapClick, useGlobeStatus } from '@/globe';
+import { useMeasureStore } from '@/globe/toolState';
 import { useLang, useT } from '@/i18n';
+import { pointInPolygon } from '@/lib/geo';
 import { type Phase, useMission } from '@/state/mission';
 import { AdvisoryPanel } from '@/ui/advisory';
-import { Segmented, StatusTag, Tooltip, cn } from '@/ui/design';
+import { StatusTag, Tooltip, cn } from '@/ui/design';
 import { FieldPanel } from '@/ui/field/FieldPanel';
 import { FieldList, FindField } from '@/ui/field/FindField';
 import { TimelineScrubber } from '@/ui/timeline';
 import { TrackingView } from '@/ui/tracking';
 import { UrbanCompanion } from '@/ui/urban';
+import { MapSearch, WeatherChip } from './MapSearch';
 import { MapLegendChip, MapToolbar } from './MapToolbar';
-import { onMapClick } from '@/globe';
-import { SAMPLE_PARCELS } from '@/data';
-import { pointInPolygon } from '@/lib/geo';
-import { useMeasureStore } from '@/globe/toolState';
-
-const useMeasureState = () => useMeasureStore.getState();
 import { useMissionUi, useNarrow } from './uiState';
 import './strings';
 
@@ -56,40 +56,37 @@ function useNav() {
   return { active, disabled, go };
 }
 
+const LANGS: { id: Lang; name: string }[] = [
+  { id: 'en', name: 'English' },
+  { id: 'vi', name: 'Tiếng Việt' },
+];
+
+/** Two visible choices: the demo is bilingual and the switch should not hide behind a menu. */
 function LangSwitch({ vertical }: { vertical?: boolean }) {
   const t = useT();
   const lang = useLang();
   const setLang = useMission((s) => s.setLang);
-  if (vertical) {
-    return (
-      <div role="radiogroup" aria-label={t('chrome.lang')} className="flex flex-col gap-0.5 rounded-sm bg-inset p-0.5">
-        {(['en', 'vi'] as Lang[]).map((l) => (
-          <button
-            key={l}
-            type="button"
-            role="radio"
-            aria-checked={lang === l}
-            aria-label={l === 'en' ? 'English' : 'Tiếng Việt'}
-            onClick={() => setLang(l)}
-            className={cn('t-value h-8 w-10 rounded-xs text-xs', lang === l ? 'bg-signal text-on-signal' : 'text-ink-2 hover:text-ink-1')}
-          >
-            {l.toUpperCase()}
-          </button>
-        ))}
-      </div>
-    );
-  }
   return (
-    <Segmented<Lang>
-      ariaLabel={t('chrome.lang')}
-      size="md"
-      value={lang}
-      onValueChange={setLang}
-      options={[
-        { value: 'en', label: 'EN', ariaLabel: 'English' },
-        { value: 'vi', label: 'VI', ariaLabel: 'Tiếng Việt' },
-      ]}
-    />
+    <div role="radiogroup" aria-label={t('chrome.lang')} className={cn('flex gap-0.5 rounded-sm p-0.5', vertical ? 'flex-col' : 'bg-surface-3')}>
+      {LANGS.map((l) => (
+        <button
+          key={l.id}
+          type="button"
+          role="radio"
+          aria-checked={lang === l.id}
+          aria-label={l.name}
+          title={l.name}
+          onClick={() => setLang(l.id)}
+          className={cn(
+            't-value rounded-[6px] text-xs',
+            vertical ? 'h-7 w-10' : 'h-7 w-9',
+            lang === l.id ? 'bg-surface-0 text-ink-1 shadow-sm' : 'text-ink-3 hover:text-ink-1',
+          )}
+        >
+          {l.id.toUpperCase()}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -103,22 +100,23 @@ function Mark() {
       type="button"
       aria-label={t('chrome.home')}
       onClick={() => (hasParcel ? unlock() : setPhase('explore'))}
-      className="t-display flex size-10 items-center justify-center rounded-md bg-signal text-base text-on-signal shadow-sm hover:brightness-110"
+      className="t-display flex size-10 items-center justify-center rounded-sm bg-signal text-base text-on-signal hover:bg-signal-strong"
     >
       A
     </button>
   );
 }
 
+/** Icons only, like the model's rail; the name of each page is its tooltip and its accessible name. */
 function Rail() {
   const t = useT();
   const { active, disabled, go } = useNav();
   return (
-    <nav aria-label={t('chrome.nav.label')} className="absolute inset-y-0 left-0 z-(--z-chrome) flex w-(--rail-w) flex-col items-center gap-1 bg-surface-3 py-2">
+    <nav aria-label={t('chrome.nav.label')} className="absolute inset-y-0 left-0 z-(--z-chrome) flex w-(--rail-w) flex-col items-center bg-surface-3 py-2">
       <Mark />
-      <div className="mt-4 flex flex-col items-center gap-1">
-        {NAV.map((n) => {
-          const btn = (
+      <div className="mt-5 flex flex-col items-center gap-2">
+        {NAV.map((n) => (
+          <Tooltip key={n.id} content={disabled(n.id) ? `${t(`chrome.${n.key}`)}: ${t('chrome.nav.needField')}` : t(`chrome.${n.id === 'urban' ? 'nav.urbanLong' : n.key}`)} side="right" delay={150}>
             <button
               type="button"
               aria-current={active(n.id) ? 'page' : undefined}
@@ -126,24 +124,15 @@ function Rail() {
               aria-label={t(`chrome.${n.key}`)}
               onClick={() => go(n.id)}
               className={cn(
-                'flex w-12 flex-col items-center gap-1 rounded-sm py-2 text-[11px] leading-none [font-stretch:var(--stretch-condensed)] [&_svg]:size-5 [&_svg]:stroke-[1.5]',
-                active(n.id) ? 'bg-surface-0 text-signal shadow-sm' : 'text-ink-2 hover:bg-surface-0/60 hover:text-ink-1',
-                disabled(n.id) && 'cursor-not-allowed opacity-45 hover:bg-transparent hover:text-ink-3',
-                n.id === 'ask' && 'mt-3',
+                'flex size-10 items-center justify-center rounded-sm [&_svg]:size-5 [&_svg]:stroke-[1.5]',
+                active(n.id) ? 'bg-surface-0 text-signal-strong shadow-sm' : 'text-ink-2 hover:bg-surface-0/60 hover:text-ink-1',
+                disabled(n.id) && 'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-ink-2',
               )}
             >
               {n.icon}
-              <span aria-hidden className="max-w-full truncate">
-                {t(`chrome.${n.key}`)}
-              </span>
             </button>
-          );
-          return (
-            <Tooltip key={n.id} content={disabled(n.id) ? t('chrome.nav.needField') : t(`chrome.${n.id === 'urban' ? 'nav.urbanLong' : n.key}`)} side="right">
-              {btn}
-            </Tooltip>
-          );
-        })}
+          </Tooltip>
+        ))}
       </div>
       <div className="mt-auto">
         <LangSwitch vertical />
@@ -165,12 +154,12 @@ function TabBar() {
           aria-disabled={disabled(n.id) || undefined}
           onClick={() => go(n.id)}
           className={cn(
-            'flex min-w-0 flex-col items-center justify-center gap-1 text-xs [&_svg]:size-5 [&_svg]:stroke-[1.5]',
-            active(n.id) ? 'text-ink-1' : 'text-ink-3',
-            disabled(n.id) && 'opacity-45',
+            'flex min-w-0 flex-col items-center justify-center gap-0.5 text-xs [&_svg]:size-5 [&_svg]:stroke-[1.5]',
+            active(n.id) ? 'font-medium text-signal-strong' : 'text-ink-3',
+            disabled(n.id) && 'opacity-40',
           )}
         >
-          <span className={cn('flex h-7 w-12 items-center justify-center rounded-full', active(n.id) && 'bg-surface-3')}>{n.icon}</span>
+          <span className="flex h-7 w-12 items-center justify-center">{n.icon}</span>
           <span className="max-w-full truncate px-1">{t(`chrome.${n.key}`)}</span>
         </button>
       ))}
@@ -188,41 +177,67 @@ function MapNotice({ className }: { className?: string }) {
   if (!locked) return null;
   let body: ReactNode = null;
   if (loadError) body = <><StatusTag status="alert" label={t('hud.error.title')} /><span className="t-caption min-w-0 truncate">{loadError}</span></>;
-  else if (done < BRANCHES.length) body = <><span className="skeleton h-3 w-8 shrink-0" aria-hidden /><span className="min-w-0 truncate text-sm text-ink-2">{t('hud.loading.title')} · {t('hud.loading.body', { done })}</span></>;
+  else if (done < BRANCHES.length) body = <><span className="skeleton h-3 w-8 shrink-0" aria-hidden /><span className="min-w-0 truncate text-xs text-ink-2">{t('hud.loading.title')} · {t('hud.loading.body', { done })}</span></>;
   if (!body) return null;
   return (
-    <div role="status" className={cn('plate pointer-events-auto flex max-w-[min(480px,calc(100%-24px))] items-center gap-2 px-3 py-1.5 shadow-md', className)}>
+    <div role="status" className={cn('pointer-events-auto flex h-8 max-w-full items-center gap-2 rounded-sm border border-line-1 bg-surface-0 px-3 shadow-md', className)}>
       {body}
     </div>
+  );
+}
+
+/** Imagery and terrain credits, hosted by the shell so they sit in the visible part of the map. */
+function MapCredits({ className }: { className?: string }) {
+  const credits = useGlobeStatus((s) => s.credits);
+  if (!credits) return null;
+  return (
+    <span title={credits} className={cn('pointer-events-auto truncate rounded-xs bg-black/45 px-1.5 text-[10px] leading-4 text-white/85', className)}>
+      {credits}
+    </span>
   );
 }
 
 function RightPanel() {
   const t = useT();
   return (
-    <aside aria-label={t('chrome.fieldPanel')} className="absolute top-2 right-2 bottom-2 z-(--z-panel) w-(--right-w) overflow-y-auto rounded-lg border border-line-1 bg-surface-0 px-6 py-5 shadow-lg">
+    <aside aria-label={t('chrome.fieldPanel')} data-panel-scroll className="absolute top-2 right-2 bottom-2 z-(--z-panel) w-(--right-w) overflow-y-auto rounded-lg border border-line-1 bg-surface-0 px-6 pt-6 pb-6 shadow-lg">
       <FieldPanel />
     </aside>
   );
 }
 
+/** Left edge of the map, and its right edge when the field panel floats over it. */
+const MAP_L = 'left-[calc(var(--rail-w)+var(--left-w)+12px)]';
+const MAP_R_LOCKED = 'right-[calc(var(--right-w)+20px)]';
+
 function WideField({ locked }: { locked: boolean }) {
   const listMode = useMissionUi((s) => s.listMode);
   return (
     <>
-      <aside className="absolute inset-y-0 left-(--rail-w) z-(--z-panel) w-(--left-w) overflow-y-auto rounded-l-sm border-r border-line-1 bg-surface-0 px-4 py-4">
+      <aside className="absolute inset-y-0 left-(--rail-w) z-(--z-panel) flex w-(--left-w) flex-col overflow-y-auto rounded-l-sm border-r border-line-1 bg-surface-0 px-3 py-4">
         {listMode === 'add' ? <FindField /> : <FieldList />}
       </aside>
-      <div className={cn('pointer-events-none absolute top-3 z-(--z-map-ui) flex justify-center', 'left-[calc(var(--rail-w)+var(--left-w)+12px)]', locked ? 'right-[calc(var(--right-w)+64px)]' : 'right-16')}>
+      <div className={cn('pointer-events-none absolute top-3 z-(--z-map-ui) flex flex-col items-start gap-2', MAP_L, locked ? 'right-[calc(var(--right-w)+72px)]' : 'right-16')}>
+        <div className="pointer-events-auto flex w-full max-w-[420px] items-center gap-2">
+          <MapSearch className="min-w-0 flex-1" />
+          {locked && <WeatherChip className="compact:hidden" />}
+        </div>
         <MapNotice />
       </div>
-      <MapToolbar className={cn('absolute top-3 z-(--z-map-ui)', locked ? 'right-[calc(var(--right-w)+20px)]' : 'right-3')} />
-      {locked && <MapLegendChip className="absolute bottom-[calc(var(--strip-h)+24px)] left-[calc(var(--rail-w)+var(--left-w)+12px)] z-(--z-map-ui)" />}
-      {locked && (
+      <MapToolbar className={cn('absolute top-3 z-(--z-map-ui)', locked ? MAP_R_LOCKED : 'right-3')} />
+      {locked ? (
         <>
-          <TimelineScrubber className="absolute bottom-3 left-[calc(var(--rail-w)+var(--left-w)+12px)] right-[calc(var(--right-w)+20px)] z-(--z-dock) h-(--strip-h) rounded-lg border border-line-1" />
+          <div className={cn('pointer-events-none absolute bottom-[calc(var(--strip-h)+20px)] z-(--z-map-ui) flex items-end justify-between gap-3', MAP_L, MAP_R_LOCKED)}>
+            <MapLegendChip className="pointer-events-auto" />
+            <MapCredits className="min-w-0" />
+          </div>
+          <TimelineScrubber className={cn('absolute bottom-3 z-(--z-dock) h-(--strip-h) rounded-lg border border-line-1 shadow-md', MAP_L, MAP_R_LOCKED)} />
           <RightPanel />
         </>
+      ) : (
+        <div className={cn('pointer-events-none absolute right-3 bottom-2 z-(--z-map-ui) flex justify-end', MAP_L)}>
+          <MapCredits className="min-w-0" />
+        </div>
       )}
     </>
   );
@@ -235,34 +250,35 @@ function NarrowField({ locked }: { locked: boolean }) {
   const setFull = useMissionUi((s) => s.setSheetFull);
   return (
     <>
-      <div className="absolute top-2 left-2 z-(--z-map-ui) flex items-center gap-2">
-        <div className="plate flex items-center gap-2 p-1 pl-2 shadow-md">
-          <span className="t-display text-xs">Astrovivu</span>
-          <LangSwitch />
-        </div>
+      <div className="absolute top-2 left-2 z-(--z-map-ui) flex h-10 items-center gap-2 rounded-sm border border-line-1 bg-surface-0 pr-1 pl-3 shadow-md">
+        <span className="t-display text-xs text-ink-1">Astrovivu</span>
+        <LangSwitch />
       </div>
       <MapToolbar className="absolute top-2 right-2 z-(--z-map-ui)" />
-      <div className="pointer-events-none absolute inset-x-0 top-[calc(var(--map-h)-44px)] z-(--z-map-ui) flex justify-center px-3">
-        <MapNotice />
+      <div className="pointer-events-none absolute inset-x-0 top-[calc(var(--map-h)-64px)] z-(--z-map-ui) flex flex-col items-start gap-1.5 px-2">
+        <MapNotice className="self-center" />
+        <MapCredits className="max-w-full" />
       </div>
       <section
+        // Remounted when its content changes kind, so a list scrolled down does not open the field half-way.
+        key={locked ? 'field' : listMode}
+        data-panel-scroll
         aria-label={locked ? t('chrome.metrics') : t('field.find.title')}
         className={cn(
-          'absolute inset-x-0 z-(--z-panel) overflow-x-hidden overflow-y-auto rounded-t-lg border-t border-line-2 bg-surface-0 px-4 pt-0 pb-6 shadow-lg transition-[top] duration-(--dur-base)',
+          'absolute inset-x-0 z-(--z-panel) flex flex-col overflow-x-hidden overflow-y-auto rounded-t-lg bg-surface-0 px-4 pt-0 pb-6 shadow-lg transition-[top] duration-(--dur-base)',
           full ? 'top-14' : 'top-(--map-h)',
           locked ? 'bottom-[calc(var(--tabbar-h)+var(--strip-h))]' : 'bottom-(--tabbar-h)',
         )}
       >
-        <div className="sticky top-0 z-10 -mx-4 mb-2 flex justify-center bg-surface-0 pt-1">
+        <div className="sticky top-0 z-10 -mx-4 flex shrink-0 justify-center bg-surface-0">
           <button
             type="button"
             aria-expanded={full}
             aria-label={t(full ? 'chrome.sheet.collapse' : 'chrome.sheet.expand')}
             onClick={() => setFull(!full)}
-            className="flex h-10 w-24 flex-col items-center justify-center text-ink-3 hover:text-ink-1"
+            className="flex h-6 w-24 items-center justify-center"
           >
-            <span aria-hidden className="h-1 w-10 rounded-full bg-line-2" />
-            {full ? <ChevronsDown size={16} aria-hidden /> : <ChevronsUp size={16} aria-hidden />}
+            <span aria-hidden className="h-1 w-9 rounded-full bg-line-2" />
           </button>
         </div>
         {locked ? <FieldPanel /> : listMode === 'add' ? <FindField /> : <FieldList />}
@@ -283,8 +299,10 @@ function useReportInsets(narrow: boolean, locked: boolean, phase: Phase) {
         const mapH = Math.round(window.innerHeight * 0.45);
         setInsets({ top: 52, left: 0, right: 56, bottom: Math.max(0, window.innerHeight - mapH) });
       } else {
-        const left = px('--rail-w') + (phase === 'explore' || phase === 'locked' ? px('--left-w') : 0);
-        setInsets({ top: 0, left, right: (locked ? px('--right-w') : 0) + 56, bottom: locked ? px('--strip-h') : 0 });
+        // The hero counts as the field view: when the user enters, the globe already knows where the list panel will be.
+        const left = px('--rail-w') + (phase === 'explore' || phase === 'locked' || phase === 'hero' ? px('--left-w') : 0);
+        // Top: the search row; right: the tool stack (and the field panel); bottom: the legend and the timeline strip.
+        setInsets({ top: 52, left, right: (locked ? px('--right-w') + 8 : 0) + 56, bottom: locked ? px('--strip-h') + 12 : 0 });
       }
     };
     report();
@@ -314,7 +332,7 @@ export function Shell() {
     () =>
       onMapClick((at) => {
         const s = useMission.getState();
-        if (s.phase === 'hero' || s.draft || useMissionUi.getState().listMode === 'add' || useMeasureState().kind) return;
+        if (s.phase === 'hero' || s.draft || useMissionUi.getState().listMode === 'add' || useMeasureStore.getState().kind) return;
         const hit = SAMPLE_PARCELS.find((p) => pointInPolygon(at, p.polygon));
         if (hit && hit.id !== s.parcel?.id) void s.lockSample(hit.id);
       }),

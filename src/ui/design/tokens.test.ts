@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { BRANCHES } from '@/contracts';
-import { BRANCH_HEX, COLOR, contrastRatio, RAMPS, rampColor } from './tokens';
+import { BRANCH_HEX, COLOR, contrastRatio, RAMP_VEGETATION_FIELD, RAMP_ZONES, RAMPS, rampColor } from './tokens';
 
 const css = readFileSync(fileURLToPath(new URL('./tokens.css', import.meta.url)), 'utf8');
 const cssColor = (name: string): string | undefined => new RegExp(`--color-${name}:\\s*(#[0-9a-f]{6})`).exec(css)?.[1];
@@ -17,6 +17,8 @@ describe('design tokens', () => {
   it('ramp stops match the CSS gradients', () => {
     const gradient = (name: string) => new RegExp(`--ramp-${name}:\\s*linear-gradient\\(90deg, ([^)]+)\\)`).exec(css)?.[1].split(', ');
     expect(gradient('vegetation')).toEqual(RAMPS.vegetation.sequential.stops);
+    expect(gradient('vegetation-field')).toEqual(RAMP_VEGETATION_FIELD.stops);
+    expect(gradient('zones')).toEqual(RAMP_ZONES.stops);
     expect(gradient('moisture')).toEqual(RAMPS.moisture.sequential.stops);
     expect(gradient('heat')).toEqual(RAMPS.heat.sequential.stops);
     expect(gradient('rain')).toEqual(RAMPS.rain.sequential.stops);
@@ -29,8 +31,10 @@ describe('design tokens', () => {
     for (const s of surfaces) for (const ink of [COLOR.ink1, COLOR.ink2, COLOR.ink3]) expect(contrastRatio(ink, s)).toBeGreaterThanOrEqual(4.5);
     for (const s of [COLOR.surface0, COLOR.surface1, COLOR.surface2, COLOR.inset]) expect(contrastRatio(COLOR.line3, s)).toBeGreaterThanOrEqual(3);
     for (const state of [COLOR.nominal, COLOR.watch, COLOR.alert, COLOR.stale, COLOR.simulated]) for (const s of surfaces) expect(contrastRatio(state, s)).toBeGreaterThanOrEqual(4.5);
-    // Light theme: white on the green primary meets AA for text (it was 7:1 inverse video on the dark theme).
-    expect(contrastRatio(COLOR.onSignal, COLOR.signal)).toBeGreaterThanOrEqual(4.5);
+    // The fill green is the reference product's (#27ae60). White on it is 2.9:1, so labels on a green
+    // fill are always weight 600 and never the only cue; green used as text is the darker signalStrong.
+    expect(contrastRatio(COLOR.onSignal, COLOR.signal)).toBeGreaterThanOrEqual(2.8);
+    for (const s of [COLOR.surface0, COLOR.surface1, COLOR.surface2]) expect(contrastRatio(COLOR.signalStrong, s)).toBeGreaterThanOrEqual(4.5);
   });
 
   it('rampColor clamps and spans the ramp', () => {

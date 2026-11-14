@@ -87,14 +87,14 @@ export function Slider({ value, onValueChange, onValueCommit, min, max, step = 1
         disabled={disabled}
         className={cn('relative flex w-full touch-none items-center', lg ? 'h-9' : 'h-6')}
       >
-        <RSlider.Track className={cn('relative w-full grow bg-line-2', lg ? 'h-[3px]' : 'h-0.5')}>
+        <RSlider.Track className={cn('relative w-full grow rounded-full bg-line-2', lg ? 'h-1' : 'h-[3px]')}>
           {ranges?.map((r) => (
             <span
               key={`${r.kind}-${r.from}-${r.to}`}
               aria-hidden
               className={cn(
                 'absolute top-1/2 -translate-y-1/2',
-                r.kind === 'pending' && 'hatch-pending h-3 border-x border-stale/60',
+                r.kind === 'pending' && 'hatch-pending h-2.5 border-x border-stale/50',
                 // Dashed rule with opaque gaps, so the solid track underneath reads as broken.
                 r.kind === 'forecast' && 'h-full bg-[repeating-linear-gradient(90deg,var(--color-ink-3)_0_4px,var(--color-surface-1)_4px_8px)]',
                 r.kind === 'mark' && 'h-full bg-ink-3',
@@ -108,10 +108,11 @@ export function Slider({ value, onValueChange, onValueCommit, min, max, step = 1
           aria-label={ariaLabel}
           aria-valuetext={formatValue?.(value)}
           className={cn(
-            'relative block rounded-xs bg-signal shadow-sm outline-offset-4',
-            'transition-[height,width] duration-(--dur-instant) ease-out',
-            lg ? 'h-7 w-[3px] hover:w-[5px] active:w-[5px]' : 'h-4 w-[3px] hover:h-5',
-            // Invisible hit area so a 3 px cursor is still an easy target.
+            // A round knob: white rim so it reads on the track, the ranges and the tick marks alike.
+            'relative block rounded-full border-2 border-white bg-signal shadow-md outline-offset-2',
+            'transition-transform duration-(--dur-instant) ease-out hover:scale-110 active:scale-110',
+            lg ? 'size-5' : 'size-4',
+            // Invisible hit area so a small knob is still an easy target.
             'before:absolute before:top-1/2 before:left-1/2 before:size-11 before:-translate-1/2 before:content-[""]',
           )}
         >
@@ -125,8 +126,8 @@ export function Slider({ value, onValueChange, onValueCommit, min, max, step = 1
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[18px]">
           {ticks.map((t) => (
             <span key={t.value} className="absolute top-0 flex items-start" style={{ left: pct(t.value) }}>
-              <span className={cn('w-px', t.major ? 'h-2 bg-ink-3' : 'h-1 bg-line-3')} />
-              {t.label != null && <span className="t-meta mt-px pl-1 whitespace-nowrap">{t.label}</span>}
+              <span className={cn('w-px', t.major ? 'h-2 bg-ink-4' : 'h-1 bg-line-2')} />
+              {t.label != null && <span className="mt-px pl-1 text-[11px] leading-[14px] whitespace-nowrap text-ink-4 narrow:text-xs">{t.label}</span>}
             </span>
           ))}
         </div>

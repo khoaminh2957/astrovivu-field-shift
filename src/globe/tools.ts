@@ -48,6 +48,11 @@ export function locateMe(): Promise<LngLat | null> {
   });
 }
 
+/** Fly to a place whatever the state (the map search): a locked field stays locked. */
+export function flyToPoint(location: LngLat, zoom = 13.5): void {
+  getActiveGlobe()?.flyTo(location, zoom);
+}
+
 export function setMotion(motion: 'full' | 'reduced'): void {
   getActiveGlobe()?.setMotion(motion);
 }

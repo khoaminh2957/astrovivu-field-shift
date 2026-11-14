@@ -103,7 +103,7 @@ export function RotationCompare({ rotations, priorities, currency, planStrategyI
             return (
               <div role="columnheader" key={r.id} className={cn(colCls(r), 'flex flex-col gap-2')}>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={cn('t-value inline-flex h-5 min-w-5 items-center justify-center rounded-xs px-1 text-xs', rank === 1 ? 'bg-signal text-on-signal' : 'border border-line-3 text-ink-2')}>
+                  <span className={cn('t-value inline-flex h-5 min-w-5 items-center justify-center rounded-xs px-1 text-xs', rank === 1 ? 'bg-signal font-bold text-on-signal' : 'border border-line-2 text-ink-2')}>
                     {rank}
                   </span>
                   {isCur(r) ? (

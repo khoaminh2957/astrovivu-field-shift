@@ -17,10 +17,11 @@ export const COLOR = {
   line2: '#d1d1d6',
   line3: '#7c7c80',
   ink1: '#1c1c1e',
-  ink2: '#3a3a3c',
+  ink2: '#48484a',
   ink3: '#636366',
-  ink4: '#aeaeb2',
-  signal: '#1d874b',
+  ink4: '#8e8e93',
+  signal: '#27ae60',
+  signalStrong: '#1a7f45',
   onSignal: '#ffffff',
   nominal: '#11703c',
   watch: '#8f5300',
@@ -76,14 +77,19 @@ export function severityFromRisk(level: 0 | 1 | 2 | 3): Severity {
 export const PROVENANCES: Provenance[] = ['observed', 'modelled', 'derived', 'forecast', 'simulated', 'ground-truth'];
 
 // ---------------------------------------------------------------------------------------------
-// Map metric ramps (ColorBrewer, colour-blind safe). Nine stops, low to high.
+// Map metric ramps, low to high. Vegetation follows the convention of field-monitoring apps;
+// the others are ColorBrewer, colour-blind safe.
 // ---------------------------------------------------------------------------------------------
 
 export type MapMetric = 'vegetation' | 'moisture' | 'heat' | 'rain';
 export type RampMode = 'sequential' | 'diverging';
 
-// RdYlGn: low vegetation red, high green, the convention farmers know from NDVI maps.
-const RD_YL_GN = ['#d73027', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850'];
+// NDVI on its fixed 0-1 scale: bare soil brown, sparse cover orange and yellow, canopy green to dark green.
+const NDVI = ['#300b05', '#7a1e0c', '#c2410f', '#ee8a1e', '#f8d03c', '#e6e65a', '#b5d94c', '#7dc243', '#4da63a', '#2f8431', '#1f5a22', '#123011'];
+// Vegetation stretched to one field's own range: weakest part crimson, strongest green.
+const NDVI_FIELD = ['#b5121b', '#dc3b1f', '#f0702a', '#f8a63a', '#fbd84a', '#cfe04e', '#8fcb4f', '#4caf50', '#1e8e3e'];
+// Relative zones of a field (low, medium, high).
+const ZONES = ['#d0e3fc', '#8abbf7', '#4392f1'];
 const YL_GN_BU = ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58'];
 const YL_OR_RD = ['#ffffcc', '#ffeda0', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#bd0026', '#800026'];
 const BLUES = ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'];
@@ -109,11 +115,16 @@ function ramp(stops: string[], cssVar: string): Ramp {
 const anomalyWet = ramp(DRY_WET, 'var(--ramp-anomaly-wet)');
 
 export const RAMPS: Record<MapMetric, Record<RampMode, Ramp>> = {
-  vegetation: { sequential: ramp(RD_YL_GN, 'var(--ramp-vegetation)'), diverging: anomalyWet },
+  vegetation: { sequential: ramp(NDVI, 'var(--ramp-vegetation)'), diverging: anomalyWet },
   moisture: { sequential: ramp(YL_GN_BU, 'var(--ramp-moisture)'), diverging: anomalyWet },
   heat: { sequential: ramp(YL_OR_RD, 'var(--ramp-heat)'), diverging: ramp(COOL_WARM, 'var(--ramp-anomaly-heat)') },
   rain: { sequential: ramp(BLUES, 'var(--ramp-rain)'), diverging: anomalyWet },
 };
+
+/** Vegetation when the picture is stretched to the field's own range (relative, not absolute, colours). */
+export const RAMP_VEGETATION_FIELD: Ramp = ramp(NDVI_FIELD, 'var(--ramp-vegetation-field)');
+/** Low, medium and high zone of a field. */
+export const RAMP_ZONES: Ramp = ramp(ZONES, 'var(--ramp-zones)');
 
 /** Which ramp paints the parcel for a branch headline metric. Null means the branch has no map paint. */
 export const BRANCH_RAMP: Record<BranchId, MapMetric | null> = {

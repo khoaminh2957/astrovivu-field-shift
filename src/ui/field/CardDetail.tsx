@@ -135,7 +135,7 @@ function Filmstrip({ id }: { id: BranchId }) {
                 aria-pressed={on}
                 aria-label={t('field.frame.go', { d: fmtDate(f.t, lang) })}
                 onClick={() => (setPlaying(false), setCursor(f.t))}
-                className={cn('flex w-full flex-col gap-0.5 rounded-xs border p-1 text-left hover:border-ink-3', on ? 'border-signal bg-surface-2' : 'border-line-1')}
+                className={cn('flex w-full flex-col gap-0.5 rounded-sm border bg-surface-2 p-1.5 text-left hover:bg-surface-3', on ? 'border-signal' : 'border-transparent')}
               >
                 <span className="block aspect-square">
                   <FrameCanvas parcel={parcel} raster={raster} t={f.t} />
@@ -187,11 +187,11 @@ export function CardDetail({ branch: id, onBack, backLabel }: { branch: BranchId
           </Button>
         )}
         <BranchIcon branch={id} colored size={18} className="ml-auto" />
-        <h2 className="t-title truncate">{title}</h2>
+        <h2 className="truncate text-lg font-medium text-ink-1">{title}</h2>
       </header>
 
-      <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-ink-1">
-        {pic === 'loading' ? <span className="skeleton absolute inset-3" aria-hidden /> : <LiveFieldCanvas branch={id} pad={14} />}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-ink-1">
+        {pic === 'loading' ? <span className="skeleton absolute inset-3" aria-hidden /> : <LiveFieldCanvas branch={id} pad={28} />}
       </div>
       <p className="t-caption -mt-2">{pic === 'loading' ? t('field.pic.loading') : caption}</p>
       <PictureLegend id={id} />

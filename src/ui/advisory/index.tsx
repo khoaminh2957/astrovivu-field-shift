@@ -108,11 +108,11 @@ function PriorityPicker({ value, onToggle }: { value: FarmerPriority[]; onToggle
               onClick={() => onToggle(p)}
               className={cn(
                 'inline-flex h-8 items-center gap-1.5 rounded-sm border px-2.5 text-sm font-medium transition-colors duration-(--dur-instant) stacked:h-11',
-                on ? 'border-signal bg-signal text-on-signal' : 'border-line-3 bg-inset text-ink-2 hover:bg-surface-2 hover:text-ink-1',
+                on ? 'border-signal bg-signal/12 text-signal-strong' : 'border-line-2 bg-surface-0 text-ink-2 hover:bg-surface-2 hover:text-ink-1',
                 'disabled:cursor-not-allowed disabled:opacity-45',
               )}
             >
-              {on && <span className="t-value inline-flex size-4 items-center justify-center rounded-xs bg-on-signal text-2xs text-signal">{rank + 1}</span>}
+              {on && <span className="t-value inline-flex size-4 items-center justify-center rounded-xs bg-signal text-2xs font-bold text-on-signal">{rank + 1}</span>}
               {t(`advisory.prio.${p}`)}
             </button>
           );

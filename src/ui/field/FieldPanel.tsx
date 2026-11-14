@@ -1,51 +1,62 @@
 /**
- * Field panel, laid out the way OneSoil lays out a field: a header (thumbnail, name, area and
- * crop, one score line, actions, close) and four tabs.
+ * Field panel, laid out the way OneSoil lays out a field: a header (name, area and crop, the next
+ * steps as icon-over-label actions, close) and four tabs.
  *   Status        crop / planting date / weather cards, "Satellite data" (the field picture with a
  *                 metric selector beside the satellite image, a date control), three chart cards.
- *   Field report  the score in detail, then zones, stable area, frames, comparison maps.
+ *   Field report  the score as four small cards, then zones, stable area, frames, comparison maps.
  *   Data          the eight metric cards; details only after opening one.
  *   Ground truth  the override form and ledger.
  */
-import { useMemo, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, ClipboardPen, CloudSun, Pencil, X } from 'lucide-react';
-import { BRANCHES, type BranchId, type Series, pick } from '@/contracts';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, ChevronsUpDown, CloudSun, Droplets, Lightbulb, Maximize2, Wind, X } from 'lucide-react';
+import { BRANCHES, type BranchId, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { BRANCH_TITLES, findSeries, primarySeries, scoreAt } from '@/lib/series';
 import { diffDays } from '@/lib/time';
-import { useMission } from '@/state/mission';
-import { IconButton, Sparkline, StatusTag, TabPanel, Tabs, cn } from '@/ui/design';
+import { type Phase, useMission } from '@/state/mission';
+import { IconButton, StatusTag, TabPanel, Tabs } from '@/ui/design';
+import { useWeatherNow } from '@/ui/chrome/MapSearch';
 import { useMissionUi } from '@/ui/chrome/uiState';
 import { cropName, fmtDate, fmtNum } from '@/ui/hud/format';
 import { rainSum } from '@/ui/hud/readings';
 import { GroundTruthForm } from '@/ui/override';
 import { CardDetail } from './CardDetail';
-import { LiveFieldCanvas, ShapeThumb } from './FieldCanvas';
+import { LiveFieldCanvas } from './FieldCanvas';
 import { FieldReport } from './FieldReport';
 import { CropSelect, ScoreBlock } from './FieldSummary';
+import { InfoCard } from './InfoCard';
 import { MetricGrid, usePictureState, useSelectBranch } from './MetricCards';
 import { rasterFor } from './picture';
 import { SatelliteCanvas } from './SatelliteCanvas';
-import { ScaleLegend } from './ScaleLegend';
-import { NdviChart, gddBase, gddNote, gddSeries, s2Points } from './StatusCharts';
+import { TileLegend } from './ScaleLegend';
+import { AccumChart, NdviChart, gddBase, gddNote, gddSeries, s2Points } from './StatusCharts';
 import './strings';
 
 export type FieldTab = 'status' | 'report' | 'data' | 'truth';
 
-function ScoreLine() {
+/** The score in a few words beside the area and crop; it opens the Field report. */
+function ScoreLink() {
   const t = useT();
-  const lang = useLang();
   const score = useMission((s) => s.score);
   const cursor = useMission((s) => s.timeline.cursor);
   const setTab = useMissionUi((s) => s.setFieldTab);
   const snap = scoreAt(score, cursor);
-  if (!snap) return <span className="skeleton mt-1 h-4 w-48" />;
-  const lim = snap.limiting ? snap.factors.find((f) => f.key === snap.limiting) : null;
+  if (!snap) return <span className="skeleton inline-block h-3 w-20 align-middle" />;
   return (
-    <button type="button" onClick={() => setTab('report')} className="mt-1 self-start text-left text-sm text-ink-2 hover:text-signal">
-      {snap.offSeason ? t('field.line.outlook') : t('field.line.productivity')} <span className="t-value font-medium text-ink-1">{Math.round(snap.productivity)}</span>
-      {lim ? ` · ${t('field.line.limited', { f: pick(lim.label, lang).toLowerCase() })}` : ''}
+    <button type="button" onClick={() => setTab('report')} className="rounded-xs text-ink-2 underline decoration-line-2 underline-offset-2 hover:text-ink-1 hover:decoration-ink-3">
+      {snap.offSeason ? t('field.line.outlook') : t('field.line.productivity')} <span className="t-value text-ink-1">{Math.round(snap.productivity)}</span>
+      /100
+    </button>
+  );
+}
+
+/** A next step for this field, drawn as an icon over its name. */
+function HeaderAction({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex h-12 min-w-16 flex-col items-center justify-center gap-1 rounded-sm px-2 text-xs text-ink-1 hover:bg-surface-2 [&_svg]:size-5 [&_svg]:stroke-[1.5]">
+      {icon}
+      <span className="whitespace-nowrap">{label}</span>
     </button>
   );
 }
@@ -57,51 +68,35 @@ function Header() {
   const cropId = useMission((s) => s.cropId);
   const mode = useMission((s) => s.telemetry?.mode);
   const unlock = useMission((s) => s.unlockParcel);
-  const setTab = useMissionUi((s) => s.setFieldTab);
+  const setPhase = useMission((s) => s.setPhase);
   if (!parcel) return null;
   const crop = getCrop(cropId);
+  const go = (phase: Phase) => () => setPhase(phase);
   return (
-    <header className="flex items-start gap-3">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-sm bg-ink-1">
-        <ShapeThumb parcel={parcel} size={36} light />
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <h2 className="truncate text-lg leading-6 font-semibold text-ink-1" title={parcel.name}>
+    <header className="flex items-start gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
+        <h2 className="truncate text-lg leading-6 font-bold text-ink-1" title={parcel.name}>
           {parcel.name}
         </h2>
-        <span className="truncate text-sm text-ink-2">
-          <span className="font-medium text-ink-1">{fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha</span>
-          {crop ? `, ${cropName(crop.names, lang)}` : ''}
-          {mode === 'mock' ? <StatusTag status="simulated" compact className="ml-2 align-middle" /> : null}
-        </span>
-        <ScoreLine />
+        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-ink-2">
+          <span>
+            <span className="font-medium text-ink-1">{fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha</span>
+            {crop ? `, ${cropName(crop.names, lang)}` : ''}
+          </span>
+          <span aria-hidden className="text-ink-4">
+            ·
+          </span>
+          <ScoreLink />
+          {mode === 'mock' ? <StatusTag status="simulated" compact className="ml-1" /> : null}
+        </p>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <IconButton label={t('field.gt')} icon={<ClipboardPen />} onClick={() => setTab('truth')} />
-        <IconButton label={t('field.close')} icon={<X />} onClick={unlock} />
+      {/* On narrow screens the same destinations are in the tab bar. */}
+      <div className="flex shrink-0 items-start narrow:hidden">
+        <HeaderAction icon={<Lightbulb />} label={t('field.go.rotation')} onClick={go('advisory')} />
+        <HeaderAction icon={<CalendarCheck />} label={t('field.go.notes')} onClick={go('tracking')} />
       </div>
+      <IconButton label={t('field.close')} icon={<X />} size="lg" onClick={unlock} className="-mr-2 shrink-0 [&_svg]:size-5" />
     </header>
-  );
-}
-
-/** One of the three small cards at the top of Status (crop, planting date, weather). */
-function InfoCard({ label, children, onClick, action }: { label: string; children: ReactNode; onClick?: () => void; action?: string }) {
-  const body = (
-    <>
-      <span className="flex items-center justify-between gap-2 text-xs text-ink-3">
-        {label}
-        {onClick && <Pencil size={13} aria-hidden className="text-ink-4" />}
-      </span>
-      <span className="min-w-0 truncate text-sm font-medium text-ink-1">{children}</span>
-    </>
-  );
-  const cls = 'flex min-w-0 flex-col gap-1 rounded-md border border-line-1 bg-surface-0 px-3 py-2.5 text-left';
-  return onClick ? (
-    <button type="button" aria-label={action} onClick={onClick} className={cn(cls, 'hover:border-line-2')}>
-      {body}
-    </button>
-  ) : (
-    <div className={cls}>{body}</div>
   );
 }
 
@@ -110,32 +105,40 @@ function TopCards() {
   const lang = useLang();
   const cropId = useMission((s) => s.cropId);
   const sowing = useMission((s) => s.groundTruth.sowingDate);
-  const tel = useMission((s) => s.telemetry);
   const setTab = useMissionUi((s) => s.setFieldTab);
+  const w = useWeatherNow();
   const crop = getCrop(cropId);
-  const last = (key: string, b: 'agromet' | 'rainfall') => {
-    if (!tel) return null;
-    const x = findSeries(tel.branches[b], key)?.samples.filter((v) => v.t <= tel.window.today && v.v != null).at(-1);
-    return x?.v ?? null;
-  };
-  const tmax = last('t2m_max', 'agromet');
-  const rain = last('rain', 'rainfall');
-  const wind = last('wind', 'agromet');
+  const add = (label: string) => <span className="text-signal-strong">{label}</span>;
   return (
-    <div className="grid grid-cols-3 gap-2 narrow:grid-cols-2">
+    <div className="grid grid-cols-[150fr_176fr_188fr] gap-2 narrow:grid-cols-2">
       <InfoCard label={t('field.crop')} onClick={() => setTab('truth')} action={t('field.addCrop')}>
-        {crop ? cropName(crop.names, lang) : <span className="text-signal">{t('field.addCrop')}</span>}
+        {crop ? (
+          <span className="inline-flex max-w-full items-center gap-1.5">
+            <span aria-hidden className="size-2 shrink-0 rounded-full bg-signal" />
+            <span className="truncate">{cropName(crop.names, lang)}</span>
+          </span>
+        ) : (
+          add(t('field.addCrop'))
+        )}
       </InfoCard>
       <InfoCard label={t('field.sowing')} onClick={() => setTab('truth')} action={t('field.addSowing')}>
-        {sowing ? fmtDate(sowing, lang) : <span className="text-signal">{t('field.addSowing')}</span>}
+        {sowing ? fmtDate(sowing, lang) : add(t('field.addSowing'))}
       </InfoCard>
-      <InfoCard label={t('field.weather')}>
-        <span className="inline-flex items-center gap-2">
-          <CloudSun size={16} aria-hidden className="text-ink-3" />
-          {tmax != null ? `${fmtNum(tmax, 0)} °C` : '--'}
-          <span className="t-meta">{[rain != null ? `${fmtNum(rain, 1)} mm` : null, wind != null ? `${fmtNum(wind, 1)} m/s` : null].filter(Boolean).join(' · ')}</span>
+      <div title={t('field.weather')} className="flex min-h-[60px] min-w-0 items-center gap-3 rounded-sm border border-line-1 px-3 py-2 narrow:col-span-2">
+        <CloudSun size={28} strokeWidth={1.5} aria-hidden className="shrink-0 text-branch-rainfall" />
+        <span className="t-value text-xl leading-6 text-ink-1">{w?.tmax != null ? `${fmtNum(w.tmax, 0)}°` : '--'}</span>
+        <span className="t-value flex min-w-0 flex-col text-xs font-normal text-ink-2">
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <Droplets size={12} strokeWidth={1.5} aria-hidden className="text-ink-3" />
+            {w?.rain != null ? `${fmtNum(w.rain, w.rain < 10 ? 1 : 0)} mm` : '--'}
+          </span>
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <Wind size={12} strokeWidth={1.5} aria-hidden className="text-ink-3" />
+            {w?.wind != null ? `${fmtNum(w.wind, 1)} m/s` : '--'}
+          </span>
         </span>
-      </InfoCard>
+        <span className="sr-only">{t('field.weather')}</span>
+      </div>
     </div>
   );
 }
@@ -153,20 +156,24 @@ function DatePill() {
   const prev = [...dates].reverse().find((d) => d < cursor);
   const next = dates.find((d) => d > cursor);
   const go = (d?: string) => d && (setPlaying(false), setCursor(d));
+  const step = 'flex size-8 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-35 disabled:hover:bg-transparent';
   return (
-    <div className="flex items-center gap-1 rounded-full bg-ink-1 p-1 text-white">
-      <button type="button" aria-label={t('field.frame.prev')} disabled={!prev} onClick={() => go(prev)} className="flex size-7 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-40">
+    <div className="flex h-10 shrink-0 items-center gap-1 rounded-full bg-ink-1 px-1 text-white">
+      <button type="button" aria-label={t('field.frame.prev')} disabled={!prev} onClick={() => go(prev)} className={step}>
         <ChevronLeft size={16} aria-hidden />
       </button>
-      <span className="t-value px-1 text-sm">{fmtDate(cursor, lang)}</span>
-      <button type="button" aria-label={t('field.frame.next')} disabled={!next} onClick={() => go(next)} className="flex size-7 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-40">
+      <span className="t-value min-w-24 px-1 text-center text-base">{fmtDate(cursor, lang)}</span>
+      <button type="button" aria-label={t('field.frame.next')} disabled={!next} onClick={() => go(next)} className={step}>
         <ChevronRight size={16} aria-hidden />
       </button>
     </div>
   );
 }
 
-/** Left tile: the field picture with a metric selector in its corner and the legend under it. */
+const TILE = 'relative block aspect-[8/7] overflow-hidden rounded-sm bg-ink-1';
+const TILE_CHIP = 'bg-[#3a3a3c] text-white';
+
+/** Left tile: the field picture, a metric selector and an expand button on top, its legend in the corner. */
 function PictureTile() {
   const t = useT();
   const lang = useLang();
@@ -176,24 +183,42 @@ function PictureTile() {
   const titles = useMission((s) => s.telemetry?.branches);
   const pic = usePictureState(branch);
   const select = useSelectBranch();
+  const setTab = useMissionUi((s) => s.setFieldTab);
   const title = (b: BranchId) => pick(titles?.[b]?.title ?? BRANCH_TITLES[b], lang);
   return (
-    <figure className="flex min-w-0 flex-col gap-2">
-      <span className="relative block aspect-square overflow-hidden rounded-md bg-ink-1">
-        {pic === 'loading' ? <span className="skeleton absolute inset-6 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={branch} pad={20} />}
-        <label className="absolute top-2 left-2 flex items-center rounded-full bg-black/60 pr-1 text-xs font-medium text-white">
-          <span className="sr-only">{t('field.metric')}</span>
-          <select value={branch} onChange={(e) => select(e.target.value as BranchId)} className="h-7 max-w-[11rem] cursor-pointer appearance-none truncate rounded-full bg-transparent pr-2 pl-3 outline-offset-2">
-            {BRANCHES.map((b) => (
-              <option key={b} value={b} className="text-ink-1">
-                {title(b)}
-              </option>
-            ))}
-          </select>
-          <ChevronRight size={12} aria-hidden className="rotate-90" />
-        </label>
-      </span>
-      {raster ? <ScaleLegend raster={raster} compact /> : <span className="t-caption">{t('field.pic.singleNoRes')}</span>}
+    <figure className={TILE}>
+      {pic === 'loading' ? <span className="skeleton absolute inset-10 opacity-20" aria-hidden /> : <LiveFieldCanvas branch={branch} pad={44} />}
+      <label className={`absolute top-2 left-2 flex h-7 max-w-[calc(100%-3.5rem)] items-center rounded-full pr-2 text-xs font-medium ${TILE_CHIP}`}>
+        <span className="sr-only">{t('field.metric')}</span>
+        <select value={branch} onChange={(e) => select(e.target.value as BranchId)} className="h-full min-w-0 cursor-pointer appearance-none truncate rounded-full bg-transparent pr-1 pl-3 outline-offset-2">
+          {BRANCHES.map((b) => (
+            <option key={b} value={b} className="text-ink-1">
+              {title(b)}
+            </option>
+          ))}
+        </select>
+        <ChevronsUpDown size={12} aria-hidden className="shrink-0 opacity-80" />
+      </label>
+      <button
+        type="button"
+        aria-label={t('field.pic.open', { name: title(branch) })}
+        title={t('field.pic.open', { name: title(branch) })}
+        onClick={() => (select(branch), setTab('data'))}
+        className={`absolute top-2 right-2 flex size-7 items-center justify-center rounded-xs hover:bg-[#48484a] ${TILE_CHIP}`}
+      >
+        <Maximize2 size={14} strokeWidth={1.75} aria-hidden />
+      </button>
+      {raster ? (
+        <TileLegend raster={raster} className="absolute bottom-2 left-3" />
+      ) : (
+        <figcaption className="absolute right-3 bottom-2 left-3 text-[11px] leading-[14px] text-white/80 narrow:text-xs">{t('field.pic.singleNoRes')}</figcaption>
+      )}
+      {raster && raster.frames.length > 1 && (
+        <span className="absolute right-3 bottom-[26px] inline-flex items-center gap-1 text-[11px] leading-[14px] text-white/70 narrow:text-xs">
+          <span aria-hidden className="inline-block size-2 rounded-[2px] bg-[#3a3a3c] ring-1 ring-white/30" />
+          {t('field.scale.noData')}
+        </span>
+      )}
     </figure>
   );
 }
@@ -202,53 +227,45 @@ function SatelliteTile() {
   const t = useT();
   const parcel = useMission((s) => s.parcel);
   if (!parcel) return null;
+  const shadow = '[text-shadow:0_1px_2px_rgb(0_0_0/0.7)]';
   return (
-    <figure className="flex min-w-0 flex-col gap-2">
-      <span className="relative block aspect-square overflow-hidden rounded-md bg-ink-1">
-        <SatelliteCanvas parcel={parcel} pad={20} />
-        <span className="absolute top-2 left-2 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">{t('field.sat.title')}</span>
-      </span>
-      <span className="t-caption">{t('field.sat.credit')}</span>
+    <figure className={TILE}>
+      <SatelliteCanvas parcel={parcel} pad={44} />
+      <figcaption className={`absolute top-3 left-3 text-base font-medium text-white ${shadow}`}>{t('field.sat.title')}</figcaption>
+      <span className={`absolute right-3 bottom-2 left-3 text-[11px] leading-[14px] text-white/85 narrow:text-xs ${shadow}`}>{t('field.sat.credit')}</span>
     </figure>
   );
 }
 
-/** A chart card: the plot on the left, title, one large value and one sentence on the right. */
+/** The window every chart below covers. Not a control: the telemetry window is fixed at one year. */
+function PeriodNote() {
+  const lang = useLang();
+  const t = useT();
+  const window = useMission((s) => s.telemetry?.window);
+  if (!window) return null;
+  return (
+    <span className="inline-flex h-8 items-center gap-1.5 self-end rounded-sm border border-line-1 px-2.5 text-xs text-ink-1" title={t('field.period')}>
+      <CalendarDays size={14} strokeWidth={1.5} aria-hidden className="text-ink-3" />
+      <span className="sr-only">{t('field.period')}: </span>
+      {fmtDate(window.start, lang)} – {fmtDate(window.today, lang)}
+    </span>
+  );
+}
+
+/** A chart card: the plot on the left; its name, one value and one sentence on the right. */
 function ChartCard({ title, value, unit, note, children }: { title: string; value: string; unit: string; note: string; children: ReactNode }) {
   return (
-    <section className="grid grid-cols-[minmax(0,1fr)_11rem] gap-4 rounded-md border border-line-1 bg-surface-0 p-4 narrow:grid-cols-1">
-      <div className="min-w-0 self-center">{children}</div>
+    <section className="grid grid-cols-[minmax(0,1fr)_9.5rem] gap-5 rounded-sm border border-line-1 p-4 narrow:grid-cols-1 narrow:gap-3">
+      <div className="min-w-0">{children}</div>
       <div className="flex flex-col gap-1 narrow:order-first">
-        <h4 className="text-sm font-medium text-ink-1">{title}</h4>
+        <h4 className="text-xs font-medium text-ink-1">{title}</h4>
         <span className="flex items-baseline gap-1">
-          <span className="t-value text-2xl text-ink-1">{value}</span>
+          <span className="t-value text-xl leading-7 text-ink-1">{value}</span>
           <span className="t-unit">{unit}</span>
         </span>
         <p className="t-caption">{note}</p>
       </div>
     </section>
-  );
-}
-
-function SeriesPlot({ series, samples, range, branch }: { series: Series; samples: Series['samples']; range?: [number, number]; branch: BranchId }) {
-  const lang = useLang();
-  const telemetry = useMission((s) => s.telemetry)!;
-  const cursor = useMission((s) => s.timeline.cursor);
-  return (
-    <Sparkline
-      samples={samples}
-      domain={[telemetry.window.start, telemetry.window.end]}
-      range={range}
-      cadence={series.cadence}
-      cursor={cursor}
-      today={telemetry.window.today}
-      tone={branch}
-      variant="line"
-      height={72}
-      points={false}
-      label={pick(series.label, lang)}
-      unit={series.unit}
-    />
   );
 }
 
@@ -278,18 +295,18 @@ function StatusCharts() {
   const rainDays = rain ? diffDays(cursor, telemetry.window.start) : 0;
   const gddNow = gdd?.samples.filter((s) => s.t <= cursor && s.v != null).at(-1)?.v ?? null;
   return (
-    <div className="flex flex-col gap-3">
-      <ChartCard title={t('field.ndvi.card')} value={latest ? fmtNum(latest.mean, 2) : '--'} unit="NDVI" note={ndviNote}>
-        <NdviChart modis={modis} bare />
+    <div className="flex flex-col gap-2">
+      <ChartCard title={t('field.ndvi.card')} value={latest ? fmtNum(latest.mean, 2) : '--'} unit="" note={ndviNote}>
+        <NdviChart modis={modis} />
       </ChartCard>
       {rain && (
         <ChartCard title={t('field.chart.rainAcc')} value={fmtNum(rainTotal, 0)} unit="mm" note={t('field.rain.short', { n: rainDays })}>
-          <SeriesPlot series={rain} samples={rainAcc} range={[0, Math.max(1, rainAcc.at(-1)?.v ?? 1)]} branch="rainfall" />
+          <AccumChart samples={rainAcc} color="var(--color-branch-rainfall)" label={t('field.chart.rainAcc')} />
         </ChartCard>
       )}
       {gdd && (
-        <ChartCard title={t('field.gdd.title')} value={gddNow == null ? '--' : `+${fmtNum(gddNow, 0)}`} unit="°C·d" note={gddNote(t, lang, crop, base)}>
-          <SeriesPlot series={gdd} samples={gdd.samples} range={gdd.range} branch="thermal" />
+        <ChartCard title={t('field.gdd.title')} value={gddNow == null ? '--' : fmtNum(gddNow, 0)} unit="°C·d" note={gddNote(t, lang, crop, base)}>
+          <AccumChart samples={gdd.samples} color="var(--color-branch-thermal)" label={t('field.gdd.title')} />
         </ChartCard>
       )}
     </div>
@@ -306,12 +323,13 @@ function StatusTab() {
           <h3 className="text-lg font-medium text-ink-1">{t('field.status.satellite')}</h3>
           <DatePill />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 narrow:grid-cols-1">
           <PictureTile />
           <SatelliteTile />
         </div>
+        <PeriodNote />
+        <StatusCharts />
       </section>
-      <StatusCharts />
     </div>
   );
 }
@@ -345,8 +363,15 @@ export function FieldPanel() {
   const t = useT();
   const tab = useMissionUi((s) => s.fieldTab);
   const setTab = useMissionUi((s) => s.setFieldTab);
+  const root = useRef<HTMLDivElement | null>(null);
+  const parcelId = useMission((s) => s.parcel?.id);
+  // A tab or a field opens at its top, wherever the previous one had been scrolled to.
+  useEffect(() => {
+    root.current?.closest('[data-panel-scroll]')?.scrollTo({ top: 0 });
+  }, [tab, parcelId]);
+  const count = <span className="rounded-xs border border-signal px-1 text-xs leading-4 font-medium text-signal-strong">{BRANCHES.length}</span>;
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={root} className="flex flex-col gap-5 narrow:gap-3">
       <Header />
       <Tabs<FieldTab>
         ariaLabel={t('field.tabs')}
@@ -355,20 +380,20 @@ export function FieldPanel() {
         tabs={[
           { value: 'status', label: t('field.tab.status') },
           { value: 'report', label: t('field.tab.report') },
-          { value: 'data', label: `${t('field.tab.data')} 8` },
+          { value: 'data', label: t('field.tab.data'), badge: count },
           { value: 'truth', label: t('field.tab.truth') },
         ]}
       >
-        <TabPanel value="status" className="pt-5">
+        <TabPanel value="status" className="pt-6">
           <StatusTab />
         </TabPanel>
-        <TabPanel value="report" className="pt-5">
+        <TabPanel value="report" className="pt-6">
           <ReportTab />
         </TabPanel>
-        <TabPanel value="data" className="pt-5">
+        <TabPanel value="data" className="pt-6">
           <DataTab />
         </TabPanel>
-        <TabPanel value="truth" className="pt-5">
+        <TabPanel value="truth" className="pt-6">
           <TruthTab />
         </TabPanel>
       </Tabs>

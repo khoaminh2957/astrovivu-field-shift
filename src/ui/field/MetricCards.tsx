@@ -14,7 +14,8 @@ import { fmtRes } from '@/ui/hud/format';
 import { readBranch } from '@/ui/hud/readings';
 import '@/ui/hud/strings';
 import { LiveFieldCanvas } from './FieldCanvas';
-import { RASTER_BRANCHES, frameShown, rampGradient, rasterFor } from './picture';
+import { displayRange } from '@/lib/raster';
+import { RASTER_BRANCHES, frameShown, isRelative, rampGradient, rasterFor } from './picture';
 import { fmtDate } from '@/ui/hud/format';
 import './strings';
 
@@ -68,7 +69,11 @@ const MetricCard = memo(function MetricCard({ id }: { id: BranchId }) {
   const select = useSelectBranch();
   const pic = usePictureState(id);
   const caption = usePictureCaption(id);
-  const ramp = useMission((s) => rasterFor(s.rasters, id)?.ramp);
+  // The bar under the picture is the ramp the picture is painted with (fixed, or this field's own range).
+  const ramp = useMission((s) => {
+    const r = rasterFor(s.rasters, id);
+    return r ? rampGradient(r.ramp, isRelative(r, displayRange(r, s.parcel?.polygon, s.layers.stretch))) : undefined;
+  });
   const frameDate = useMission((s) => frameShown(rasterFor(s.rasters, id), s.timeline.cursor)?.date);
 
   const branch = telemetry?.branches[id];
@@ -83,7 +88,7 @@ const MetricCard = memo(function MetricCard({ id }: { id: BranchId }) {
       aria-pressed={active}
       onClick={() => select(active ? null : id)}
       className={cn(
-        'group flex min-w-0 flex-col gap-2 rounded-lg border bg-surface-2 p-3 text-left transition-colors duration-(--dur-fast)',
+        'group flex min-w-0 flex-col gap-2 rounded-sm border bg-surface-2 p-3 text-left transition-colors duration-(--dur-fast)',
         active ? 'border-signal' : 'border-transparent hover:bg-surface-3',
       )}
     >
@@ -92,19 +97,19 @@ const MetricCard = memo(function MetricCard({ id }: { id: BranchId }) {
           <BranchIcon branch={id} size={12} />
           {fmtDate(frameDate ?? cursor, lang)}
         </span>
-        <span className="truncate text-sm font-semibold text-ink-1">{title}</span>
+        <span className="truncate text-base font-medium text-ink-1">{title}</span>
       </span>
-      <span className="relative block aspect-square overflow-hidden">
-        {unavailable ? null : pic === 'loading' || loading ? <span className="skeleton absolute inset-4 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={id} pad={14} />}
+      <span className="relative block aspect-[4/3] overflow-hidden">
+        {unavailable ? null : pic === 'loading' || loading ? <span className="skeleton absolute inset-4 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={id} pad={10} />}
       </span>
-      {unavailable ? null : ramp ? <span aria-hidden className="h-1.5 rounded-full" style={{ background: rampGradient(ramp) }} /> : <span className="t-caption truncate">{caption}</span>}
+      {unavailable ? null : ramp ? <span aria-hidden className="h-1.5 rounded-full" style={{ background: ramp }} /> : <span className="t-caption truncate">{caption}</span>}
       {unavailable ? (
         <span className="t-caption">{t('field.unavailable')}</span>
       ) : loading ? (
         <span className="skeleton h-6 w-20" />
       ) : (
         <span className="flex min-w-0 items-baseline gap-1">
-          <span className={cn('t-value text-xl leading-6 text-ink-1', r?.status === 'stale' && 'text-ink-3')}>{r?.value ?? '--'}</span>
+          <span className={cn('t-value text-lg leading-6 text-ink-1', r?.status === 'stale' && 'text-ink-3')}>{r?.value ?? '--'}</span>
           <span className="t-unit truncate">{r?.unit}</span>
         </span>
       )}
@@ -127,8 +132,8 @@ export function MetricGrid({ className }: { className?: string }) {
         ] as const
       ).map(([key, ids]) => (
         <section key={key} className="flex flex-col gap-3">
-          <h3 className="text-lg font-semibold text-ink-1">{t(key)}</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <h3 className="text-lg font-medium text-ink-1">{t(key)}</h3>
+          <div className="grid grid-cols-2 gap-2">
             {ids.map((b) => (
               <MetricCard key={b} id={b} />
             ))}

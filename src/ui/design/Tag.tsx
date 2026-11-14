@@ -61,7 +61,7 @@ const toneOutline: Record<TagTone, string> = {
   stale: 'border-stale/45 text-stale border-dashed',
   simulated: 'border-simulated/50 text-simulated hatch-simulated',
   // Outline only: the solid signal fill is kept for the measured value itself.
-  'ground-truth': 'border-signal text-signal',
+  'ground-truth': 'border-signal text-signal-strong',
 };
 
 const toneSoft: Record<TagTone, string> = {
@@ -71,7 +71,7 @@ const toneSoft: Record<TagTone, string> = {
   alert: 'border-transparent bg-alert/14 text-alert',
   stale: 'border-transparent bg-stale/12 text-stale',
   simulated: 'border-transparent bg-simulated/10 text-simulated hatch-simulated',
-  'ground-truth': 'border-transparent bg-signal/12 text-signal',
+  'ground-truth': 'border-transparent bg-signal/12 text-signal-strong',
 };
 
 const toneSolid: Record<TagTone, string> = {
@@ -168,7 +168,7 @@ export function ProvenanceTag({ provenance, source, detail, compact, className, 
   const word = t(`design.prov.${provenance}`);
   const tone =
     provenance === 'ground-truth'
-      ? 'text-signal'
+      ? 'text-signal-strong'
       : provenance === 'simulated'
         ? 'text-simulated hatch-simulated px-1'
         : provenance === 'forecast'

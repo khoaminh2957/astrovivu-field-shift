@@ -8,6 +8,7 @@ import { useParcelPaint } from '@/globe';
 import { displayRange } from '@/lib/raster';
 import { useMission } from '@/state/mission';
 import { StretchToggle } from '@/ui/field/ScaleLegend';
+import { isFieldRange, rasterRampCss } from '@/globe';
 import { pick } from '@/contracts';
 import { useLang } from '@/i18n';
 import { fmtDate } from '@/ui/hud/format';
@@ -20,7 +21,7 @@ import { useMissionUi, useNarrow } from './uiState';
 import './strings';
 
 function Group({ children }: { children: React.ReactNode }) {
-  return <div className="plate flex flex-col p-0.5 shadow-md">{children}</div>;
+  return <div className="flex flex-col rounded-sm border border-line-1 bg-surface-0 p-1 shadow-md">{children}</div>;
 }
 
 function MeasureReadout() {
@@ -153,19 +154,22 @@ export function MapLegendChip({ className }: { className?: string }) {
   // The map paints rasters on the same scale as the cards; the legend follows it.
   const range = raster ? displayRange(raster, polygon, stretch) : paint.range;
   const d = range[1] - range[0] < 5 ? 2 : 0;
+  const title = paint.label ? pick(paint.label, lang).split(',')[0] : paint.key;
   return (
-    <div className={cn('plate flex w-56 flex-col gap-1 rounded-md px-3 py-2 shadow-md', className)}>
+    <div className={cn('flex w-56 flex-col gap-1.5 rounded-sm border border-line-1 bg-surface-0 px-3 py-2.5 shadow-md', className)}>
       <span className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-xs font-medium text-ink-1">{paint.label ? pick(paint.label, lang) : paint.key}</span>
+        <span className="truncate text-xs font-medium text-ink-1">{title}</span>
         {paint.date && <span className="t-meta shrink-0">{fmtDate(paint.date, lang)}</span>}
       </span>
-      <span aria-hidden className="h-1.5 rounded-full" style={{ background: paint.rampCss }} />
+      {/* The bar is the ramp the map is painted with: the field-range ramp when the scale is stretched to this field. */}
+      <span aria-hidden className="h-1.5 rounded-full" style={{ background: raster ? rasterRampCss(raster.ramp, isFieldRange(raster, range)) : paint.rampCss }} />
       <span className="t-meta flex justify-between">
         <span>{fmtNum(range[0], d)}</span>
-        <span>{paint.unit}</span>
+        {/* An index is its own unit: do not print NDVI under a title that already says NDVI. */}
+        <span>{title === paint.unit ? '' : paint.unit}</span>
         <span>{fmtNum(range[1], d)}</span>
       </span>
-      {raster && raster.frames.length > 1 && <StretchToggle className="self-start" />}
+      {raster && raster.frames.length > 1 && <StretchToggle className="mt-0.5 self-start" />}
     </div>
   );
 }

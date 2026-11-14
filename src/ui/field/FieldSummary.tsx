@@ -10,6 +10,7 @@ import { useLang, useT } from '@/i18n';
 import { insightsNear, scoreAt } from '@/lib/series';
 import { useMission } from '@/state/mission';
 import { AnomalyMarker, Button, Select, StatusTag, Tag, cn } from '@/ui/design';
+import { InfoCard } from './InfoCard';
 import { useMissionUi } from '@/ui/chrome/uiState';
 import { cropName, fmtDate, fmtNum } from '@/ui/hud/format';
 import { GroundTruthForm, countOverrides } from '@/ui/override';
@@ -57,6 +58,10 @@ export function CropSelect() {
   );
 }
 
+/**
+ * The score at the cursor date, said once and quietly: four small cards (the score, the crop fit or
+ * growing condition, what limits it, how many years back it up) and one line for the date and stage.
+ */
 export function ScoreBlock() {
   const t = useT();
   const lang = useLang();
@@ -67,50 +72,39 @@ export function ScoreBlock() {
   const snap = scoreAt(score, cursor);
   const limiting = snap?.limiting ? snap.factors.find((f) => f.key === snap.limiting) : null;
   const rel = score?.summary.reliability;
-  const off = !!snap?.offSeason;
 
   if (!snap) {
     return (
-      <section aria-busy className="flex flex-col gap-2 rounded-sm border border-line-1 bg-surface-1 p-4">
-        <span className="t-label">{t('field.score.loading')}</span>
-        <span className="skeleton h-10 w-28" />
-        <span className="skeleton h-3 w-44" />
+      <section aria-busy aria-label={t('field.score.loading')} className="grid grid-cols-4 gap-2 narrow:grid-cols-2">
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className="skeleton h-[60px] rounded-sm" />
+        ))}
       </section>
     );
   }
 
   const v = Math.round(snap.productivity);
+  // Colour only when the land needs attention; a healthy score is plain ink.
   const tone = v >= 60 ? 'text-ink-1' : v >= 40 ? 'text-watch' : 'text-alert';
+  const outOf = <span className="t-unit ml-0.5">/100</span>;
   return (
-    <section aria-label={t('field.score.aria')} className="flex flex-col gap-3 rounded-sm border border-line-1 bg-surface-1 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col">
-          <span className="t-label">{off ? t('field.score.outlook') : t('field.score.productivity')}</span>
-          <span className="flex items-baseline gap-1">
-            <span className={cn('t-value text-4xl leading-none', tone)}>{v}</span>
-            <span className="t-unit">/100</span>
-          </span>
-        </div>
-        <div className="flex flex-col items-end gap-1 pt-1">
-          {snap.stage && <Tag variant="soft">{pick(snap.stage.label, lang)}</Tag>}
-          {mode === 'mock' && <StatusTag status="simulated" compact />}
-        </div>
+    <section aria-label={t('field.score.aria')} className="flex flex-col gap-2">
+      <div className="grid grid-cols-4 gap-2 narrow:grid-cols-2">
+        <InfoCard label={snap.offSeason ? t('field.line.outlook') : t('field.score.productivity')}>
+          <span className={cn('t-value', tone)}>{v}</span>
+          {outOf}
+        </InfoCard>
+        <InfoCard label={cropId ? t('field.score.fit') : t('field.score.condition')}>
+          <span className="t-value">{fmtNum(cropId ? snap.compatibility : snap.condition, 0)}</span>
+          {outOf}
+        </InfoCard>
+        <InfoCard label={t('field.score.limiting')}>{limiting ? pick(limiting.label, lang) : t('field.score.none')}</InfoCard>
+        <InfoCard label={t('field.score.reliability')}>{rel ? t('field.score.years', { ok: rel.yearsOk, n: rel.yearsTotal }) : '--'}</InfoCard>
       </div>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-line-1 pt-3">
-        <div className="flex flex-col">
-          <dt className="t-caption">{cropId ? t('field.score.fit') : t('field.score.condition')}</dt>
-          <dd className="t-value text-lg text-ink-1">{fmtNum(cropId ? snap.compatibility : snap.condition, 0)}<span className="t-unit">/100</span></dd>
-        </div>
-        <div className="flex flex-col">
-          <dt className="t-caption">{t('field.score.reliability')}</dt>
-          <dd className="text-base text-ink-1">{rel ? t('field.score.years', { ok: rel.yearsOk, n: rel.yearsTotal }) : '--'}</dd>
-        </div>
-        <div className="col-span-2 flex flex-col">
-          <dt className="t-caption">{t('field.score.limiting')}</dt>
-          <dd className="text-base text-ink-1">{limiting ? pick(limiting.label, lang) : t('field.score.noLimit')}</dd>
-        </div>
-      </dl>
-      <p className="t-meta">{t('field.score.at', { d: fmtDate(cursor, lang) })}</p>
+      <p className="t-caption flex flex-wrap items-center gap-x-2 gap-y-1">
+        {[snap.offSeason ? t('field.score.outlook') : null, t('field.score.at', { d: fmtDate(cursor, lang) }), snap.stage ? pick(snap.stage.label, lang) : null].filter(Boolean).join(' · ')}
+        {mode === 'mock' && <StatusTag status="simulated" compact />}
+      </p>
     </section>
   );
 }

@@ -89,7 +89,7 @@ export function LayersPanel({ onClose }: { onClose: () => void }) {
                   onClick={() => setOverlay(o.id)}
                   className={cn('flex min-h-8 items-center gap-2 rounded-xs px-1.5 text-left text-sm text-ink-2 hover:bg-surface-2 hover:text-ink-1', on && 'text-ink-1')}
                 >
-                  <span aria-hidden className={cn('flex size-3.5 shrink-0 items-center justify-center rounded-full border', on ? 'border-signal' : 'border-line-3')}>
+                  <span aria-hidden className={cn('flex size-3.5 shrink-0 items-center justify-center rounded-full border', on ? 'border-signal' : 'border-ink-4')}>
                     {on && <span className="size-1.5 rounded-full bg-signal" />}
                   </span>
                   <span className="min-w-0 flex-1">{pick(o.label, lang)}</span>

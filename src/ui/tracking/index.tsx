@@ -183,13 +183,13 @@ function NdviYears({ data, observed }: { data: TrackingData; observed: { samples
         {ticks.map((v) => (
           <g key={v}>
             <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="var(--color-line-1)" />
-            <text x={pad.l - 4} y={y(v) + 3} textAnchor="end" fontSize={10} fill="var(--color-ink-3)" fontFamily="var(--font-mono)">
+            <text x={pad.l - 4} y={y(v) + 3} textAnchor="end" fontSize={10} fill="var(--color-ink-4)" fontFamily="var(--font-sans)">
               {v.toFixed(1)}
             </text>
           </g>
         ))}
         {Array.from({ length: 12 }, (_, i) => (
-          <text key={i} x={x(dayOfYear(`2025-${String(i + 1).padStart(2, '0')}-01`)) + 2} y={H - 4} fontSize={10} fill="var(--color-ink-3)" fontFamily="var(--font-mono)">
+          <text key={i} x={x(dayOfYear(`2025-${String(i + 1).padStart(2, '0')}-01`)) + 2} y={H - 4} fontSize={10} fill="var(--color-ink-4)" fontFamily="var(--font-sans)">
             {monthShort(i + 1, lang)}
           </text>
         ))}

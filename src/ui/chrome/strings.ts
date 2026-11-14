@@ -42,6 +42,8 @@ registerStrings(
   'map',
   {
     tools: 'Map tools',
+    search: 'Search a place',
+    'search.clear': 'Clear the search',
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',
     north: 'Point north (bearing {b}°)',
@@ -75,6 +77,8 @@ registerStrings(
   },
   {
     tools: 'Công cụ bản đồ',
+    search: 'Tìm địa điểm',
+    'search.clear': 'Xoá ô tìm',
     zoomIn: 'Phóng to',
     zoomOut: 'Thu nhỏ',
     north: 'Quay về hướng bắc (đang {b}°)',

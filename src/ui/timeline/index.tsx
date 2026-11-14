@@ -10,7 +10,7 @@ import { useLang, useT } from '@/i18n';
 import { primarySeries } from '@/lib/series';
 import { addDays, diffDays } from '@/lib/time';
 import { useMission } from '@/state/mission';
-import { IconButton, Segmented, Slider, type SliderMarker, type SliderRange, type SliderTick, cn } from '@/ui/design';
+import { IconButton, Slider, type SliderMarker, type SliderRange, type SliderTick, Tooltip, cn } from '@/ui/design';
 import { useMissionUi, useNarrow } from '@/ui/chrome/uiState';
 import { MONTHS, fmtDate } from '@/ui/hud/format';
 import './strings';
@@ -113,10 +113,11 @@ export function TimelineScrubber({ className }: { className?: string }) {
       if (!date.endsWith('-01')) continue;
       const m = Number(date.slice(5, 7));
       const labelled = (m - 1) % 3 === 0;
-      out.push({ value: d, major: m === 1, label: labelled ? (m === 1 && !narrow ? `${MONTHS[lang][0]} ${date.slice(0, 4)}` : MONTHS[lang][m - 1]) : undefined });
+      // Month names only: the year is in the date beside the track, and a longer label runs into its neighbour.
+      out.push({ value: d, major: m === 1, label: labelled ? MONTHS[lang][m - 1] : undefined });
     }
     return out;
-  }, [start, max, lang, narrow]);
+  }, [start, max, lang]);
 
   const markers = useMemo<SliderMarker[]>(() => {
     const out: SliderMarker[] = insights.map((i) => ({ value: diffDays(i.t, start), severity: i.severity, label: `${fmtDate(i.t, lang)}: ${pick(i.text, lang)}` }));
@@ -174,12 +175,12 @@ ${m.label}` } : m);
       ref={rootRef}
       role="region"
       aria-label={t('tl.timeline')}
-      className={cn('flex min-w-0 items-center gap-3 bg-surface-0 px-3 shadow-md', className)}
+      className={cn('flex min-w-0 items-center gap-3 bg-surface-0 pr-3 pl-4', className)}
     >
-      <IconButton label={playing ? t('tl.pause') : t('tl.play')} icon={playing ? <Pause /> : <Play />} variant="primary" size={narrow ? 'lg' : 'md'} onClick={() => setPlaying(!playing)} />
-      <div className={cn('flex shrink-0 flex-col leading-tight', narrow ? 'w-[5.5rem]' : 'w-28')}>
-        <span className="t-value text-sm text-ink-1">{fmtDate(cursor, lang)}</span>
-        <span className="t-meta truncate">{rel === 0 ? t('tl.today') : rel < 0 ? t('tl.ago', { n: -rel }) : t('tl.ahead', { n: rel })}</span>
+      <IconButton label={playing ? t('tl.pause') : t('tl.play')} icon={playing ? <Pause /> : <Play />} variant="primary" size="lg" className="rounded-full shadow-none [&_svg]:size-4 [&_svg]:fill-current" onClick={() => setPlaying(!playing)} />
+      <div className="flex min-w-[5.75rem] shrink-0 flex-col">
+        <span className="t-value text-base whitespace-nowrap text-ink-1">{fmtDate(cursor, lang)}</span>
+        <span className="truncate text-xs text-ink-3">{rel === 0 ? t('tl.today') : rel < 0 ? t('tl.ago', { n: -rel }) : t('tl.ahead', { n: rel })}</span>
       </div>
       <div
         className="relative min-w-0 flex-1"
@@ -204,28 +205,17 @@ ${m.label}` } : m);
           ranges={ranges}
         />
       </div>
-      {narrow ? (
+      {/* One button that steps 1x, 2x, 4x: three segments here crowded the track out of a short strip. */}
+      <Tooltip content={t('tl.speed')}>
         <button
           type="button"
-          aria-label={t('tl.speed')}
+          aria-label={`${t('tl.speed')}: ${speed}×`}
           onClick={() => setSpeed(speed === 4 ? 1 : ((speed * 2) as 2 | 4))}
-          className="t-value flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-2 text-sm text-ink-1"
+          className={cn('t-value flex shrink-0 items-center justify-center rounded-sm border border-line-1 text-xs text-ink-1 hover:bg-surface-2', narrow ? 'size-11 text-base' : 'h-8 w-10')}
         >
           {speed}×
         </button>
-      ) : (
-        <Segmented
-          ariaLabel={t('tl.speed')}
-          size="sm"
-          value={String(speed)}
-          onValueChange={(v) => setSpeed(Number(v) as 1 | 2 | 4)}
-          options={[
-            { value: '1', label: '1×' },
-            { value: '2', label: '2×' },
-            { value: '4', label: '4×' },
-          ]}
-        />
-      )}
+      </Tooltip>
     </div>
   );
 }

@@ -113,11 +113,19 @@ All values in `tokens.css`. Tailwind classes follow the names: `bg-surface-1`, `
 
 ### Map metric ramps
 
-ColorBrewer, colour-blind safe, nine stops, low to high. CSS: `var(--ramp-*)` (a 90° gradient). Code: `RAMPS[metric][mode]`, `rampColor(metric, value, [min, max], mode)` (piecewise linear, identical to the legend).
+Low to high. CSS: `var(--ramp-*)` (a 90° gradient). Code: `RAMPS[metric][mode]`, `rampColor(metric, value, [min, max], mode)` (piecewise linear, identical to the legend). Moisture, rain and heat are ColorBrewer, colour-blind safe, nine stops. Vegetation follows the convention of field-monitoring apps and has two ramps, so the two scales of a field picture cannot be mistaken for each other:
+
+| Ramp | Token, code | Stops | Used when |
+|---|---|---|---|
+| NDVI, fixed scale | `--ramp-vegetation`, `RAMPS.vegetation.sequential` | 12: dark brown `#300b05`, rust, orange, yellow `#f8d03c`, greens, dark green `#123011` | The picture is on the index's own 0 to 1 range ("Fixed scale") |
+| NDVI, field range | `--ramp-vegetation-field`, `RAMP_VEGETATION_FIELD` | 9: crimson `#b5121b`, orange, yellow, green `#1e8e3e` | The picture is stretched to this field's 2nd to 98th percentile ("Field range") |
+| Zones | `--ramp-zones`, `RAMP_ZONES` | 3 blues: `#d0e3fc`, `#8abbf7`, `#4392f1` | Low, medium, high zone in the Field report |
+
+The two end stops of the fixed NDVI ramp and of the zone ramp are OneSoil's; the stops between them are ours (the reference could not be opened when this was written, see Known limits). `src/globe/fieldRaster.ts` picks the ramp (`rampStops(id, relative)`); the cards, tiles and legends in `src/ui/field` read the same function, so a picture in the panel and the field on the map always match.
 
 | Metric | Sequential | Diverging (departure from normal) |
 |---|---|---|
-| `vegetation` | RdYlGn `--ramp-vegetation` (red low, yellow, green high) | BrBG `--ramp-anomaly-wet` (browner to greener) |
+| `vegetation` | see above | BrBG `--ramp-anomaly-wet` (browner to greener) |
 | `moisture` | YlGnBu `--ramp-moisture` | BrBG `--ramp-anomaly-wet` (drier to wetter) |
 | `rain` | Blues `--ramp-rain` | BrBG `--ramp-anomaly-wet` |
 | `heat` | YlOrRd `--ramp-heat` | RdBu reversed `--ramp-anomaly-heat` (cooler to hotter) |
@@ -187,16 +195,33 @@ Layers (`z-(--z-*)`): globe 0, map-ui 10, leader 20, hud 30, panel 40, dock 50, 
 
 Measured on OneSoil's web app at 1440 x 900 (2026-11-14) and matched in tokens, not copied: grey icon rail 56 px (#e5e5ea), white list panel 280 px with an 8 px left radius, field panel ~790 px with 24 px padding, body text #1c1c1e at 14 px (Graphik, proprietary; we use Inter, the closest open neo-grotesque with full Vietnamese), section titles 18 / 500, tabs 36 px tall, primary button green #27ae60 pill (radius 18 px, padding 0 8 px, shadow 0 4 8 -2 rgba(16,24,40,.1) + 0 2 4 -2 rgba(16,24,40,.06)).
 
-From their public stylesheet (values only): 12 px and 14 px dominate (line heights 16 and 18 px), weight 500 for every emphasis (600 almost never), radii 8 / 4 / 12 px, borders 1 px #e5e5ea, gaps 8 / 4 / 16 px, controls 32 and 40 px tall, text greys #1c1c1e / #48484a / #636366 / #8e8e93. Charts: grid and axis #e5e5ea, ticks 12 px #8e8e93, line 2 px. We follow these, except the primary green: theirs (#27ae60) gives white text 2.9:1, so `signal` is #1d874b (4.55:1). Numbers use the sans with tabular figures, not the mono.
+From their public stylesheet (values only): 12 px and 14 px dominate (line heights 16 and 18 px), weight 500 for every emphasis (600 almost never), radii 8 / 4 / 12 px, borders 1 px #e5e5ea, gaps 8 / 4 / 16 px, controls 32 and 40 px tall, text greys #1c1c1e / #48484a / #636366 / #8e8e93. Charts: grid and axis #e5e5ea, ticks 12 px #8e8e93, line 2 px. We follow all of these. Numbers use the sans with tabular figures, not the mono.
 
-Our values: surfaces white / #f2f2f7 / #e5e5ea, lines #e5e5ea / #d1d1d6 / #7c7c80, ink #1c1c1e / #3a3a3c / #636366, primary (`signal`) #15804a (darker than theirs so white text meets 4.5:1), states darkened to pass AA on #e5e5ea, radii 4 / 8 / 10 / 12 px, buttons are pills, soft shadows. The hero keeps the dark palette through the `.theme-dark` scope.
+Our values: surfaces white / #f2f2f7 / #e5e5ea, lines #e5e5ea / #d1d1d6 / #7c7c80, ink #1c1c1e / #48484a / #636366 / #8e8e93 (`ink-4`: tick labels and non-text marks only), radii 4 (`xs`) / 8 (`sm`) / 12 (`lg`) px, soft shadows. The hero keeps the dark palette through the `.theme-dark` scope.
+
+Green: `signal` is the reference green #27ae60, used for fills and selection (primary pill, "Demo" tag, check marks, chart line, timeline knob, focus ring). White on it is 2.9:1, so a label on a green fill is always weight 600 (`font-bold`) and never the only cue. Green used as text or as an icon on a light surface is `signal-strong` #1a7f45 (5.0:1 on white, 4.5:1 on #f2f2f7), which is also the hover of a green fill. A chosen chip (priorities, urban options) is a green rim with a 12 % green tint and `signal-strong` text, not a filled chip.
+
+Controls: labelled buttons are pills, 32 px (`md`, 12 px text) or 40 px (`lg`, 14 px; 44 px on narrow screens); the primary is the green pill with the shadow above; secondary is white with a hairline. Icon buttons are 8 px rounded squares; a pressed one is a grey tile with a green icon. Inputs and selects are white with a 1 px #d1d1d6 border, 8 px radius, 32 or 40 px tall, green border on focus. A segmented control is a #e5e5ea track with the chosen segment as a white tile. Tabs are 36 px tall with no side padding, 24 px apart, the active one in weight 500 over a 2 px ink rule. Tooltips are dark chips (#1c1c1e, white 12 px); popovers are white cards.
 
 | Width | Layout |
 |---|---|
-| 1100 px and up | Rail 56 (`--rail-w`) · list panel 300 (`--left-w`) · map with a white tool stack on its right edge and a floating timeline strip 52 px (`--strip-h`) · field panel 500 (`--right-w`) floating over the right of the map once a field is locked. Advisory (Rotation), Tracking (Notes) and Urban fill everything right of the rail. |
-| below 1100 px (`narrow:`) | Map in the top 45 % (`--map-h`) with zoom, fit and layers; one scrolling sheet under it; timeline pinned above a 60 px tab bar (`--tabbar-h`); nothing under 12 px. |
+| 1100 px and up | Rail 56 (`--rail-w`, #e5e5ea, icons only, 40 px tiles, names as tooltips) · list panel 280 (`--left-w`, white, 8 px left radius) · map with a place search (and the field's weather) at its top-left, a white tool stack at its top-right, the legend and the imagery credits above a floating timeline strip 72 px (`--strip-h`) · field panel 580 (`--right-w`, 520 at 1280 x 720; 12 px radius, 24 px padding) floating over the right of the map once a field is locked. Advisory (Rotation), Tracking (Notes) and Urban fill everything right of the rail. |
+| below 1100 px (`narrow:`) | Map in the top 45 % (`--map-h`) with zoom, fit and layers; one scrolling sheet under it with a drag handle; timeline pinned above a 60 px tab bar (`--tabbar-h`); nothing under 12 px; touch controls 44 px. |
 
-Field panel tabs: Status (two field pictures, score, crop, three charts on one month axis each with one plain sentence, what changed), Field report (relative NDVI zones with a per-zone table, stable area, frames used, the gallery of real frames that can be toggled, three field maps), Data (eight field-shaped metric cards, each opening a detail with legend, frame date and age, a filmstrip of real frames, series, facts, sources and caveats), Ground truth (form and ledger). Field pictures are canvases drawn from a store subscription, so playback never re-renders React. The radial HUD, leader lines and hub on the parcel are retired; their primitives stay in the style guide only.
+Screens, and the one green button each has:
+
+| Screen | What it holds | Primary |
+|---|---|---|
+| List panel | Title 14 / 500 with the count and total area, a borderless search row with Sort, rows 56 px (40 px dark thumbnail, name 14 / 500, "Demo" tag, area and place; the open field is a grey row and shows its vegetation picture), the grey "Add your fields" card that fills the rest, the green-rimmed assistant card | Add field |
+| Add a field | Back row, a two-way segmented control (address and area, or select on the map), one address and one area, then the area, the name and Start over | Show on the map, then Lock field |
+| Field panel header | Name 18 / 600, area and crop 12 px with the score as a link to the report, next steps as icon-over-label actions (Rotation plan, Field notes), close | none |
+| Status | Three 60 px cards (crop, planting date, weather), "Satellite data" with the dark date pill, two dark 8:7 tiles (the field picture with its metric chip, expand button and in-tile vertical legend; the satellite image), the period, three chart cards (plot with value and month axes on the left; name, one value, one sentence on the right) | none |
+| Field report | The score as four small cards and one line, the zones tile as tall as the two dark figure cards and the distribution table beside it, the frames used as grey tiles with a check, three dark field maps | none |
+| Data | Grey cards (date, name, the field picture, ramp, value); a card opens its detail | none |
+
+What differs from OneSoil on purpose: the name, the mark and all wording are ours (English and Vietnamese); icons are lucide; the typeface is Inter where theirs is Graphik; the field panel is 580 px where theirs is about 800 px, because the map with the field picture and the timeline strip must stay visible; the rail has five destinations and a two-way language switch; the timeline strip, the score cards, the "Field range / Fixed scale" switch and the ground-truth tab have no counterpart in the model.
+
+Field panel tabs: Status (crop, planting date and weather cards, the field picture beside the satellite image, three charts on one month axis each with one plain sentence), Field report (the score as four cards, relative NDVI zones with a per-zone table, stable area, frames used, the gallery of real frames that can be toggled, three field maps), Data (eight field-shaped metric cards, each opening a detail with legend, frame date and age, a filmstrip of real frames, series, facts, sources and caveats), Ground truth (form and ledger). Field pictures are canvases drawn from a store subscription, so playback never re-renders React. The radial HUD, leader lines and hub on the parcel are retired; their primitives stay in the style guide only.
 
 ### Radial HUD (retired from the app)
 
@@ -211,7 +236,9 @@ Field panel tabs: Status (two field pictures, score, crop, three charts on one m
 
 ### Timeline
 
-One row inside `--timeline-h`: play / pause (primary icon button), the cursor date in `t-value text-xl` with its distance from today under it, speed (`Segmented`, small), then one line of automatic commentary above the `Slider size="lg"` with month ticks, Anomaly Markers above the track, a `pending` range for the latency gap and a `forecast` range past today. On phones the controls stack above the track and tick labels thin to one per quarter.
+One row inside `--strip-h` (72 px): a round green play / pause button, the cursor date (14 / 500) with its distance from today under it, the `Slider` (a grey track with a round green knob) with one month label per quarter, at most one Anomaly Marker per month above the track, a `pending` range for the latency gap and a `forecast` range past today, then one speed button that steps 1x, 2x, 4x. The strip sits in the gap between the list panel and the field panel, so it carries nothing else.
+
+Camera framing: the shell publishes what its panels cover (`setInsets`: the search row on top, rail and list on the left, tool stack and field panel on the right, legend and strip at the bottom). The globe in explore, a place the camera flies to, a draft and the locked field are all centred in what is left.
 
 ## Elevation & Depth
 
@@ -307,3 +334,5 @@ Rules: motion states a change, nothing else. Values follow the cursor with no ea
 - `footprintTargets` uses the footprint's bounding ellipse; on very irregular parcels a terminal dot can sit slightly inside or outside the boundary.
 - The style guide's imagery, baseline bands and productivity score are specimens built from `mockTelemetry`; they are labelled simulated and are not model output.
 - Fonts load with `font-display: swap`: the first paint may use the fallback stack for a moment.
+- The last fidelity pass (2026-11-14) worked from the values above and from four earlier screenshots of the reference (list, Status, Field report, Data at 1440 x 900): the reference app asked for a sign-in in the working browser. Its map controls, search, weather chip, hover states and narrow layout were not seen; ours follow the measured tokens, not a comparison. The interior stops of the fixed NDVI ramp are ours for the same reason.
+- White on the fill green is 2.9:1. It is used only for short labels at weight 600 and for icons; `tokens.test.ts` holds the floor at 2.8 and requires 4.5:1 of `signal-strong`.

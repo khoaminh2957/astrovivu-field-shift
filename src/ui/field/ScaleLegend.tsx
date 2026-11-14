@@ -1,6 +1,8 @@
 /**
- * Legend of a field picture: ramp, the low and high values of the scale in use with the unit,
+ * Legends of a field picture: the ramp, the low and high values of the scale in use with the unit,
  * which scale is on (fixed, or stretched to this field), and the no-data swatch.
+ *   ScaleLegend  a horizontal bar with captions, under a picture on a light surface.
+ *   TileLegend   a short vertical bar for the corner of a dark picture tile.
  */
 import type { FieldRaster } from '@/contracts';
 import { pick } from '@/contracts';
@@ -9,7 +11,7 @@ import { displayRange } from '@/lib/raster';
 import { useMission } from '@/state/mission';
 import { Segmented, cn } from '@/ui/design';
 import { fmtNum } from '@/ui/hud/format';
-import { rampGradient } from './picture';
+import { isRelative, rampGradient } from './picture';
 import './strings';
 
 export function StretchToggle({ className }: { className?: string }) {
@@ -31,32 +33,64 @@ export function StretchToggle({ className }: { className?: string }) {
   );
 }
 
-export function ScaleLegend({ raster, compact, className }: { raster: FieldRaster; compact?: boolean; className?: string }) {
-  const t = useT();
+/** What a legend needs to say about a raster under the current scale choice. */
+function useScale(raster: FieldRaster) {
   const lang = useLang();
   const polygon = useMission((s) => s.parcel?.polygon);
   const stretch = useMission((s) => s.layers.stretch);
   const range = displayRange(raster, polygon, stretch);
-  const dated = raster.frames.length > 1;
-  const fieldOn = dated && stretch !== 'fixed' && range !== raster.range;
+  const relative = isRelative(raster, range);
   const d = range[1] - range[0] < 5 ? 2 : 0;
-  const unit = raster.unit || pick(raster.label, lang).split(',')[0];
+  return {
+    range,
+    relative,
+    dated: raster.frames.length > 1,
+    lo: fmtNum(range[0], d),
+    hi: fmtNum(range[1], d),
+    unit: raster.unit || pick(raster.label, lang).split(',')[0],
+  };
+}
+
+export function ScaleLegend({ raster, compact, className }: { raster: FieldRaster; compact?: boolean; className?: string }) {
+  const t = useT();
+  const s = useScale(raster);
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <span aria-hidden className="h-1.5 rounded-full" style={{ background: rampGradient(raster.ramp) }} />
+      <span aria-hidden className="h-1.5 rounded-full" style={{ background: rampGradient(raster.ramp, s.relative) }} />
       <span className="t-meta flex justify-between gap-2">
-        <span>{fmtNum(range[0], d)}</span>
-        <span className="truncate">{unit}</span>
-        <span>{fmtNum(range[1], d)}</span>
+        <span>{s.lo}</span>
+        <span className="truncate">{s.unit}</span>
+        <span>{s.hi}</span>
       </span>
       <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="t-caption">{dated ? (fieldOn ? t('field.scale.fieldOn') : t('field.scale.fixedOn')) : t('field.scale.static')}</span>
+        <span className="t-caption">{s.dated ? (s.relative ? t('field.scale.fieldOn') : t('field.scale.fixedOn')) : t('field.scale.static')}</span>
         <span className="t-caption inline-flex items-center gap-1">
           <span aria-hidden className="inline-block size-2.5 rounded-xs border border-line-2 bg-[#3a3a3c]" />
           {t('field.scale.noData')}
         </span>
       </span>
-      {dated && !compact && <StretchToggle className="self-start" />}
+      {s.dated && !compact && <StretchToggle className="self-start" />}
+    </div>
+  );
+}
+
+/** Vertical legend in the corner of a dark tile: high at the top, the scale in use named under it. */
+export function TileLegend({ raster, className }: { raster: FieldRaster; className?: string }) {
+  const t = useT();
+  const s = useScale(raster);
+  const scale = s.dated ? (s.relative ? t('field.scale.field') : t('field.scale.fixed')) : t('field.scale.own');
+  return (
+    <div className={cn('flex flex-col gap-1 text-[11px] leading-[14px] text-white/80 narrow:text-xs', className)} title={s.dated ? (s.relative ? t('field.scale.fieldOn') : t('field.scale.fixedOn')) : t('field.scale.static')}>
+      <div className="flex items-stretch gap-1.5">
+        <span aria-hidden className="w-1.5 rounded-full" style={{ background: rampGradient(raster.ramp, s.relative, 'up') }} />
+        <span className="t-value flex h-14 flex-col justify-between font-normal">
+          <span>{s.hi}</span>
+          <span>{s.lo}</span>
+        </span>
+      </div>
+      <span className="max-w-40 truncate">
+        {s.unit} · {scale}
+      </span>
     </div>
   );
 }

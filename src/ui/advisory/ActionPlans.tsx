@@ -156,7 +156,7 @@ function IrrigationStrip({ events, today, lang }: { events: IrrigationPlan['even
       {ticks.map((d) => (
         <g key={d}>
           <rect x={x(d)} y={8} width={1} height={base - 8} fill="var(--color-line-1)" />
-          <text x={x(d) + 3} y={H - 4} fill="var(--color-ink-3)" fontSize={10} fontFamily="var(--font-mono)">
+          <text x={x(d) + 3} y={H - 4} fill="var(--color-ink-4)" fontSize={10} fontFamily="var(--font-sans)">
             {monthShort(Number(d.slice(5, 7)), lang)}
           </text>
         </g>
@@ -175,7 +175,7 @@ function IrrigationStrip({ events, today, lang }: { events: IrrigationPlan['even
           <g key={e.t}>
             <title>{`${fmtDayMonth(e.t, lang)} · ${fmtNum(e.mm, lang)} mm · ${pick(e.reason, lang)}`}</title>
             <rect x={x(e.t) - 3} y={base - h} width={6} height={h} fill="var(--color-ink-1)" />
-            <text x={x(e.t)} y={base - h - 3} textAnchor="middle" fill="var(--color-ink-2)" fontSize={9.5} fontFamily="var(--font-mono)">
+            <text x={x(e.t)} y={base - h - 3} textAnchor="middle" fill="var(--color-ink-2)" fontSize={9.5} fontFamily="var(--font-sans)">
               {Math.round(e.mm)}
             </text>
           </g>

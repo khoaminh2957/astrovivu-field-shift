@@ -14,7 +14,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { FieldRaster, ISODate, LngLat, RampId } from '@/contracts';
 import { displayRange, framesAt, paintRaster, type RampColor } from '@/lib/raster';
 import { useMission } from '@/state/mission';
-import { RAMPS, type MapMetric } from '@/ui/design/tokens';
+import { RAMPS, RAMP_VEGETATION_FIELD, type MapMetric } from '@/ui/design/tokens';
 
 const TARGET_PX = 384;
 
@@ -28,27 +28,38 @@ const EXTRA_STOPS: Record<Exclude<RampId, MapMetric>, string[]> = {
 
 const isMapMetric = (id: RampId): id is MapMetric => id in RAMPS;
 
-export function rampStops(id: RampId): readonly string[] {
+/**
+ * Stops of a raster ramp. `relative` is true when the picture is stretched to the field's own
+ * range: vegetation then switches from the absolute NDVI colours to the crimson-to-green ramp, so
+ * the two scales cannot be mistaken for each other.
+ */
+export function rampStops(id: RampId, relative = false): readonly string[] {
+  if (id === 'vegetation' && relative) return RAMP_VEGETATION_FIELD.stops;
   return isMapMetric(id) ? RAMPS[id].sequential.stops : EXTRA_STOPS[id];
 }
 
 /** Legend bar for a raster ramp: the design-system variable where there is one. */
-export function rasterRampCss(id: RampId): string {
+export function rasterRampCss(id: RampId, relative = false): string {
+  if (id === 'vegetation' && relative) return RAMP_VEGETATION_FIELD.cssVar;
   return isMapMetric(id) ? RAMPS[id].sequential.cssVar : `linear-gradient(90deg, ${EXTRA_STOPS[id].join(', ')})`;
 }
+
+/** True when `range` is the field's own stretch rather than the raster's fixed range. */
+export const isFieldRange = (raster: Pick<FieldRaster, 'range'>, range: readonly [number, number]): boolean => range !== raster.range;
 
 const hexRgb = (hex: string): [number, number, number] => {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
 
-const colorFns = new Map<RampId, RampColor>();
+const colorFns = new Map<string, RampColor>();
 
 /** Piecewise linear in sRGB over the stops, the same interpolation the CSS gradient legend draws. */
-export function rampColor(id: RampId): RampColor {
-  let fn = colorFns.get(id);
+export function rampColor(id: RampId, relative = false): RampColor {
+  const key = relative && id === 'vegetation' ? 'vegetation-field' : id;
+  let fn = colorFns.get(key);
   if (!fn) {
-    const stops = rampStops(id).map(hexRgb);
+    const stops = rampStops(id, relative).map(hexRgb);
     fn = (pos) => {
       const x = Math.max(0, Math.min(1, pos)) * (stops.length - 1);
       const i = Math.min(stops.length - 2, Math.floor(x));
@@ -57,7 +68,7 @@ export function rampColor(id: RampId): RampColor {
       const b = stops[i + 1];
       return [Math.round(a[0] + (b[0] - a[0]) * f), Math.round(a[1] + (b[1] - a[1]) * f), Math.round(a[2] + (b[2] - a[2]) * f)];
     };
-    colorFns.set(id, fn);
+    colorFns.set(key, fn);
   }
   return fn;
 }
@@ -222,7 +233,7 @@ export class FieldRasterView {
     const key = `${t}|${range[0]},${range[1]}`;
     if (key === this.paintedKey) return info;
     this.paintedKey = key;
-    paintRaster(raster, t, rampColor(raster.ramp), image.data, true, range);
+    paintRaster(raster, t, rampColor(raster.ramp, isFieldRange(raster, range)), image.data, true, range);
     this.small.getContext('2d')?.putImageData(image, 0, 0);
     const ctx = this.el.getContext('2d');
     if (!ctx) return info;

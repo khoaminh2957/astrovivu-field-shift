@@ -17,7 +17,7 @@ function CitationMark({ n, c }: { n: number; c: Citation | undefined }) {
         <button
           type="button"
           aria-label={t('ask.citeLabel', { n, title: c.title })}
-          className="t-value mx-0.5 inline-flex h-4 items-center rounded-xs border border-line-3 px-1 align-[1px] text-2xs text-ink-1 hover:bg-surface-3"
+          className="t-value mx-0.5 inline-flex h-4 items-center rounded-xs border border-line-2 px-1 align-[1px] text-2xs text-ink-1 hover:bg-surface-3"
         >
           S{n}
         </button>

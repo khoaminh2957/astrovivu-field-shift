@@ -113,8 +113,8 @@ function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onCl
       }}
       className={cn(
         'plate-raised fixed z-(--z-assistant) flex flex-col',
-        'top-3 right-3 bottom-3 w-[400px]',
-        locked && 'right-[calc(var(--right-w)+12px)] bottom-[calc(var(--strip-h)+12px)]',
+        'top-2 right-2 bottom-2 w-[400px] rounded-lg',
+        locked && 'right-[calc(var(--right-w)+16px)] bottom-[calc(var(--strip-h)+20px)]',
         'narrow:inset-x-0 narrow:top-auto narrow:right-0 narrow:bottom-(--tabbar-h) narrow:h-[80dvh] narrow:w-full narrow:rounded-none',
       )}
     >
@@ -134,7 +134,7 @@ function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onCl
           type="button"
           aria-expanded={showCtx}
           onClick={() => setShowCtx((v) => !v)}
-          className="flex w-full items-center gap-2 px-(--panel-pad) py-2 text-left hover:bg-surface-3"
+          className="flex w-full items-center gap-2 px-(--panel-pad) py-2 text-left hover:bg-surface-2"
         >
           <span className="min-w-0 flex-1">
             <span className="t-label block">{t('ask.knows')}</span>
@@ -165,7 +165,7 @@ function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onCl
               type="button"
               disabled={busy}
               onClick={() => void submit(c)}
-              className="max-w-full rounded-sm border border-line-3 bg-inset px-2 py-1 text-left text-xs text-ink-2 hover:bg-surface-2 hover:text-ink-1 disabled:opacity-45 stacked:min-h-11 stacked:text-sm"
+              className="max-w-full rounded-full border border-line-2 bg-surface-0 px-3 py-1 text-left text-xs text-ink-1 hover:bg-surface-2 disabled:opacity-45 stacked:min-h-11 stacked:rounded-sm stacked:text-sm"
             >
               {c}
             </button>
@@ -190,7 +190,7 @@ function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onCl
             }
           }}
           placeholder={t('ask.placeholder')}
-          className="min-h-11 flex-1 resize-none rounded-sm border border-line-3 bg-inset px-2.5 py-2 text-sm text-ink-1 outline-none placeholder:text-ink-3 focus:border-signal stacked:text-base"
+          className="min-h-11 flex-1 resize-none rounded-sm border border-line-2 bg-surface-0 px-3 py-2 text-base text-ink-1 outline-none placeholder:text-ink-3 focus:border-signal"
         />
         <IconButton label={t('ask.send')} icon={<ArrowUp />} type="submit" variant="primary" size="lg" loading={busy} disabled={!query.trim()} />
       </form>

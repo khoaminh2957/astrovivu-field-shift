@@ -82,6 +82,8 @@ const RATIO_RESTORE_MS = 260;
 /** During a scripted flight the anchor is published at most this often; exact again on arrival. */
 const FLIGHT_ANCHOR_MS = 120;
 const INSET_EASE_MS = 360;
+/** Below this zoom the whole globe is in view (the explore framing sits between 1 and 3). */
+const GLOBE_VIEW_ZOOM = 4;
 const ESRI_TILE = (z: number, x: number, y: number) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 const DEM_TILE = (z: number, x: number, y: number) => `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`;
 
@@ -236,7 +238,7 @@ export class GlobeEngine {
   flyTo(location: LngLat, zoom = 15): void {
     if (!this.ready) return;
     this.prefetch(location, zoom);
-    this.fly({ center: location, zoom, pitch: 0, bearing: 0, padding: this.freePadding(explorePose(this.viewport(), location).padding) }, 'level');
+    this.fly({ center: location, zoom, pitch: 0, bearing: 0, padding: this.explore(this.viewport(), location).padding }, 'level');
   }
 
   /** A short camera ease for the toolbar; a cut under reduced motion. */
@@ -339,7 +341,7 @@ export class GlobeEngine {
       frameDraft: (vertices) => this.frameDraft(vertices),
       zoomToField: (at) => {
         setGlobeStatus({ notice: 'globe.draw.zoomHint' });
-        this.fly({ center: at, zoom: FIELD_ZOOM, pitch: 0, bearing: 0, padding: explorePose(this.viewport(), at).padding }, 'level', () => {
+        this.fly({ center: at, zoom: FIELD_ZOOM, pitch: 0, bearing: 0, padding: this.explore(this.viewport(), at).padding }, 'level', () => {
           if (useGlobeStatus.getState().notice === 'globe.draw.zoomHint') setGlobeStatus({ notice: null });
         });
       },
@@ -499,7 +501,7 @@ export class GlobeEngine {
   private poseFor(view: View, viewport: Viewport): CameraPose {
     const { parcel } = this.state;
     if (view === 'parcel' && parcel) return this.parcelPose(parcel, viewport);
-    return view === 'hero' ? heroPose(viewport, HERO_CENTER) : explorePose(viewport, HERO_CENTER);
+    return view === 'hero' ? heroPose(viewport, HERO_CENTER) : this.explore(viewport, HERO_CENTER);
   }
 
   /**
@@ -533,23 +535,48 @@ export class GlobeEngine {
     return fitPadding({ top: cssPx('--topbar-h', 48) + 8, bottom: cssPx('--timeline-h', 132) + 20, left: side, right: side }, viewport);
   }
 
-  /** A pose padding widened to clear the panels, side by side. */
-  private freePadding(p: Padding): Padding {
+  /**
+   * The explore framing inside what the panels leave free. The padding is the panel insets plus a
+   * margin and nothing else, so a place the camera flies to lands in the middle of the visible map
+   * (an extra bottom allowance for a dock that no longer exists used to push it up to the top edge).
+   */
+  private explore(viewport: Viewport, center: LngLat): CameraPose {
     const ins = this.state.insets;
-    if (!hasInsets(ins)) return p;
-    return fitPadding(
-      { top: Math.max(p.top, ins.top + 12), bottom: Math.max(p.bottom, ins.bottom + 12), left: Math.max(p.left, ins.left + 12), right: Math.max(p.right, ins.right + 12) },
-      this.viewport(),
-    );
+    if (!hasInsets(ins)) return explorePose(viewport, center);
+    const m = 12;
+    return explorePose(viewport, center, fitPadding({ top: ins.top + m, bottom: ins.bottom + m, left: ins.left + m, right: ins.right + m }, viewport));
   }
 
-  /** Panels opened or closed: slide the field back into the middle of what is still visible. */
-  private onInsets(): void {
+  /** Insets that arrived while a flight was running; applied when it lands. */
+  private insetsPending = false;
+
+  /**
+   * Panels opened or closed: slide the field back into the middle of what is still visible.
+   * `landed` is set when a flight has just arrived at its framing and the panels changed during it
+   * (locking a field from the list opens the field panel while the camera is already on its way):
+   * the camera is then where the old insets put it, so the whole framing is redone, however far that is.
+   */
+  private onInsets(landed = false): void {
     const { parcel } = this.state;
-    if (this.view !== 'parcel' || !parcel || this.flying) return;
+    if (this.flying) {
+      this.insetsPending = true;
+      return;
+    }
+    this.insetsPending = false;
+    if (this.view === 'explore') {
+      // No field to keep in the middle: the free area moves and the place under the camera stays. While the
+      // whole globe is in view it is also resized to the new free area (a field panel that closed gives room back).
+      const c = this.map.getCenter();
+      const pose = this.explore(this.viewport(), [c.lng, c.lat]);
+      const orbit = this.map.getZoom() < GLOBE_VIEW_ZOOM;
+      this.map.easeTo({ padding: pose.padding, ...(orbit ? { zoom: pose.zoom } : {}), duration: this.reduced ? 0 : INSET_EASE_MS, easing: easeOutCubic, essential: true });
+      return;
+    }
+    if (this.view !== 'parcel' || !parcel) return;
     const pose = this.parcelPose(parcel);
     const here = this.map.project(parcel.centroid);
-    const near = Math.abs(this.map.getZoom() - pose.zoom) < 1.2 && here.x > 0 && here.x < this.vw && here.y > 0 && here.y < this.vh;
+    // Opening the field panel on a 1280 to 1440 px screen alone changes the fitted zoom by about 1.3 levels.
+    const near = landed || (Math.abs(this.map.getZoom() - pose.zoom) < 1.75 && here.x > 0 && here.x < this.vw && here.y > 0 && here.y < this.vh);
     // Near the framed view the whole framing follows; after the user has wandered off only the padding does.
     this.map.easeTo({
       padding: pose.padding,
@@ -599,7 +626,7 @@ export class GlobeEngine {
       // or step in or out over wherever the user had turned the globe.
       const c = map.getCenter();
       const here: LngLat = [c.lng, c.lat];
-      this.fly(view === 'hero' ? heroPose(viewport, here) : explorePose(viewport, here), from === 'parcel' ? 'ascend' : 'level');
+      this.fly(view === 'hero' ? heroPose(viewport, here) : this.explore(viewport, here), from === 'parcel' ? 'ascend' : 'level');
     }
     if (view === 'hero') this.startRotation();
     else this.stopRotation();
@@ -615,7 +642,7 @@ export class GlobeEngine {
     const { map } = this;
     const viewport = this.viewport();
     const center = meanPoint(vertices);
-    const padding = this.freePadding(explorePose(viewport, center).padding);
+    const padding = this.explore(viewport, center).padding;
     const zoom = clamp(fitZoom(vertices, center[1], viewport, padding, 0, 0, 0.42), ...DRAFT_ZOOM_RANGE);
     const p = map.project(center);
     const inView = p.x > viewport.width * 0.2 && p.x < viewport.width * 0.8 && p.y > viewport.height * 0.15 && p.y < viewport.height * 0.75;
@@ -670,7 +697,9 @@ export class GlobeEngine {
       this.rotateResumeAt = performance.now() + 600;
       this.rotateRampFrom = 0;
       // Interrupted by the user (a drag, the wheel): they have the camera now.
-      if (Math.abs(map.getZoom() - pose.zoom) < 0.05) onArrive?.();
+      const arrived = Math.abs(map.getZoom() - pose.zoom) < 0.05;
+      if (arrived) onArrive?.();
+      if (this.insetsPending) this.onInsets(arrived);
     };
     map.on('moveend', onEnd);
     map.flyTo(
@@ -918,7 +947,7 @@ export class GlobeEngine {
       else if (this.view === 'hero') {
         const c = this.map.getCenter();
         this.map.jumpTo(heroPose(this.viewport(), [c.lng, c.lat]));
-      } else this.map.setPadding(explorePose(this.viewport(), HERO_CENTER).padding);
+      } else this.map.setPadding(this.explore(this.viewport(), HERO_CENTER).padding);
     }, 160);
   };
 

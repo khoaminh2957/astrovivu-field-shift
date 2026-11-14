@@ -61,16 +61,22 @@ export function heroPose(view: Viewport, center: LngLat): CameraPose {
   };
 }
 
-/** State 2: one step closer, and lifted to clear the dock along the bottom edge. */
-export function explorePose(view: Viewport, center: LngLat): CameraPose {
-  const radius = Math.min(0.45 * view.height, 0.56 * view.width);
+/**
+ * State 2: one step closer. With `free` (what the panels leave uncovered, as a padding) the globe
+ * is sized to that area and centred in it; without it, the earlier estimate that lifts the globe
+ * to clear a dock along the bottom edge.
+ */
+export function explorePose(view: Viewport, center: LngLat, free?: Padding): CameraPose {
+  const w = free ? Math.max(120, view.width - free.left - free.right) : view.width;
+  const h = free ? Math.max(120, view.height - free.top - free.bottom) : view.height;
+  const radius = Math.min(0.45 * h, (free ? 0.47 : 0.56) * w);
   const lat = clamp(center[1], -55, 55);
   return {
     center: [center[0], lat],
     zoom: zoomForGlobeRadius(radius, lat, view.height),
     pitch: 0,
     bearing: 0,
-    padding: { top: 0, bottom: Math.round(0.15 * view.height), left: 0, right: 0 },
+    padding: free ?? { top: 0, bottom: Math.round(0.15 * view.height), left: 0, right: 0 },
   };
 }
 

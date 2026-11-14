@@ -7,13 +7,13 @@ import './strings';
 
 export type ControlSize = 'md' | 'lg';
 
-/** Shared look of every text-like control: a well, a 3:1 boundary, signal on focus, alert on error. */
+/** Shared look of every text-like control: white, a hairline boundary, signal on focus, alert on error. */
 const well =
-  'w-full min-w-0 rounded-sm border border-line-3 bg-inset text-ink-1 transition-colors duration-(--dur-instant) ease-out ' +
+  'w-full min-w-0 rounded-sm border border-line-2 bg-surface-0 text-ink-1 transition-colors duration-(--dur-instant) ease-out ' +
   'hover:border-ink-4 focus-within:border-signal focus-within:outline-2 focus-within:outline-offset-0 focus-within:outline-signal/25 ' +
-  'has-[:disabled]:opacity-45 has-[:disabled]:hover:border-line-3 data-[invalid=true]:border-alert';
+  'has-[:disabled]:opacity-45 has-[:disabled]:hover:border-line-2 data-[invalid=true]:border-alert';
 
-const heights: Record<ControlSize, string> = { md: 'h-8 text-sm', lg: 'h-11 text-base' };
+const heights: Record<ControlSize, string> = { md: 'h-8 text-xs', lg: 'h-10 text-base narrow:h-11' };
 
 export interface FieldProps {
   /** Visible label. Always present: placeholders are not labels. */
@@ -67,7 +67,7 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 
 export function Input({ size = 'md', prefix, unit, invalid, numeric, className, id, ref, ...rest }: InputProps) {
   return (
-    <div data-invalid={invalid || undefined} className={cn(well, heights[size], 'flex items-center gap-2 px-2.5', className)}>
+    <div data-invalid={invalid || undefined} className={cn(well, heights[size], 'flex items-center gap-2 px-3', className)}>
       {prefix != null && <span className="shrink-0 text-ink-3 [&_svg]:size-4">{prefix}</span>}
       <input
         ref={ref}
@@ -142,7 +142,7 @@ export function Select<V extends string = string>({ options, value, onValueChang
         className={cn(
           well,
           heights[size],
-          'flex items-center justify-between gap-2 px-2.5 text-left outline-offset-0 focus-visible:border-signal disabled:opacity-45 data-[placeholder]:text-ink-3',
+          'flex items-center justify-between gap-2 px-3 text-left outline-offset-0 focus-visible:border-signal disabled:opacity-45 data-[placeholder]:text-ink-3',
           className,
         )}
       >
@@ -154,7 +154,7 @@ export function Select<V extends string = string>({ options, value, onValueChang
         </RSelect.Icon>
       </RSelect.Trigger>
       <RSelect.Portal>
-        <RSelect.Content position="popper" sideOffset={4} collisionPadding={8} className="z-(--z-popover) max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) overflow-hidden rounded-sm border border-line-2 bg-surface-3 shadow-lg">
+        <RSelect.Content position="popper" sideOffset={4} collisionPadding={8} className="z-(--z-popover) max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) overflow-hidden rounded-sm border border-line-1 bg-surface-0 shadow-lg">
           <RSelect.Viewport className="p-1">
             {options.map((o) => (
               <RSelect.Item
@@ -164,11 +164,11 @@ export function Select<V extends string = string>({ options, value, onValueChang
                 className={cn(
                   'relative flex cursor-pointer items-start gap-2 rounded-xs py-1.5 pr-2 pl-7 text-ink-1 outline-none select-none',
                   size === 'lg' ? 'min-h-11 text-base' : 'text-sm',
-                  'data-[highlighted]:bg-signal data-[highlighted]:text-on-signal data-[disabled]:cursor-not-allowed data-[disabled]:opacity-45',
+                  'data-[highlighted]:bg-surface-2 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-45',
                 )}
               >
                 <RSelect.ItemIndicator className="absolute top-2 left-2">
-                  <Check size={14} strokeWidth={2} aria-hidden />
+                  <Check size={14} strokeWidth={2} aria-hidden className="text-signal-strong" />
                 </RSelect.ItemIndicator>
                 <span className="min-w-0">
                   <RSelect.ItemText>{o.label}</RSelect.ItemText>

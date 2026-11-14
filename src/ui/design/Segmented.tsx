@@ -26,11 +26,11 @@ export interface SegmentedProps<V extends string = string> {
   className?: string;
 }
 
-const segSize = { sm: 'h-6 px-2 text-xs', md: 'h-7 px-2.5 text-sm', lg: 'h-10 px-3.5 text-base' } as const;
+const segSize = { sm: 'h-6 px-2 text-xs', md: 'h-7 px-2.5 text-xs', lg: 'h-9 px-3 text-base narrow:h-10' } as const;
 
 /**
- * Segmented control: one choice out of two to five, all visible. The chosen segment is inverse
- * video. Arrow keys move between segments; a selected segment cannot be deselected.
+ * Segmented control: one choice out of two to five, all visible. The chosen segment is a white
+ * tile lifted off a grey track. Arrow keys move between segments; a selected segment cannot be deselected.
  */
 export function Segmented<V extends string = string>({ options, value, onValueChange, ariaLabel, size = 'md', block, disabled, className }: SegmentedProps<V>) {
   return (
@@ -40,7 +40,7 @@ export function Segmented<V extends string = string>({ options, value, onValueCh
       onValueChange={(v) => v && onValueChange(v as V)}
       aria-label={ariaLabel}
       disabled={disabled}
-      className={cn('inline-flex items-center gap-0.5 rounded-sm border border-line-2 bg-inset p-0.5', block && 'flex w-full', disabled && 'opacity-45', className)}
+      className={cn('inline-flex items-center gap-0.5 rounded-sm bg-surface-3 p-0.5', block && 'flex w-full', disabled && 'opacity-45', className)}
     >
       {options.map((o) => (
         <ToggleGroup.Item
@@ -49,9 +49,9 @@ export function Segmented<V extends string = string>({ options, value, onValueCh
           disabled={o.disabled}
           aria-label={o.ariaLabel}
           className={cn(
-            'inline-flex items-center justify-center gap-1.5 rounded-xs font-medium whitespace-nowrap text-ink-2 [&_svg]:size-4',
-            'transition-colors duration-(--dur-instant) ease-out hover:bg-surface-2 hover:text-ink-1 disabled:opacity-45',
-            'data-[state=on]:bg-signal data-[state=on]:font-semibold data-[state=on]:text-on-signal',
+            'inline-flex min-w-0 items-center justify-center gap-1.5 rounded-[6px] font-medium whitespace-nowrap text-ink-3 [&_svg]:size-4',
+            'transition-colors duration-(--dur-instant) ease-out hover:text-ink-1 disabled:opacity-45',
+            'data-[state=on]:bg-surface-0 data-[state=on]:text-ink-1 data-[state=on]:shadow-sm',
             segSize[size],
             block && 'flex-1',
           )}
@@ -89,15 +89,15 @@ export function Toggle({ checked, onCheckedChange, label, hint, ariaLabel, disab
       disabled={disabled}
       aria-label={label == null ? ariaLabel : undefined}
       className={cn(
-        'relative inline-flex h-4 w-[30px] shrink-0 items-center rounded-full border border-line-3 bg-inset',
+        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent bg-line-2',
         'transition-colors duration-(--dur-fast) ease-out data-[state=checked]:border-signal data-[state=checked]:bg-signal',
         'disabled:opacity-45',
       )}
     >
       <Switch.Thumb
         className={cn(
-          'block size-2.5 translate-x-[2px] rounded-full bg-ink-3',
-          'transition-transform duration-(--dur-fast) ease-out data-[state=checked]:translate-x-[16px] data-[state=checked]:bg-on-signal',
+          'block size-4 translate-x-[1px] rounded-full bg-white shadow-sm',
+          'transition-transform duration-(--dur-fast) ease-out data-[state=checked]:translate-x-[17px]',
         )}
       />
     </Switch.Root>

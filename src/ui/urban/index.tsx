@@ -155,7 +155,7 @@ function ToggleChip({ on, onClick, radio, children }: { on: boolean; onClick: ()
       onClick={onClick}
       className={cn(
         'inline-flex min-h-11 items-center justify-center rounded-sm border px-2 py-1 text-center text-sm leading-tight font-medium transition-colors duration-(--dur-instant) lg:min-h-9',
-        on ? 'border-signal bg-signal text-on-signal' : 'border-line-3 bg-inset text-ink-2 hover:bg-surface-2 hover:text-ink-1',
+        on ? 'border-signal bg-signal/12 text-signal-strong' : 'border-line-2 bg-surface-0 text-ink-2 hover:bg-surface-2 hover:text-ink-1',
       )}
     >
       {children}

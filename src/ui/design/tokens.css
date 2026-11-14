@@ -36,12 +36,13 @@
 
   /* Ink. ink-1..3 pass 4.5:1 on every surface; ink-4 is for disabled and non-text marks only. */
   --color-ink-1: #1c1c1e;
-  --color-ink-2: #3a3a3c;
+  --color-ink-2: #48484a;
   --color-ink-3: #636366;
-  --color-ink-4: #aeaeb2;
+  --color-ink-4: #8e8e93;
 
   /* Signal: the operator. Solid fills for primary actions, selection, the timeline cursor, ground truth. */
-  --color-signal: #1d874b; /* the reference green #27ae60 darkened to the lightest step that keeps white text at AA */
+  --color-signal: #27ae60; /* the reference green, for fills and selection; white text on it is set at weight 600 */
+  --color-signal-strong: #1a7f45; /* green as text or icon on a light surface (4.5:1 on white and on surface-2), and the pressed fill */
   --color-on-signal: #ffffff;
 
   /* States of the land or of the data. Always paired with a shape and a word. */
@@ -205,15 +206,19 @@
   --touch: 44px;
 
   /* Plates sit on imagery: nearly opaque, no blur (the globe owns the GPU). */
-  --plate: color-mix(in srgb, var(--color-surface-1) 94%, transparent);
-  --plate-raised: color-mix(in srgb, var(--color-surface-2) 96%, transparent);
+  --plate: var(--color-surface-1);
+  --plate-raised: var(--color-surface-0);
 
   /* Texture vocabulary. */
   --hatch-pending: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-stale) 50%, transparent) 0 1px, transparent 1px 5px);
   --hatch-simulated: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-simulated) 60%, transparent) 0 1px, transparent 1px 4px);
 
-  /* Map metric ramps, nine stops each (ColorBrewer, colour-blind safe). Low to high. */
-  --ramp-vegetation: linear-gradient(90deg, #d73027, #f46d43, #fdae61, #fee08b, #ffffbf, #d9ef8b, #a6d96a, #66bd63, #1a9850);
+  /* Map metric ramps, low to high. Vegetation on the fixed 0-1 scale: twelve stops, bare soil brown through yellow to dense canopy. */
+  --ramp-vegetation: linear-gradient(90deg, #300b05, #7a1e0c, #c2410f, #ee8a1e, #f8d03c, #e6e65a, #b5d94c, #7dc243, #4da63a, #2f8431, #1f5a22, #123011);
+  /* Vegetation stretched to one field's own range: weakest crimson, strongest green. */
+  --ramp-vegetation-field: linear-gradient(90deg, #b5121b, #dc3b1f, #f0702a, #f8a63a, #fbd84a, #cfe04e, #8fcb4f, #4caf50, #1e8e3e);
+  /* Relative zones of a field, low to high. */
+  --ramp-zones: linear-gradient(90deg, #d0e3fc, #8abbf7, #4392f1);
   --ramp-moisture: linear-gradient(90deg, #ffffd9, #edf8b1, #c7e9b4, #7fcdbb, #41b6c4, #1d91c0, #225ea8, #253494, #081d58);
   --ramp-heat: linear-gradient(90deg, #ffffcc, #ffeda0, #fed976, #feb24c, #fd8d3c, #fc4e2a, #e31a1c, #bd0026, #800026);
   --ramp-rain: linear-gradient(90deg, #f7fbff, #deebf7, #c6dbef, #9ecae1, #6baed6, #4292c6, #2171b5, #08519c, #08306b);
@@ -252,7 +257,7 @@
   --rail-w: 56px;
   --left-w: 280px;
   --right-w: 580px;
-  --strip-h: 64px;
+  --strip-h: 72px;
   --tabbar-h: 60px;
   --map-h: 45dvh;
 }
@@ -267,6 +272,8 @@
     --hud-hub: 128px;
     --hud-shelf: 20px;
     --panel-pad: 12px;
+    /* The field panel gives a little back to the map and its timeline strip. */
+    --right-w: 520px;
   }
 }
 
@@ -479,7 +486,7 @@
 
 @utility plate-raised {
   background: var(--plate-raised);
-  border: 1px solid var(--color-line-2);
+  border: 1px solid var(--color-line-1);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-lg);
 }
@@ -522,6 +529,7 @@
   --color-ink-3: #959faf;
   --color-ink-4: #6a7586;
   --color-signal: #fbfaf6;
+  --color-signal-strong: #ffffff;
   --color-on-signal: #060b14;
   --color-nominal: #58da98;
   --color-watch: #f8bd40;

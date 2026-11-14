@@ -71,8 +71,8 @@
 
 .globe-parcel__line {
   fill: none;
-  stroke: rgb(255 255 255 / 0.95);
-  stroke-width: 1.5;
+  stroke: #fff;
+  stroke-width: 2;
   stroke-linejoin: round;
 }
 
@@ -83,7 +83,7 @@
   top: 0;
   transform-origin: 0 0;
   pointer-events: none;
-  opacity: 0.88;
+  opacity: 0.94;
   will-change: transform;
 }
 

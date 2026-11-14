@@ -114,7 +114,7 @@ function SeasonBlock({ block, top, pct, lang, compact }: { block: Block; top: nu
       title={`${label} · ${range}`}
       className={cn(
         'absolute flex items-center overflow-hidden rounded-xs border px-1 text-2xs whitespace-nowrap',
-        fallow ? 'border-line-2 bg-inset text-ink-3' : 'border-line-3 bg-surface-3 text-ink-1',
+        fallow ? 'border-line-1 bg-surface-2 text-ink-3' : 'border-line-2 bg-surface-3 text-ink-1',
       )}
       style={{ left: `calc(${pct(block.from)} + 1px)`, width: `calc(${pct(block.to - block.from)} - 2px)`, top, height: LANE_H }}
     >
