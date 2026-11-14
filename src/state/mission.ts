@@ -26,6 +26,7 @@ import type {
   Parcel,
   ParcelDraft,
   ScoreTimeline,
+  SampleParcel,
   ScreenAnchor,
   TrackingData,
 } from '@/contracts';
@@ -136,6 +137,12 @@ export function toModelInput(s: Pick<MissionState, 'parcel' | 'telemetry' | 'cro
 
 const today = todayISO();
 
+/** The assumed farm profile of a demo field (a copy, so edits never touch the sample), else none. */
+export function defaultGroundTruth(parcel: Parcel): GroundTruth {
+  const gt = (parcel as Partial<SampleParcel>).defaultGroundTruth;
+  return gt ? structuredClone(gt) : {};
+}
+
 export const useMission = create<MissionState>()((set, get) => ({
   phase: 'hero',
   lang: 'en',
@@ -200,7 +207,7 @@ export const useMission = create<MissionState>()((set, get) => ({
       branchStatus: allStatus('loading'),
       loadError: null,
       cropId: 'defaultCropId' in parcel ? (parcel as { defaultCropId: string }).defaultCropId : null,
-      groundTruth: {},
+      groundTruth: defaultGroundTruth(parcel),
       score: null,
       insights: [],
       advisory: null,
@@ -269,7 +276,8 @@ export const useMission = create<MissionState>()((set, get) => ({
     get().recompute();
   },
   resetGroundTruth: () => {
-    set({ groundTruth: {} });
+    // A demo field resets to its assumed farm profile, any other field to no overrides.
+    set((s) => ({ groundTruth: s.parcel ? defaultGroundTruth(s.parcel) : {} }));
     get().recompute();
   },
   setPriorities: (priorities) => {

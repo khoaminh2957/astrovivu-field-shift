@@ -99,3 +99,14 @@ Not verified, our own judgement (review before relying on them): the factor weig
 - Not implemented: soil-moisture, land-surface-temperature and radiation components of the condition, root growth during the season, waterlogging, climatic adjustment of Kc, thermal time, a year-by-year water-balance yield (yearly yield fractions use the EcoCrop climate score).
 - Paddy rice percolation is not in the water balance; EcoCrop's 1,000 mm season minimum stands in for it.
 - Pest, disease, variety, management and market access are outside the model.
+
+## Perennials, off-season and the calibration ledger (integration fixes, 2026-11-14)
+
+| Topic | Rule |
+|---|---|
+| Active season | A perennial's active months are those whose mean temperature is above its absolute minimum (`req.tempC[0]`). If every month is active (evergreen, e.g. robusta at Đắk Lắk) nothing changes. |
+| Dormant perennial | The growth window (`windowMonths`) is placed inside the active season on temperature first; the farmer's planting date does not move it. Temperature is scored only in that window. Two gates are added: `winterSurvival` (rest months against `killTempRestC` + 4 °C; a note says so when the value is unknown) and `activeSeason` (active months / window months, capped at 1). Yearly reliability uses the same window and the survival gate. |
+| Stages | A dormant perennial outside its window is `dormant`; an evergreen between cycles is shown as "between cycles" and still scored. An annual listed in `currentRotation` follows those blocks (e.g. three rice crops a year). |
+| Off-season | On `fallow`, `pre-sowing` (annuals) and `dormant` days `productivity` = compatibility (the outlook), `offSeason: true`, the limiting factor is the static one, and `summary.seasonNow` / the headline say off-season or dormant. |
+| Ledger | Each calibration line carries `scoreEffect` {with, without, delta}: the season score re-computed without that one override. |
+| Alfalfa pH | Curated pH 4.3/6.5/8.2/9.2 (EcoCrop 4.3/6.5/7.5/8.7): the Diamond Valley pivot (SSURGO pH 8.8) is alfalfa in every CDL year 2019-2025. pH remains its limiting factor. |

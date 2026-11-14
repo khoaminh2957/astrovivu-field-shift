@@ -2,7 +2,8 @@
  * Confidence Badge, ARCHITECTURE.md §4.3.
  *
  *   spatial = 0.30 + 0.70·sqrt(fit)       fit = min(1, sqrt(area)/resolution)
- *   fresh   = 1 if age <= cadence, linear to 0.3 at 3×cadence, 0.3 beyond (static: 1)
+ *   fresh   = 1 if age <= cadence, linear to 0.3 at 3×cadence, 0.3 beyond (static: 1); the age is
+ *             counted after the source's normal latency, so the latest published reading is not penalised
  *   source  = observed 1 | ground-truth 1 | modelled .75 | derived .70 | forecast .60 | simulated .30
  *   quality = good 1 | fair .85 | filled .70 | poor .50
  *   score   = spatial·fresh·source·quality;  high >= .70, medium >= .45, low below
@@ -14,6 +15,7 @@ import type { BranchTelemetry, ConfidenceBadge, I18nText, ISODate, Parcel, Prove
 import { tx } from '@/contracts';
 import { sampleAt } from '@/lib/series';
 import { footprintFit } from './harmonize/zonal';
+import { latencyDaysOf } from './sources';
 
 export const SOURCE_FACTOR: Record<Provenance, number> = {
   observed: 1,
@@ -90,15 +92,18 @@ export function confidenceAt(
   if (src?.provenance === 'ground-truth') return { level: 'high', score: 1, reasons: [tx('Measured on the field.', 'Đo trên đồng ruộng.')] };
   const base = src ? staticBadge(src, parcel) : branch.confidence;
   if (series.cadence === 'static') return base;
-  const at = sampleAt(series, cursorDate);
+  const latency = Math.max(0, latencyDaysOf(series.sourceId, src) ?? 0);
+  const at = sampleAt(series, cursorDate, latency);
   const cadenceDays = src?.cadenceDays ?? CADENCE_DAYS[series.cadence];
-  const fresh = freshnessFactor(at.ageDays, cadenceDays);
+  const fresh = freshnessFactor(at.ageDays == null ? null : Math.max(0, at.ageDays - latency), cadenceDays);
   const quality = QUALITY_FACTOR[at.sample?.q ?? 'good'];
   const score = r2(base.score * fresh * quality);
   const reasons = [...base.reasons];
   if (at.ageDays == null) reasons.push(tx('No observation yet at this date.', 'Chưa có quan trắc tại ngày này.'));
   else if (fresh < 1)
     reasons.push(tx(`Latest reading is ${at.ageDays} days old.`, `Số đo gần nhất đã cách ${at.ageDays} ngày.`));
+  else if (at.latest)
+    reasons.push(tx(`Latest available reading, ${at.ageDays} days old (normal delay of this source: ${latency} days).`, `Số đo mới nhất hiện có, cách ${at.ageDays} ngày (độ trễ thường lệ của nguồn: ${latency} ngày).`));
   if (quality < 1) reasons.push(tx(`Sample quality: ${at.sample?.q}.`, `Chất lượng mẫu: ${at.sample?.q}.`));
   return { level: levelOf(score), score, reasons };
 }

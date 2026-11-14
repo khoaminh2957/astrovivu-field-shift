@@ -373,6 +373,8 @@ interface SeasonFit {
   supplyMm: number | null;
   storedMm: number;
   kill: number | null;
+  /** Survival of the months outside the window (perennials): null when not checked. */
+  restKill: number | null;
   photo: number | null;
   quad: Quad;
 }
@@ -410,13 +412,15 @@ function seasonFit(crop: CropProfile, c: Climate, start: number, useClim: boolea
       if (classes.includes(h < 12 ? 'short' : h <= 14 ? 'neutral' : 'long')) photoHits++;
     }
   }
-  // A perennial also has to survive the months outside its growing window.
+  // A perennial also has to survive the months outside its growing window. Only the rest-period
+  // killing temperature applies there: a dormant, hardened stand is not killed by a growing-season frost.
+  let restKill: number | null = null;
   if (crop.lifeSpan === 'perennial') {
-    const restKill = crop.req.killTempRestC ?? crop.req.killTempC;
-    if (restKill != null)
+    const restT = crop.req.killTempRestC;
+    if (restT != null)
       for (let k = n; k < 12; k++) {
         const tn = at(c.tMin, c.clim.tMin, start + k);
-        if (!Number.isNaN(tn)) kill = Math.min(kill ?? 1, tn < restKill + KILL_MARGIN_C ? 0 : 1);
+        if (!Number.isNaN(tn)) restKill = Math.min(restKill ?? 1, tn < restT + KILL_MARGIN_C ? 0 : 1);
       }
   }
   // Water supply = rain in the window + water a fallow soil stored before sowing (annuals only).
@@ -446,9 +450,22 @@ function seasonFit(crop: CropProfile, c: Climate, start: number, useClim: boolea
     supplyMm: supply,
     storedMm: stored,
     kill,
+    restKill,
     photo: classes?.length && classes.length < 3 ? GATE.photoperiodMin + (1 - GATE.photoperiodMin) * (photoHits / n) : null,
     quad,
   };
+}
+
+/**
+ * Active season of a perennial: the months whose mean temperature is above the crop's absolute
+ * minimum (growth possible). Null for annuals and for sites where every month is active (evergreen),
+ * so those keep the plain window logic.
+ */
+export function activeSeason(crop: CropProfile, tMean: number[]): { active: boolean[]; months: number } | null {
+  if (crop.lifeSpan !== 'perennial' || tMean.length !== 12 || tMean.some(Number.isNaN)) return null;
+  const active = tMean.map((t) => t > crop.req.tempC[0]);
+  const months = active.filter(Boolean).length;
+  return months >= 12 ? null : { active, months };
 }
 
 const ORDER = { depth: ['very-shallow', 'shallow', 'medium', 'deep'], salinity: ['none', 'low', 'medium', 'high'], fertility: ['low', 'moderate', 'high'] } as const;
@@ -479,7 +496,8 @@ function fitFor(crop: CropProfile, site: Site, climate: Climate | null, month: n
   const season = climate ? seasonFit(crop, climate, month - 1, true, site, irrigation) : null;
   const n = windowMonths(crop);
 
-  add('temperature', tx('Temperature in the growing window', 'Nhiệt độ trong vụ'), season?.temp ?? null, w.temperature, season?.tempAt != null ? round(season.tempAt, 1) : null, fmt(req.tempC), 'fixed', 'agromet', '°C', season?.temp == null ? missing : tx(`Worst month of the ${n}-month window.`, `Tháng bất lợi nhất trong ${n} tháng của vụ.`));
+  const dorm = climate ? activeSeason(crop, climate.clim.tMean) : null;
+  add('temperature', tx('Temperature in the growing window', 'Nhiệt độ trong vụ'), season?.temp ?? null, w.temperature, season?.tempAt != null ? round(season.tempAt, 1) : null, fmt(req.tempC), 'fixed', 'agromet', '°C', season?.temp == null ? missing : dorm ? tx(`Worst month of the ${n}-month growth window inside the active season; dormant months are judged on survival only.`, `Tháng bất lợi nhất trong ${n} tháng sinh trưởng của mùa hoạt động; tháng cây nghỉ chỉ xét khả năng sống sót.`) : tx(`Worst month of the ${n}-month window.`, `Tháng bất lợi nhất trong ${n} tháng của vụ.`));
   const waterNote =
     season?.water == null
       ? missing
@@ -515,6 +533,21 @@ function fitFor(crop: CropProfile, site: Site, climate: Climate | null, month: n
 
   // Gates: multipliers outside the weighted product. Each one asks for local review.
   const reviewNote = tx('Outside what the crop database records for this crop: needs local review.', 'Nằm ngoài phạm vi cơ sở dữ liệu ghi nhận cho cây này: cần chuyên gia địa phương xem xét.');
+  const dormancy = climate ? activeSeason(crop, climate.clim.tMean) : null;
+  // Evergreen perennials keep one combined kill gate (window and rest months), as before.
+  if (!dormancy && season && season.restKill != null) season.kill = Math.min(season.kill ?? 1, season.restKill);
+  if (dormancy) {
+    // A perennial with a dormant season: winter is judged only on survival, and the active season must be long enough.
+    const restT = req.killTempRestC;
+    add('winterSurvival', tx('Winter survival (dormant season)', 'Sống sót qua mùa nghỉ'), season?.restKill ?? null, 1, null, restT != null ? `> ${restT + KILL_MARGIN_C} °C` : '?', 'fixed', 'agromet', undefined,
+      restT == null
+        ? tx('Winter survival not checked: the crop database records no killing temperature for the rest period.', 'Chưa kiểm tra khả năng sống qua mùa nghỉ: cơ sở dữ liệu không ghi nhiệt độ gây chết khi cây nghỉ.')
+        : season?.restKill === 0
+          ? tx('Winter nights are cold enough to kill the dormant stand.', 'Đêm mùa đông đủ lạnh để làm chết cây đang nghỉ.')
+          : tx(`Dormant for ${12 - dormancy.months} months; winter nights stay above the rest-period killing temperature.`, `Nghỉ ${12 - dormancy.months} tháng; đêm mùa đông vẫn trên ngưỡng nhiệt gây chết khi cây nghỉ.`));
+    add('activeSeason', tx('Length of the active season', 'Độ dài mùa sinh trưởng'), dormancy.months >= n ? 1 : dormancy.months / n, 1, dormancy.months, `>= ${n}`, 'fixed', 'agromet', 'months',
+      tx(`${dormancy.months} months warm enough for growth (mean above ${req.tempC[0]} °C); the crop needs ${n}.`, `${dormancy.months} tháng đủ ấm để sinh trưởng (trung bình trên ${req.tempC[0]} °C); cây cần ${n}.`));
+  }
   if (season?.kill != null) add('frost', tx('Killing temperature', 'Nhiệt độ gây chết'), season.kill, 1, null, `> ${(req.killTempC ?? 0) + KILL_MARGIN_C} °C`, 'fixed', 'agromet', undefined, season.kill === 0 ? tx('A month of the season has nights cold enough to kill the crop.', 'Có tháng trong vụ đêm lạnh đến mức làm chết cây.') : undefined);
   if (climate?.zones.length && req.climateZones?.length) {
     const ok = climate.zones.some((z) => req.climateZones!.includes(z));
@@ -553,7 +586,7 @@ function yearStats(crop: CropProfile, site: Site, c: Climate, month: number, irr
     if (start + Math.max(n, crop.lifeSpan === 'perennial' ? 12 : n) > c.years * 12) break;
     const s = seasonFit(crop, c, start, false, site, irrigation);
     if (s.temp == null || s.water == null) continue;
-    scores.push(Math.min(s.temp, s.water, s.kill ?? 1));
+    scores.push(Math.min(s.temp, s.water, s.kill ?? 1, s.restKill ?? 1));
   }
   return { yearsOk: scores.filter((s) => s >= RELIABILITY_THRESHOLD).length, yearsTotal: scores.length, scores };
 }
@@ -601,9 +634,21 @@ function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Clima
     stats.push(climate ? yearStats(crop, site, climate, m, irrigation) : null);
   }
   const rel = (i: number) => (stats[i]?.yearsTotal ? stats[i]!.yearsOk / stats[i]!.yearsTotal : 0);
+  const dormancy = climate ? activeSeason(crop, climate.clim.tMean) : null;
   let best = 0;
-  for (let i = 1; i < 12; i++) if (fits[i].score > fits[best].score + 1e-9 || (Math.abs(fits[i].score - fits[best].score) <= 1e-9 && rel(i) > rel(best) + 1e-9)) best = i;
-  const gtMonth = input.groundTruth.sowingDate ? Number(input.groundTruth.sowingDate.slice(5, 7)) : undefined;
+  if (!dormancy) {
+    for (let i = 1; i < 12; i++) if (fits[i].score > fits[best].score + 1e-9 || (Math.abs(fits[i].score - fits[best].score) <= 1e-9 && rel(i) > rel(best) + 1e-9)) best = i;
+  } else {
+    // A dormant perennial is not re-sown each year: its growth window sits inside the active season,
+    // placed on temperature first so that a water deficit is reported as water, not as a winter month.
+    const n = Math.min(windowMonths(crop), dormancy.months);
+    const pool = Array.from({ length: 12 }, (_, i) => i).filter((i) => Array.from({ length: n }, (_, k) => dormancy.active[(i + k) % 12]).every(Boolean));
+    const temp = (i: number) => fits[i].season?.temp ?? 0;
+    best = pool[0] ?? 0;
+    for (const i of pool) if (temp(i) > temp(best) + 1e-9 || (Math.abs(temp(i) - temp(best)) <= 1e-9 && fits[i].score > fits[best].score + 1e-9)) best = i;
+  }
+  // The planting date of a perennial stand does not move its growth window.
+  const gtMonth = input.groundTruth.sowingDate && !dormancy ? Number(input.groundTruth.sowingDate.slice(5, 7)) : undefined;
   const month = opts.sowingMonth ?? gtMonth ?? best + 1;
   const fit = fits[month - 1];
   const st = stats[month - 1];
@@ -685,8 +730,9 @@ export function rankCrops(input: ModelInput, opts: { limit?: number; cropIds?: s
 // ------------------------------------------------------------------------------------------------
 
 const STAGE_LABEL: Record<StageId, I18nText> = {
-  fallow: tx('Fallow / rest', 'Đất nghỉ / cây nghỉ'),
-  'pre-sowing': tx('Before sowing', 'Trước gieo'),
+  fallow: tx('Off-season (fallow)', 'Ngoài vụ (đất nghỉ)'),
+  'pre-sowing': tx('Off-season (before sowing)', 'Ngoài vụ (trước gieo)'),
+  dormant: tx('Dormant (winter rest)', 'Ngủ nghỉ (nghỉ đông)'),
   initial: tx('Initial', 'Giai đoạn đầu'),
   development: tx('Development', 'Phát triển'),
   'mid-season': tx('Mid-season', 'Giữa vụ'),
@@ -813,7 +859,45 @@ function rainBias(input: ModelInput, d: Daily, calibration: CalibrationNote[]): 
   return factor;
 }
 
-export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolean } = {}): ScoreDetail {
+/** Ground-truth fields behind each calibration key: removing them re-scores the field without that override. */
+const OVERRIDE_FIELDS: Record<string, (keyof GroundTruth)[]> = {
+  texture: ['texture'],
+  ph: ['ph'],
+  drainage: ['drainage'],
+  salinity: ['ecDsM'],
+  depth: ['soilDepthCm'],
+  irrigation: ['irrigation', 'waterSource', 'waterReliability'],
+  sowing: ['sowingDate'],
+  rain: ['measuredRain'],
+};
+
+function withoutOverride(gt: GroundTruth, key: string): GroundTruth | null {
+  const fields = OVERRIDE_FIELDS[key];
+  if (!fields) return null;
+  const next: GroundTruth = { ...gt };
+  for (const k of fields) delete next[k];
+  if (key === 'drainage' && next.issues) next.issues = next.issues.filter((i) => i !== 'waterlogging');
+  if (key === 'salinity' && next.issues) next.issues = next.issues.filter((i) => i !== 'salinity');
+  return next;
+}
+
+/** Fill each ledger line with the season score with and without that one override. */
+function scoreLedger(input: ModelInput, notes: CalibrationNote[], withScore: number): CalibrationNote[] {
+  return notes.map((c) => {
+    const gt = withoutOverride(input.groundTruth, c.key);
+    if (!gt) return c;
+    const without = seasonScore({ ...input, groundTruth: gt }, false);
+    const delta = withScore - without;
+    const sign = delta > 0 ? '+' : '';
+    return {
+      ...c,
+      scoreEffect: { with: withScore, without, delta },
+      effect: tx(`${c.effect.en} Season score ${without} without it, ${withScore} with it (${sign}${delta}).`, `${c.effect.vi} Điểm vụ ${without} khi không có, ${withScore} khi có (${sign}${delta}).`),
+    };
+  });
+}
+
+export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolean; ledger?: boolean } = {}): ScoreDetail {
   const { telemetry: t, groundTruth: gt } = input;
   const crop = getCrop(input.cropId);
   const site = buildSite(input);
@@ -831,12 +915,24 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
   const kc = new Float64Array(d.n).fill(1);
   const inSeason = new Uint8Array(d.n);
   const seasonStart = new Uint8Array(d.n);
+  // A perennial with a dormant season rests outside its growth window: dormant, not fallow and not failing.
+  const dormancy = crop && climate ? activeSeason(crop, climate.clim.tMean) : null;
+  const dormantStage: GrowthStage = { id: 'dormant', label: STAGE_LABEL.dormant, progress: 0, dayInSeason: null };
+  // An evergreen tree between two cycles keeps growing: not fallow, not off-season.
+  const restStage: GrowthStage = { id: 'fallow', label: tx('Between cycles (tree rest)', 'Giữa hai chu kỳ (cây nghỉ)'), progress: 0, dayInSeason: null };
+  // An annual the farmer grows several times a year (the rotation lists it more than once, or in given
+  // months) follows that calendar: each block starts on the 1st of its first month.
+  const blocks = crop && crop.lifeSpan !== 'perennial' && !gt.sowingDate ? (gt.currentRotation ?? []).filter((b) => b.cropId === crop.id && b.startMonth >= 1 && b.startMonth <= 12) : [];
+  const blockStartDoy = blocks.map((b) => dayOfYear(`2025-${String(b.startMonth).padStart(2, '0')}-01`));
   if (crop) {
     const cache = new Map<number, GrowthStage>();
     for (let i = 0; i < d.n; i++) {
-      const dis = (Math.min(d.doy[i], 365) - sowDoy + 365) % 365;
+      const doy = Math.min(d.doy[i], 365);
+      // Days since the most recent block start (or the single sowing day).
+      const dis = blocks.length ? Math.min(...blockStartDoy.map((b) => (doy - b + 365) % 365)) : (doy - sowDoy + 365) % 365;
       let st = cache.get(dis);
       if (!st) cache.set(dis, (st = stageAt(crop, dis)));
+      if (st.dayInSeason == null && crop.lifeSpan === 'perennial') st = dormancy ? dormantStage : restStage;
       stages[i] = st;
       kc[i] = kcAt(crop, st);
       inSeason[i] = st.dayInSeason != null && st.id !== 'harvest' ? 1 : 0;
@@ -870,6 +966,7 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
   let sum = 0;
   let count = 0;
   let nowScore = 0;
+  let nowState: 'in-season' | 'off-season' | 'dormant' = 'in-season';
   const dyn = (key: string, label: I18nText, score: number, weight: number, actual: number | null, ideal: string, kind: FactorKind, branch: BranchId, unit?: string): FactorScore => ({ key, label, score: round(score, 3), weight, actual, ideal, kind, branch, ...(unit ? { unit } : {}) });
   for (let i = 0; i < d.n; i++) {
     const stage = stages[i];
@@ -889,9 +986,13 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
     // No dynamic data at all is "no stress detected", shown with zero dynamic confidence.
     const k = model == null ? (observed ?? 1) : observed == null ? model : (1 - OBSERVED_BLEND) * model + OBSERVED_BLEND * observed;
     const condition = Math.round(100 * k);
-    const productivity = compat == null ? condition : Math.round(100 * compat * k);
+    // No crop in the ground (fallow, before sowing, dormant): the headline carries the outlook for the
+    // next season, not a reading of a crop that is not there.
+    const offSeason = !!crop && stage != null && (stage.id === 'dormant' || (crop.lifeSpan !== 'perennial' && (stage.id === 'fallow' || stage.id === 'pre-sowing')));
+    const productivity = compat == null ? condition : offSeason ? Math.round(100 * compat) : Math.round(100 * compat * k);
     if (active) (sum += productivity), count++;
     nowScore = productivity;
+    nowState = !offSeason ? 'in-season' : stage!.id === 'dormant' ? 'dormant' : 'off-season';
     if (opts.snapshots === false) continue;
 
     const factors: FactorScore[] = [...staticFactors];
@@ -907,8 +1008,10 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
       const c = f.score ** Math.min(1, f.weight);
       if (c < worst) (worst = c), (limiting = f);
     }
+    // Off-season, today's weather limits nothing that is growing; the limit is the static one of the next season.
+    if (offSeason) limiting = a?.limiting ? (factors.find((f) => f.key === a.limiting!.key) ?? null) : null;
     if (limiting) factors[factors.indexOf(limiting)] = { ...limiting, limiting: true };
-    snapshots.push({ t: addDays(d.start, i), productivity, condition, compatibility: compat == null ? null : Math.round(100 * compat), stage, factors, limiting: limiting?.key ?? null, confidence });
+    snapshots.push({ t: addDays(d.start, i), productivity, condition, compatibility: compat == null ? null : Math.round(100 * compat), stage, factors, limiting: limiting?.key ?? null, confidence, ...(offSeason ? { offSeason: true } : {}) });
   }
 
   const cropName = crop?.names;
@@ -923,6 +1026,12 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
           `${cropName!.vi ?? cropName!.en}: ${cls(pct)[1]} (${pct}/100)${lim ? `, giới hạn bởi ${lim.label.vi.toLowerCase()}` : ''}${rel ? `; vụ đáp ứng nhu cầu của cây trong ${rel.yearsOk}/${rel.yearsTotal} năm` : ''}${a!.needsLocalReview ? '. Cần chuyên gia địa phương xem xét.' : '.'}`,
         )
       : tx('Growing conditions for a generic crop (choose a crop for a crop-specific score).', 'Điều kiện sinh trưởng cho cây trồng chung (chọn cây để có điểm riêng).');
+  const headlineNow: I18nText =
+    crop && pct != null && nowState !== 'in-season'
+      ? nowState === 'dormant'
+        ? tx(`${headline.en} Dormant now: the score is the outlook for the next growing season.`, `${headline.vi} Cây đang nghỉ: điểm là triển vọng cho mùa sinh trưởng tới.`)
+        : tx(`${headline.en} Off-season now: the score is the outlook for the next season.`, `${headline.vi} Hiện ngoài vụ: điểm là triển vọng cho vụ tới.`)
+      : headline;
 
   const { fits: _f, stats: _s, ...assessment } = a ?? ({} as NonNullable<typeof a>);
   return {
@@ -937,8 +1046,9 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
         limiting: lim ? { ...lim, limiting: true } : null,
         expectedYieldFraction: expected == null ? null : round(expected, 3),
         reliability: rel ?? null,
-        calibration,
-        headline,
+        calibration: opts.ledger === false || !calibration.length ? calibration : scoreLedger(input, calibration, expected == null ? (count ? Math.round(sum / count) : 0) : Math.round(100 * expected)),
+        headline: headlineNow,
+        seasonNow: nowState,
       },
     },
     assessment: a ? assessment : null,
@@ -960,8 +1070,8 @@ export function scanSowingWindows(input: ModelInput): SowingWindow[] {
   return a.fits.map((f, i) => ({ month: i + 1, score: Math.round(100 * f.score), reliability: a.stats[i]?.yearsTotal ? round(a.stats[i]!.yearsOk / a.stats[i]!.yearsTotal, 2) : null, limiting: f.limiting?.key ?? null }));
 }
 
-const seasonScore = (input: ModelInput): number => {
-  const s = computeScoreDetail(input, { snapshots: false }).timeline.summary;
+const seasonScore = (input: ModelInput, ledger = false): number => {
+  const s = computeScoreDetail(input, { snapshots: false, ledger }).timeline.summary;
   return s.expectedYieldFraction == null ? s.productivityMean : Math.round(100 * s.expectedYieldFraction);
 };
 

@@ -22,13 +22,15 @@ function HubReading({ size }: { size?: number }) {
   const openOverride = useMissionUi((s) => s.setOverrideOpen);
   const snap = scoreAt(score, cursor);
   const limiting = snap?.limiting ? snap.factors.find((f) => f.key === snap.limiting) : null;
+  // No crop in the ground: the number is the outlook for the next season and the gap names the state.
+  const off = !!snap?.offSeason;
   return (
     <HubGauge
       value={snap?.productivity ?? null}
-      label={t('hud.hub.label')}
+      label={off ? t('hud.hub.outlook') : t('hud.hub.label')}
       secondary={cropId ? (snap?.compatibility ?? null) : (snap?.condition ?? null)}
       secondaryLabel={cropId ? t('hud.hub.compat') : t('hud.hub.condition')}
-      limiting={limiting ? pick(limiting.label, lang) : undefined}
+      limiting={off && snap?.stage ? pick(snap.stage.label, lang) : limiting ? pick(limiting.label, lang) : undefined}
       size={size}
       instant={instant}
       simulated={mode === 'mock'}

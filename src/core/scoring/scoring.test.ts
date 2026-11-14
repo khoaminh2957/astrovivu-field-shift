@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { getSampleParcel } from '@/data/samples';
 import type { BranchTelemetry, FieldTelemetry, GroundTruth, ModelInput, Parcel, Series, StaticFact } from '@/contracts';
 import { tx } from '@/contracts';
 import { getCrop, listCrops, searchCrops } from '@/core/crops';
@@ -248,5 +250,41 @@ describe('economics', () => {
   it('returns null instead of guessing when no cost is known', () => {
     expect(seasonEconomics({ cropId: 'sesamum-indicum', areaHa: 1, yieldFraction: 1, reference: referenceEconomics('sesamum-indicum', daklak(null).parcel) })).toBeNull();
     expect(seasonEconomics({ cropId: 'x', areaHa: 1, yieldFraction: 1, reference: null })).toBeNull();
+  });
+});
+
+describe('perennials with a dormant season (demo caches)', () => {
+  const cache = (id: string, cropId: string, groundTruth: GroundTruth): ModelInput => {
+    const telemetry = JSON.parse(readFileSync(`public/data/samples/${id}.json`, 'utf8')) as FieldTelemetry;
+    return { parcel: getSampleParcel(id)!, telemetry, cropId, groundTruth, priorities: ['profit'], today: telemetry.window.today };
+  };
+  it('irrigated alfalfa in the Nevada desert is suitable; winter is dormancy, not failure', () => {
+    const d = computeScoreDetail(cache('nevada-alfalfa', 'medicago-sativa', { irrigation: 'full' }));
+    const s = d.timeline.summary;
+    expect(s.compatibility!).toBeGreaterThanOrEqual(45);
+    expect(s.reliability!.yearsOk / s.reliability!.yearsTotal).toBeGreaterThan(0.8);
+    expect(d.assessment!.factors.find((f) => f.key === 'winterSurvival')?.score).toBe(1);
+    const jan = d.timeline.snapshots.find((x) => x.t.endsWith('-01-15'))!;
+    expect(jan.stage?.id).toBe('dormant');
+    expect(jan.offSeason).toBe(true);
+    expect(jan.productivity).toBe(s.compatibility);
+    expect(s.seasonNow).toBe('dormant');
+  });
+  it('rainfed alfalfa in that desert is limited by water, not by winter', () => {
+    const s = computeScoreTimeline(cache('nevada-alfalfa', 'medicago-sativa', {})).summary;
+    expect(s.limiting?.key).toBe('water');
+    expect(s.compatibility!).toBeLessThan(20);
+  });
+  it('tropical robusta keeps its evergreen window (no dormancy)', () => {
+    const d = computeScoreDetail(cache('daklak-coffee', 'coffea-canephora', {}));
+    expect(d.timeline.summary.compatibility).toBe(74);
+    expect(d.timeline.summary.limiting?.key).toBe('water');
+    expect(d.assessment!.factors.some((f) => f.key === 'winterSurvival')).toBe(false);
+    expect(d.timeline.snapshots.some((x) => x.stage?.id === 'dormant')).toBe(false);
+  });
+  it('an annual after harvest reads off-season with the outlook, not zero', () => {
+    const s = computeScoreTimeline(cache('iowa-corn-soy', 'zea-mays', {})).summary;
+    expect(s.seasonNow).toBe('off-season');
+    expect(s.productivityNow).toBe(s.compatibility);
   });
 });

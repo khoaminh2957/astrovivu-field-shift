@@ -28,7 +28,8 @@ export const SOURCES = {
     provenance: 'derived',
     resolutionM: 111_000,
     cadenceDays: 1,
-    latencyDays: 75,
+    // FLASHFlux near-real-time solar: the demo caches end 10-11 days before the request date.
+    latencyDays: 10,
     access: 'POWER Daily API',
     url: 'https://power.larc.nasa.gov/',
   }),
@@ -52,7 +53,8 @@ export const SOURCES = {
     provenance: 'modelled',
     resolutionM: 25_000,
     cadenceDays: 1,
-    latencyDays: 2,
+    // ERA5T preliminary data reach the archive about 5 days after real time.
+    latencyDays: 5,
     access: 'Open-Meteo Historical Weather API',
     url: 'https://open-meteo.com/en/docs/historical-weather-api',
     license: 'CC BY 4.0',
@@ -65,7 +67,7 @@ export const SOURCES = {
     provenance: 'modelled',
     resolutionM: 9_000,
     cadenceDays: 1,
-    latencyDays: 2,
+    latencyDays: 5,
     access: 'Open-Meteo Historical Weather API',
     url: 'https://open-meteo.com/en/docs/historical-weather-api',
     license: 'CC BY 4.0',
@@ -114,7 +116,8 @@ export const SOURCES = {
     provenance: 'observed',
     resolutionM: 1_000,
     cadenceDays: 8,
-    latencyDays: 10,
+    // Sample dates are composite start dates: 8 days of compositing plus a few days of processing.
+    latencyDays: 12,
     access: 'ORNL DAAC MODIS/VIIRS subset API',
     url: 'https://modis.ornl.gov/rst/api/v1/',
   }),
@@ -274,3 +277,11 @@ export const SOURCES = {
 } as const;
 
 export type SourceKey = keyof typeof SOURCES;
+
+const BY_ID = new Map<string, SourceRef>(Object.values(SOURCES).map((s) => [s.id, s]));
+
+/**
+ * Normal publication delay of a source. The catalogue wins over the copy stored in a telemetry
+ * file, because cached demo files keep the values of the day they were written.
+ */
+export const latencyDaysOf = (id: string | undefined, stored?: SourceRef): number | null => (id ? BY_ID.get(id)?.latencyDays : undefined) ?? stored?.latencyDays ?? null;

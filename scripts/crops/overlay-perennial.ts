@@ -220,8 +220,9 @@ export const PERENNIAL_AND_COVER_CROPS: CuratedSpec[] = [
     aliases: ['lucerne', 'cỏ alfalfa'],
     category: 'forage',
     cycleDays: [100, 150],
-    req: { climateZones: ['Bw', 'Bs', 'Cf', 'Cs', 'Cw', 'Do', 'Dc', 'Df', 'Dw'] },
+    req: { ph: [4.3, 6.5, 8.2, 9.2], climateZones: ['Bw', 'Bs', 'Cf', 'Cs', 'Cw', 'Do', 'Dc', 'Df', 'Dw'] },
     reqNotes: [
+      'ph 4.3/6.5/8.2/9.2 instead of 4.3/6.5/7.5/8.7: alfalfa is grown every year on the alkaline, calcareous soils of western US valleys (the Nevada demo pivot is pH 8.8 in SSURGO and alfalfa in the Cropland Data Layer 2019-2025), which the EcoCrop limits score as impossible; the upper limits are a judgement, not a measured threshold',
       'cycleDays 100-150 instead of 100-210: first growth to last cutting in a temperate three- to four-cut system; the stand rests in winter',
       'climateZones: Bw added (irrigated desert valleys are the main alfalfa areas of the western United States)',
     ],

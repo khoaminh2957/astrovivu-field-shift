@@ -1,4 +1,5 @@
 import type { I18nText } from './common';
+import type { GroundTruth } from './model';
 
 export type LngLat = [lng: number, lat: number];
 export type BBox = [west: number, south: number, east: number, north: number];
@@ -47,6 +48,8 @@ export interface SampleParcel extends Parcel {
   tagline: I18nText;
   story: I18nText;
   defaultCropId: string;
+  /** Assumed farm profile a demo field starts with (irrigation, rotation); the user can change it, Reset returns to it. */
+  defaultGroundTruth?: GroundTruth;
 }
 
 export interface PlaceHit {

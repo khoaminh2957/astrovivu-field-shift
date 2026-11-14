@@ -16,7 +16,9 @@ import { diffDays } from './time';
 /**
  * Temporal sync rule (ARCHITECTURE.md §4): at cursor date `t` every series shows its most recent
  * valid observation at or before `t`. If that observation is older than the hold window of its
- * cadence, the reading is flagged stale instead of being silently carried forward.
+ * cadence plus the source's normal publication delay, the reading is flagged stale instead of being
+ * silently carried forward. Between the hold window and that limit it is the latest the source has
+ * published: shown, with its age, but not stale.
  */
 export const HOLD_DAYS: Record<Cadence, number> = {
   daily: 3,
@@ -31,9 +33,15 @@ export interface SampleAt {
   sample: Sample | null;
   ageDays: number | null;
   stale: boolean;
+  /** Older than the hold window but within the source's normal latency: the latest available reading. */
+  latest?: boolean;
 }
 
-export function sampleAt(series: Series, t: ISODate): SampleAt {
+/** Days after which a reading is stale: the cadence hold plus the source's normal latency. */
+export const staleAfterDays = (cadence: Cadence, latencyDays?: number | null): number => HOLD_DAYS[cadence] + Math.max(0, latencyDays ?? 0);
+
+/** `latencyDays` is the source's normal publication delay (`SourceRef.latencyDays`); 0 keeps the old rule. */
+export function sampleAt(series: Series, t: ISODate, latencyDays?: number | null): SampleAt {
   const s = series.samples;
   let lo = 0;
   let hi = s.length - 1;
@@ -48,7 +56,8 @@ export function sampleAt(series: Series, t: ISODate): SampleAt {
   while (idx >= 0 && s[idx].v == null) idx--;
   if (idx < 0) return { sample: null, ageDays: null, stale: true };
   const ageDays = diffDays(t, s[idx].t);
-  return { sample: s[idx], ageDays, stale: ageDays > HOLD_DAYS[series.cadence] };
+  const stale = ageDays > staleAfterDays(series.cadence, latencyDays);
+  return { sample: s[idx], ageDays, stale, latest: !stale && ageDays > HOLD_DAYS[series.cadence] };
 }
 
 export const primarySeries = (b: BranchTelemetry): Series | undefined => b.series.find((x) => x.primary) ?? b.series[0];

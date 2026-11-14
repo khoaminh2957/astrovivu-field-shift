@@ -178,6 +178,7 @@ function ResetButton() {
   const t = useT();
   const gt = useMission((s) => s.groundTruth);
   const reset = useMission((s) => s.resetGroundTruth);
+  const demo = useMission((s) => !!(s.parcel && 'defaultGroundTruth' in s.parcel && s.parcel.defaultGroundTruth));
   const [open, setOpen] = useState(false);
   const n = countOverrides(gt);
   return (
@@ -186,9 +187,9 @@ function ResetButton() {
       onOpenChange={setOpen}
       size="sm"
       title={t('gt.reset')}
-      description={t('gt.resetConfirm', { n })}
+      description={t(demo ? 'gt.resetConfirmDemo' : 'gt.resetConfirm', { n })}
       trigger={
-        <Button variant="ghost" icon={<RotateCcw />} disabled={n === 0}>
+        <Button variant="ghost" icon={<RotateCcw />} disabled={n === 0 && !demo}>
           {t('gt.reset')}
         </Button>
       }
@@ -213,6 +214,7 @@ export function GroundTruthPanel() {
   const soil = useMission((s) => s.telemetry?.branches.soil);
   const gt = useMission((s) => s.groundTruth);
   const setGroundTruth = useMission((s) => s.setGroundTruth);
+  const demo = useMission((s) => !!(s.parcel && 'defaultGroundTruth' in s.parcel && s.parcel.defaultGroundTruth));
   const sowId = useId();
 
   const num = (key: string) => {
@@ -233,6 +235,7 @@ export function GroundTruthPanel() {
       footer={<ResetButton />}
     >
       <div className="flex flex-col gap-4">
+        {demo && <p className="t-caption text-ink-2">{t('gt.demoProfile')}</p>}
         <CropPicker />
 
         <Field label={t('gt.sowing')} htmlFor={sowId} hint={t('gt.sowingHint')} aside={gt.sowingDate ? <StatusTag status="ground-truth" compact /> : undefined}>

@@ -50,6 +50,8 @@ export interface CalibrationNote {
   ground: number | string;
   delta?: number;
   effect: I18nText;
+  /** Season score (expected % of attainable yield) with and without this override; absent when not re-scored. */
+  scoreEffect?: { with: number; without: number; delta: number };
 }
 
 /** Everything the model tier needs. Pure functions of this input: no fetches, no globals. */
@@ -87,7 +89,8 @@ export interface FactorScore {
   note?: I18nText;
 }
 
-export type StageId = 'fallow' | 'pre-sowing' | 'initial' | 'development' | 'mid-season' | 'late-season' | 'harvest';
+/** `dormant`: a perennial outside its active (warm-enough) season; alive, not growing, not failing. */
+export type StageId = 'fallow' | 'pre-sowing' | 'initial' | 'development' | 'mid-season' | 'late-season' | 'harvest' | 'dormant';
 
 export interface GrowthStage {
   id: StageId;
@@ -111,6 +114,11 @@ export interface ScoreSnapshot {
   limiting: string | null;
   /** 0..1, aggregated from the branches the score used. */
   confidence: number;
+  /**
+   * True when no crop is growing at `t` (fallow, before sowing, dormant). `productivity` then carries
+   * the outlook (the static compatibility), not a reading of a failing crop.
+   */
+  offSeason?: boolean;
 }
 
 export interface ScoreSummary {
@@ -124,6 +132,8 @@ export interface ScoreSummary {
   reliability: { yearsOk: number; yearsTotal: number } | null;
   calibration: CalibrationNote[];
   headline: I18nText;
+  /** State on the last day of the window (today): growing, off-season (annual) or dormant (perennial). */
+  seasonNow?: 'in-season' | 'off-season' | 'dormant';
 }
 
 export interface ScoreTimeline {

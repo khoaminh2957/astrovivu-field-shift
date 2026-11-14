@@ -52,7 +52,7 @@ describe('confidence badge (ARCHITECTURE §4.3)', () => {
     expect(fresh.score).toBe(branch.confidence.score);
     const filled = confidenceAt(branch, series, '2026-11-02', parcel, sources);
     expect(filled.score).toBeCloseTo(Math.round(branch.confidence.score * 0.7 * 100) / 100, 2);
-    const stale = confidenceAt(branch, series, '2026-12-20', parcel, sources);
+    const stale = confidenceAt(branch, series, '2027-01-25', parcel, sources);
     expect(stale.score).toBeCloseTo(Math.round(branch.confidence.score * 0.3 * 0.7 * 100) / 100, 2);
     expect(stale.level).toBe('low');
     expect(confidenceAt(branch, series, '2026-01-01', parcel, sources).reasons.some((r) => r.en.includes('No observation'))).toBe(true);

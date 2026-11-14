@@ -1,3 +1,4 @@
+import { latencyDaysOf } from '@/data/sources';
 import { useEffect, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { BRANCH_SIDE, type BranchId, type Series, pick } from '@/contracts';
@@ -24,7 +25,7 @@ function SeriesRow({ series, branch }: { series: Series; branch: BranchId }) {
   const lang = useLang();
   const telemetry = useMission((s) => s.telemetry)!;
   const cursor = useMission((s) => s.timeline.cursor);
-  const at = sampleAt(series, cursor);
+  const at = sampleAt(series, cursor, latencyDaysOf(series.sourceId, telemetry.sources[series.sourceId]));
   const src = telemetry.sources[series.sourceId];
   const sim = telemetry.mode === 'mock';
   const forecast = series.branch === 'risk';

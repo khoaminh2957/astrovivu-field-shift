@@ -19,6 +19,7 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
       place: { label: 'Đắk Lắk, Vietnam', country: 'Vietnam', countryCode: 'VN', admin1: 'Đắk Lắk' },
     }),
     defaultCropId: 'coffea-canephora',
+    defaultGroundTruth: { irrigation: 'supplemental', waterSource: 'well', currentRotation: [{ cropId: 'coffea-canephora', startMonth: 1, endMonth: 12 }] },
     tagline: tx('Dry-season water is the limit', 'Nước mùa khô là giới hạn'),
     story: tx(
       'Robusta coffee on basalt soil. Rain stops for four months; irrigation timing decides the harvest.',
@@ -34,6 +35,16 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
       place: { label: 'Cần Thơ, Vietnam', country: 'Vietnam', countryCode: 'VN', admin1: 'Cần Thơ' },
     }),
     defaultCropId: 'oryza-sativa',
+    // Three rice crops a year (winter-spring, summer-autumn, autumn-winter), irrigated from river and canals.
+    defaultGroundTruth: {
+      irrigation: 'full',
+      waterSource: 'river-canal',
+      currentRotation: [
+        { cropId: 'oryza-sativa', startMonth: 11, endMonth: 2 },
+        { cropId: 'oryza-sativa', startMonth: 3, endMonth: 6 },
+        { cropId: 'oryza-sativa', startMonth: 7, endMonth: 10 },
+      ],
+    },
     tagline: tx('Flood, salt and a third rice crop', 'Ngập, mặn và vụ lúa thứ ba'),
     story: tx(
       'Triple-cropped rice in the delta. Should the third crop become a short legume or vegetable season?',
@@ -49,6 +60,8 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
       place: { label: 'Iowa, United States', country: 'United States', countryCode: 'US', admin1: 'Iowa' },
     }),
     defaultCropId: 'zea-mays',
+    // Rainfed corn-soybean alternation, as the Cropland Data Layer history in the cache shows (2018-2025).
+    defaultGroundTruth: { irrigation: 'rainfed', waterSource: 'rain', currentRotation: [{ cropId: 'zea-mays', startMonth: 5, endMonth: 10 }, { cropId: 'glycine-max', startMonth: 5, endMonth: 10 }] },
     tagline: tx('The classic rotation, re-examined', 'Luân canh kinh điển, nhìn lại'),
     story: tx(
       'Corn-soybean on prairie soil. US-only layers (SSURGO, Cropland Data Layer) show the real rotation history.',
@@ -64,6 +77,8 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
       place: { label: 'Nevada, United States', country: 'United States', countryCode: 'US', admin1: 'Nevada' },
     }),
     defaultCropId: 'medicago-sativa',
+    // Continuous alfalfa under a centre pivot fed by a well (Cropland Data Layer: alfalfa every year 2019-2025).
+    defaultGroundTruth: { irrigation: 'full', waterSource: 'well', currentRotation: [{ cropId: 'medicago-sativa', startMonth: 1, endMonth: 12 }] },
     tagline: tx('Every millimetre is pumped', 'Từng milimét nước đều phải bơm'),
     story: tx(
       'Irrigated alfalfa in a high desert basin: which rotation keeps income while using less groundwater?',

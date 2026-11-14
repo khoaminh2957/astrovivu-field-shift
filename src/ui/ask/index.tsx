@@ -9,6 +9,7 @@ import type { AskResult, FieldContext, Lang } from '@/contracts';
 import { useT } from '@/i18n';
 import { ask, buildFieldContext, suggestQuestions, warmUp } from '@/rag';
 import { useMission } from '@/state/mission';
+import { useMissionUi } from '@/ui/chrome/uiState';
 import { Button, ConfidenceBars, IconButton, ScrollArea, SkeletonText, Tag, cn, confidenceLevel } from '@/ui/design';
 import { AnswerText, SourceDetail } from './Answer';
 import './strings';
@@ -43,6 +44,8 @@ export function AskPanel() {
   const open = useMission((s) => s.askOpen);
   const setOpen = useMission((s) => s.setAskOpen);
   const lang = useMission((s) => s.lang);
+  // The ground-truth sheet sits where the launcher floats; the launcher steps aside while it is open.
+  const overrideOpen = useMissionUi((s) => s.overrideOpen);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(open);
 
@@ -57,6 +60,7 @@ export function AskPanel() {
   const locked = phase === 'locked';
 
   if (!open) {
+    if (overrideOpen) return null;
     return (
       <Button
         ref={triggerRef}

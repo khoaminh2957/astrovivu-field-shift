@@ -22,7 +22,8 @@ import type {
 } from '@/contracts';
 import { pick } from '@/contracts';
 import { confidenceAt } from '@/data';
-import { HOLD_DAYS, findSeries, insightsNear, primarySeries, sampleAt } from '@/lib/series';
+import { latencyDaysOf } from '@/data/sources';
+import { findSeries, insightsNear, primarySeries, sampleAt, staleAfterDays } from '@/lib/series';
 import { addDays, dayOfYear } from '@/lib/time';
 import type { Status } from '@/ui/design';
 import { digitsFor, fmtDate, fmtNum, fmtRes, unitFor } from './format';
@@ -102,11 +103,13 @@ export interface ReadContext {
   t: T;
 }
 
-function deltaFor(series: Series, cursor: ISODate, t: T): { text: string; stale: boolean; age: number | null; value: number | null } {
-  const at = sampleAt(series, cursor);
+function deltaFor(series: Series, cursor: ISODate, t: T, latency: number | null): { text: string; stale: boolean; age: number | null; value: number | null } {
+  const at = sampleAt(series, cursor, latency);
   const v = at.sample?.v ?? null;
   if (v == null) return { text: t('hud.delta.none'), stale: false, age: null, value: null };
-  if (at.stale) return { text: t('hud.delta.stale', { n: at.ageDays ?? 0, h: HOLD_DAYS[series.cadence] }), stale: true, age: at.ageDays, value: v };
+  if (at.stale) return { text: t('hud.delta.stale', { n: at.ageDays ?? 0, h: staleAfterDays(series.cadence, latency) }), stale: true, age: at.ageDays, value: v };
+  // Older than the hold window only because the source publishes late: the latest there is, said quietly.
+  if (at.latest) return { text: t('hud.delta.latest', { n: at.ageDays ?? 0 }), stale: false, age: at.ageDays, value: v };
   const band = baselineAt(series.baseline, cursor);
   const d = digitsFor(series.unit, series.key);
   if (band) {
@@ -181,12 +184,23 @@ export function readBranch(ctx: ReadContext): BranchReading {
     };
   }
 
-  const series = primarySeries(branch);
-  if (!series) {
+  const primary = primarySeries(branch);
+  if (!primary) {
     return { value: null, unit: '', delta: t('hud.delta.none'), status: null, badge: branch.confidence, provenance: 'derived', sourceName: '', sourceDetail: '', ageDays: null };
   }
+  const latencyOf = (s: Series) => latencyDaysOf(s.sourceId, telemetry.sources[s.sourceId]);
+  const usable = (s: Series) => {
+    const at = sampleAt(s, cursor, latencyOf(s));
+    return at.sample?.v != null && !at.stale && (branch.id !== 'rainfall' || rainSum(s.samples, cursor) != null);
+  };
+  // When the primary series has nothing usable at the cursor, another series of the same quantity
+  // (same unit, key extending the primary's, e.g. rain_era5 beside CHIRPS rain) stands in, with its own source.
+  const standIn = usable(primary) ? undefined : branch.series.find((s) => s !== primary && s.unit === primary.unit && s.key.startsWith(primary.key) && usable(s));
+  const series = standIn ?? primary;
   const src = telemetry.sources[series.sourceId];
-  const d = deltaFor(series, cursor, t);
+  const primaryName = telemetry.sources[primary.sourceId]?.name ?? primary.sourceId;
+  const d0 = deltaFor(series, cursor, t, latencyOf(series));
+  const d = standIn ? { ...d0, text: t('hud.delta.standIn', { primary: primaryName }) } : d0;
   const badge = confidenceAt(branch, series, cursor, parcel, telemetry.sources);
   const flagged = insightStatus(insights, branch.id, cursor);
   const status: Status | null = flagged ?? (d.stale ? 'stale' : sim ? 'simulated' : null);
@@ -197,7 +211,7 @@ export function readBranch(ctx: ReadContext): BranchReading {
     return {
       value: sum == null ? null : fmtNum(sum, 0),
       unit: t('hud.unit.rain30'),
-      delta: d.value == null ? d.text : t('hud.delta.rainDay', { v: fmtNum(d.value, 1) }),
+      delta: d.value == null || standIn ? d.text : t('hud.delta.rainDay', { v: fmtNum(d.value, 1) }),
       status,
       badge,
       provenance: provenanceOf(src, mode),

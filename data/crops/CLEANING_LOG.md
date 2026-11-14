@@ -341,6 +341,7 @@ Thresholds of curated crops that differ from the EcoCrop row, and the source of 
 
 ### Alfalfa (`medicago-sativa`, EcoCrop 1428)
 
+- ph 4.3/6.5/8.2/9.2 instead of 4.3/6.5/7.5/8.7: alfalfa is grown every year on the alkaline, calcareous soils of western US valleys (the Nevada demo pivot is pH 8.8 in SSURGO and alfalfa in the Cropland Data Layer 2019-2025), which the EcoCrop limits score as impossible; the upper limits are a judgement, not a measured threshold
 - cycleDays 100-150 instead of 100-210: first growth to last cutting in a temperate three- to four-cut system; the stand rests in winter
 - climateZones: Bw added (irrigated desert valleys are the main alfalfa areas of the western United States)
 - water model: FAO-56 Table 12 "Alfalfa hay, averaged cutting effects" Kc 0.4/0.95/0.9; Table 11 "Alfalfa, total season (FAO prints 10/30/var./var.; mid and late set for a 165-day season)" 10/30/110/15 days; Table 22 Zr 1-2 m, p 0.55; Ky 1.1 (FAO-56 Table 24, from FAO-33)
