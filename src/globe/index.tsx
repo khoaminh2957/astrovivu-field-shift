@@ -18,3 +18,4 @@ export { paintForSeries, colorForValue, rampCss, rampPosition, parcelReadingAt, 
 export { useGlobeStatus, type GlobeStatus, type OverlayStatus, type ImagerySource } from './status';
 export { MIN_DRAW_ZOOM } from './draw';
 export type { MotionPref } from './engine';
+export { zoomBy, resetNorth, setTilt, fitParcel, locateMe, setMotion, startMeasure, stopMeasure, useMapView, useMeasure, type MapViewState, type MeasureKind, type MeasureState } from './tools';

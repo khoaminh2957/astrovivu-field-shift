@@ -15,6 +15,7 @@ import type {
   BranchId,
   DrawMode,
   FarmerPriority,
+  FieldRaster,
   FieldTelemetry,
   GroundTruth,
   ISODate,
@@ -29,12 +30,13 @@ import type {
   SampleParcel,
   ScreenAnchor,
   TrackingData,
+  ViewInsets,
 } from '@/contracts';
 import { BRANCHES } from '@/contracts';
 import { buildAdvisoryReport, buildInsights } from '@/core/advisory';
 import { computeScoreTimeline } from '@/core/scoring';
 import { buildTracking } from '@/core/tracking';
-import { getSampleParcel, loadTelemetry } from '@/data';
+import { getSampleParcel, loadFieldRasters, loadTelemetry } from '@/data';
 import { addDays, clampDate, todayISO } from '@/lib/time';
 
 /** hero -> explore -> locked (HUD + timeline) -> advisory | tracking; urban is a side mission. */
@@ -62,6 +64,10 @@ export interface MissionState {
   branchStatus: Record<BranchId, LoadState>;
   loadError: string | null;
 
+  /** Within-field rasters (10-30 m) of the locked parcel. They load beside the telemetry and never trigger a recompute. */
+  rasters: FieldRaster[];
+  rasterStatus: LoadState;
+
   timeline: TimelineState;
 
   cropId: string | null;
@@ -76,6 +82,8 @@ export interface MissionState {
   layers: LayerState;
   /** Parcel footprint in screen space, written by the globe on every camera move. */
   anchor: ScreenAnchor | null;
+  /** Screen space covered by panels, written by the layout; the globe frames the parcel inside what is left. */
+  insets: ViewInsets;
   /** HUD branch the user is inspecting (expanded callout); also selects the parcel colouring. */
   focusBranch: BranchId | null;
   askOpen: boolean;
@@ -106,6 +114,7 @@ export interface MissionState {
   setOverlayOpacity(value: number): void;
   setParcelMetric(key: string | null): void;
   setAnchor(anchor: ScreenAnchor | null): void;
+  setInsets(insets: ViewInsets): void;
   setFocusBranch(branch: BranchId | null): void;
   setAskOpen(open: boolean): void;
 }
@@ -155,6 +164,9 @@ export const useMission = create<MissionState>()((set, get) => ({
   branchStatus: allStatus('idle'),
   loadError: null,
 
+  rasters: [],
+  rasterStatus: 'idle',
+
   timeline: { start: addDays(today, -364), end: today, cursor: today, playing: false, stepDays: 3 },
 
   cropId: null,
@@ -168,6 +180,7 @@ export const useMission = create<MissionState>()((set, get) => ({
 
   layers: { base: { satellite: true, terrain: true, labels: false }, overlay: 'none', overlayOpacity: 0.7, parcelMetric: 'ndvi' },
   anchor: null,
+  insets: { top: 0, right: 0, bottom: 0, left: 0 },
   focusBranch: null,
   askOpen: false,
 
@@ -212,9 +225,26 @@ export const useMission = create<MissionState>()((set, get) => ({
       insights: [],
       advisory: null,
       tracking: null,
+      rasters: [],
+      rasterStatus: 'loading',
       focusBranch: null,
       timeline: { ...s.timeline, playing: false },
     }));
+
+    // Field rasters are heavier than the telemetry and independent of the score: load them beside it.
+    void loadFieldRasters(parcel, {
+      signal: abort.signal,
+      onProgress: (rasters) => {
+        if (isCurrent()) set({ rasters });
+      },
+    }).then(
+      (rasters) => {
+        if (isCurrent()) set({ rasters, rasterStatus: 'ready' });
+      },
+      () => {
+        if (isCurrent()) set({ rasterStatus: 'error' });
+      },
+    );
 
     const adoptWindow = (t: FieldTelemetry) =>
       set((s) => ({
@@ -262,6 +292,8 @@ export const useMission = create<MissionState>()((set, get) => ({
       advisory: null,
       tracking: null,
       anchor: null,
+      rasters: [],
+      rasterStatus: 'idle',
       focusBranch: null,
       timeline: { ...s.timeline, playing: false },
     }));
@@ -326,6 +358,7 @@ export const useMission = create<MissionState>()((set, get) => ({
   setOverlayOpacity: (value) => set((s) => ({ layers: { ...s.layers, overlayOpacity: Math.max(0, Math.min(1, value)) } })),
   setParcelMetric: (key) => set((s) => ({ layers: { ...s.layers, parcelMetric: key } })),
   setAnchor: (anchor) => set({ anchor }),
+  setInsets: (insets) => set({ insets }),
   setFocusBranch: (focusBranch) => set({ focusBranch }),
   setAskOpen: (askOpen) => set({ askOpen }),
 }));
