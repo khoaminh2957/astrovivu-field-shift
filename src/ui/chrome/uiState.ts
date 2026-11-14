@@ -14,6 +14,9 @@ export interface MissionUiState {
   /** Tab of the field panel. */
   fieldTab: 'status' | 'report' | 'data' | 'truth';
   setFieldTab(tab: 'status' | 'report' | 'data' | 'truth'): void;
+  /** Narrow: the sheet covers the map except a strip at the top. */
+  sheetFull: boolean;
+  setSheetFull(on: boolean): void;
   /** Which map-toolbar popover is open. */
   mapPopover: MapPopover;
   /** Playback driven by requestAnimationFrame in the scrubber (smoother than the store's interval). */
@@ -34,6 +37,8 @@ export const useMissionUi = create<MissionUiState>()((set) => ({
   fieldTab: 'status',
   setFieldTab: (fieldTab) => set({ fieldTab }),
   mapPopover: null,
+  sheetFull: false,
+  setSheetFull: (sheetFull) => set({ sheetFull }),
   playing: false,
   speed: 1,
   scrubbing: false,

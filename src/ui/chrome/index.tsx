@@ -7,7 +7,7 @@
  * is left.
  */
 import { useEffect, type ReactNode } from 'react';
-import { CalendarCheck, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
+import { ChevronsDown, ChevronsUp, CalendarCheck, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { BRANCHES } from '@/contracts';
 import { useLang, useT } from '@/i18n';
@@ -19,8 +19,8 @@ import { FieldList, FindField } from '@/ui/field/FindField';
 import { TimelineScrubber } from '@/ui/timeline';
 import { TrackingView } from '@/ui/tracking';
 import { UrbanCompanion } from '@/ui/urban';
-import { MapToolbar } from './MapToolbar';
-import { useNarrow } from './uiState';
+import { MapLegendChip, MapToolbar } from './MapToolbar';
+import { useMissionUi, useNarrow } from './uiState';
 import './strings';
 
 type NavId = 'field' | 'advisory' | 'tracking' | 'urban' | 'ask';
@@ -210,6 +210,7 @@ function WideField({ locked }: { locked: boolean }) {
         <MapNotice />
       </div>
       <MapToolbar className={cn('absolute top-3 z-(--z-map-ui)', locked ? 'right-[calc(var(--right-w)+20px)]' : 'right-3')} />
+      {locked && <MapLegendChip className="absolute bottom-[calc(var(--strip-h)+24px)] left-[calc(var(--rail-w)+var(--left-w)+12px)] z-(--z-map-ui)" />}
       {locked && (
         <>
           <TimelineScrubber className="absolute bottom-3 left-[calc(var(--rail-w)+var(--left-w)+12px)] right-[calc(var(--right-w)+20px)] z-(--z-dock) h-(--strip-h) rounded-lg border border-line-1" />
@@ -222,6 +223,8 @@ function WideField({ locked }: { locked: boolean }) {
 
 function NarrowField({ locked }: { locked: boolean }) {
   const t = useT();
+  const full = useMissionUi((s) => s.sheetFull);
+  const setFull = useMissionUi((s) => s.setSheetFull);
   return (
     <>
       <div className="absolute top-2 left-2 z-(--z-map-ui) flex items-center gap-2">
@@ -237,10 +240,23 @@ function NarrowField({ locked }: { locked: boolean }) {
       <section
         aria-label={locked ? t('chrome.metrics') : t('field.find.title')}
         className={cn(
-          'absolute inset-x-0 top-(--map-h) z-(--z-panel) overflow-x-hidden overflow-y-auto border-t border-line-2 bg-surface-0 px-4 pt-4 pb-6',
+          'absolute inset-x-0 z-(--z-panel) overflow-x-hidden overflow-y-auto rounded-t-lg border-t border-line-2 bg-surface-0 px-4 pt-0 pb-6 shadow-lg transition-[top] duration-(--dur-base)',
+          full ? 'top-14' : 'top-(--map-h)',
           locked ? 'bottom-[calc(var(--tabbar-h)+var(--strip-h))]' : 'bottom-(--tabbar-h)',
         )}
       >
+        <div className="sticky top-0 z-10 -mx-4 mb-2 flex justify-center bg-surface-0 pt-1">
+          <button
+            type="button"
+            aria-expanded={full}
+            aria-label={t(full ? 'chrome.sheet.collapse' : 'chrome.sheet.expand')}
+            onClick={() => setFull(!full)}
+            className="flex h-10 w-24 flex-col items-center justify-center text-ink-3 hover:text-ink-1"
+          >
+            <span aria-hidden className="h-1 w-10 rounded-full bg-line-2" />
+            {full ? <ChevronsDown size={16} aria-hidden /> : <ChevronsUp size={16} aria-hidden />}
+          </button>
+        </div>
         {locked ? (
           <FieldPanel />
         ) : (
@@ -286,7 +302,13 @@ export function Shell() {
     <>
       {narrow ? <TabBar /> : <Rail />}
       {fieldPhase && (narrow ? <NarrowField locked={locked} /> : <WideField locked={locked} />)}
-      {view && <div className="absolute top-0 right-0 bottom-0 left-(--rail-w) z-(--z-panel) overflow-hidden narrow:bottom-(--tabbar-h) narrow:left-0">{view}</div>}
+      {view && narrow && (
+        <div className="absolute inset-x-0 top-0 z-(--z-chrome) flex h-12 items-center justify-between border-b border-line-1 bg-surface-0 px-3">
+          <span className="t-display text-xs">Astrovivu</span>
+          <LangSwitch />
+        </div>
+      )}
+      {view && <div className="absolute top-0 right-0 bottom-0 left-(--rail-w) z-(--z-panel) overflow-hidden narrow:top-12 narrow:bottom-(--tabbar-h) narrow:left-0">{view}</div>}
     </>
   );
 }

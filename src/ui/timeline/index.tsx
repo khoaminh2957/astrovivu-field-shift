@@ -269,10 +269,32 @@ export function TimelineScrubber({ className }: { className?: string }) {
           step={1}
           formatValue={(v) => fmtDate(addDays(start, v), lang)}
           ticks={ticks}
-          markers={undefined}
+          markers={markers}
           ranges={ranges}
         />
       </div>
+      {narrow ? (
+        <button
+          type="button"
+          aria-label={t('tl.speed')}
+          onClick={() => setSpeed(speed === 4 ? 1 : ((speed * 2) as 2 | 4))}
+          className="t-value flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-2 text-sm text-ink-1"
+        >
+          {speed}×
+        </button>
+      ) : (
+        <Segmented
+          ariaLabel={t('tl.speed')}
+          size="sm"
+          value={String(speed)}
+          onValueChange={(v) => setSpeed(Number(v) as 1 | 2 | 4)}
+          options={[
+            { value: '1', label: '1×' },
+            { value: '2', label: '2×' },
+            { value: '4', label: '4×' },
+          ]}
+        />
+      )}
     </div>
   );
 }

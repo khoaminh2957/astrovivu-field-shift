@@ -205,7 +205,7 @@
   --hatch-simulated: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-simulated) 60%, transparent) 0 1px, transparent 1px 4px);
 
   /* Map metric ramps, nine stops each (ColorBrewer, colour-blind safe). Low to high. */
-  --ramp-vegetation: linear-gradient(90deg, #ffffe5, #f7fcb9, #d9f0a3, #addd8e, #78c679, #41ab5d, #238443, #006837, #004529);
+  --ramp-vegetation: linear-gradient(90deg, #d73027, #f46d43, #fdae61, #fee08b, #ffffbf, #d9ef8b, #a6d96a, #66bd63, #1a9850);
   --ramp-moisture: linear-gradient(90deg, #ffffd9, #edf8b1, #c7e9b4, #7fcdbb, #41b6c4, #1d91c0, #225ea8, #253494, #081d58);
   --ramp-heat: linear-gradient(90deg, #ffffcc, #ffeda0, #fed976, #feb24c, #fd8d3c, #fc4e2a, #e31a1c, #bd0026, #800026);
   --ramp-rain: linear-gradient(90deg, #f7fbff, #deebf7, #c6dbef, #9ecae1, #6baed6, #4292c6, #2171b5, #08519c, #08306b);
@@ -244,7 +244,7 @@
   --rail-w: 56px;
   --left-w: 300px;
   --right-w: 500px;
-  --strip-h: 52px;
+  --strip-h: 64px;
   --tabbar-h: 60px;
   --map-h: 45dvh;
 }

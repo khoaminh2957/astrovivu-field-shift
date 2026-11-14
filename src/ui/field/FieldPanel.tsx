@@ -17,6 +17,7 @@ import { cropName, digitsFor, fmtDate, fmtNum, unitFor } from '@/ui/hud/format';
 import { rainSum } from '@/ui/hud/readings';
 import { GroundTruthForm } from '@/ui/override';
 import { CardDetail } from './CardDetail';
+import { SatelliteCanvas } from './SatelliteCanvas';
 import { FieldReport } from './FieldReport';
 import { LiveFieldCanvas, ShapeThumb } from './FieldCanvas';
 import { CropSelect, ScoreBlock, WhatChanged } from './FieldSummary';
@@ -195,6 +196,21 @@ function chartNotes(veg: Series | undefined, rain: Series | undefined, temp: Ser
   return out;
 }
 
+function SatelliteTile() {
+  const t = useT();
+  const parcel = useMission((s) => s.parcel);
+  if (!parcel) return null;
+  return (
+    <figure className="flex min-w-0 flex-col gap-1.5 rounded-md border border-line-1 bg-surface-0 p-2 shadow-sm">
+      <figcaption className="text-sm font-medium text-ink-1">{t('field.sat.title')}</figcaption>
+      <span className="relative block aspect-square overflow-hidden rounded-sm bg-ink-1">
+        <SatelliteCanvas parcel={parcel} />
+      </span>
+      <span className="t-caption truncate">{t('field.sat.credit')}</span>
+    </figure>
+  );
+}
+
 function StatusTab() {
   const t = useT();
   const lang = useLang();
@@ -202,7 +218,6 @@ function StatusTab() {
   const cursor = useMission((s) => s.timeline.cursor);
   const focus = useMission((s) => s.focusBranch);
   const left: BranchId = focus ?? 'vegetation';
-  const right: BranchId = left === 'soilMoisture' ? 'vegetation' : 'soilMoisture';
   const veg = telemetry ? primarySeries(telemetry.branches.vegetation) : undefined;
   const rain = telemetry ? (findSeries(telemetry.branches.rainfall, 'rain') ?? primarySeries(telemetry.branches.rainfall)) : undefined;
   const temp = telemetry ? (findSeries(telemetry.branches.agromet, 't2m_max') ?? findSeries(telemetry.branches.agromet, 't2m')) : undefined;
@@ -216,7 +231,7 @@ function StatusTab() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <PictureTile branch={left} />
-          <PictureTile branch={right} />
+          <SatelliteTile />
         </div>
       </section>
       <ScoreBlock />

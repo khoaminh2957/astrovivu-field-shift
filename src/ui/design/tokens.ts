@@ -82,7 +82,8 @@ export const PROVENANCES: Provenance[] = ['observed', 'modelled', 'derived', 'fo
 export type MapMetric = 'vegetation' | 'moisture' | 'heat' | 'rain';
 export type RampMode = 'sequential' | 'diverging';
 
-const YL_GN = ['#ffffe5', '#f7fcb9', '#d9f0a3', '#addd8e', '#78c679', '#41ab5d', '#238443', '#006837', '#004529'];
+// RdYlGn: low vegetation red, high green, the convention farmers know from NDVI maps.
+const RD_YL_GN = ['#d73027', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850'];
 const YL_GN_BU = ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58'];
 const YL_OR_RD = ['#ffffcc', '#ffeda0', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#bd0026', '#800026'];
 const BLUES = ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'];
@@ -108,7 +109,7 @@ function ramp(stops: string[], cssVar: string): Ramp {
 const anomalyWet = ramp(DRY_WET, 'var(--ramp-anomaly-wet)');
 
 export const RAMPS: Record<MapMetric, Record<RampMode, Ramp>> = {
-  vegetation: { sequential: ramp(YL_GN, 'var(--ramp-vegetation)'), diverging: anomalyWet },
+  vegetation: { sequential: ramp(RD_YL_GN, 'var(--ramp-vegetation)'), diverging: anomalyWet },
   moisture: { sequential: ramp(YL_GN_BU, 'var(--ramp-moisture)'), diverging: anomalyWet },
   heat: { sequential: ramp(YL_OR_RD, 'var(--ramp-heat)'), diverging: ramp(COOL_WARM, 'var(--ramp-anomaly-heat)') },
   rain: { sequential: ramp(BLUES, 'var(--ramp-rain)'), diverging: anomalyWet },

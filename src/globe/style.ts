@@ -133,7 +133,8 @@ export function baseStyle(): StyleSpecification {
         source: SOURCE.dim,
         minzoom: 9,
         paint: {
-          'fill-color': COLOR.void,
+          // A fixed dark, not the theme's void: the interface theme is light, the dimming must stay dark.
+          'fill-color': '#03050b',
           'fill-antialias': false,
           'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9.5, 0, 13, 0.14],
         },

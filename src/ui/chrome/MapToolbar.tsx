@@ -4,9 +4,13 @@
  */
 import { useEffect, useState } from 'react';
 import { Box, Compass, Expand, Focus, Gauge, Layers, LocateFixed, Minimize, Minus, Plus, Ruler, SquareDashed, X } from 'lucide-react';
+import { useParcelPaint } from '@/globe';
+import { pick } from '@/contracts';
+import { useLang } from '@/i18n';
+import { fmtDate } from '@/ui/hud/format';
 import { fitParcel, locateMe, resetNorth, setMotion, setTilt, startMeasure, stopMeasure, useMapView, useMeasure, zoomBy } from '@/globe';
 import { useT } from '@/i18n';
-import { IconButton, cn } from '@/ui/design';
+import { Button, IconButton, cn } from '@/ui/design';
 import { fmtNum } from '@/ui/hud/format';
 import { LayersPanel } from './LayersPanel';
 import { useMissionUi, useNarrow } from './uiState';
@@ -20,13 +24,26 @@ function MeasureReadout() {
   const t = useT();
   const m = useMeasure();
   const setPopover = useMissionUi((s) => s.setMapPopover);
+  useEffect(() => {
+    if (!m.kind) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        stopMeasure();
+        setPopover(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [m.kind, setPopover]);
   if (!m.kind) return null;
   const value = m.value == null ? '--' : m.kind === 'area' ? `${fmtNum(m.value, m.value < 10 ? 2 : 1)} ha` : m.value >= 1000 ? `${fmtNum(m.value / 1000, 2)} km` : `${fmtNum(m.value, 0)} m`;
   return (
     <div role="status" className="plate-raised flex w-60 flex-col gap-1 p-3 shadow-lg">
       <div className="flex items-center gap-2">
         <span className="t-heading flex-1">{t(m.kind === 'area' ? 'map.measure.area' : 'map.measure.distance')}</span>
-        <IconButton label={t('map.measure.stop')} icon={<X />} size="sm" onClick={() => (stopMeasure(), setPopover(null))} />
+        <Button size="sm" variant="secondary" icon={<X />} onClick={() => (stopMeasure(), setPopover(null))}>
+          {t('map.measure.stopShort')}
+        </Button>
       </div>
       <span className="t-value text-xl text-ink-1">{value}</span>
       <span className="t-caption">{t('map.measure.howto')}</span>
@@ -118,6 +135,28 @@ export function MapToolbar({ className }: { className?: string }) {
           </Group>
         )}
       </div>
+    </div>
+  );
+}
+
+/** What the parcel on the map is painted with: name, ramp, range, unit and the date shown. */
+export function MapLegendChip({ className }: { className?: string }) {
+  const lang = useLang();
+  const paint = useParcelPaint();
+  if (!paint) return null;
+  const d = paint.range[1] - paint.range[0] < 5 ? 2 : 0;
+  return (
+    <div className={cn('plate flex w-56 flex-col gap-1 rounded-md px-3 py-2 shadow-md', className)}>
+      <span className="flex items-baseline justify-between gap-2">
+        <span className="truncate text-xs font-medium text-ink-1">{paint.label ? pick(paint.label, lang) : paint.key}</span>
+        {paint.date && <span className="t-meta shrink-0">{fmtDate(paint.date, lang)}</span>}
+      </span>
+      <span aria-hidden className="h-1.5 rounded-full" style={{ background: paint.rampCss }} />
+      <span className="t-meta flex justify-between">
+        <span>{fmtNum(paint.range[0], d)}</span>
+        <span>{paint.unit}</span>
+        <span>{fmtNum(paint.range[1], d)}</span>
+      </span>
     </div>
   );
 }

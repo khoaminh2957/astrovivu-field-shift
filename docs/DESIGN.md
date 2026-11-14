@@ -117,7 +117,7 @@ ColorBrewer, colour-blind safe, nine stops, low to high. CSS: `var(--ramp-*)` (a
 
 | Metric | Sequential | Diverging (departure from normal) |
 |---|---|---|
-| `vegetation` | YlGn `--ramp-vegetation` (straw to deep green) | BrBG `--ramp-anomaly-wet` (browner to greener) |
+| `vegetation` | RdYlGn `--ramp-vegetation` (red low, yellow, green high) | BrBG `--ramp-anomaly-wet` (browner to greener) |
 | `moisture` | YlGnBu `--ramp-moisture` | BrBG `--ramp-anomaly-wet` (drier to wetter) |
 | `rain` | Blues `--ramp-rain` | BrBG `--ramp-anomaly-wet` |
 | `heat` | YlOrRd `--ramp-heat` | RdBu reversed `--ramp-anomaly-heat` (cooler to hotter) |

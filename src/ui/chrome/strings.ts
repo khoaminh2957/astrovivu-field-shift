@@ -16,6 +16,8 @@ registerStrings(
     home: 'Astrovivu home: back to the globe',
     metrics: 'Field metrics',
     metricsDate: 'At {d}',
+    'sheet.expand': 'Expand the panel over the map',
+    'sheet.collapse': 'Show more of the map',
   },
   {
     'nav.label': 'Các màn hình',
@@ -31,6 +33,8 @@ registerStrings(
     home: 'Trang đầu Astrovivu: về quả địa cầu',
     metrics: 'Chỉ số thửa ruộng',
     metricsDate: 'Ngày {d}',
+    'sheet.expand': 'Mở rộng bảng lên trên bản đồ',
+    'sheet.collapse': 'Hiện thêm bản đồ',
   },
 );
 
@@ -48,7 +52,8 @@ registerStrings(
     'measure.distance': 'Measure distance',
     'measure.area': 'Measure area',
     'measure.stop': 'Stop measuring',
-    'measure.howto': 'Click on the map to add points.',
+    'measure.stopShort': 'Stop',
+    'measure.howto': 'Click on the map to add points. Escape stops.',
     'motion.off': 'Turn camera motion off',
     'motion.on': 'Turn camera motion on',
     fullscreen: 'Full screen',
@@ -80,7 +85,8 @@ registerStrings(
     'measure.distance': 'Đo khoảng cách',
     'measure.area': 'Đo diện tích',
     'measure.stop': 'Dừng đo',
-    'measure.howto': 'Bấm lên bản đồ để thêm điểm.',
+    'measure.stopShort': 'Dừng',
+    'measure.howto': 'Bấm lên bản đồ để thêm điểm. Esc để dừng.',
     'motion.off': 'Tắt chuyển động camera',
     'motion.on': 'Bật chuyển động camera',
     fullscreen: 'Toàn màn hình',

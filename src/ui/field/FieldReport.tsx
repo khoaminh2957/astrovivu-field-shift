@@ -16,8 +16,8 @@ import { computeFieldZones } from '@/core/zones';
 import { FrameCanvas, LiveFieldCanvas } from './FieldCanvas';
 import './strings';
 
-export const ZONE_HEX = { low: '#d7301f', medium: '#f2c12e', high: '#1a9850' } as const;
-const zoneColor: RampColor = (p) => (p < 0.34 ? [215, 48, 31] : p < 0.67 ? [242, 193, 46] : [26, 152, 80]);
+export const ZONE_HEX = { low: '#d73027', medium: '#fee08b', high: '#1a9850' } as const;
+const zoneColor: RampColor = (p) => (p < 0.34 ? [215, 48, 39] : p < 0.67 ? [254, 224, 139] : [26, 152, 80]);
 
 function ZonesCanvas({ parcel, raster, className }: { parcel: Parcel; raster: FieldRaster; className?: string }) {
   const [el, setEl] = useState<HTMLCanvasElement | null>(null);

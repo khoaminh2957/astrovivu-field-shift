@@ -123,6 +123,12 @@ const PLAY_TICK_MS = 110;
 const allStatus = (s: LoadState) => Object.fromEntries(BRANCHES.map((b) => [b, s])) as Record<BranchId, LoadState>;
 
 let playTimer: ReturnType<typeof setInterval> | null = null;
+let derivedTicket = 0;
+
+function scheduleIdle(fn: () => void): void {
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout: 4000 });
+  else setTimeout(fn, 0);
+}
 let loadAbort: AbortController | null = null;
 
 function stopTimer(): void {
@@ -321,11 +327,19 @@ export const useMission = create<MissionState>()((set, get) => ({
     const input = toModelInput(get());
     if (!input) return;
     const score = computeScoreTimeline(input);
-    set({
-      score,
-      insights: buildInsights(input, score),
-      advisory: buildAdvisoryReport(input, score),
-      tracking: get().phase === 'tracking' ? buildTracking(input) : null,
+    set({ score });
+    // Insights, advisory and tracking are slower (the advisory's first call is 70-150 ms) and
+    // nothing needs them in the first frame of the fly-in: build them in idle time. The newest
+    // call wins; a call for a parcel that is no longer locked is dropped.
+    const ticket = ++derivedTicket;
+    const parcelId = input.parcel.id;
+    scheduleIdle(() => {
+      if (ticket !== derivedTicket || get().parcel?.id !== parcelId || get().score !== score) return;
+      set({
+        insights: buildInsights(input, score),
+        advisory: buildAdvisoryReport(input, score),
+        tracking: get().phase === 'tracking' ? buildTracking(input) : null,
+      });
     });
   },
 
