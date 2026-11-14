@@ -1,6 +1,6 @@
 # Productivity scoring (Astrovivu-AEZ v2)
 
-Code: `src/core/scoring/index.ts` and `src/core/scoring/literature.ts` (pure TypeScript). Crop data: `src/core/crops`, built by `npm run crops:build`. Unit tests: `src/core/scoring/scoring.test.ts` and `src/core/scoring/literature.test.ts`. Full mathematical derivations, 20-paper literature review, formal proofs, and empirical/sensitivity benchmarks: `docs/SCORING_PAPER.md` (reproducible via `npx tsx scripts/crops/evaluate-scoring-paper.ts` -> `data/crops/scoring-paper-results.json`).
+Code: `src/core/scoring/index.ts` and `src/core/scoring/literature.ts` (pure TypeScript). Crop data: `src/core/crops`, built by `npm run crops:build`. Unit tests: `src/core/scoring/scoring.test.ts` and `src/core/scoring/literature.test.ts`. Full mathematical derivations, 20-paper literature review, formal proofs, and empirical/sensitivity benchmarks: `docs/SCORING_PAPER.md` (reproducible via `npx tsx scripts/crops/evaluate-scoring-paper.ts` -> `data/crops/scoring-paper-results.json`). A second suitability method, CropSuite (Zabel et al. 2025), lives in `src/core/scoring/cropsuite.ts`; section 9 describes it and its comparison with v2.
 
 ## 1. What is computed
 
@@ -101,3 +101,166 @@ Full bibliographic details and DOIs for all 36 cited publications are in `docs/S
 - **Historical yield ranges (`yieldFractions`):** Multi-year ranges over the 20-year ERA5 history evaluate monthly growing-window climate scores rather than 20 sequential daily water balances, and have not yet been calibrated against weighed farm harvest trials in Vietnam.
 - **Winter vernalization & bunded rice hydraulics:** Dormant perennial survival is modelled via `winterSurvival` and `activeSeason`, whereas winter annual vernalization chill hours and bunded paddy plough-pan percolation hydraulics are not explicitly simulated.
 - **Biotic & market risks:** Pests, diseases, typhoon lodging, and contract pricing lie outside the biophysical engine.
+
+## 9. CropSuite as a second suitability method
+
+Code: `src/core/scoring/cropsuite.ts` (the model), `assessWithCropSuite` in `src/core/scoring/index.ts` (the adapter to the scoring API), `src/core/scoring/cropsuite.test.ts`. Comparison: `npx tsx scripts/crops/evaluate-cropsuite.ts` -> `data/crops/cropsuite-comparison.json`. Source: Zabel, Knüttel & Poschlod (2025), *CropSuite v1.0 – a comprehensive open-source crop suitability model considering climate variability for climate impact assessment*, Geosci. Model Dev. 18, 1067-1087, DOI `10.5194/gmd-18-1067-2025`.
+
+### 9.1 The method, step by step
+
+| Paper (section 2) | In this repository |
+|---|---|
+| Fuzzy membership functions, 0 (not suitable) to 100, one per requirement | `MembershipFunction` (piecewise linear) and `membership()`; one function per crop and factor from `cropSuiteParams(crop)` |
+| Climate suitability for every sowing day of the year, from the mean temperature and the total precipitation over the growing cycle that starts on that day | `runCropSuite` evaluates all 365 sowing days; cycle length = mean of `cycleDays`; perennials use 365 days and sowing day 1 |
+| Climate variability: recurrence rate of potential crop failure = share of years in which the cycle's temperature or precipitation leaves the band between the lower and upper threshold; thresholds at 5-10 % suitability of the membership function | `failures()` over the 20-year history; thresholds at 7.5 % (`variabilityThresholds`); a side of a function that never comes down uses its outermost node |
+| Sigmoid membership function of the recurrence rate, 0 from 25 % (one year in four) | `variabilitySuitability`: logistic centred on 12.5 %, 100 at 0 %, 73 at 10 %, 27 at 15 %, 0 from 25 % |
+| Rainfed and irrigated systems; irrigated: precipitation is no constraint, only excess rain still counts as failure | `irrigation: 'rainfed' \| 'full'`; `'supplemental'` (this app's third mode) adds up to 30 % of the optimal season water, as v2 does |
+| Lethal limits: permafrost (annual mean below 0 °C), cycle mean above 40 °C, crop-specific killing temperature, day length, vernalization, consecutive dry days, germination | `limits()`: each is 100 or 0. Killing temperature and day length come from EcoCrop. Vernalization, dry-spell and germination limits are implemented and tested but no crop sets them, because the catalogue has no source for their values |
+| Liebig's law of the minimum: climate = min(temperature, precipitation, variability), soil = min(soil and terrain factors), crop = min(climate, soil) | `evaluateCropSuite`; a missing value is skipped, never scored as 0 |
+| Optimal sowing date = day with the highest climate suitability; number of suitable sowing days | `optimalSowingDoy`, `suitableSowingDays`. Among equal days the middle of the longest run is taken; the paper leaves this open |
+| Multiple cropping: one, two or three sowing dates maximising the summed climate suitability, 21 days between harvest and sowing | `multipleCropping()`, exact search over all combinations |
+| Most-limiting factor and the magnitude of every constraint | `limiting` and `limitation` (100 - suitability per factor) in `CropSuiteSummary` |
+| Classes: 0 unsuitable, 1-32 marginally, 33-74 moderately, 75-100 highly suitable (Table 3) | `suitabilityClass` |
+| Spatial downscaling of gridded climate data; GeoTIFF/NetCDF maps | Not applicable: the model runs on one parcel, and `climateHistory` already arrives lapse-rate adjusted to the parcel (docs/DATA_SOURCES.md) |
+
+### 9.2 Where the membership functions come from
+
+The paper takes the membership functions of most of its 48 crops from Sys et al. (1993) and those of cowpea, rye and yam from EcoCrop. This catalogue is EcoCrop throughout, so every function is built from the EcoCrop columns:
+
+| EcoCrop column | Membership function |
+|---|---|
+| `eco_temperat_requir_*` | Trapezoid on the mean temperature of the growing cycle: 0 at the absolute limits, 100 across the optimum |
+| `eco_rainfall_annual_*` | Trapezoid on the precipitation of the growing cycle, scaled by `min(1, months / 4)` for short cycles (same scaling as v2) |
+| `eco_soil_ph_*` | Trapezoid on soil pH |
+| `eco_soil_depth_*` | Rises from 0 at the shallow edge of the tolerated class to 100 at the edge of the optimal class (class edges 20, 50, 150 cm) |
+| `eco_soil_salinity_*` | 100 up to the upper EC of the optimal class, 0 at the upper EC of the tolerated class (2, 4, 10, 16 dS/m) |
+| `eco_soil_fertility_*` | On the organic-carbon and CEC index of v2, between the class thresholds v2 uses |
+| `eco_soil_texture_*`, `eco_soil_drainage_*` | Class values: optimal 100, tolerated 60, outside 0 |
+| `cult_cycle_min/max` | Length of the growing cycle |
+| killing temperatures, photoperiod | Lethal limits |
+| slope (no EcoCrop column) | 100 up to 4.6° (annuals) or 9° (perennials), 0 at 16.7° / 24° (the GAEZ v4 limits v2 uses) |
+
+Not used: `eco_latitude_*`, `eco_altitude_*` and `clim_climate_zone` (the method reads the climate itself; v2 keeps them as review gates), `eco_light_intensity_*` and `eco_soil_al_tox_*` (no parcel observation to compare with; aluminium toxicity is empty for 98 % of EcoCrop rows), `desc_plant_attributes` (a description, not a requirement).
+
+Two values are assumptions of this port, not of the paper: 60 for a tolerated soil class (lower edge of S2 "moderately suitable" in the Sys et al. scale the paper reproduces in Table 3) and 7.5 % for the variability thresholds (middle of the recommended 5-10 % band). The sigmoid was read off Fig. 5 of the paper (about 95 at 5 %, 73 at 10 %, 27 at 15 %, 5 at 20 %, 0 at 25 %); the paper prints no formula for it.
+
+### 9.3 Climate data
+
+The paper uses daily temperature and precipitation. The parcel history is monthly (20 years of ERA5), so each day takes its month's mean temperature and an equal share of its month's rainfall. Cycle means and totals are exact for whole months. What a monthly record cannot show is not modelled: single extreme days, and dry spells shorter than a month.
+
+### 9.4 Comparison with Astrovivu-AEZ v2
+
+Same parcels, same crop catalogue, same 56-case viability benchmark (31 viable, 25 non-viable) as `docs/SCORING_PAPER.md` section 6.2. Each method is also judged at the score from which it calls a crop suitable itself: 45 for v2, 33 ("moderately suitable") for CropSuite.
+
+| Method | ROC-AUC | Brier | Sensitivity | Specificity | Youden J | False negatives / false positives |
+|---|---:|---:|---:|---:|---:|---:|
+| Astrovivu-AEZ v2 | 0.955 | 0.076 | 0.871 | 1.000 | 0.871 | 4 / 0 |
+| CropSuite, as published | 0.842 | 0.225 | 0.645 | 0.840 | 0.485 | 11 / 4 |
+| CropSuite without climate variability | 0.897 | 0.179 | 0.774 | 0.840 | 0.614 | 7 / 4 |
+| CropSuite without the day-length limit | 0.842 | 0.225 | 0.645 | 0.840 | 0.485 | 11 / 4 |
+
+Per parcel (ROC-AUC, v2 / CropSuite): Đắk Lắk 1.00 / 0.81, An Giang 1.00 / 0.93, Iowa 1.00 / 0.81, Nevada 0.67 / 0.67.
+
+Why CropSuite misses 11 viable cases:
+
+- **Climate variability, 7 cases** (rainfed maize, soybean, rye, sorghum, sunflower and red clover in Iowa; rainfed rice in An Giang). The EcoCrop rainfall thresholds are compared with the rain of the growing cycle alone. In Iowa that rain falls below the lower threshold in 15 % (sorghum, red clover) to 55 % (soybean) of the 20 years. From 25 % the suitability is 0 (maize, soybean, rye); at 15-20 % the sigmoid already brings it to 27 or 4, under the 33 of "moderately suitable". v2 adds the water a fallow soil stores before sowing, which is what carries a Corn Belt crop, and it accepts all six. Rainfed rice in An Giang (55 %) is rejected by v2 as well. The paper itself notes that its variability limits "might be parameterized slightly too exclusively".
+- **Temperature, 2 cases** (alfalfa in Iowa and Nevada). A perennial is judged on the mean of all 365 days. EcoCrop temperatures describe the growing season, so a winter-dormant perennial scores low (31 and 27). v2 separates the active season from dormancy and accepts the irrigated Nevada stand; it rejects the rainfed Iowa one on water.
+- **pH, 2 cases** (irrigated barley and wheat in Nevada, pH 8.8). v2 rejects them too (barley on pH, wheat on frost).
+
+All four cases v2 misses are among the eleven; CropSuite adds seven of its own. Switching climate variability off entirely recovers four cases and still leaves CropSuite behind v2 (ROC-AUC 0.897 against 0.955), so the result does not depend on the 7.5 % level or on the shape of the sigmoid.
+
+Its 4 false positives (wheat and oat at Đắk Lắk, pea and oat in An Giang) are cool-season crops sown in the cooler part of the year (sowing days 243-287), where the mean temperature of the cycle still falls inside their EcoCrop window. v2 rejects three of them through the climate-zone gate and the An Giang oat on temperature.
+
+On the 73 curated crops, rainfed, the two methods rank crops alike only in part (Spearman 0.48 at Đắk Lắk, 0.77 at An Giang, 0.51 in Iowa) and CropSuite scores lower on average (0.48 against 0.64 at Đắk Lắk) because the minimum of several factors is never above the weakest one. Cost is similar: 0.23 ms (v2) and 0.31 ms (CropSuite) per crop and parcel.
+
+### 9.5 Decision
+
+`DEFAULT_SUITABILITY_METHOD = 'astrovivu-v2'`. The rule is fixed in the evaluation script (higher ROC-AUC, then lower Brier score) and a unit test fails if the constant and `cropsuite-comparison.json` disagree. Every score in the app therefore stays on v2.
+
+CropSuite is kept for what v2 does not report:
+
+- sowing day at day-of-year resolution and the number of suitable sowing days (v2 works in months);
+- potential harvests per year with their sowing days;
+- recurrence rate of potential crop failure as a suitability factor;
+- the paper's three suitabilities (climate, soil, crop) and its class.
+
+It reaches the user as a "Second opinion: CropSuite" block under the sowing window of the advisory (`AdvisoryReport.cropSuite`). The block states that the other scores on the page come from the main method, and when rain is what limits the crop it adds why CropSuite is stricter there. Any caller can ask for it with `assessCropSuite(input, cropId)` or `assessCrop(input, cropId, { method: 'cropsuite' })`; `rankCrops` and `computeScoreDetail` accept the same `method`.
+
+### 9.6 Limits
+
+- The benchmark was assembled for v2 and has 56 cases on four parcels. Section 10 repeats the comparison on independent statistics: the order of the two methods holds, the level of skill does not.
+- CropSuite was built and evaluated for Africa with Sys et al. membership functions. The gaps found here (soil-water carry-over, dormant perennials) are those of the EcoCrop parameterisation outside the tropics, not a verdict on the published model.
+- Monthly climate: see 9.3.
+- Vernalization, dry-spell and germination limits are inactive until a crop supplies values with a source.
+
+## 10. Independent validation on agricultural statistics (MIRCA-OS 2015)
+
+Code: `scripts/crops/build-mirca-validation.ts` (builds the set, network), `scripts/crops/evaluate-mirca-validation.ts` (scores both methods, offline), `scripts/crops/mirca-validation.test.ts`. Data: `data/crops/validation/mirca-os-2015-sites.json` -> `data/crops/mirca-validation-results.json`.
+
+### 10.1 Why this dataset
+
+The 56 cases of section 9.4 were written for v2 by the team that wrote v2. A validation set has to come from somewhere else. Candidates that were examined:
+
+| Dataset | What it holds | Verdict |
+|---|---|---|
+| **MIRCA-OS** (Kebede et al. 2025, Sci. Data 12, 208; HydroShare `10.4211/hs.60a890eb841c460192c03bb590687145`, CC BY 4.0) | Harvested area in 2015 per administrative unit, 23 crop classes, rainfed and irrigated separately, with planting and maturity months. 4,887 units, zeros included | **Used.** Statistics, not a model output; tells where a crop is absent; matches both water modes and the sowing calendar; two CSV files of 9 MB |
+| SPAM 2020 v2r2 (IFPRI, Harvard Dataverse `10.7910/DVN/SWPENT`) | Harvested area on a 5-arcmin grid, 46 crops, by water system. The set the CropSuite paper validates against | Not used: the download asks for a personal form. Its within-unit pattern is allocated with a suitability prior, which favours AEZ-type scorers |
+| CROPGRIDS v1.08 (Tang et al. 2024, figshare `22491997`) | Harvested area for 173 crops, 0.05° grid, 2020 | Not used: no rainfed/irrigated split; 800 MB of NetCDF |
+| LUCAS 2018 (JRC, harmonised) | 340,000 surveyed points with the crop seen in the field | Not used: European Union only |
+| GGCMI Phase 3 crop calendar (Jägermeyr et al. 2021) | Planting and maturity day, 18 crops, 0.5° | Not used: calendar only; MIRCA-OS carries a calendar already |
+
+Viet Nam is one national unit in MIRCA-OS, as are Thailand, Indonesia and the Philippines, so the set cannot localise crops inside them. Monsoon Asia enters through 28 Indian and 6 Bangladeshi districts.
+
+### 10.2 The validation set
+
+- **Units.** Subnational units with at least 10,000 ha harvested, drawn at random with a fixed seed and a cap per country (28 for the United States and India, fewer elsewhere), kept only if their outline is at most 200 km wide. 153 units in 35 countries: 58 temperate, 48 subtropical, 27 tropical, 20 dry.
+- **Site.** One point per unit: the MODIS (MCD12Q1, 2015) cropland pixel nearest the unit centre (144 units; the centre itself in 8 where the land-cover request failed).
+- **Inputs.** Temperature 2001-2020 from NASA POWER, lapse-adjusted to the site; rainfall from GPCC Full Data Monthly v2025 (gauges), NASA POWER rainfall in 8 units outside GPCC; soil from SoilGrids. Slope is not scored: a unit tens of kilometres wide has no single slope.
+- **Labels.** A crop is *grown* in a water system from 1 % of the unit's harvested area (and 100 ha). It is *not grown* rainfed where its rainfed area is zero, and not grown irrigated where it is absent from a unit that irrigates. Trace areas are left out. 2,422 cases on 14 crop classes of the curated catalogue (682 grown), 1,015 on 5 classes scored from raw EcoCrop values.
+
+### 10.3 Suitability
+
+| Cases | n | Astrovivu-AEZ v2 | CropSuite | CropSuite without variability |
+|---|---:|---:|---:|---:|
+| Curated crops, both water systems (ROC-AUC) | 2,422 | **0.662** | 0.548 | 0.566 |
+| Rainfed | 1,640 | **0.663** | 0.527 | 0.554 |
+| Irrigated | 782 | **0.724** | 0.660 | 0.659 |
+| Raw-catalogue crops (cocoa, cotton, millet, oil palm, sugar beet) | 1,015 | **0.854** | 0.720 | 0.757 |
+| Ranking the crops of one unit, rainfed (mean ROC-AUC over 134 units) | | **0.690** | 0.538 | 0.577 |
+
+- v2 minus CropSuite on the curated crops: 0.114, 95 % interval 0.093 to 0.135 (2,000 resamples of whole units).
+- Per unit, rainfed: v2 ranks better in 101 units, CropSuite in 19, equal in 14.
+- v2 is ahead in 13 of 14 crop classes; sugar cane is level (CropSuite 0.87, v2 0.86). Neither method beats chance on sunflower (0.43, 0.41), coffee (0.45, 0.35; grown in 7 cases only) or potatoes (0.53, 0.49).
+- The order does not depend on the choices made here: rainfall from NASA POWER instead of GPCC (0.657 against 0.541), presence from 0.5 %, 5 % or 10 % of the area (v2 0.67-0.68, CropSuite 0.53-0.57), units narrower or wider than 100 km (0.66 against 0.53, 0.67 against 0.57).
+- Dry climates are the exception (341 cases): level in the dry subtropics (0.61, 0.61), CropSuite slightly ahead in dry temperate and dry tropical units (0.58 against 0.54 on 62 cases, 0.56 against 0.54 on 85). Both are close to chance there.
+
+At the score each method uses itself, v2 calls 56 % of the grown crops suitable and CropSuite 51 %; both reject two thirds or fewer of the crops that are not grown (v2 65 %, CropSuite 56 %).
+
+### 10.4 Sowing calendar and harvests per year
+
+736 cases of an annual crop a unit grows, against the months MIRCA-OS gives for planting:
+
+| | v2 | CropSuite |
+|---|---:|---:|
+| Planting month rated suitable (cases the method rates suitable at all) | 63 % | 76 % |
+| Months of the year rated suitable, mean | 5.0 | 6.6 |
+| Best month within one month of planting (chance: 27 %) | 48 % | 43 % |
+
+CropSuite covers the farmers' month more often because it opens a wider window; v2 points closer to it.
+
+Rice grown in two or more seasons a year (28 units): CropSuite finds two or more harvests in 23. Where rice is grown once (17 units) it reports exactly one harvest in 3: the figure is a climatic potential, not a forecast of practice.
+
+### 10.5 What this changes
+
+- **The default stays.** `selectedMethod` is `astrovivu-v2` here as in section 9; `mirca-validation.test.ts` fails if `DEFAULT_SUITABILITY_METHOD` disagrees with either result.
+- **The 56-case figure overstates skill.** ROC-AUC 0.955 on the team's own cases becomes 0.66 on statistics. Part of the gap is noise in the test itself (one site standing for a unit, crops not grown for economic reasons), part is the model.
+- **Autumn-sown cereals are a known gap of both methods.** Wheat is grown in 131 of 152 labelled cases and v2 calls it suitable in 23 % (CropSuite 38 %). Both judge the whole cycle on EcoCrop growing-season temperatures, so a cycle that crosses a winter fails; v2 treats dormancy for perennials only. Rye and barley show the same pattern (v2 calls 39 % of each suitable where grown).
+
+### 10.6 Limits
+
+- A label says what is grown in a unit of up to 200 km, the score says what would grow at one cropland pixel in it.
+- "Not grown" includes crops that would grow but do not pay; this lowers every method's score and should not change their order.
+- MIRCA-OS derives the rainfed/irrigated split from national sources of unequal quality.
+- 2015 statistics against a 2001-2020 climate.
+- Rebuilding the set calls public services (Nominatim, ORNL DAAC, NASA POWER, NOAA PSL, SoilGrids) and takes about 90 minutes; responses are cached under `.cache/`.
+

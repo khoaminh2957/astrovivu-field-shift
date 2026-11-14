@@ -55,6 +55,7 @@ Contracts (`src/contracts/**`) may be extended additively (new optional fields, 
 
 - Windows 11, Git Bash and PowerShell. The project path contains a space: quote it.
 - Node 24, npm. **No Python.** Scripts are TypeScript run with `npx tsx`.
+- Database (optional): `npm run db:start` runs a local Supabase with Docker, API on port 54321 and Postgres on 54322; `npm run db:test` checks migrations and policies. See `docs/DATABASE.md`. Nothing in the app needs it to start.
 - Today is 2026-11-14. The telemetry window is the 365 days ending today.
 - Dev server ports: orchestrator 5173, globe 5181, mission UI 5182, advisory UI 5183, design 5184, API server 8787.
 - Deep links: `?sample=<id>&phase=locked|advisory|tracking&crop=<id>&lang=vi`, `?phase=explore`, `?phase=urban`, `#/styleguide`, `#/globe-lab`.

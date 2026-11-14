@@ -1,5 +1,5 @@
 import type { I18nText, ISODate } from './common';
-import type { FarmerPriority, SowingWindow } from './model';
+import type { CropSuiteSummary, FarmerPriority, SowingWindow } from './model';
 import type { BranchId } from './telemetry';
 
 // ---------------------------------------------------------------------------------------------
@@ -222,6 +222,8 @@ export interface AdvisoryReport {
   rotations: RotationStrategy[];
   irrigation?: IrrigationPlan;
   sowing?: SowingWindow[];
+  /** The selected crop read by the CropSuite method, shown next to the sowing window as a second opinion. */
+  cropSuite?: CropSuiteSummary;
   ph?: PhPlan;
   annualPlan?: AnnualPlan;
 }

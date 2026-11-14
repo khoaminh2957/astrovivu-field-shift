@@ -246,6 +246,7 @@ Optional `.env` (copy `.env.example`; every variable is optional, keys are read 
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Generative answers through the local API server (default model `claude-opus-5-5`) |
 | `NASS_API_KEY` | USDA NASS QuickStats county yields (not tested) |
 | `VITE_DATA_MODE` | `auto` (default), `live`, `cached` or `mock` |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Loading the market database with `npm run db:load` (`docs/DATABASE.md`); the app itself does not read them |
 
 Scripts (`package.json`):
 
@@ -256,6 +257,8 @@ Scripts (`package.json`):
 | `npm run crops:build` | Rebuilds the crop catalogue from `data/ecocrop/` into `src/core/crops/curated.generated.ts` and `public/data/crops/` |
 | `npm run rag:build` | Rebuilds the knowledge index in `public/rag/` from local snapshots (`-- --fetch` downloads missing Wikipedia pages) |
 | `npm run server` | Starts the optional API server on port 8787 (proxied at `/api`): generative answers and token-protected NASA sources |
+| `npm run db:start`, `db:test`, `db:load`, `db:stop` | Local Supabase (needs Docker) with the market database: crop atlas, FAOSTAT items and producer prices. Schema, sources and limits: `docs/DATABASE.md` |
+| `npm run market:match` | Rebuilds the crop-to-FAOSTAT-item link in `data/market/` from FAOSTAT's production file |
 
 ## Demo deep links
 

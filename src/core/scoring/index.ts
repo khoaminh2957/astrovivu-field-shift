@@ -17,6 +17,7 @@ import type {
   BranchId,
   CalibrationNote,
   CropProfile,
+  CropSuiteSummary,
   FactorKind,
   FactorScore,
   FieldTelemetry,
@@ -59,9 +60,41 @@ import {
   type AhpSolution,
   type ParametricMethod,
 } from './literature';
+import {
+  cropSuiteParams,
+  CROPSUITE,
+  evaluateCropSuite,
+  multipleCropping,
+  prepareCropSuiteClimate,
+  runCropSuite,
+  suitabilityClass,
+  type CropSuiteEvaluation,
+  type CropSuiteFactor,
+  type CropSuiteOptions,
+  type CropSuiteParams,
+  type CropSuiteRun,
+  type PreparedClimate,
+} from './cropsuite';
 import { clamp, clamp01, quantile, round, trapezoid } from './math';
 
 export { trapezoid } from './math';
+export {
+  cropSuiteParams,
+  CROPSUITE,
+  evaluateCropSuite,
+  membership,
+  multipleCropping,
+  prepareCropSuiteClimate,
+  quadMembership,
+  runCropSuite,
+  suitabilityClass,
+  variabilitySuitability,
+  variabilityThresholds,
+  type CropSuiteParams,
+  type MembershipFunction,
+  type MultipleCropping,
+  type SuitabilityClass,
+} from './cropsuite';
 export {
   adjustKcClimate,
   aggregateSuitability,
@@ -90,6 +123,17 @@ export {
 // ------------------------------------------------------------------------------------------------
 // Constants (docs/SCORING.md & docs/SCORING_PAPER.md give the literature source of each)
 // ------------------------------------------------------------------------------------------------
+
+/**
+ * How the static crop-site suitability is computed: one of the parametric operators of
+ * `literature.ts` on the v2 factor scores, or the CropSuite fuzzy-logic model (`cropsuite.ts`).
+ */
+export type SuitabilityMethod = ParametricMethod | 'cropsuite';
+/**
+ * Method behind every score the app shows. Chosen on the benchmark of
+ * `scripts/crops/evaluate-cropsuite.ts` (docs/SCORING.md section 9).
+ */
+export const DEFAULT_SUITABILITY_METHOD: SuitabilityMethod = 'astrovivu-v2';
 
 /** Max-normalized Saaty AHP eigenvector exponents (CR = 0.0030 << 0.10); primary climate acts at 1.0. */
 export const FACTOR_WEIGHTS = AHP_SOLUTION.exponents;
@@ -826,6 +870,196 @@ function yearStats(crop: CropProfile, site: Site, c: Climate, month: number, irr
 }
 
 // ------------------------------------------------------------------------------------------------
+// CropSuite (Zabel et al. 2025): the same parcel and crop read through cropsuite.ts
+// ------------------------------------------------------------------------------------------------
+
+const cropSuiteClimates = new WeakMap<Climate, Map<number, PreparedClimate | null>>();
+function cropSuiteClimate(climate: Climate, lat: number): PreparedClimate | null {
+  let byLat = cropSuiteClimates.get(climate);
+  if (!byLat) cropSuiteClimates.set(climate, (byLat = new Map()));
+  if (!byLat.has(lat)) byLat.set(lat, prepareCropSuiteClimate({ years: climate.years, rain: climate.rain, tMean: climate.tMean, tMin: climate.tMin }, lat));
+  return byLat.get(lat) ?? null;
+}
+
+const MONTH_FIRST_DOY = DAYS_IN_MONTH.reduce<number[]>((acc, d, i) => (acc.push(i ? acc[i - 1] + DAYS_IN_MONTH[i - 1] : 1), acc), []);
+const monthOfDoy = (doy: number): number => {
+  let m = 11;
+  while (MONTH_FIRST_DOY[m] > doy) m--;
+  return m + 1;
+};
+
+const CS_TEXT: Record<CropSuiteFactor['key'], { label: I18nText; kind: FactorKind; branch: BranchId; unit?: string }> = {
+  temperature: { label: tx('Mean temperature over the growing cycle', 'Nhiệt độ trung bình cả vụ'), kind: 'fixed', branch: 'agromet', unit: '°C' },
+  water: { label: tx('Precipitation over the growing cycle', 'Lượng mưa cả vụ'), kind: 'manageable', branch: 'rainfall', unit: 'mm' },
+  variability: { label: tx('Climate variability: years with potential crop failure', 'Biến động khí hậu: số năm có nguy cơ mất mùa'), kind: 'fixed', branch: 'agromet', unit: '%' },
+  permafrost: { label: tx('Permafrost', 'Băng vĩnh cửu'), kind: 'fixed', branch: 'agromet', unit: '°C' },
+  heat: { label: tx('Lethal heat over the cycle', 'Nóng gây chết trong vụ'), kind: 'fixed', branch: 'agromet', unit: '°C' },
+  frost: { label: tx('Killing temperature', 'Nhiệt độ gây chết'), kind: 'fixed', branch: 'agromet', unit: '°C' },
+  photoperiod: { label: tx('Day length over the cycle', 'Độ dài ngày trong vụ'), kind: 'choice', branch: 'agromet', unit: 'h' },
+  vernalization: { label: tx('Vernalization days', 'Số ngày xuân hoá'), kind: 'fixed', branch: 'agromet', unit: 'd' },
+  germination: { label: tx('Germination conditions', 'Điều kiện nảy mầm'), kind: 'choice', branch: 'agromet', unit: '°C' },
+  drySpell: { label: tx('Longest dry spell in the cycle', 'Đợt khô dài nhất trong vụ'), kind: 'manageable', branch: 'rainfall', unit: 'd' },
+  ph: { label: tx('Soil pH', 'pH đất'), kind: 'manageable', branch: 'soil' },
+  texture: { label: tx('Soil texture', 'Thành phần cơ giới'), kind: 'fixed', branch: 'soil' },
+  drainage: { label: tx('Drainage', 'Thoát nước'), kind: 'manageable', branch: 'soil' },
+  depth: { label: tx('Soil depth', 'Độ sâu tầng đất'), kind: 'fixed', branch: 'soil', unit: 'cm' },
+  salinity: { label: tx('Salinity', 'Độ mặn'), kind: 'manageable', branch: 'soil', unit: 'dS/m' },
+  fertility: { label: tx('Soil fertility (organic carbon, CEC)', 'Độ phì (carbon hữu cơ, CEC)'), kind: 'manageable', branch: 'soil' },
+  slope: { label: tx('Slope', 'Độ dốc'), kind: 'fixed', branch: 'terrain', unit: '°' },
+};
+
+function cropSuiteIdeal(key: CropSuiteFactor['key'], crop: CropProfile, p: CropSuiteParams): string {
+  const req = crop.req;
+  switch (key) {
+    case 'temperature':
+      return fmt(req.tempC);
+    case 'water':
+      return `${Math.round(p.precipitation.x[1])}-${Math.round(p.precipitation.x[2])}`;
+    case 'variability':
+      return `< ${100 * CROPSUITE.failureRateLimit}`;
+    case 'permafrost':
+      return `>= ${CROPSUITE.permafrostMeanTempC}`;
+    case 'heat':
+      return `<= ${CROPSUITE.maxCycleMeanTempC}`;
+    case 'frost':
+      return `>= ${p.lethalMinC}`;
+    case 'photoperiod':
+      return p.dayLengthH ? `${p.dayLengthH[0]}-${p.dayLengthH[1]}` : '?';
+    case 'vernalization':
+      return p.vernalization ? `>= ${p.vernalization.days}` : '?';
+    case 'germination':
+      return p.germination?.minTempC != null ? `>= ${p.germination.minTempC}` : '?';
+    case 'drySpell':
+      return p.maxDryDays != null ? `<= ${p.maxDryDays}` : '?';
+    case 'ph':
+      return p.ph ? fmt(req.ph, 1) : '?';
+    case 'texture':
+      return req.texture?.opt.join(', ') ?? '?';
+    case 'drainage':
+      return req.drainage?.opt.join(', ') ?? '?';
+    case 'depth':
+      return req.depth?.opt ?? '?';
+    case 'salinity':
+      return req.salinity?.opt ?? '?';
+    case 'fertility':
+      return req.fertility?.opt ?? '?';
+    case 'slope':
+      return `<= ${p.slope.x[0]}`;
+  }
+}
+
+/** CropSuite factors as the app's FactorScore rows. Lethal limits are listed only when they bite or carry information. */
+function cropSuiteFactorScores(crop: CropProfile, site: Site, run: CropSuiteRun, ev: CropSuiteEvaluation, src: { soil?: string; climate?: string; terrain?: string }): FactorScore[] {
+  const missing = tx('No data: skipped, not scored as zero.', 'Thiếu dữ liệu: bỏ qua, không tính là 0.');
+  const out: FactorScore[] = [];
+  for (const f of ev.factors) {
+    if (f.limit && (f.suitability == null || ((f.key === 'permafrost' || f.key === 'heat') && f.suitability > 0))) continue;
+    const t = CS_TEXT[f.key];
+    const ground = site.groundKeys.has(f.key);
+    let actual: number | string | null = typeof f.value === 'number' ? round(f.value, f.key === 'water' || f.key === 'depth' ? 0 : f.key === 'fertility' ? 2 : 1) : f.value;
+    let note: I18nText | undefined;
+    if (f.key === 'variability') {
+      actual = f.value == null ? null : Math.round(100 * (f.value as number));
+      note = ev.failureRate == null
+        ? tx('Too few years of climate history for a recurrence rate.', 'Chuỗi khí hậu quá ngắn để tính tần suất.')
+        : tx(`Temperature or precipitation left the crop's tolerable band in ${ev.yearsFailed} of ${ev.yearsAnalysed} years.`, `Nhiệt độ hoặc lượng mưa vượt khỏi dải chịu được của cây trong ${ev.yearsFailed}/${ev.yearsAnalysed} năm.`);
+    } else if (f.key === 'water' && run.options.irrigation === 'full') {
+      note = tx('Irrigated: precipitation is not a constraint; only its excess counts, through climate variability.', 'Có tưới: lượng mưa không phải yếu tố hạn chế; chỉ mưa quá nhiều mới tính, qua biến động khí hậu.');
+    } else if (f.suitability == null) note = missing;
+    out.push({
+      key: f.key,
+      label: t.label,
+      score: f.suitability == null ? null : round(f.suitability / 100, 3),
+      weight: 1,
+      actual,
+      ideal: cropSuiteIdeal(f.key, crop, run.params),
+      kind: t.kind,
+      branch: t.branch,
+      ...(t.unit ? { unit: t.unit } : {}),
+      sourceId: ground ? 'ground-truth' : t.branch === 'soil' ? src.soil : t.branch === 'terrain' ? src.terrain : src.climate,
+      ...(note ? { note } : {}),
+    });
+  }
+  return out;
+}
+
+/** The CropSuite model behind the `assess` contract: null when the parcel has no usable climate history. */
+function assessWithCropSuite(crop: CropProfile, input: ModelInput, site: Site, climate: Climate | null, irrigation: NonNullable<GroundTruth['irrigation']>, opts: AssessOptions): (CropAssessment & { fits: Fit[]; stats: (YearStats | null)[] }) | null {
+  const clim = climate ? cropSuiteClimate(climate, site.lat) : null;
+  if (!clim) return null;
+  const params = cropSuiteParams(crop);
+  const csSite = { ph: site.ph, ecDsM: site.ecDsM, texture: site.texture, drainage: site.drainage, depthCm: site.depthCm, fertilityIndex: oldfieldFertilityIndex(site.socGkg, site.cec), slopeDeg: site.slopeDeg };
+  const run = runCropSuite(params, csSite, clim, { irrigation, ...opts.cropSuite });
+  const src = sources(input.telemetry);
+  const review = !crop.curated;
+  const fitAt = (doy: number, month: number): { fit: Fit; ev: ReturnType<typeof evaluateCropSuite> } => {
+    const ev = evaluateCropSuite(run, clim, doy);
+    const factors = cropSuiteFactorScores(crop, site, run, ev, src);
+    return { fit: { score: round(ev.cropSuitability / 100, 3), factors, limiting: ev.limiting ? (factors.find((f) => f.key === ev.limiting!.key) ?? null) : null, season: null, month, review }, ev };
+  };
+  // One fit per calendar month, at that month's best sowing day (the sowing-window scan is monthly).
+  const monthly = Array.from({ length: 12 }, (_, i) => {
+    let doy = MONTH_FIRST_DOY[i];
+    for (let d = doy; d < MONTH_FIRST_DOY[i] + DAYS_IN_MONTH[i]; d++) if (run.climate[d - 1] > run.climate[doy - 1]) doy = d;
+    return fitAt(doy, i + 1);
+  });
+  const best = fitAt(run.optimalSowingDoy, monthOfDoy(run.optimalSowingDoy));
+  const gtDate = input.groundTruth.sowingDate && !params.perennial ? input.groundTruth.sowingDate : undefined;
+  const used = opts.sowingMonth != null ? monthly[opts.sowingMonth - 1] : gtDate ? fitAt(dayOfYear(gtDate), Number(gtDate.slice(5, 7))) : best;
+  const mc = params.perennial || opts.multipleCropping === false ? null : multipleCropping(run.climate, params.cycleDays);
+  const rel = (ev: CropSuiteEvaluation) => (ev.failureRate == null ? null : { yearsOk: ev.yearsAnalysed - ev.yearsFailed, yearsTotal: ev.yearsAnalysed });
+  const ev = used.ev;
+  const limitation: Record<string, number> = {};
+  for (const f of ev.factors) if (f.suitability != null) limitation[f.key] = Math.round(100 - f.suitability);
+  return {
+    cropId: crop.id,
+    compatibility: used.fit.score,
+    sowingMonth: used.fit.month,
+    sowingAssumed: opts.sowingMonth == null && gtDate == null,
+    bestSowingMonth: best.fit.month,
+    bestCompatibility: best.fit.score,
+    windowMonths: windowMonths(crop),
+    factors: used.fit.factors,
+    limiting: used.fit.limiting,
+    reliability: rel(ev),
+    yearScores: ev.yearScores,
+    waterSupplyMm: Math.round(ev.cycleWaterMm),
+    waterNeedMm: Math.round(params.precipitation.x[1]),
+    seasonalGdd: null,
+    needsLocalReview: review,
+    cropSuite: {
+      climateSuitability: Math.round(ev.climateSuitability),
+      soilSuitability: ev.soilSuitability == null ? null : Math.round(ev.soilSuitability),
+      cropSuitability: Math.round(ev.cropSuitability),
+      class: suitabilityClass(Math.round(ev.cropSuitability)),
+      perennial: params.perennial,
+      sowingDoy: ev.sowingDoy,
+      optimalSowingDoy: run.optimalSowingDoy,
+      suitableSowingDays: run.suitableSowingDays,
+      failureRate: ev.failureRate == null ? null : round(ev.failureRate, 3),
+      harvestsPerYear: mc ? mc.harvests : best.ev.climateSuitability > 0 ? 1 : 0,
+      // One harvest: the optimal day, which sits mid-window; several: the combination with the highest summed suitability.
+      sowingDoys: mc && mc.harvests > 1 ? mc.sowingDoys : best.ev.climateSuitability > 0 ? [run.optimalSowingDoy] : [],
+      limiting: ev.limiting?.key ?? null,
+      limitation,
+    },
+    fits: monthly.map((m) => m.fit),
+    stats: monthly.map((m) => {
+      const r = rel(m.ev);
+      return r ? { ...r, scores: m.ev.yearScores } : null;
+    }),
+  };
+}
+
+/**
+ * CropSuite assessment of any crop on the locked parcel, whatever the default method is: climate,
+ * soil and crop suitability, optimal sowing day, multiple-cropping potential and limiting factor.
+ */
+export function assessCropSuite(input: ModelInput, cropId: string, opts: Omit<AssessOptions, 'method'> = {}): CropAssessment | null {
+  return assessCrop(input, cropId, { ...opts, method: 'cropsuite' });
+}
+
+// ------------------------------------------------------------------------------------------------
 // Crop assessment (climatological) and ranking
 // ------------------------------------------------------------------------------------------------
 
@@ -850,21 +1084,33 @@ export interface CropAssessment {
   /** Seasonal thermal units (Growing Degree Days above T_absMin, °C·d) over the growing window. */
   seasonalGdd?: number | null;
   needsLocalReview: boolean;
+  /** Present when the assessment was made with the CropSuite method. */
+  cropSuite?: CropSuiteSummary;
 }
 
 export interface AssessOptions {
   /** 1-12; overrides the ground-truth sowing date and the best-window search. */
   sowingMonth?: number;
   irrigation?: GroundTruth['irrigation'];
-  /** Parametric suitability aggregation operator (default `astrovivu-v2`). */
-  method?: ParametricMethod;
+  /** Suitability method (default `DEFAULT_SUITABILITY_METHOD`). */
+  method?: SuitabilityMethod;
+  /** CropSuite only: switch climate variability or the day-length limit off (benchmark ablations). */
+  cropSuite?: Pick<CropSuiteOptions, 'variability' | 'photoperiod'>;
+  /** CropSuite only: false skips the multiple-cropping search (used when ranking many crops). */
+  multipleCropping?: boolean;
 }
 
 const sources = (t: FieldTelemetry) => ({ soil: t.branches.soil?.sources[0], terrain: t.branches.terrain?.sources[0], climate: t.climateSourceId });
 
 function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Climate | null, opts: AssessOptions = {}): CropAssessment & { fits: Fit[]; stats: (YearStats | null)[] } {
   const irrigation = opts.irrigation ?? input.groundTruth.irrigation ?? 'rainfed';
-  const method = opts.method ?? 'astrovivu-v2';
+  const chosen = opts.method ?? DEFAULT_SUITABILITY_METHOD;
+  if (chosen === 'cropsuite') {
+    const viaCropSuite = assessWithCropSuite(crop, input, site, climate, irrigation, opts);
+    if (viaCropSuite) return viaCropSuite;
+  }
+  // CropSuite needs the multi-year climate history; without it the v2 operator stands in.
+  const method: ParametricMethod = chosen === 'cropsuite' ? 'astrovivu-v2' : chosen;
   const src = sources(input.telemetry);
   const fits: Fit[] = [];
   const stats: (YearStats | null)[] = [];
@@ -947,13 +1193,13 @@ export interface CropRanking {
 }
 
 /** Second-stage ranking of the curated crops (or `cropIds`) at their best sowing window. */
-export function rankCrops(input: ModelInput, opts: { limit?: number; cropIds?: string[]; irrigation?: GroundTruth['irrigation']; method?: ParametricMethod } = {}): CropRanking[] {
+export function rankCrops(input: ModelInput, opts: { limit?: number; cropIds?: string[]; irrigation?: GroundTruth['irrigation']; method?: SuitabilityMethod } = {}): CropRanking[] {
   const site = buildSite(input);
   const climate = prepare(input).climate;
   const avoid = new Set(input.groundTruth.avoidCropIds ?? []);
   const crops = (opts.cropIds?.map((id) => getCrop(id)).filter((c): c is CropProfile => !!c) ?? listCrops()).filter((c) => !avoid.has(c.id));
   const out = crops.map((crop) => {
-    const a = assess(crop, { ...input, groundTruth: { ...input.groundTruth, sowingDate: undefined } }, site, climate, { irrigation: opts.irrigation, method: opts.method });
+    const a = assess(crop, { ...input, groundTruth: { ...input.groundTruth, sowingDate: undefined } }, site, climate, { irrigation: opts.irrigation, method: opts.method, multipleCropping: false });
     const reliability = a.reliability ? a.reliability.yearsOk / a.reliability.yearsTotal : null;
     return { cropId: crop.id, compatibility: round(a.bestCompatibility, 3), reliability, bestSowingMonth: a.bestSowingMonth, limiting: a.limiting?.key ?? null, rankScore: round(a.bestCompatibility * (0.5 + 0.5 * (reliability ?? 0.5)), 4) };
   });
@@ -1208,7 +1454,7 @@ function scoreLedger(input: ModelInput, notes: CalibrationNote[], withScore: num
   });
 }
 
-export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolean; ledger?: boolean; method?: ParametricMethod } = {}): ScoreDetail {
+export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolean; ledger?: boolean; method?: SuitabilityMethod } = {}): ScoreDetail {
   const { telemetry: t, groundTruth: gt } = input;
   const crop = getCrop(input.cropId);
   const site = buildSite(input);
@@ -1409,10 +1655,10 @@ export function computeScoreTimeline(input: ModelInput): ScoreTimeline {
 }
 
 /** Suitability of the selected crop for each sowing month, with the share of years that met its needs. */
-export function scanSowingWindows(input: ModelInput): SowingWindow[] {
+export function scanSowingWindows(input: ModelInput, opts: Pick<AssessOptions, 'irrigation' | 'method' | 'cropSuite'> = {}): SowingWindow[] {
   const crop = getCrop(input.cropId);
   if (!crop) return [];
-  const a = assess(crop, input, buildSite(input), prepare(input).climate);
+  const a = assess(crop, input, buildSite(input), prepare(input).climate, { ...opts, multipleCropping: false });
   return a.fits.map((f, i) => ({ month: i + 1, score: Math.round(100 * f.score), reliability: a.stats[i]?.yearsTotal ? round(a.stats[i]!.yearsOk / a.stats[i]!.yearsTotal, 2) : null, limiting: f.limiting?.key ?? null }));
 }
 

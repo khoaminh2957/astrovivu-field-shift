@@ -133,7 +133,7 @@ Primary source first, then fallbacks in order. The adapter that actually deliver
 | `geo.ts` | `Parcel`, `ParcelDraft`, `SampleParcel`, `PlaceHit` |
 | `telemetry.ts` | `BRANCHES`, `METRICS` (canonical keys), `SourceRef`, `Series`, `StaticFact`, `RiskEvent`, `ConfidenceBadge`, `BranchTelemetry`, `FieldTelemetry` |
 | `crop.ts` | `CropProfile` and its requirement, water, economics, rotation and urban facets |
-| `model.ts` | `GroundTruth`, `ModelInput`, `FactorScore`, `ScoreSnapshot`, `ScoreTimeline`, `SowingWindow`, `WhatIfResult` |
+| `model.ts` | `GroundTruth`, `ModelInput`, `FactorScore`, `ScoreSnapshot`, `ScoreTimeline`, `SowingWindow`, `WhatIfResult`, `CropSuiteSummary` (second suitability method, docs/SCORING.md section 9) |
 | `advisory.ts` | economics (`SeasonEconomics`, `AnnualPlan`), `Advisory`, `RotationStrategy`, `IrrigationPlan`, `PhPlan`, `AdvisoryReport`, `Insight` |
 | `experience.ts` | map layers, `ScreenAnchor`, tracking, urban companion, RAG (`AskRequest`, `AskResult`) |
 

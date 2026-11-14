@@ -12,3 +12,6 @@ reports/
 Thumbs.db
 .claude/worktrees/
 .claude/settings.local.json
+# Supabase CLI working files
+supabase/.temp/
+supabase/.branches/
