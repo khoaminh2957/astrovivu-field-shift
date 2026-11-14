@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { getCrop } from '@/core/crops';
 import { DEFAULT_SUITABILITY_METHOD } from '@/core/scoring';
@@ -71,8 +71,8 @@ describe('MIRCA-OS validation: ROC-AUC', () => {
 const SITES = 'data/crops/validation/mirca-os-2015-sites.json';
 const RESULTS = 'data/crops/mirca-validation-results.json';
 
-// The bodies of skipped suites still run when tests are collected, so the files are read lazily.
-describe.runIf(existsSync(SITES))('MIRCA-OS validation: the site file', () => {
+// Both files are committed; they are read inside the tests so that a missing file fails a test, not the collection.
+describe('MIRCA-OS validation: the site file', () => {
   const load = () => JSON.parse(readFileSync(SITES, 'utf8')) as ValidationFile;
 
   it('has a climate record of whole years and a crop table for every site', () => {
@@ -103,7 +103,7 @@ interface Results {
   suitability: { curated: { pooled: Record<string, { rocAuc: number; n: number }> } };
 }
 
-describe.runIf(existsSync(RESULTS))('MIRCA-OS validation: the results', () => {
+describe('MIRCA-OS validation: the results', () => {
   const load = () => JSON.parse(readFileSync(RESULTS, 'utf8')) as Results;
 
   it('names the method with the higher ROC-AUC on the curated crops', () => {
