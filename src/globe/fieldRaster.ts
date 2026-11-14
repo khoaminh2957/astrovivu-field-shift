@@ -84,6 +84,52 @@ export function quadMatrix3d(p: [number, number][], w: number, h: number): strin
   return `matrix3d(${m.map((v) => +v.toPrecision(9)).join(',')})`;
 }
 
+/**
+ * Least-squares homography from unit-square coordinates (u, v) to screen points, as CSS matrix3d
+ * for a W x H element. Fitted to the projected parcel outline itself, so the picture lands on the
+ * same ground as the outline even where the terrain under the raster's corners (which lie one
+ * cell outside the field, often on a levee, canal or slope) is not at the field's height.
+ */
+export function fitMatrix3d(uv: ArrayLike<number>, xy: ArrayLike<number>, w: number, h: number): string | null {
+  const n = Math.min(uv.length, xy.length) / 2;
+  if (n < 4) return null;
+  // Normal equations of the 8-parameter DLT: x(g u + h v + 1) = a u + b v + c, same for y.
+  const M = Array.from({ length: 8 }, () => new Float64Array(9));
+  const add = (row: number[], rhs: number) => {
+    for (let i = 0; i < 8; i++) {
+      if (row[i] === 0) continue;
+      for (let j = 0; j < 8; j++) M[i][j] += row[i] * row[j];
+      M[i][8] += row[i] * rhs;
+    }
+  };
+  for (let k = 0; k < n; k++) {
+    const u = uv[2 * k];
+    const v = uv[2 * k + 1];
+    const x = xy[2 * k];
+    const y = xy[2 * k + 1];
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    add([u, v, 1, 0, 0, 0, -u * x, -v * x], x);
+    add([0, 0, 0, u, v, 1, -u * y, -v * y], y);
+  }
+  // Gauss-Jordan with partial pivoting.
+  for (let c = 0; c < 8; c++) {
+    let piv = c;
+    for (let r = c + 1; r < 8; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    if (Math.abs(M[piv][c]) < 1e-12) return null;
+    [M[c], M[piv]] = [M[piv], M[c]];
+    for (let r = 0; r < 8; r++) {
+      if (r === c) continue;
+      const f = M[r][c] / M[c][c];
+      if (f === 0) continue;
+      for (let j = c; j < 9; j++) M[r][j] -= f * M[c][j];
+    }
+  }
+  const [a, b, c, d, e, f, g, hh] = M.map((row, i) => row[8] / row[i]);
+  const m = [a / w, d / w, 0, g / w, b / h, e / h, 0, hh / h, 0, 0, 1, 0, c, f, 0, 1];
+  if (!m.every(Number.isFinite)) return null;
+  return `matrix3d(${m.map((x) => +x.toPrecision(9)).join(',')})`;
+}
+
 export interface RasterFrameInfo {
   date: ISODate;
   nextDate: ISODate | null;
@@ -98,6 +144,8 @@ export class FieldRasterView {
   private paintedKey = '';
   private lastTransform = '';
   private shown = false;
+  /** The outline ring in unit-square coordinates of the raster grid, matching the ring the overlay projects. */
+  private ringUV: Float64Array | null = null;
 
   constructor(
     private readonly map: MapLibreMap,
@@ -114,12 +162,21 @@ export class FieldRasterView {
     return this.raster;
   }
 
+  /** Unit-square coordinates of the densified outline the overlay projects each frame. */
+  setOutline(ring: LngLat[]): void {
+    this.outline = ring;
+    this.ringUV = null;
+  }
+
+  private outline: LngLat[] = [];
+
   /** Sets the raster and the parcel ring it is clipped to; null removes the picture. */
   set(raster: FieldRaster | null, ring: LngLat[]): void {
     if (raster === this.raster) return;
     this.raster = raster;
     this.paintedKey = '';
     this.lastTransform = '';
+    this.ringUV = null;
     if (!raster || raster.width < 1 || raster.height < 1) {
       this.raster = null;
       this.hide();
@@ -131,6 +188,12 @@ export class FieldRasterView {
     const s = Math.max(1, Math.round(TARGET_PX / Math.max(raster.width, raster.height)));
     this.el.width = raster.width * s;
     this.el.height = raster.height * s;
+    // Pinned CSS size: the homography assumes one CSS pixel per canvas pixel, whatever a global
+    // stylesheet (a reset's max-width, a framework's canvas rule) would do to a canvas element.
+    this.el.style.width = `${this.el.width}px`;
+    this.el.style.height = `${this.el.height}px`;
+    this.el.style.maxWidth = 'none';
+    this.el.style.maxHeight = 'none';
     // The grid is north-up in lng/lat: the polygon maps to canvas pixels linearly.
     const [nw, , se] = raster.corners;
     const W = this.el.width;
@@ -173,19 +236,28 @@ export class FieldRasterView {
     return info;
   }
 
-  /** Follows the camera: one transform write per frame, only when it changed. */
-  position(visible: boolean): void {
+  /**
+   * Follows the camera: one transform write per frame, only when it changed. With the projected
+   * outline (same points, same order as `setOutline`) the placement is fitted to it; otherwise
+   * the four corners are used.
+   */
+  position(visible: boolean, outlineScreen?: Float64Array): void {
     if (!this.raster || !visible) {
       this.hide();
       return;
     }
-    const pts = this.raster.corners.map((c) => {
-      const p = this.map.project(c);
-      return [p.x, p.y] as [number, number];
-    });
-    const m = pts.every(([x, y]) => Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) < 1e5 && Math.abs(y) < 1e5)
-      ? quadMatrix3d(pts, this.el.width, this.el.height)
-      : null;
+    let m: string | null = null;
+    const uv = this.outlineUV();
+    if (uv && outlineScreen && outlineScreen.length === uv.length) m = fitMatrix3d(uv, outlineScreen, this.el.width, this.el.height);
+    if (!m) {
+      const pts = this.raster.corners.map((c) => {
+        const p = this.map.project(c);
+        return [p.x, p.y] as [number, number];
+      });
+      m = pts.every(([x, y]) => Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) < 1e5 && Math.abs(y) < 1e5)
+        ? quadMatrix3d(pts, this.el.width, this.el.height)
+        : null;
+    }
     if (!m) {
       this.hide();
       return;
@@ -202,6 +274,20 @@ export class FieldRasterView {
 
   destroy(): void {
     this.el.remove();
+  }
+
+  private outlineUV(): Float64Array | null {
+    if (this.ringUV) return this.ringUV;
+    const r = this.raster;
+    if (!r || this.outline.length < 4) return null;
+    const [nw, , se] = r.corners;
+    const uv = new Float64Array(this.outline.length * 2);
+    this.outline.forEach(([lng, lat], i) => {
+      uv[2 * i] = (lng - nw[0]) / (se[0] - nw[0]);
+      uv[2 * i + 1] = (nw[1] - lat) / (nw[1] - se[1]);
+    });
+    this.ringUV = uv;
+    return uv;
   }
 
   private hide(): void {

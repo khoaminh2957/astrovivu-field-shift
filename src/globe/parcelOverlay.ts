@@ -100,6 +100,7 @@ export class ParcelOverlay {
     let ring = densifyRing(corners, 30);
     if (ring.length > MAX_RING_POINTS) ring = densifyRing(corners, 30 * Math.ceil(ring.length / MAX_RING_POINTS));
     this.ring = ring;
+    this.raster.setOutline(ring);
     this.centroid = parcel.centroid;
     this.lastPath = '';
     const c = this.map.getContainer();
@@ -157,7 +158,7 @@ export class ParcelOverlay {
     const onScreen = screen.finite && screen.maxX > 0 && screen.minX < width && screen.maxY > 0 && screen.minY < height;
     const visible = facing && onScreen;
 
-    this.raster.position(visible && Math.max(w, h) >= RETICLE_BELOW_PX);
+    this.raster.position(visible && Math.max(w, h) >= RETICLE_BELOW_PX, screen.finite ? screen.points : undefined);
     if (!visible) {
       this.hide();
     } else {

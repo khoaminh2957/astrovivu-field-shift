@@ -365,10 +365,22 @@ export class GlobeEngine {
     map.on('move', this.queueViewState);
     // With a camera at rest (a deep link straight into explore or a locked field) the frame
     // drawn when the last tile landed was observed to leave the raster layers out until the
-    // next repaint. One extra frame once loading settles costs nothing and closes that gap.
+    // next repaint (seen again on a deep link to An Giang: tiles loaded, map grey until a
+    // repaint). The idle event alone did not always come, so a repaint also follows every burst
+    // of tile arrivals once it has been quiet for 250 ms. At rest that is one extra frame.
     let loadedSinceIdle = false;
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
     map.on('sourcedata', (e) => {
-      if (e.tile) loadedSinceIdle = true;
+      if (!e.tile) return;
+      loadedSinceIdle = true;
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        settleTimer = null;
+        if (!this.destroyed) map.triggerRepaint();
+      }, 250);
+    });
+    this.cleanups.push(() => {
+      if (settleTimer) clearTimeout(settleTimer);
     });
     map.on('idle', () => {
       if (!loadedSinceIdle) return;

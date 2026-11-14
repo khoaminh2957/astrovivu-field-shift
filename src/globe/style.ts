@@ -123,7 +123,13 @@ export function baseStyle(): StyleSpecification {
     },
     layers: [
       // A globe with no tile yet (or no network) is still a planet, not a hole in the stars.
-      { id: LAYER.ocean, type: 'background', paint: { 'background-color': '#0a1b30' } },
+      // From orbit a globe with no tile yet is still a planet (dark sea). Close up, a missing
+      // imagery tile must not read as a hole under the light interface: neutral ground instead.
+      {
+        id: LAYER.ocean,
+        type: 'background',
+        paint: { 'background-color': ['interpolate', ['linear'], ['zoom'], 5, '#0a1b30', 8, '#cfcbc2'] },
+      },
       raster(LAYER.blueMarble, SOURCE.blueMarble),
       // Loaded from the first frame but transparent, so that entering explore is a fade, not a wait.
       raster(LAYER.sat, SOURCE.sat, { 'raster-opacity': 0, 'raster-opacity-transition': { duration: 0 } }),
