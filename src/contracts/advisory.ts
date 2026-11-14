@@ -107,6 +107,33 @@ export interface RotationSeason {
    * seasons out in order, treating a 12-month season as standing across every year (a perennial).
    */
   year?: number;
+  /**
+   * Per-season detail for the rotation calendar. All optional: a report computed before these
+   * existed, a fixture, or a fallow season simply omits them and the UI shows the block without them.
+   */
+  detail?: RotationSeasonDetail;
+}
+
+/** What one season of a rotation is expected to do on this field, with the reason it sits where it does. */
+export interface RotationSeasonDetail {
+  /** What the season is there for. A cash crop that is also a legume is `cash`. */
+  role: 'cash' | 'legume' | 'cover' | 'fallow' | 'perennial';
+  /** 0..100 climate and soil fit of this crop sown in `startMonth` on this field. */
+  suitability?: number;
+  /** In how many of the analysed years the crop's needs were met in this slot. */
+  metInYears?: { met: number; of: number };
+  /** Modelled crop water need over the season, mm. */
+  waterNeedMm?: number;
+  /** Normal rainfall over the months of the season, mm (same climate record as the score). */
+  rainMm?: number;
+  /** Expected yield, t/ha (reference-scaled, see SeasonEconomics.yield). */
+  yieldTHa?: number;
+  /** Margin of this season per hectare, USD. */
+  marginUsdPerHa?: number;
+  /** Nitrogen left by a legume or cover crop, kg N/ha (indicative). */
+  nitrogenKgHa?: number;
+  /** One sentence: why this crop, in these months. */
+  reason?: I18nText;
 }
 
 export type RotationKind = 'current' | 'soil-health' | 'water-saver' | 'income' | 'resilience';
