@@ -1,21 +1,22 @@
 import type { SampleParcel } from '@/contracts';
 import { tx } from '@/contracts';
-import { circlePolygon, closeRing, makeParcel, rectPolygon } from '@/lib/geo';
+import { circlePolygon, closeRing, makeParcel } from '@/lib/geo';
 
 /**
  * Demo fields. Telemetry for these is pre-cached (`npm run data:samples`) so the story plays
  * instantly; every other location on Earth goes through the live adapters.
  *
  * Nevada and Iowa follow the field visible on Esri World Imagery under the verified centre
- * (traced at zoom 14, about 4 m per pixel). Dak Lak and Can Tho are still provisional shapes:
- * plot edges under their centres could not be told apart on the imagery.
+ * (traced at zoom 14, about 4 m per pixel). Dak Lak and the Mekong paddy are field outlines found by
+ * `detectFieldBoundary` from Sentinel-2 NDVI (scripts/data/boundary-demo.ts); the crop on them is assumed, not verified.
  */
 export const SAMPLE_PARCELS: SampleParcel[] = [
   {
     ...makeParcel({
       id: 'daklak-coffee',
       name: 'Central Highlands robusta block',
-      polygon: rectPolygon([108.2, 12.8], 190, 130, 12),
+      // Found by detectFieldBoundary (Sentinel-2 NDVI, conf 0.87) on a 1.5 km grid within 3 km of the old centre.
+      polygon: { type: 'Polygon', coordinates: [[[108.226389, 12.814519], [108.228067, 12.813556], [108.228165, 12.81346], [108.227968, 12.813171], [108.227277, 12.812979], [108.226389, 12.81346], [108.226093, 12.814134], [108.226389, 12.814519]]] },
       source: 'sample',
       place: { label: 'Đắk Lắk, Vietnam', country: 'Vietnam', countryCode: 'VN', admin1: 'Đắk Lắk' },
     }),
@@ -31,9 +32,10 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
     ...makeParcel({
       id: 'cantho-rice',
       name: 'Mekong Delta paddy',
-      polygon: rectPolygon([105.44, 10.11], 210, 90, 78),
+      // Found by detectFieldBoundary (Sentinel-2 NDVI, conf 0.82) among the regular paddies of An Giang.
+      polygon: { type: 'Polygon', coordinates: [[[105.172489, 10.52764], [105.173413, 10.527135], [105.173105, 10.527034], [105.172797, 10.526631], [105.171873, 10.526631], [105.171771, 10.527438], [105.172489, 10.52764]]] },
       source: 'sample',
-      place: { label: 'Cần Thơ, Vietnam', country: 'Vietnam', countryCode: 'VN', admin1: 'Cần Thơ' },
+      place: { label: 'An Giang, Vietnam', country: 'Vietnam', countryCode: 'VN', admin1: 'An Giang' },
     }),
     defaultCropId: 'oryza-sativa',
     // Three rice crops a year (winter-spring, summer-autumn, autumn-winter), irrigated from river and canals.

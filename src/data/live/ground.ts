@@ -2,7 +2,7 @@
 import type { CropHistoryYear, I18nText, StaticFact } from '@/contracts';
 import { tx } from '@/contracts';
 import { offsetMetres } from '@/lib/geo';
-import { cdlHistory } from '../adapters/cdl';
+import { cdlHistory, cdlSamplePoints } from '../adapters/cdl';
 import { elevation as omElevation } from '../adapters/openmeteo';
 import { openTopoDem } from '../adapters/opentopo';
 import { soilGrids, type SoilProp, type SoilValue } from '../adapters/soilgrids';
@@ -233,7 +233,7 @@ export async function soil(ctx: LiveContext): Promise<void> {
 export async function cropHistory(ctx: LiveContext): Promise<CropHistoryYear[] | null> {
   if (!ctx.parcel.isUS || !isNode) return null;
   const years = Array.from({ length: 8 }, (_, i) => ctx.thisYear - 8 + i);
-  const rows = await cdlHistory(ctx.parcel.centroid, years, ctx.signal);
+  const rows = await cdlHistory(cdlSamplePoints(ctx.parcel), years, ctx.signal);
   if (rows.length) ctx.addSource(SOURCES.cdl);
   return rows.length ? rows : null;
 }

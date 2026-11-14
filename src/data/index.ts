@@ -22,6 +22,7 @@ export { SAMPLE_PARCELS, getSampleParcel } from './samples';
 export { confidenceAt, staticBadge } from './confidence';
 export { SOURCES } from './sources';
 export { loadFieldRasters, type RasterLoadOptions } from './rasters';
+export { detectFieldBoundary, type FieldBoundary } from './boundary';
 
 /** auto = cached file for sample parcels, live adapters otherwise, mock only if everything fails. */
 export type DataMode = 'auto' | 'live' | 'cached' | 'mock';
