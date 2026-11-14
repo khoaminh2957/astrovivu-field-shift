@@ -13,7 +13,7 @@ import { getCrop } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
 import { Button, EmptyState, Panel, Skeleton, SkeletonText, StatusGlyph, cn } from '@/ui/design';
-import { AdvisoryCard, AdvisoryBody, AdvisoryPlate, IrrigationView, PhView, SowingView } from './ActionPlans';
+import { AdvisoryCard, AdvisoryBody, AdvisoryPlate, CropSuiteView, IrrigationView, PhView, SowingView } from './ActionPlans';
 import { AnnualPlanView } from './AnnualPlanView';
 import { climateOf } from './climate';
 import { useFixture } from './fixture';
@@ -357,6 +357,8 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
           </AdvisoryPlate>
           <AdvisoryPlate adv={sowAdv} title={t('advisory.sow.title')}>
             {report.sowing?.length ? <SowingView windows={report.sowing} chosenMonth={sowingMonth} /> : <EmptyState layout="inline" title={t('advisory.empty.noSowing')} body={t('advisory.empty.noSowingBody')} />}
+            {report.cropSuite && <Divider />}
+            {report.cropSuite && <CropSuiteView summary={report.cropSuite} />}
             {sowAdv && <Divider />}
             {sowAdv && <AdvisoryBody adv={sowAdv} currency={currency} showTitle />}
           </AdvisoryPlate>

@@ -173,3 +173,36 @@ export interface WhatIfResult {
   after: number;
   delta: number;
 }
+
+// ---------------------------------------------------------------------------------------------
+// CropSuite (Zabel, Knüttel & Poschlod 2025): the second suitability method, docs/SCORING.md §9
+// ---------------------------------------------------------------------------------------------
+
+/** CropSuite classes (paper, Table 3): 0 unsuitable, 1-32 marginal, 33-74 moderate, 75-100 high. */
+export type CropSuitabilityClass = 'unsuitable' | 'marginal' | 'moderate' | 'high';
+
+/** CropSuite outputs for one crop on one parcel. Suitabilities are 0-100, as in the paper. */
+export interface CropSuiteSummary {
+  climateSuitability: number;
+  /** Null when the parcel has no soil or terrain value. */
+  soilSuitability: number | null;
+  /** Liebig minimum of climate and soil suitability at the sowing day used. */
+  cropSuitability: number;
+  class: CropSuitabilityClass;
+  /** A perennial occupies the whole year: it has no sowing day and one harvest season. */
+  perennial: boolean;
+  /** Day of year (1-365) the assessment used, and the day with the highest climate suitability. */
+  sowingDoy: number;
+  optimalSowingDoy: number;
+  /** Sowing days of the year with a climate suitability above 0. */
+  suitableSowingDays: number;
+  /** Recurrence rate of potential crop failure at the sowing day, 0..1; null with too short a history. */
+  failureRate: number | null;
+  /** Potential harvests of this crop within a year, and their sowing days of year. */
+  harvestsPerYear: number;
+  sowingDoys: number[];
+  /** Key of the most-limiting factor. */
+  limiting: string | null;
+  /** Degree of limitation, 100 - suitability, of every factor that has a value. */
+  limitation: Record<string, number>;
+}

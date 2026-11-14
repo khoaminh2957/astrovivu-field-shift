@@ -8,6 +8,7 @@
  * Run: `npx tsx scripts/crops/evaluate-scoring-paper.ts`
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import type { CropProfile, FieldTelemetry, GroundTruth, ModelInput } from '../../src/contracts';
 import { getCrop, loadFullCatalog } from '../../src/core/crops';
@@ -63,7 +64,7 @@ function halton(index: number, base: number): number {
   return result;
 }
 
-function loadSample(id: string): { telemetry: FieldTelemetry; makeInput: (cropId: string | null, gt?: GroundTruth) => ModelInput } {
+export function loadSample(id: string): { telemetry: FieldTelemetry; makeInput: (cropId: string | null, gt?: GroundTruth) => ModelInput } {
   const telemetry = JSON.parse(readFileSync(`public/data/samples/${id}.json`, 'utf8')) as FieldTelemetry;
   const parcel = getSampleParcel(id)!;
   return {
@@ -153,7 +154,7 @@ function runExperiment1() {
 // ================================================================================================
 // Experiment 2: Parametric Aggregation Operators on Canonical Profiles & 56-Case Real Benchmark
 // ================================================================================================
-interface BenchmarkCase {
+export interface BenchmarkCase {
   parcelId: 'daklak-coffee' | 'cantho-rice' | 'iowa-corn-soy' | 'nevada-alfalfa';
   cropId: string;
   irrigation: 'rainfed' | 'supplemental' | 'full';
@@ -161,7 +162,7 @@ interface BenchmarkCase {
   basis: string;
 }
 
-const BENCHMARK_56: BenchmarkCase[] = [
+export const BENCHMARK_56: BenchmarkCase[] = [
   // 1. Đắk Lắk basalt upland (14 cases: tropical wet-dry Aw, 4-month dry spell, pH ~5.5)
   { parcelId: 'daklak-coffee', cropId: 'coffea-canephora', irrigation: 'supplemental', viable: 1, basis: 'Dominant commercial perennial of Đắk Lắk (FAOSTAT/MARD)' },
   { parcelId: 'daklak-coffee', cropId: 'coffea-canephora', irrigation: 'rainfed', viable: 1, basis: 'Viable rainfed robusta with moderate dry-season deficit' },
@@ -227,7 +228,7 @@ const BENCHMARK_56: BenchmarkCase[] = [
   { parcelId: 'nevada-alfalfa', cropId: 'hevea-brasiliensis', irrigation: 'full', viable: 0, basis: 'Killed by winter frost and alkaline desert soil' },
 ];
 
-function computeBinaryMetrics(yTrue: number[], yScore: number[]) {
+export function computeBinaryMetrics(yTrue: number[], yScore: number[]) {
   const n = yTrue.length;
   let brier = 0;
   let tp50 = 0;
@@ -818,7 +819,9 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Run only as a script: evaluate-cropsuite.ts imports the benchmark and the metrics from this file.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
