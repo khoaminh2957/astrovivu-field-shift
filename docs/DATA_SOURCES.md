@@ -126,3 +126,23 @@ Open-Meteo quota: the 20-year archive request weighs a few hundred "calls" of th
 ## 5. Crop requirements
 
 `data/ecocrop/ecocrop_2568_plants.csv`: FAO EcoCrop, 2,568 species, 70 columns (column guide in `ecocrop_2568_plants_headers.html`). 2,048 species have temperature, rainfall, pH, texture and drainage requirements. Known defects: temperature values > 60 and latitude values > 90 in a handful of rows (wrong scale), `cult_cycle_min/max = 0` means missing (685 species), `eco_altitude_opt_*` is empty, aluminium toxicity is filled for 62 species only, some species have several rows with different thresholds.
+
+## Field rasters (within-field pictures, 10-30 m)
+
+`loadFieldRasters(parcel)` (`src/data/rasters/`) returns small north-up lng/lat grids over the parcel bounding box plus one cell of margin, at most 96 cells on the long side, one frame per real acquisition date. Demo parcels read `public/data/samples/<id>.rasters.json` (written by `npx tsx scripts/data/cache-rasters.ts`, up to 24 frames); other parcels load live from the Microsoft Planetary Computer (key-free, CORS `*`): one STAC search per collection, then one data-API request per scene (`/api/data/v1/item/bbox/{bbox}/{w}x{h}.npy`, nearest resampling), which returns the requested assets plus a last band that is the validity mask (255 inside the scene, 0 outside). Responses are cached in `.cache/` (Node) or IndexedDB (browser); scenes for a year, searches for a day.
+
+| key | branch | source | cell | value | mask | encoding (`offset + scale*byte`) | display range |
+|---|---|---|---|---|---|---|---|
+| `ndvi` | vegetation | Copernicus Sentinel-2 L2A B04, B08 | 10 m | (NIR-Red)/(NIR+Red) | SCL kept 4, 5, 6, 7 | -1 + 2/254 | 0..1 |
+| `ndmi` | soilMoisture | Sentinel-2 L2A B8A, B11 | 20 m | (B8A-B11)/(B8A+B11), a canopy and surface moisture index, not soil moisture | SCL as above | -1 + 2/254 | -0.4..0.6 |
+| `lst` | thermal | Landsat 8/9 C2 L2 `lwir11` (ST_B10) | 30 m | DN x 0.00341802 + 149.0 K, shown in °C | QA_PIXEL bits 0-5 (fill, dilated cloud, cirrus, cloud, shadow, snow) all clear | -40 + 0.4 | 2nd-98th percentile of the cells seen, rounded to 5 °C |
+| `elevation` | terrain | AWS Terrarium tiles (SRTM and others) | ~14-19 m (zoom 13) | metres | none | min + (max-min)/254 | min..max |
+| `slope` | terrain | derived from `elevation` | same | central differences, degrees | none | 0 + max/254 | 0..max |
+
+**Reflectance offset.** Sentinel-2 processing baseline 04.00 and later (all scenes since 2022-01-25) store `DN = 10000 x reflectance + 1000`. The offset is read from `s2:processing_baseline` per scene and subtracted before any index; without it NDVI over bare soil is biased low by roughly a factor of two.
+
+**Scene selection.** The 365-day window ending today is cut into bins of `max(15, 365 / maxFrames)` days counted back from today. Within a bin, scenes (scene cloud cover below 60 %) are tried clearest first, up to three; a scene is used when at least 70 % of the parcel cells are valid. Newest bins first; at most `maxFrames` (12 live, 24 for the demo caches). Cloudy bins are simply absent: frames are never interpolated or filled. Where two MGRS tiles overlap, both are candidates and the mask decides.
+
+**Checks (2026-11-14).** Sentinel-2 NDVI parcel means follow the MODIS MOD13Q1 series of the demo fields within about 0.1 on most dates (Iowa July 0.88 vs 0.91, Nevada June 0.62 vs 0.69, Dak Lak October 0.88 vs 0.81); MODIS 16-day maximum-value composites run slightly higher, as expected. Flooded rice in Can Tho reads near 0 at transplanting.
+
+**Limits.** Terrain is one frame dated today (static). Tropical fields get few clear frames in the wet season (Can Tho 6-12, Dak Lak 9-13 over the year). Landsat thermal is 100 m native, resampled by USGS to 30 m. HLS (`hls2-s30`/`hls2-l30`) is not wired; it is the planned fallback if Sentinel-2 L2A on the Planetary Computer fails. A data-API failure for one scene is logged and that bin moves to its next candidate; a whole collection failing yields no raster for that key (an empty list is a valid answer).

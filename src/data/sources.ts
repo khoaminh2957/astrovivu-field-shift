@@ -274,6 +274,32 @@ export const SOURCES = {
     url: 'https://open-meteo.com/en/docs',
     license: 'CC BY 4.0',
   }),
+  sentinel2: def({
+    id: 'sentinel-2-l2a',
+    name: 'Copernicus Sentinel-2 MSI Level-2A surface reflectance (NDVI, NDMI)',
+    resourceName: 'Copernicus Sentinel-2',
+    agency: 'ESA / Copernicus',
+    provenance: 'observed',
+    resolutionM: 10,
+    cadenceDays: 5,
+    latencyDays: 2,
+    access: 'Microsoft Planetary Computer STAC + data API',
+    url: 'https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a',
+    license: 'Copernicus Sentinel data terms (free, attribution: contains modified Copernicus Sentinel data)',
+  }),
+  landsatSt: def({
+    id: 'landsat-c2-l2-st',
+    name: 'Landsat 8/9 Collection 2 Level-2 surface temperature (ST_B10)',
+    resourceName: 'Landsat',
+    agency: 'NASA / USGS',
+    provenance: 'observed',
+    resolutionM: 30,
+    cadenceDays: 8,
+    latencyDays: 3,
+    access: 'Microsoft Planetary Computer STAC + data API',
+    url: 'https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2',
+    license: 'Public domain (USGS); courtesy of the U.S. Geological Survey',
+  }),
 } as const;
 
 export type SourceKey = keyof typeof SOURCES;

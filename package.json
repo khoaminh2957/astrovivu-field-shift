@@ -13,6 +13,7 @@
     "test": "vitest run",
     "server": "tsx server/index.ts",
     "data:samples": "tsx scripts/cache-samples.ts",
+    "data:rasters": "tsx scripts/data/cache-rasters.ts",
     "crops:build": "tsx scripts/build-crop-catalog.ts",
     "rag:build": "tsx scripts/rag/build.ts"
   },

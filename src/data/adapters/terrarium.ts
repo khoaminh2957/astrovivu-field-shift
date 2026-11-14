@@ -2,7 +2,7 @@
  * AWS Terrain Tiles, Terrarium encoding (CORS *). Decodes the tiles covering the parcel into a
  * DEM grid in Web Mercator pixel space: OffscreenCanvas/canvas in the browser, pngjs in Node.
  */
-import type { Parcel } from '@/contracts';
+import type { LngLat, Parcel } from '@/contracts';
 import { cached, TTL } from '../cache';
 import { isNode, nodeImport } from '../env';
 import { getBytes } from '../http';
@@ -62,7 +62,7 @@ function pickZoom(bbox: Parcel['bbox']): number {
   return 8;
 }
 
-export async function terrariumDem(parcel: Pick<Parcel, 'bbox' | 'polygon' | 'centroid'>, signal?: AbortSignal): Promise<{ grid: DemGrid; zoom: number; pixelM: number }> {
+export async function terrariumDem(parcel: Pick<Parcel, 'bbox' | 'polygon' | 'centroid'>, signal?: AbortSignal): Promise<{ grid: DemGrid; zoom: number; pixelM: number; corners: [LngLat, LngLat, LngLat, LngLat] }> {
   // Data under the tiles is ~30 m SRTM outside the US; zoom 13 (≈19 m at the equator) samples it
   // without inventing detail, so cap there unless the parcel is tiny.
   const z = Math.min(13, pickZoom(parcel.bbox));
@@ -102,5 +102,11 @@ export async function terrariumDem(parcel: Pick<Parcel, 'bbox' | 'polygon' | 'ce
     const r = Math.floor(latToY(parcel.centroid[1], z)) - py0;
     insideMask[r * w + c] = 1;
   }
-  return { grid: { width: w, height: h, data, cellX: pixelM, cellY: pixelM, inside: (c, r) => insideMask[r * w + c] === 1 }, zoom: z, pixelM };
+  // Grid corners in lng/lat (outer pixel edges), for drawing the DEM as a field raster.
+  const west = xToLng(px0, z);
+  const east = xToLng(px0 + w, z);
+  const north = yToLat(py0, z);
+  const south = yToLat(py0 + h, z);
+  const corners: [LngLat, LngLat, LngLat, LngLat] = [[west, north], [east, north], [east, south], [west, south]];
+  return { grid: { width: w, height: h, data, cellX: pixelM, cellY: pixelM, inside: (c, r) => insideMask[r * w + c] === 1 }, zoom: z, pixelM, corners };
 }
