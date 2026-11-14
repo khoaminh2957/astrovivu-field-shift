@@ -3,7 +3,7 @@ import { registerStrings } from '@/i18n';
 registerStrings(
   'tracking',
   {
-    title: 'Field record',
+    title: 'Field notes',
     simHistory: 'Simulated history',
     simNote: 'This is a demo field: its past seasons, soil tests and journal are simulated to show how the record builds up over the years. Entries you add yourself are real and are never marked simulated.',
     sim: 'simulated',
@@ -67,7 +67,7 @@ registerStrings(
     'rating.high': 'high',
   },
   {
-    title: 'Sổ theo dõi thửa ruộng',
+    title: 'Ghi chép thửa ruộng',
     simHistory: 'Lịch sử giả lập',
     simNote: 'Đây là thửa mẫu: các vụ trước, kết quả xét nghiệm đất và nhật ký được giả lập để minh họa sổ theo dõi qua nhiều năm. Các ghi chép bạn tự thêm là thật và không bao giờ bị đánh dấu giả lập.',
     sim: 'giả lập',

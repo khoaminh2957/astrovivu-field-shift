@@ -56,7 +56,7 @@ export function UrbanCompanion() {
       <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 pt-4 pb-24 lg:px-6 lg:pt-5">
         <header className="flex flex-col gap-1">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h1 id="urb-title" className="t-title text-2xl leading-8">
+            <h1 id="urb-title" className="text-xl leading-7 font-semibold text-ink-1">
               {t('urban.title')}
             </h1>
             {fixture && <FixtureTag />}

@@ -21,3 +21,4 @@ export type { MotionPref } from './engine';
 export { zoomBy, resetNorth, setTilt, fitParcel, locateMe, setMotion, startMeasure, stopMeasure, useMapView, useMeasure, type MapViewState, type MeasureKind, type MeasureState } from './tools';
 export { useParcelPaint, type ParcelPaintInfo } from './legend';
 export { rasterRampCss } from './fieldRaster';
+export { onMapClick } from './mapClick';

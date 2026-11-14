@@ -3,7 +3,7 @@ import { registerStrings } from '@/i18n';
 registerStrings(
   'advisory',
   {
-    title: 'Advisory',
+    title: 'Crop rotation',
     generated: 'computed {date}',
     support: 'These suggestions support your judgement and local expertise; they do not replace them. Check anything marked "Needs local review" with an extension officer or agronomist before you act.',
     fixture: 'Layout fixture',
@@ -171,7 +171,7 @@ registerStrings(
     'factor.slope': 'slope',
   },
   {
-    title: 'Khuyến nghị',
+    title: 'Luân canh cây trồng',
     generated: 'tính ngày {date}',
     support: 'Các gợi ý này hỗ trợ, không thay thế, kinh nghiệm của bạn và chuyên môn địa phương. Hãy kiểm tra mọi mục có nhãn "Cần kiểm tra tại chỗ" với cán bộ khuyến nông hoặc kỹ sư nông nghiệp trước khi làm.',
     fixture: 'Dữ liệu mẫu bố cục',

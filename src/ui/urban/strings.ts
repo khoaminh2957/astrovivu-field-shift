@@ -3,7 +3,7 @@ import { registerStrings } from '@/i18n';
 registerStrings(
   'urban',
   {
-    title: 'Urban Grower Companion',
+    title: 'Urban grower',
     lead: 'What will grow on your balcony, rooftop or windowsill, from the climate where you live and the light you get.',
     where: 'Where you grow',
     useGps: 'Use my location',
@@ -56,7 +56,7 @@ registerStrings(
     lang: 'Plant names and care notes in {lang}; climate from the sources listed above.',
   },
   {
-    title: 'Trợ lý trồng cây đô thị',
+    title: 'Trồng rau đô thị',
     lead: 'Cây gì sẽ hợp với ban công, sân thượng hay bậu cửa sổ của bạn, theo khí hậu nơi bạn sống và lượng nắng bạn có.',
     where: 'Nơi bạn trồng',
     useGps: 'Dùng vị trí của tôi',

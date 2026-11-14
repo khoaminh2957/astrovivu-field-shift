@@ -20,6 +20,12 @@ import { TimelineScrubber } from '@/ui/timeline';
 import { TrackingView } from '@/ui/tracking';
 import { UrbanCompanion } from '@/ui/urban';
 import { MapLegendChip, MapToolbar } from './MapToolbar';
+import { onMapClick } from '@/globe';
+import { SAMPLE_PARCELS } from '@/data';
+import { pointInPolygon } from '@/lib/geo';
+import { useMeasureStore } from '@/globe/toolState';
+
+const useMeasureState = () => useMeasureStore.getState();
 import { useMissionUi, useNarrow } from './uiState';
 import './strings';
 
@@ -302,6 +308,18 @@ export function Shell() {
     setListMode('list');
     setFieldTab('status');
   }, [parcelId, setListMode, setFieldTab]);
+
+  // A click on a demo field's outline selects it, like a click on its row.
+  useEffect(
+    () =>
+      onMapClick((at) => {
+        const s = useMission.getState();
+        if (s.phase === 'hero' || s.draft || useMissionUi.getState().listMode === 'add' || useMeasureState().kind) return;
+        const hit = SAMPLE_PARCELS.find((p) => pointInPolygon(at, p.polygon));
+        if (hit && hit.id !== s.parcel?.id) void s.lockSample(hit.id);
+      }),
+    [],
+  );
   if (phase === 'hero') return null;
   const fieldPhase = phase === 'explore' || phase === 'locked';
   const view = phase === 'advisory' ? <AdvisoryPanel /> : phase === 'tracking' ? <TrackingView /> : phase === 'urban' ? <UrbanCompanion /> : null;

@@ -112,7 +112,7 @@ export function TimelineScrubber({ className }: { className?: string }) {
       const date = addDays(start, d);
       if (!date.endsWith('-01')) continue;
       const m = Number(date.slice(5, 7));
-      const labelled = !narrow || (m - 1) % 3 === 0;
+      const labelled = (m - 1) % 3 === 0;
       out.push({ value: d, major: m === 1, label: labelled ? (m === 1 ? `${MONTHS[lang][0]} ${date.slice(0, 4)}` : MONTHS[lang][m - 1]) : undefined });
     }
     return out;
@@ -121,15 +121,18 @@ export function TimelineScrubber({ className }: { className?: string }) {
   const markers = useMemo<SliderMarker[]>(() => {
     const out: SliderMarker[] = insights.map((i) => ({ value: diffDays(i.t, start), severity: i.severity, label: `${fmtDate(i.t, lang)}: ${pick(i.text, lang)}` }));
     for (const e of riskEvents ?? []) if (e.severity > 0) out.push({ value: diffDays(e.start, start), severity: e.severity >= 2 ? 'alert' : 'watch', label: `${fmtDate(e.start, lang)}: ${pick(e.title, lang)}` });
-    // The slider keys markers by day and severity: merge markers that share both into one, joining their labels.
-    const byKey = new Map<string, SliderMarker>();
-    for (const m of out) {
+    // One marker per month (the strip is short beside the panels): the strongest stays, the others join its label, so the track
+    // reads cleanly and nothing is lost on hover.
+    const rank = (sev: SliderMarker['severity']) => (sev === 'alert' ? 2 : sev === 'watch' ? 1 : 0);
+    const byBin = new Map<number, SliderMarker>();
+    for (const m of out.sort((a, b) => rank(b.severity) - rank(a.severity) || a.value - b.value)) {
       if (m.value < 0 || m.value > max) continue;
-      const k = `${m.value}-${m.severity}`;
-      const prev = byKey.get(k);
-      byKey.set(k, prev ? { ...prev, label: `${prev.label}\n${m.label}` } : m);
+      const bin = Math.floor(m.value / 30);
+      const prev = byBin.get(bin);
+      byBin.set(bin, prev ? { ...prev, label: `${prev.label}
+${m.label}` } : m);
     }
-    return [...byKey.values()];
+    return [...byBin.values()];
   }, [insights, riskEvents, start, max, lang]);
 
   const ranges = useMemo<SliderRange[]>(() => {

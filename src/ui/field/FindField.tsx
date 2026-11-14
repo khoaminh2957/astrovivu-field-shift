@@ -11,10 +11,11 @@ import { SAMPLE_PARCELS, reverseGeocode, searchPlace } from '@/data';
 import { draftToParcel, flyToPlace, isLockable, squareDraft } from '@/globe';
 import { useLang, useT } from '@/i18n';
 import { useMission } from '@/state/mission';
-import { Button, Field, IconButton, Input, cn } from '@/ui/design';
+import { Button, Field, IconButton, Input, Segmented, cn } from '@/ui/design';
 import { cropName, fmtNum } from '@/ui/hud/format';
 import { getCrop } from '@/core/crops';
 import { ShapeThumb } from './FieldCanvas';
+import { SelectOnMapStatus, useSelectOnMap } from './SelectOnMap';
 import { useMissionUi } from '@/ui/chrome/uiState';
 import './strings';
 
@@ -140,6 +141,8 @@ export function FindField() {
   const seq = useRef(0);
   const id = useId();
   const areaId = useId();
+  const [way, setWay] = useState<'address' | 'map'>('address');
+  const sel = useSelectOnMap(way === 'map');
   const placed = !!draft?.closed && !!chosen;
 
   useEffect(() => {
@@ -220,9 +223,30 @@ export function FindField() {
           {t('field.add.back')}
         </button>
         <h2 className="text-lg font-semibold text-ink-1">{t('field.add.step')}</h2>
-        <p className="text-sm text-ink-3">{t('field.add.lede')}</p>
+        {way === 'address' && <p className="text-sm text-ink-3">{t('field.add.lede')}</p>}
       </header>
 
+      <Segmented<'address' | 'map'>
+        ariaLabel={t('field.select.way')}
+        block
+        value={way}
+        onValueChange={(v) => {
+          cancelDraw();
+          setChosen(null);
+          setWay(v);
+        }}
+        options={[
+          { value: 'address', label: t('field.select.address') },
+          { value: 'map', label: t('field.select.map') },
+        ]}
+      />
+      {way === 'map' ? (
+        <>
+          <SelectOnMapStatus state={sel.state} />
+          {sel.state.kind === 'found' && draft?.closed && <LockForm place={sel.place} defaultName={sel.place?.label.split(',')[0]} />}
+        </>
+      ) : (
+      <>
       <form
         className="flex flex-col gap-4"
         onSubmit={(e) => {
@@ -282,6 +306,8 @@ export function FindField() {
       </form>
 
       {placed && <LockForm place={chosen ? { label: chosen.label, country: chosen.country, admin1: chosen.admin1 } : undefined} defaultName={chosen?.label.split(',')[0]} />}
+      </>
+      )}
 
     </div>
   );

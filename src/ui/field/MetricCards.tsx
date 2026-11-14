@@ -74,6 +74,7 @@ const MetricCard = memo(function MetricCard({ id }: { id: BranchId }) {
   const branch = telemetry?.branches[id];
   const title = pick(branch?.title ?? BRANCH_TITLES[id], lang);
   const loading = status === 'loading' || status === 'idle' || (!branch && status !== 'error');
+  const unavailable = !loading && (status === 'error' || branch?.status === 'unavailable');
   const r = !loading && branch && telemetry && parcel ? readBranch({ telemetry, branch, cursor, parcel, insights, groundTruth, lang, t }) : null;
 
   return (
@@ -91,10 +92,12 @@ const MetricCard = memo(function MetricCard({ id }: { id: BranchId }) {
         <span className="t-caption truncate">{frameDate ? t('field.data.date', { d: fmtDate(frameDate, lang) }) : fmtDate(cursor, lang)}</span>
       </span>
       <span className="relative block aspect-square overflow-hidden rounded-sm bg-ink-1">
-        {pic === 'loading' || loading ? <span className="skeleton absolute inset-4 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={id} pad={14} />}
+        {unavailable ? null : pic === 'loading' || loading ? <span className="skeleton absolute inset-4 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={id} pad={14} />}
       </span>
-      {ramp ? <span aria-hidden className="h-1.5 rounded-full" style={{ background: rampGradient(ramp) }} /> : <span className="t-caption truncate">{caption}</span>}
-      {loading ? (
+      {unavailable ? null : ramp ? <span aria-hidden className="h-1.5 rounded-full" style={{ background: rampGradient(ramp) }} /> : <span className="t-caption truncate">{caption}</span>}
+      {unavailable ? (
+        <span className="t-caption">{t('field.unavailable')}</span>
+      ) : loading ? (
         <span className="skeleton h-6 w-20" />
       ) : (
         <span className="flex min-w-0 items-baseline gap-1">

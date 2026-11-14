@@ -20,6 +20,7 @@ import { closeRing } from '@/lib/geo';
 import { primarySeries, sampleAt } from '@/lib/series';
 import { useMission, type MissionState } from '@/state/mission';
 import { Beacons } from './beacons';
+import { emitMapClick } from './mapClick';
 import {
   angularDistance,
   cssPx,
@@ -343,6 +344,8 @@ export class GlobeEngine {
         });
       },
     });
+    // Plain clicks go to the UI (field selection, select on the map).
+    map.on('click', (ev) => emitMapClick([ev.lngLat.lng, ev.lngLat.lat]));
     this.beacons = new Beacons(map, SAMPLE_PARCELS, (id) => void useMission.getState().lockSample(id), mission.lang);
     this.overlay = new OverlayController(map, {
       beforeLayer: () => LAYER.dim,

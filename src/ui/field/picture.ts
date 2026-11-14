@@ -68,23 +68,31 @@ export interface Projector {
   toPx(p: LngLat): [number, number];
 }
 
-/** Fits the parcel into a w x h box, north up, with longitudes shrunk by cos(latitude). */
+/** Web Mercator, unscaled (the map and the satellite tile use it too, so outlines line up). */
+const mercX = (lng: number) => (lng + 180) / 360;
+const mercY = (lat: number) => {
+  const s = Math.sin((Math.max(-85, Math.min(85, lat)) * Math.PI) / 180);
+  return 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
+};
+
+/** Fits the parcel into a w x h box, north up, in Web Mercator. */
 export function fitProjector(parcel: Pick<Parcel, 'polygon'>, w: number, h: number, pad: number): Projector {
   const ring = ringsOf(parcel)[0] ?? [];
-  let w0 = Infinity, e0 = -Infinity, s0 = Infinity, n0 = -Infinity;
-  for (const [x, y] of ring) {
-    w0 = Math.min(w0, x);
-    e0 = Math.max(e0, x);
-    s0 = Math.min(s0, y);
-    n0 = Math.max(n0, y);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const [lng, lat] of ring) {
+    const x = mercX(lng);
+    const y = mercY(lat);
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y);
+    y1 = Math.max(y1, y);
   }
-  const kx = Math.cos((((s0 + n0) / 2) * Math.PI) / 180);
-  const dx = Math.max(1e-9, (e0 - w0) * kx);
-  const dy = Math.max(1e-9, n0 - s0);
+  const dx = Math.max(1e-12, x1 - x0);
+  const dy = Math.max(1e-12, y1 - y0);
   const k = Math.min((w - 2 * pad) / dx, (h - 2 * pad) / dy);
   const ox = (w - dx * k) / 2;
   const oy = (h - dy * k) / 2;
-  return { toPx: ([x, y]) => [ox + (x - w0) * kx * k, oy + (n0 - y) * k] };
+  return { toPx: ([lng, lat]) => [ox + (mercX(lng) - x0) * k, oy + (mercY(lat) - y0) * k] };
 }
 
 /** SVG path of the parcel in a w x h box, for thumbnails. */
