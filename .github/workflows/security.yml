@@ -1,0 +1,86 @@
+name: Security
+
+# Supply chain and secrets: whether the dependencies carry a known vulnerability, and whether a
+# key slipped into a commit. Both jobs run on every pull request, on main and once a week.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '41 3 * * 1' # Mondays 03:41 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dependencies:
+    name: Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Choose the check
+        id: mode
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # A pull request is judged on what it adds (GitHub's dependency review), so that an old
+          # problem does not turn an unrelated pull request red. The review reads the repository's
+          # dependency graph, which an admin switches on under Settings > Code security. Without
+          # the graph, and on main and on the weekly run, the whole dependency tree is audited.
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] && gh api "repos/$GITHUB_REPOSITORY/dependency-graph/compare/$BASE_SHA...$HEAD_SHA" > /dev/null 2>&1; then
+            echo "mode=review" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=audit" >> "$GITHUB_OUTPUT"
+            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+              echo "::warning title=Dependency graph is off::This pull request was checked with npm audit on the whole dependency tree. With the dependency graph on (Settings > Code security, admin) it is judged on the dependencies it adds."
+            fi
+          fi
+      - name: Review the dependencies this pull request adds
+        if: ${{ steps.mode.outputs.mode == 'review' }}
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+      - uses: ./.github/actions/setup
+        if: ${{ steps.mode.outputs.mode == 'audit' }}
+      - name: Packages are the ones their publishers signed
+        if: ${{ steps.mode.outputs.mode == 'audit' }}
+        run: npm audit signatures
+      - name: Known vulnerabilities in what ships to users
+        if: ${{ steps.mode.outputs.mode == 'audit' }}
+        run: npm audit --omit=dev --audit-level=high
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the scan reads commits, not only the files of the last one
+          persist-credentials: false
+      - name: gitleaks
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          # A pull request and a push scan their own commits; the weekly run scans the whole history.
+          case "$GITHUB_EVENT_NAME" in
+            pull_request) range="$BASE_SHA..$HEAD_SHA" ;;
+            push) range="$BEFORE_SHA..$GITHUB_SHA" ;;
+            *) range="" ;;
+          esac
+          args=(git /repo --redact --no-banner)
+          if [ -n "$range" ]; then args+=("--log-opts=$range"); fi
+          docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f "${args[@]}" # v8.30.1

@@ -1,0 +1,39 @@
+# Weekly pull requests that update dependencies. They go through the same checks and review as any
+# other change. Minor and patch updates arrive together in one pull request; a major version gets
+# its own, because it may need code changes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    # A version must be a week old before it is proposed: most poisoned releases are pulled sooner.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore(deps)
+    labels: [dependencies]
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  # Actions are pinned to a commit; this keeps the pins (and the version comment beside them) current.
+  - package-ecosystem: github-actions
+    directories: ['/', '/.github/actions/*']
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Ho_Chi_Minh
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci(deps)
+    labels: [dependencies, ci]
+    groups:
+      actions:
+        patterns: ['*']

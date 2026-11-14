@@ -1,9 +1,12 @@
 name: CI
 
+# What every change passes before it can be merged. docs/CI_CD.md describes the whole pipeline.
+
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # A newer push to the same branch replaces the run in progress.
 concurrency:
@@ -13,18 +16,137 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  DO_NOT_TRACK: 1
+
 jobs:
+  changes:
+    name: Changed areas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      database: ${{ steps.areas.outputs.database }}
+      workflows: ${{ steps.areas.outputs.workflows }}
+    steps:
+      - name: Find what this change touches
+        id: areas
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # A pull request runs the slower jobs only for the areas it touches.
+          # A push to main and a manual run check everything.
+          if [ -n "$PR_NUMBER" ]; then
+            files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[].filename')
+          else
+            files=""
+          fi
+          touched() {
+            if [ -z "$PR_NUMBER" ] || grep -Eq "$1" <<<"$files"; then echo true; else echo false; fi
+          }
+          {
+            echo "database=$(touched '^(supabase/|scripts/market/|data/market/)')"
+            echo "workflows=$(touched '^\.github/')"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  # The name of this job is the status check that branch protection on main requires.
+  # Renaming it blocks every pull request until the rule is changed too.
   check:
     name: Typecheck, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --no-audit --no-fund
-      - run: npx tsc --noEmit
-      - run: npx vitest run
-      - run: npx vite build
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Test
+        run: npx vitest run --reporter=default --reporter=junit --outputFile.junit=reports/junit.xml
+      - name: Build
+        run: npx vite build
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: npx tsx scripts/ci/summary.ts
+      - name: Keep the test report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-report
+          path: reports/junit.xml
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Keep the build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+
+  smoke:
+    name: Preview smoke test
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Fetch the build of this run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Serve the build and load it
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 --strictPort &
+          npx tsx scripts/ci/smoke.ts http://127.0.0.1:4173 --wait=30
+
+  database:
+    name: Database migrations and tests
+    needs: changes
+    if: needs.changes.outputs.database == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # A push to main runs this job whatever changed: without a supabase/ folder there is nothing to test.
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        if: ${{ hashFiles('supabase/config.toml') != '' }}
+        with:
+          version: 3.1.0
+      - name: Start Postgres, apply every migration and the seed
+        if: ${{ hashFiles('supabase/config.toml') != '' }}
+        run: supabase db start
+      - name: Lint the SQL functions
+        if: ${{ hashFiles('supabase/config.toml') != '' }}
+        run: supabase db lint --level warning --fail-on error
+      - name: Run the pgTAP tests
+        if: ${{ hashFiles('supabase/config.toml') != '' }}
+        run: supabase test db
+      - name: Stop
+        if: ${{ always() && hashFiles('supabase/config.toml') != '' }}
+        run: supabase stop --no-backup
+
+  workflows:
+    name: Lint workflows
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint (syntax, expressions, shell)
+        run: docker run --rm -v "$PWD:/repo:ro" -w /repo rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color # 1.7.12
+      - name: zizmor (security of the workflows)
+        run: docker run --rm -v "$PWD:/repo:ro" -w /repo ghcr.io/zizmorcore/zizmor@sha256:3014cc8f68f663935f69b3c3e0e41f5ce102b268d97db13db0f62208747f860d --offline --min-severity medium .github # 1.32.0

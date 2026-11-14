@@ -2,7 +2,7 @@
  * FAOSTAT bulk downloads (https://bulks-faostat.fao.org/production/, public, no key). A bulk file
  * is a ZIP holding one large CSV in "normalized" form: one value per line.
  */
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { getBytes } from '@/data/http';
@@ -25,10 +25,14 @@ const WEEK_MS = 7 * 86_400_000;
 export async function faostatZip(ds: FaostatDataset, opts: { refresh?: boolean } = {}): Promise<Buffer> {
   const file = path.join(CACHE, ds.file);
   if (!opts.refresh) {
-    try {
-      if (Date.now() - (await stat(file)).mtimeMs < WEEK_MS) return await readFile(file);
-    } catch {
-      // not cached yet
+    // One handle for the age check and the read: the file cannot be replaced between the two.
+    const cached = await open(file, 'r').catch(() => null); // null: not cached yet
+    if (cached) {
+      try {
+        if (Date.now() - (await cached.stat()).mtimeMs < WEEK_MS) return await cached.readFile();
+      } finally {
+        await cached.close();
+      }
     }
   }
   const url = `${FAOSTAT_BULK}/${encodeURIComponent(ds.file).replaceAll('(', '%28').replaceAll(')', '%29')}`;

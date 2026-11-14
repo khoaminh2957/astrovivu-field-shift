@@ -32,6 +32,8 @@ Edit only the paths you own. If you need something outside them, describe the ch
 | 4b Advisory, tracking, urban, assistant UI | `src/ui/advisory/**`, `src/ui/tracking/**`, `src/ui/urban/**`, `src/ui/ask/**` |
 | 5 Docs & QA | `README.md`, `docs/DEMO_SCRIPT.md`, `docs/JUDGING.md` |
 | 6 Crop-knowledge RAG | `src/rag/**`, `server/**`, `scripts/rag/**`, `public/rag/**`, `data/rag/**`, `docs/RAG.md` |
+| 7 Market data & database | `supabase/**`, `scripts/market/**`, `data/market/**`, `docs/DATABASE.md` |
+| 8 CI/CD | `.github/**`, `scripts/ci/**`, `docs/CI_CD.md` |
 
 Contracts (`src/contracts/**`) may be extended additively (new optional fields, new exported types) when your area needs it. Never rename or remove. List every contract change in your final report.
 
