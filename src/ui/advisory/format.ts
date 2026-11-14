@@ -24,7 +24,8 @@ const locale = (lang: Lang) => (lang === 'vi' ? 'vi-VN' : 'en-GB');
 
 export function fmtNum(n: number | null | undefined, lang: Lang, digits = 0): string {
   if (n == null || !Number.isFinite(n)) return '--';
-  return new Intl.NumberFormat(locale(lang), { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
+  // A true minus sign, as in the signed deltas beside it.
+  return new Intl.NumberFormat(locale(lang), { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n).replace('-', '−');
 }
 
 /** Signed number with a true minus sign, for deltas against the current rotation. */
@@ -70,4 +71,10 @@ export const moneyText = (usd: number | null | undefined, cur: CurrencyCode, lan
   return `${m.value} ${m.unit}`;
 };
 
-export const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+/** `Sesbania (cover crop)` to `Sesbania`: the name alone, for a block too small to carry the role. */
+export const cropNameOnly = (label: string): string => label.replace(/\s*\([^)]*\)\s*$/, '') || label;
+
+/** `Nov-Feb`, or one month name when the season is a single month. */
+export const monthSpan = (start: number, end: number, lang: Lang): string => (start === end ? monthShort(start, lang) : `${monthShort(start, lang)}-${monthShort(end, lang)}`);
+
+export const clamp =(v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));

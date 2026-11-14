@@ -54,6 +54,20 @@ export const BRANCH_VAR: Record<BranchId, string> = {
   risk: 'var(--color-branch-risk)',
 };
 
+/**
+ * Crop groups on the rotation calendar, in their fixed categorical order (mirror of `--color-crop-*`).
+ * A tint under ink text, with the crop name always written in the block; never a text colour.
+ */
+export const CROP_GROUP_HEX = {
+  cover: '#2a78d6',
+  root: '#eb6834',
+  forage: '#1baf7a',
+  cereal: '#eda100',
+  oilseed: '#e87ba4',
+  legume: '#008300',
+  tree: '#6250d6',
+} as const;
+
 /** What a reading or a field can be flagged as. `nominal` is drawn quietly on purpose. */
 export const STATUSES = ['nominal', 'watch', 'alert', 'stale', 'simulated', 'ground-truth'] as const;
 export type Status = (typeof STATUSES)[number];

@@ -75,7 +75,25 @@ const base: Omit<RotationStrategy, 'score'>[] = [
     years: 3,
     seasons: [
       coffee(),
-      { cropId: 'vigna-radiata', label: tx('Mung bean', 'Đậu xanh'), startMonth: 5, endMonth: 7, year: 0 },
+      // One season with every detail field, so the calendar popover can be reviewed; the others carry none.
+      {
+        cropId: 'vigna-radiata',
+        label: tx('Mung bean', 'Đậu xanh'),
+        startMonth: 5,
+        endMonth: 7,
+        year: 0,
+        detail: {
+          role: 'legume',
+          suitability: 82,
+          metInYears: { met: 17, of: 20 },
+          waterNeedMm: 310,
+          rainMm: 574,
+          yieldTHa: 1.1,
+          marginUsdPerHa: 410,
+          nitrogenKgHa: 25,
+          reason: tx('Sown in May once the rains are established; harvested before the heaviest rain of August.', 'Gieo tháng 5 khi mưa đã ổn định; thu trước đợt mưa lớn nhất của tháng 8.'),
+        },
+      },
       { cropId: 'fallow', label: tx('Mulch', 'Phủ rơm'), startMonth: 11, endMonth: 3, year: 0 },
       { cropId: 'glycine-max', label: tx('Soybean', 'Đậu nành'), startMonth: 5, endMonth: 8, year: 1 },
       { cropId: 'fallow', label: tx('Mulch', 'Phủ rơm'), startMonth: 11, endMonth: 3, year: 1 },

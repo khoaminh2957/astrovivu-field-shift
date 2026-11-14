@@ -66,6 +66,19 @@
   --color-branch-soil: #a8642b;
   --color-branch-risk: #c2477f;
 
+  /*
+   * Crop groups on the rotation calendar. Categorical: this order is fixed (neighbours stay apart
+   * for colour-blind readers) and the crop name is always written in the block. Used as a tint
+   * under ink text, never as text.
+   */
+  --color-crop-cover: #2a78d6;
+  --color-crop-root: #eb6834;
+  --color-crop-forage: #1baf7a;
+  --color-crop-cereal: #eda100;
+  --color-crop-oilseed: #e87ba4;
+  --color-crop-legume: #008300;
+  --color-crop-tree: #6250d6;
+
   --color-black: #000;
   --color-white: #fff;
 

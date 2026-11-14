@@ -2,11 +2,12 @@
 import type { AnnualPlan, Lang } from '@/contracts';
 import { pick } from '@/contracts';
 import { useLang, useT } from '@/i18n';
-import { Stat, cn } from '@/ui/design';
+import { Stat, StatusGlyph, cn } from '@/ui/design';
 import { type CurrencyCode, fmtNum, monthLong, monthShort, money } from './format';
+import { MonthHeader, MonthRow } from './MonthGrid';
 import { TextList } from './shared';
 
-export function AnnualPlanView({ plan, currency }: { plan: AnnualPlan; currency: CurrencyCode }) {
+export function AnnualPlanView({ plan, currency, usesReference }: { plan: AnnualPlan; currency: CurrencyCode; usesReference?: boolean }) {
   const t = useT();
   const lang = useLang();
   const m = (v: number | null | undefined, compact = true) => money(v, currency, lang, { compact });
@@ -23,10 +24,16 @@ export function AnnualPlanView({ plan, currency }: { plan: AnnualPlan; currency:
           label={t('advisory.plan.lowestCash')}
           value={m(lowCash).value}
           unit={m(lowCash).unit}
-          hint={lowCash < 0 ? t('advisory.plan.needsCredit') : t('advisory.plan.noCredit')}
           tone={lowCash < 0 ? 'watch' : undefined}
         />
       </div>
+
+      {/* Its own line: under the figure it was cut short on a narrow screen. */}
+      <p className={cn('flex items-center gap-1.5 text-sm', lowCash < 0 ? 'text-watch' : 'text-ink-2')}>
+        {lowCash < 0 && <StatusGlyph status="watch" />}
+        {lowCash < 0 ? t('advisory.plan.needsCredit') : t('advisory.plan.noCredit')}
+      </p>
+      {usesReference && <p className="t-caption">{t('advisory.refNote')}</p>}
 
       <CashChart months={months} lang={lang} currency={currency} />
 
@@ -83,8 +90,9 @@ function CashChart({ months, lang, currency }: { months: AnnualPlan['months']; l
   const t = useT();
   const W = 600;
   const H = 150;
-  const padL = 4;
-  const padR = 4;
+  // No side padding: slot k of the plot is column k of the month grid.
+  const padL = 0;
+  const padR = 0;
   const top = 10;
   const bottom = 18;
   const maxBar = Math.max(1, ...months.map((x) => Math.max(x.revenueUsd, x.costUsd)));
@@ -94,7 +102,8 @@ function CashChart({ months, lang, currency }: { months: AnnualPlan['months']; l
   const half = (H - top - bottom) / 2;
   const y = (v: number) => mid - (v / scale) * half;
   const slot = (W - padL - padR) / 12;
-  const bw = Math.min(18, slot * 0.34);
+  // The plot stretches with the page: a fifth of a slot keeps the bars thin on a wide screen too.
+  const bw = slot * 0.2;
   const cx = (mo: number) => padL + slot * (mo - 0.5);
   const line = months.map((x, i) => `${i ? 'L' : 'M'}${cx(x.month).toFixed(1)},${y(x.cashUsd).toFixed(1)}`).join('');
   const peak = months.reduce((a, b) => (b.revenueUsd > a.revenueUsd ? b : a), months[0]);
@@ -105,31 +114,27 @@ function CashChart({ months, lang, currency }: { months: AnnualPlan['months']; l
 
   return (
     <figure className="m-0 flex flex-col gap-1.5">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={summary}>
-        <line x1={0} x2={W} y1={mid} y2={mid} stroke="var(--color-line-2)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-        {months.map((x) => (
-          <g key={x.month}>
-            {x.revenueUsd > 0 && <rect x={cx(x.month) - bw - 1} y={y(x.revenueUsd)} width={bw} height={mid - y(x.revenueUsd)} fill="var(--color-ink-2)" />}
-            {x.costUsd > 0 && <rect x={cx(x.month) + 1} y={mid} width={bw} height={y(-x.costUsd) - mid} fill="var(--color-ink-4)" />}
-          </g>
-        ))}
-        <path d={line} fill="none" stroke="var(--color-signal)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-        {months.map((x) => (
-          <circle key={x.month} cx={cx(x.month)} cy={y(x.cashUsd)} r={2.25} fill={x.cashUsd < 0 ? 'var(--color-watch)' : 'var(--color-signal)'} />
-        ))}
-      </svg>
-      <div aria-hidden className="grid grid-cols-12">
-        {months.map((x) => (
-          <span key={x.month} className="t-meta text-center">
-            {monthShort(x.month, lang)}
-          </span>
-        ))}
-      </div>
-      <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <Legend swatch="bg-ink-2" label={t('advisory.plan.revenue')} />
-        <Legend swatch="bg-ink-4" label={t('advisory.plan.cost')} />
-        <Legend swatch="bg-signal h-0.5" label={t('advisory.plan.cash')} />
-      </figcaption>
+      {/* Same gutter and twelve columns as the season calendar, so the months line up down the page. */}
+      <MonthRow label={t('advisory.plan.cashFlow')} sub={money(0, currency, lang, { compact: true }).unit}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-36 w-full" role="img" aria-label={summary}>
+          <line x1={0} x2={W} y1={mid} y2={mid} stroke="var(--color-line-2)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          {months.map((x) => (
+            <g key={x.month}>
+              {x.revenueUsd > 0 && <rect x={cx(x.month) - bw - 1} y={y(x.revenueUsd)} width={bw} height={mid - y(x.revenueUsd)} fill="var(--color-ink-2)" />}
+              {x.costUsd > 0 && <rect x={cx(x.month) + 1} y={mid} width={bw} height={y(-x.costUsd) - mid} fill="var(--color-ink-4)" />}
+            </g>
+          ))}
+          <path d={line} fill="none" stroke="var(--color-signal)" strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </MonthRow>
+      <MonthHeader />
+      <MonthRow>
+        <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Legend swatch="bg-ink-2" label={t('advisory.plan.revenue')} />
+          <Legend swatch="bg-ink-4" label={t('advisory.plan.cost')} />
+          <Legend swatch="bg-signal h-0.5" label={t('advisory.plan.cash')} />
+        </figcaption>
+      </MonthRow>
     </figure>
   );
 }

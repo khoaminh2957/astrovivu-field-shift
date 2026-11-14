@@ -1,10 +1,11 @@
 /**
- * State 5: the advisory view. Rotation strategies compared side by side (the current one always
- * present), the annual plan of the chosen strategy, and the action advisories. Everything here is
- * read from the mission store; the engine lives in src/core/advisory.
+ * The crop-rotation screen. Top to bottom: the strategies as cards (the current practice first),
+ * the season calendar of the chosen one over the field's own climate, its trade-offs against the
+ * current practice, the five lists that explain it, then the year plan and the action advisories.
+ * Everything is read from the mission store; the engine lives in src/core/advisory.
  */
-import { useState } from 'react';
-import { ClipboardList, Compass, MapPinned } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ClipboardList, Compass, Info, MapPinned } from 'lucide-react';
 import type { AdvisoryReport, FarmerPriority } from '@/contracts';
 import { pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
@@ -13,10 +14,15 @@ import { useMission } from '@/state/mission';
 import { Button, EmptyState, Panel, Skeleton, SkeletonText, StatusGlyph, cn } from '@/ui/design';
 import { AdvisoryCard, AdvisoryBody, AdvisoryPlate, IrrigationView, PhView, SowingView } from './ActionPlans';
 import { AnnualPlanView } from './AnnualPlanView';
+import { climateOf } from './climate';
 import { useFixture } from './fixture';
 import { type CurrencyCode, fmtDate } from './format';
-import { RotationCompare, orderStrategies } from './RotationCompare';
+import { bestStrategyId, defaultSelection, orderStrategies } from './metrics';
+import { SeasonCalendar } from './SeasonCalendar';
 import { CurrencySwitch, FixtureTag, SectionHead, SupportLine } from './shared';
+import { StrategyCards } from './StrategyCards';
+import { StrategyStory } from './StrategyStory';
+import { TradeOffs } from './TradeOffs';
 import './strings';
 
 const PRIORITIES: FarmerPriority[] = ['profit', 'yield', 'water', 'soil', 'risk', 'cost'];
@@ -46,20 +52,23 @@ export function AdvisoryPanel() {
   };
 
   return (
-    <main aria-labelledby="adv-title" className="absolute inset-0 overflow-y-auto bg-surface-0">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-6 pt-5 pb-28 compact:gap-6 compact:px-4 compact:pt-4">
+    <main aria-labelledby="adv-title" className="absolute inset-0 overflow-x-hidden overflow-y-auto bg-surface-0">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-6 pt-5 pb-28 compact:gap-6 compact:px-4 compact:pt-4 narrow:px-3">
         <header className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h1 id="adv-title" className="text-xl leading-7 font-semibold text-ink-1">
-              {t('advisory.title')}
-            </h1>
-            {parcel && <span className="text-base text-ink-2">{parcel.name}</span>}
-            {crop && <span className="text-base text-ink-3">· {lang === 'vi' && crop.names.vi ? crop.names.vi : crop.names.en}</span>}
-            {report && <span className="t-meta">{t('advisory.generated', { date: fmtDate(report.generatedAt, lang) })}</span>}
-            {fixture && <FixtureTag />}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h1 id="adv-title" className="text-xl leading-7 font-semibold text-ink-1">
+                {t('advisory.title')}
+              </h1>
+              {parcel && <span className="text-base text-ink-2">{parcel.name}</span>}
+              {crop && <span className="text-base text-ink-3">· {lang === 'vi' && crop.names.vi ? crop.names.vi : crop.names.en}</span>}
+              {report && <span className="t-meta">{t('advisory.generated', { date: fmtDate(report.generatedAt, lang) })}</span>}
+              {fixture && <FixtureTag />}
+            </div>
+            <CurrencySwitch value={currency} onChange={setCurrency} />
           </div>
-          <SupportLine />
           <PriorityPicker value={priorities} onToggle={togglePriority} />
+          <SupportLine />
         </header>
 
         {!parcel ? (
@@ -76,7 +85,7 @@ export function AdvisoryPanel() {
         ) : loading ? (
           <LoadingLayout />
         ) : (
-          <Body report={report} currency={currency} setCurrency={setCurrency} priorities={priorities} today={today} sowingMonth={groundTruth.sowingDate ? Number(groundTruth.sowingDate.slice(5, 7)) : null} />
+          <Body key={parcel.id} report={report} currency={currency} priorities={priorities} today={today} sowingMonth={groundTruth.sowingDate ? Number(groundTruth.sowingDate.slice(5, 7)) : null} />
         )}
 
         <footer className="border-t border-line-1 pt-4">
@@ -126,16 +135,18 @@ function PriorityPicker({ value, onToggle }: { value: FarmerPriority[]; onToggle
 function LoadingLayout() {
   return (
     <div className="flex flex-col gap-6" aria-busy>
-      <div className="grid grid-cols-4 gap-px rounded-sm border border-line-1 bg-line-1">
+      <div className="flex gap-3 overflow-hidden">
         {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="flex flex-col gap-3 bg-surface-1 p-3">
+          <div key={i} className="flex w-60 shrink-0 flex-col gap-3 rounded-sm border border-line-1 p-3">
             <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-16" />
-            <SkeletonText lines={6} />
+            <Skeleton className="h-2 w-full" />
+            <Skeleton className="h-8 w-16" />
+            <SkeletonText lines={3} />
           </div>
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Skeleton className="h-56" />
+      <div className="grid gap-4 xl:grid-cols-2">
         <Skeleton className="h-64" />
         <Skeleton className="h-64" />
       </div>
@@ -146,17 +157,20 @@ function LoadingLayout() {
 interface BodyProps {
   report: AdvisoryReport | null;
   currency: CurrencyCode;
-  setCurrency: (c: CurrencyCode) => void;
   priorities: FarmerPriority[];
   today: string;
   sowingMonth: number | null;
 }
 
-function Body({ report, currency, setCurrency, priorities, today, sowingMonth }: BodyProps) {
+function Body({ report, currency, priorities, today, sowingMonth }: BodyProps) {
   const t = useT();
   const lang = useLang();
   const setPhase = useMission((s) => s.setPhase);
-  const rotations = report?.rotations ?? [];
+  const telemetry = useMission((s) => s.telemetry);
+  const climate = useMemo(() => climateOf(telemetry), [telemetry]);
+  // Only what the farmer picked is remembered; until then the page follows the ranking.
+  const [picked, setPicked] = useState<string | null>(null);
+  const rotations = useMemo(() => orderStrategies(report?.rotations ?? []), [report]);
   const advisories = report?.advisories ?? [];
   const nothing = !report || (!rotations.length && !advisories.length && !report.irrigation && !report.ph && !report.sowing?.length && !report.annualPlan);
 
@@ -171,93 +185,130 @@ function Body({ report, currency, setCurrency, priorities, today, sowingMonth }:
     );
   }
 
+  const current = rotations.find((r) => r.kind === 'current') ?? null;
+  const selected = rotations.find((r) => r.id === picked) ?? rotations.find((r) => r.id === defaultSelection(rotations)) ?? null;
   const planStrategy = report.annualPlan ? rotations.find((r) => r.id === report.annualPlan!.strategyId) : undefined;
+  const usesReference = rotations.some((r) => r.economics?.seasons?.some((s) => s.usesReferenceValues));
   const byKind = (k: string) => [...advisories].filter((a) => a.kind === k).sort((a, b) => a.priority - b.priority)[0];
   const irrAdv = byKind('irrigation');
   const phAdv = byKind('ph');
   const sowAdv = byKind('sowing');
   const shown = new Set([irrAdv?.id, phAdv?.id, sowAdv?.id]);
   const others = advisories.filter((a) => !shown.has(a.id)).sort((a, b) => a.priority - b.priority);
-  const hasCurrent = rotations.some((r) => r.kind === 'current');
-  const reviewCount = advisories.filter((a) => a.needsLocalReview).length + rotations.filter((r) => r.gaps.length || r.risks.length).length;
+  const reviewCount = selected ? selected.gaps.length + selected.risks.length : 0;
+  const selectedName = selected ? pick(selected.name, lang) : '';
 
   return (
     <>
       <section aria-labelledby="adv-rot">
-        <SectionHead
-          id="adv-rot"
-          title={t('advisory.compareTitle')}
-          sub={t('advisory.compareSub', { n: rotations.length })}
-          actions={
-            <>
-              {reviewCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-sm text-watch">
-                  <StatusGlyph status="watch" />
-                  {t('advisory.reviewCount', { n: reviewCount })}
-                </span>
-              )}
-              <CurrencySwitch value={currency} onChange={setCurrency} />
-            </>
-          }
-        />
-        {rotations.length ? (
-          <>
-            {!hasCurrent && <p className="mb-2 text-sm text-watch">{t('advisory.noCurrent')}</p>}
-            <RotationCompare rotations={orderStrategies(rotations)} priorities={priorities} currency={currency} planStrategyId={report.annualPlan?.strategyId} />
-          </>
+        <SectionHead id="adv-rot" title={t('advisory.compareTitle')} sub={t('advisory.compareSub', { n: rotations.length })} />
+        {selected ? (
+          <div className="flex flex-col gap-2">
+            {!current && <p className="text-sm text-watch">{t('advisory.noCurrent')}</p>}
+            <StrategyCards
+              rotations={rotations}
+              current={current}
+              bestId={bestStrategyId(rotations)}
+              selectedId={selected.id}
+              onSelect={setPicked}
+              priorities={priorities}
+              currency={currency}
+              planStrategyId={report.annualPlan?.strategyId}
+            />
+            {usesReference && (
+              <p className="t-caption flex max-w-[96ch] items-start gap-1.5">
+                <Info size={14} strokeWidth={1.5} aria-hidden className="mt-px shrink-0" />
+                {t('advisory.refNote')}
+              </p>
+            )}
+          </div>
         ) : (
           <EmptyState layout="block" icon={<Compass />} title={t('advisory.empty.noRotations')} body={t('advisory.empty.noRotationsBody')} />
         )}
       </section>
 
-      <div className="grid items-start gap-6 compact:gap-4 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <section aria-labelledby="adv-plan">
-          <Panel
-            title={
-              <span id="adv-plan">
-                {t('advisory.plan.title')}
-                {planStrategy && <span className="font-normal text-ink-2"> · {pick(planStrategy.name, lang)}</span>}
-              </span>
-            }
-            actions={<CurrencySwitch value={currency} onChange={setCurrency} />}
-          >
+      {selected && (
+        <>
+          <section aria-labelledby="adv-cal">
+            <SectionHead id="adv-cal" title={t('advisory.cal.title')} sub={selected.id === current?.id || !current ? t('advisory.cal.subAlone', { name: selectedName }) : t('advisory.cal.sub', { name: selectedName })} />
+            <Panel pad="none">
+              <div className="p-4 narrow:p-2.5">
+                <SeasonCalendar current={current} selected={selected} climate={climate} currency={currency} />
+              </div>
+            </Panel>
+          </section>
+
+          {/* An explicit shrinkable column: the comparison table scrolls inside its panel, never the page. */}
+          <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 compact:gap-4 xl:grid-cols-2">
+            <section aria-labelledby="adv-trade">
+              <SectionHead id="adv-trade" title={t('advisory.trade.title')} sub={t('advisory.trade.sub')} />
+              <Panel>
+                <TradeOffs rotations={rotations} current={current} selected={selected} priorities={priorities} currency={currency} usesReference={usesReference} />
+              </Panel>
+            </section>
+
+            <section aria-labelledby="adv-story">
+              <SectionHead
+                id="adv-story"
+                title={t('advisory.story.title', { name: selectedName })}
+                sub={t('advisory.story.sub')}
+                actions={
+                  reviewCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-sm text-watch">
+                      <StatusGlyph status="watch" />
+                      {t('advisory.reviewCount', { n: reviewCount })}
+                    </span>
+                  )
+                }
+              />
+              <Panel>
+                <StrategyStory strategy={selected} />
+              </Panel>
+            </section>
+          </div>
+        </>
+      )}
+
+      <section aria-labelledby="adv-plan">
+        <SectionHead
+          id="adv-plan"
+          title={planStrategy ? t('advisory.plan.titleFor', { name: pick(planStrategy.name, lang) }) : t('advisory.plan.title')}
+          sub={planStrategy && selected && planStrategy.id !== selected.id ? t('advisory.plan.otherStrategy', { plan: pick(planStrategy.name, lang), selected: selectedName }) : t('advisory.plan.sub')}
+        />
+        <Panel pad="none">
+          <div className="p-4 narrow:p-2.5">
             {report.annualPlan ? (
-              <AnnualPlanView plan={report.annualPlan} currency={currency} />
+              <AnnualPlanView plan={report.annualPlan} currency={currency} usesReference={usesReference} />
             ) : (
               <EmptyState layout="inline" icon={<ClipboardList />} title={t('advisory.empty.noPlan')} body={t('advisory.empty.noPlanBody')} />
             )}
-          </Panel>
-        </section>
+          </div>
+        </Panel>
+      </section>
 
-        <section aria-label={t('advisory.actionsTitle')} className="flex flex-col gap-4">
+      <section aria-labelledby="adv-actions">
+        <SectionHead id="adv-actions" title={t('advisory.actionsTitle')} sub={t('advisory.actionsSub')} />
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-2">
           <AdvisoryPlate adv={irrAdv} title={t('advisory.irr.title')}>
             {report.irrigation ? <IrrigationView plan={report.irrigation} today={today} /> : <EmptyState layout="inline" title={t('advisory.empty.noIrrigation')} body={t('advisory.empty.noIrrigationBody')} />}
             {irrAdv && <Divider />}
             {irrAdv && <AdvisoryBody adv={irrAdv} currency={currency} showTitle />}
-          </AdvisoryPlate>
-          <AdvisoryPlate adv={phAdv} title={t('advisory.ph.title')}>
-            {report.ph ? <PhView plan={report.ph} /> : <EmptyState layout="inline" title={t('advisory.empty.noPh')} body={t('advisory.empty.noPhBody')} />}
-            {phAdv && <Divider />}
-            {phAdv && <AdvisoryBody adv={phAdv} currency={currency} showTitle />}
           </AdvisoryPlate>
           <AdvisoryPlate adv={sowAdv} title={t('advisory.sow.title')}>
             {report.sowing?.length ? <SowingView windows={report.sowing} chosenMonth={sowingMonth} /> : <EmptyState layout="inline" title={t('advisory.empty.noSowing')} body={t('advisory.empty.noSowingBody')} />}
             {sowAdv && <Divider />}
             {sowAdv && <AdvisoryBody adv={sowAdv} currency={currency} showTitle />}
           </AdvisoryPlate>
-        </section>
-      </div>
-
-      {others.length > 0 && (
-        <section aria-labelledby="adv-other">
-          <SectionHead id="adv-other" title={t('advisory.otherTitle')} sub={t('advisory.otherSub')} />
-          <div className="grid gap-4 lg:grid-cols-2">
-            {others.map((a) => (
-              <AdvisoryCard key={a.id} adv={a} currency={currency} />
-            ))}
-          </div>
-        </section>
-      )}
+          <AdvisoryPlate adv={phAdv} title={t('advisory.ph.title')}>
+            {report.ph ? <PhView plan={report.ph} /> : <EmptyState layout="inline" title={t('advisory.empty.noPh')} body={t('advisory.empty.noPhBody')} />}
+            {phAdv && <Divider />}
+            {phAdv && <AdvisoryBody adv={phAdv} currency={currency} showTitle />}
+          </AdvisoryPlate>
+          {others.map((a) => (
+            <AdvisoryCard key={a.id} adv={a} currency={currency} />
+          ))}
+        </div>
+      </section>
     </>
   );
 }
