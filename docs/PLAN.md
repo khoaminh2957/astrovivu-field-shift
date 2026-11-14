@@ -167,6 +167,8 @@ K1 làm ngay được. K3 trở đi cần T3 và T4 của Thái; trong lúc ch�
 
 ## 5. UI/UX (Bảo)
 
+Kế hoạch chi tiết, từng hạng mục có vấn đề, thay đổi và tiêu chí xong: `docs/UX_PLAN.md`. Bảng dưới là các việc nối với phần của người khác.
+
 | Bước | Việc | Cần |
 |---|---|---|
 | B1 | Điền mã nước cho thửa ruộng (`PlaceInfo.countryCode` đã có trong hợp đồng) ở mọi đường thêm thửa | không |

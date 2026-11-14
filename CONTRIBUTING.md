@@ -16,6 +16,10 @@ Nhóm Astrovivu làm trên một repo: <https://github.com/quocbao271207/astrovi
 
 Cần sửa ngoài thư mục của mình thì vẫn sửa được, nhưng người phụ trách phần đó phải review. Riêng `src/contracts/**` chỉ được **thêm** (trường tuỳ chọn mới, kiểu mới), không đổi tên, không xoá: ba phần còn lại đều đọc từ đó.
 
+## Quy tắc chung: việc gì cũng có căn cứ
+
+Không đưa vào repo thứ gì không chỉ được căn cứ: số liệu có nguồn và ngày truy cập; công thức và ngưỡng có tài liệu công bố hoặc phép thử trên dữ liệu thật; thay đổi giao diện có quan sát, số đo hoặc yêu cầu đề bài đứng sau. Bảng đầy đủ ở mục 1 của `docs/UX_PLAN.md`; mẫu pull request có ô "Căn cứ" để ghi.
+
 ## 2. Cài đặt lần đầu
 
 Cần Git và Node 24.

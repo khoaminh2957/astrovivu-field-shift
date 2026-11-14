@@ -2,6 +2,10 @@
 
 <!-- 1-3 câu. Vì sao cần thay đổi này. -->
 
+## Căn cứ / Evidence
+
+<!-- Thay đổi này dựa trên gì: nguồn dữ liệu, tài liệu công bố, số đo, ảnh màn hình, yêu cầu đề bài. Không có căn cứ thì chưa gộp. -->
+
 ## Khu vực / Area
 
 - [ ] UI/UX
