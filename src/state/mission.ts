@@ -375,7 +375,12 @@ export const useMission = create<MissionState>()((set, get) => ({
   // A new timeline object makes every time-driven painter (map and cards) repaint the same day.
   setStretch: (stretch) => set((s) => ({ layers: { ...s.layers, stretch }, timeline: { ...s.timeline } })),
   setAnchor: (anchor) => set({ anchor }),
-  setInsets: (insets) => set({ insets }),
+  // Equal insets are dropped: a new object would start a camera ease that cuts a zoom in progress.
+  setInsets: (insets) => {
+    const cur = get().insets;
+    if (cur && cur.top === insets.top && cur.right === insets.right && cur.bottom === insets.bottom && cur.left === insets.left) return;
+    set({ insets });
+  },
   setFocusBranch: (focusBranch) => set({ focusBranch }),
   setAskOpen: (askOpen) => set({ askOpen }),
 }));

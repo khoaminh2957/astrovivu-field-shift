@@ -77,9 +77,15 @@ const MAX_PIXEL_RATIO = 2;
 const MAX_CANVAS_PIXELS = 5_200_000;
 /** While the camera moves the canvas renders at this share of the resting pixel ratio (never below 1). */
 const MOVING_RATIO_SHARE = 0.75;
-/** Rest this long before the full pixel ratio comes back, so a drag with pauses does not flip it. */
-const RATIO_RESTORE_MS = 260;
-/** During a scripted flight the anchor is published at most this often; exact again on arrival. */
+/**
+ * A user gesture (wheel, drag, pinch) lowers the pixel ratio only on a dense screen. Changing it
+ * resizes the canvas, which costs a visible hitch at the first frame of every wheel notch; below
+ * this ratio the pixels saved do not pay for that.
+ */
+const GESTURE_RATIO_FROM = 1.75;
+/** Rest this long before the full pixel ratio comes back, so wheel notches and a drag with pauses do not flip it. */
+const RATIO_RESTORE_MS = 900;
+/** While the camera moves the anchor is published at most this often; exact again when it rests. */
 const FLIGHT_ANCHOR_MS = 120;
 const INSET_EASE_MS = 360;
 /** Below this zoom the whole globe is in view (the explore framing sits between 1 and 3). */
@@ -331,6 +337,9 @@ export class GlobeEngine {
       },
     });
     this.parcelLayer = new ParcelOverlay(map, this.svg, (anchor) => useMission.getState().setAnchor(anchor));
+    // Publishing the anchor writes the mission store; once per frame of a zoom or a drag that is
+    // every subscriber running for nothing. The exact anchor follows when the camera rests.
+    this.parcelLayer.anchorEveryMs = FLIGHT_ANCHOR_MS;
     this.measure = new MeasureTool(map, this.svg);
     const size = this.viewport();
     this.vw = size.width;
@@ -682,7 +691,6 @@ export class GlobeEngine {
       map.setTransformCameraUpdate(null);
     }
     this.flying = true;
-    this.parcelLayer.anchorEveryMs = FLIGHT_ANCHOR_MS;
     setGlobeStatus({ flying: true });
     const onEnd = (e: MapMovementEvent & { flight?: number }) => {
       if (e.flight !== id) return;
@@ -691,7 +699,6 @@ export class GlobeEngine {
       if (this.flightId !== id || this.destroyed) return;
       map.setTransformCameraUpdate(null);
       this.flying = false;
-      this.parcelLayer.anchorEveryMs = 0;
       if (this.state.parcel) this.parcelLayer.update(this.vw, this.vh, true);
       setGlobeStatus({ flying: false });
       this.rotateResumeAt = performance.now() + 600;
@@ -724,7 +731,6 @@ export class GlobeEngine {
     // Any flight still running is abandoned: its end handler will see a newer id and stand down.
     this.flightId++;
     this.flying = false;
-    this.parcelLayer.anchorEveryMs = 0;
     setGlobeStatus({ flying: false });
     map.setTransformCameraUpdate(null);
     mapEl.classList.add('is-cutting');
@@ -935,6 +941,10 @@ export class GlobeEngine {
 
   private onResize = (): void => {
     const viewport = this.viewport();
+    // MapLibre also fires resize when only the pixel ratio changed (setPixelRatio calls resize()),
+    // which happens around every flight and gesture. Re-framing then threw the user's zoom away
+    // 160 ms after they started it: the hero and a locked field snapped back to their pose.
+    if (viewport.width === this.vw && viewport.height === this.vh) return;
     this.vw = viewport.width;
     this.vh = viewport.height;
     const ratio = this.targetRatio();
@@ -983,11 +993,14 @@ export class GlobeEngine {
       this.ratioTimer = null;
     }
     if (this.movingRatio) return;
+    if (!this.flying && cappedPixelRatio({ width: this.vw || window.innerWidth, height: this.vh || window.innerHeight }) < GESTURE_RATIO_FROM) return;
     this.movingRatio = true;
     this.applyRatio();
   };
 
   private onMoveEnd = (): void => {
+    // The anchor was throttled while the camera moved: publish where the parcel came to rest.
+    if (this.state.parcel && !this.flying) this.parcelLayer.update(this.vw, this.vh, true);
     if (!this.movingRatio) return;
     if (this.ratioTimer) clearTimeout(this.ratioTimer);
     this.ratioTimer = setTimeout(() => {
@@ -1004,9 +1017,11 @@ export class GlobeEngine {
     this.viewRaf = requestAnimationFrame(() => {
       this.viewRaf = 0;
       if (this.destroyed) return;
-      const zoom = Math.round(this.map.getZoom() * 100) / 100;
-      const bearing = Math.round(this.map.getBearing() * 10) / 10;
-      const pitch = Math.round(this.map.getPitch() * 10) / 10;
+      // Coarse on purpose: the toolbar shows a compass and a tilt switch, and finer steps would
+      // re-render it on every frame of a zoom.
+      const zoom = Math.round(this.map.getZoom() * 2) / 2;
+      const bearing = Math.round(this.map.getBearing());
+      const pitch = Math.round(this.map.getPitch());
       const motion = this.reduced ? 'reduced' : 'full';
       const prev = useMapViewStore.getState();
       if (prev.zoom === zoom && prev.bearing === bearing && prev.pitch === pitch && prev.motion === motion) return;
