@@ -4,7 +4,7 @@ import { listCrops } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { scoreAt } from '@/lib/series';
 import { useMission } from '@/state/mission';
-import { HubGauge, Select } from '@/ui/design';
+import { HubGauge, Select, Tag } from '@/ui/design';
 import { cropName } from './format';
 import { useMissionUi, useTimeMoving } from '@/ui/chrome/uiState';
 import './strings';
@@ -22,21 +22,29 @@ function HubReading({ size }: { size?: number }) {
   const openOverride = useMissionUi((s) => s.setOverrideOpen);
   const snap = scoreAt(score, cursor);
   const limiting = snap?.limiting ? snap.factors.find((f) => f.key === snap.limiting) : null;
-  // No crop in the ground: the number is the outlook for the next season and the gap names the state.
+  // No crop in the ground: the number is the outlook for the next season.
   const off = !!snap?.offSeason;
   return (
-    <HubGauge
-      value={snap?.productivity ?? null}
-      label={off ? t('hud.hub.outlook') : t('hud.hub.label')}
-      secondary={cropId ? (snap?.compatibility ?? null) : (snap?.condition ?? null)}
-      secondaryLabel={cropId ? t('hud.hub.compat') : t('hud.hub.condition')}
-      limiting={off && snap?.stage ? pick(snap.stage.label, lang) : limiting ? pick(limiting.label, lang) : undefined}
-      size={size}
-      instant={instant}
-      simulated={mode === 'mock'}
-      loading={!snap && !anyReady}
-      onSelect={() => openOverride(true)}
-    />
+    <div className="relative">
+      {/* Off-season: the state gets its own tag above the gauge; the gap below keeps naming the limiting factor. */}
+      {off && snap?.stage && (
+        <Tag variant="soft" className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap">
+          {pick(snap.stage.label, lang)}
+        </Tag>
+      )}
+      <HubGauge
+        value={snap?.productivity ?? null}
+        label={off ? t('hud.hub.outlook') : t('hud.hub.label')}
+        secondary={cropId ? (snap?.compatibility ?? null) : (snap?.condition ?? null)}
+        secondaryLabel={cropId ? t('hud.hub.compat') : t('hud.hub.condition')}
+        limiting={limiting ? pick(limiting.label, lang) : undefined}
+        size={size}
+        instant={instant}
+        simulated={mode === 'mock'}
+        loading={!snap && !anyReady}
+        onSelect={() => openOverride(true)}
+      />
+    </div>
   );
 }
 

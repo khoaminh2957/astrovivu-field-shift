@@ -193,7 +193,15 @@ export function TimelineScrubber() {
   const markers = useMemo<SliderMarker[]>(() => {
     const out: SliderMarker[] = insights.map((i) => ({ value: diffDays(i.t, start), severity: i.severity, label: `${fmtDate(i.t, lang)}: ${pick(i.text, lang)}` }));
     for (const e of riskEvents ?? []) if (e.severity > 0) out.push({ value: diffDays(e.start, start), severity: e.severity >= 2 ? 'alert' : 'watch', label: `${fmtDate(e.start, lang)}: ${pick(e.title, lang)}` });
-    return out.filter((m) => m.value >= 0 && m.value <= max);
+    // The slider keys markers by day and severity: merge markers that share both into one, joining their labels.
+    const byKey = new Map<string, SliderMarker>();
+    for (const m of out) {
+      if (m.value < 0 || m.value > max) continue;
+      const k = `${m.value}-${m.severity}`;
+      const prev = byKey.get(k);
+      byKey.set(k, prev ? { ...prev, label: `${prev.label}\n${m.label}` } : m);
+    }
+    return [...byKey.values()];
   }, [insights, riskEvents, start, max, lang]);
 
   const ranges = useMemo<SliderRange[]>(() => {

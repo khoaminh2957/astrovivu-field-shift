@@ -859,6 +859,9 @@ function rainBias(input: ModelInput, d: Daily, calibration: CalibrationNote[]): 
   return factor;
 }
 
+/** Lower-cases only the first letter, so units and symbols inside a label survive ("Soil pH" -> "soil pH"). */
+const lowerFirst = (s: string): string => s.charAt(0).toLowerCase() + s.slice(1);
+
 /** Ground-truth fields behind each calibration key: removing them re-scores the field without that override. */
 const OVERRIDE_FIELDS: Record<string, (keyof GroundTruth)[]> = {
   texture: ['texture'],
@@ -1022,8 +1025,8 @@ export function computeScoreDetail(input: ModelInput, opts: { snapshots?: boolea
   const headline: I18nText =
     crop && pct != null
       ? tx(
-          `${cropName!.en}: ${cls(pct)[0]} (${pct}/100)${lim ? `, limited by ${lim.label.en.toLowerCase()}` : ''}${rel ? `; the season met its needs in ${rel.yearsOk} of ${rel.yearsTotal} years` : ''}${a!.needsLocalReview ? '. Needs local review.' : '.'}`,
-          `${cropName!.vi ?? cropName!.en}: ${cls(pct)[1]} (${pct}/100)${lim ? `, giới hạn bởi ${lim.label.vi.toLowerCase()}` : ''}${rel ? `; vụ đáp ứng nhu cầu của cây trong ${rel.yearsOk}/${rel.yearsTotal} năm` : ''}${a!.needsLocalReview ? '. Cần chuyên gia địa phương xem xét.' : '.'}`,
+          `${cropName!.en}: ${cls(pct)[0]} (${pct}/100)${lim ? `, limited by ${lowerFirst(lim.label.en)}` : ''}${rel ? `; the season met its needs in ${rel.yearsOk} of ${rel.yearsTotal} years` : ''}${a!.needsLocalReview ? '. Needs local review.' : '.'}`,
+          `${cropName!.vi ?? cropName!.en}: ${cls(pct)[1]} (${pct}/100)${lim ? `, giới hạn bởi ${lowerFirst(lim.label.vi)}` : ''}${rel ? `; vụ đáp ứng nhu cầu của cây trong ${rel.yearsOk}/${rel.yearsTotal} năm` : ''}${a!.needsLocalReview ? '. Cần chuyên gia địa phương xem xét.' : '.'}`,
         )
       : tx('Growing conditions for a generic crop (choose a crop for a crop-specific score).', 'Điều kiện sinh trưởng cho cây trồng chung (chọn cây để có điểm riêng).');
   const headlineNow: I18nText =
