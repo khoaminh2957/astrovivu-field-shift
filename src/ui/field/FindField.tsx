@@ -277,9 +277,18 @@ export function FindField({ floating = false }: { floating?: boolean }) {
   const canSubmit = !!parseLatLon(q) || !!(chosen && chosen.label === q) || !!hits?.length;
 
   const switchWay = (v: 'address' | 'map') => {
+    const pickedAt = sel.lastPickAt;
     cancelDraw();
-    setChosen(null);
     setWay(v);
+    if (v === 'address' && pickedAt) {
+      const hit: PlaceHit = { label: sel.place?.label ?? `${fmtNum(pickedAt[1], 5)}, ${fmtNum(pickedAt[0], 5)}`, location: pickedAt, country: sel.place?.country, admin1: sel.place?.admin1 };
+      put(hit);
+      if (!sel.place) {
+        void reverseGeocode(pickedAt, lang).then((p) => p && setChosen((c) => (c && c.location === pickedAt ? { ...c, label: p.label, country: p.country, admin1: p.admin1 } : c)));
+      }
+    } else {
+      setChosen(null);
+    }
   };
   const leave = () => {
     cancelDraw();
@@ -340,7 +349,13 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       />
       {way === 'map' ? (
         <>
-          <SelectOnMapStatus control={sel} />
+          <SelectOnMapStatus
+            control={sel}
+            onAddress={() => {
+              setExpanded(true);
+              switchWay('address');
+            }}
+          />
           {draft?.closed && <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />}
         </>
       ) : (
@@ -417,7 +432,7 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       // Wide: a card on the left edge (ADD_CARD in uiState: 360 px, 16 px margins), clear of the credits under it. Narrow: a sheet in the finder's stack.
       // Between 1100 and 1362 px the centred finder box (594 px) reaches under the card's right edge, so there the card ends above the box.
       style={{ '--finder-h': `${finderH || 150}px` } as CSSProperties}
-      className="pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg min-[1100px]:max-[1362px]:max-h-[calc(100dvh-var(--finder-h)-44px)] narrow:static narrow:max-h-[45dvh] narrow:w-auto"
+      className="workspace-add-card pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg min-[1100px]:max-[1362px]:max-h-[calc(100dvh-var(--finder-h)-44px)] narrow:static narrow:max-h-[45dvh] narrow:w-auto"
     >
       {step}
     </section>

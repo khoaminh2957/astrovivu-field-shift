@@ -127,6 +127,8 @@ function fitPadding(p: Padding, view: Viewport): Padding {
 }
 
 const hasInsets = (i: ViewInsets | undefined): i is ViewInsets => !!i && i.top + i.right + i.bottom + i.left > 0;
+const sameInsets = (a: ViewInsets | undefined, b: ViewInsets | undefined): boolean =>
+  !!a && !!b && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left;
 
 type ViewInsetsReader = (state: MissionState) => ViewInsets;
 
@@ -752,14 +754,16 @@ export class GlobeEngine {
    */
   private onInsets(landed = false): void {
     const { parcel, insets } = this.state;
-    const target = this.transitionInsets;
-    if (target && insets && target.top === insets.top && target.right === insets.right && target.bottom === insets.bottom && target.left === insets.left) return;
-    this.transitionInsets = undefined;
+    if (sameInsets(this.transitionInsets, insets)) {
+      this.insetsPending = false;
+      return;
+    }
     if (this.flying) {
       this.insetsPending = true;
       return;
     }
     this.insetsPending = false;
+    this.transitionInsets = insets;
     // An outline is on the map: it decides the framing, not the place under the camera.
     if (this.closedDraft()) {
       this.queueFrameDraft();
@@ -819,14 +823,16 @@ export class GlobeEngine {
     this.imagery.set(this.imageryLook(), from === null || this.reduced ? 0 : 1200);
 
     const viewport = this.viewport();
+    const targetInsets = this.transitionInsets ?? this.state.insets;
     if (from === null) {
       // First frame (page load or deep link): start where the state says, without a show.
-      map.jumpTo(this.poseFor(view, viewport, this.transitionInsets ?? this.state.insets));
+      map.jumpTo(this.poseFor(view, viewport, targetInsets));
       this.syncTerrain();
       if (view === 'parcel' && parcel) this.showParcelName(parcel);
     } else if (view === 'parcel' && parcel) {
-      const pose = this.parcelPose(parcel, viewport, this.transitionInsets ?? this.state.insets);
+      const pose = this.parcelPose(parcel, viewport, targetInsets);
       this.prefetch(pose.center, pose.zoom);
+      this.syncTerrain(pose.zoom);
       this.fly(pose, 'descend', () => { if (!this.reduced) this.parcelLayer.flash(); });
       this.showParcelName(parcel);
     } else {
@@ -834,9 +840,10 @@ export class GlobeEngine {
       // or step in or out over wherever the user had turned the globe.
       const c = map.getCenter();
       const here: LngLat = [c.lng, c.lat];
-      const pose = view === 'hero' ? heroPose(viewport, here) : this.explore(viewport, here, this.transitionInsets ?? this.state.insets);
+      const pose = view === 'hero' ? heroPose(viewport, here) : this.explore(viewport, here, targetInsets);
       // A visitor who zoomed in on the landing keeps that view when they enter: only the padding follows the panels.
       if (from === 'hero' && map.getZoom() > pose.zoom) pose.zoom = map.getZoom();
+      if (view === 'hero') this.syncTerrain(pose.zoom);
       this.fly(pose, from === 'parcel' ? 'ascend' : 'level');
     }
     if (view === 'hero') this.startRotation();
@@ -1075,10 +1082,12 @@ export class GlobeEngine {
     if (sharp !== this.sharpCredited) this.renderCredits();
   };
 
-  private syncTerrain = (): void => {
+  private syncTerrain = (targetZoom = this.map.getZoom()): void => {
     if (!this.ready) return;
-    const zoom = this.map.getZoom();
-    const want = this.state.layers.base.terrain && this.view !== 'hero' && zoom >= (this.terrainOn ? TERRAIN_OFF_ZOOM : TERRAIN_ON_ZOOM);
+    const want =
+      this.state.layers.base.terrain &&
+      this.view !== 'hero' &&
+      (this.terrainOn || this.view === 'parcel' || targetZoom >= (this.terrainOn ? TERRAIN_OFF_ZOOM : TERRAIN_ON_ZOOM));
     if (want === this.terrainOn) return;
     this.terrainOn = want;
     this.map.setTerrain(want ? { source: SOURCE.dem, exaggeration: TERRAIN_EXAGGERATION } : null);

@@ -24,6 +24,7 @@ import { type DroppedSpecies, FAOSTAT_SOURCE, readAtlasCrops, readDropped } from
 import { CONCEPT_ARTICLES, CURATED, type CuratedCrop, FORMERLY_CURATED } from './curated';
 import { aliasesOf, ecoChunks, factsFromAtlas, readEcoCrop, toFacts } from './ecocrop';
 import { fetchAll, SNAP_DIR, type WikiSnapshot } from './fetch-wikipedia';
+import { writeTables } from './tables';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const OUT = path.join(ROOT, 'public/rag');
@@ -367,6 +368,18 @@ async function main() {
   const coreSize = writeJson(path.join(OUT, 'core.json'), coreBundle);
   const fullSize = writeJson(path.join(OUT, 'full.json'), fullBundle);
 
+  // The lookup tables (public/rag/tables): the same atlas, as numbers to look up instead of passages to search.
+  const tableSizes = writeTables();
+  const under = (prefix: string) => [...tableSizes].filter(([k]) => k.startsWith(prefix));
+  const tables = {
+    files: tableSizes.size,
+    bytes: [...tableSizes.values()].reduce((a, b) => a + b, 0),
+    largest: [...tableSizes].reduce((a, b) => (b[1] > a[1] ? b : a))[0],
+    largestBytes: Math.max(...tableSizes.values()),
+    crop: { files: under('crop/').length, bytes: under('crop/').reduce((a, [, n]) => a + n, 0) },
+    region: { files: under('region/').length, bytes: under('region/').reduce((a, [, n]) => a + n, 0) },
+  };
+
   const count = (pred: (c: KnowledgeChunk) => boolean) => all.filter(pred).length;
   const docCount = (pred: (c: KnowledgeChunk) => boolean) => new Set(all.filter(pred).map((c) => c.docId)).size;
   const words = all.map((c) => wordCount(c.text)).sort((a, b) => a - b);
@@ -385,6 +398,7 @@ async function main() {
     dropped: { inAtlas: droppedSpecies.length, named: Object.keys(dropped.species).length, names: Object.keys(dropped.aliases).length },
     crops: { core: curatedSpecies.length, full: otherSpecies.length },
     artifacts: { 'public/rag/core.json': coreSize, 'public/rag/full.json': fullSize },
+    tables,
     wikipedia: wikiDocs,
     missingVietnamese: CURATED.filter((c) => !viSnaps.has(slugify(c.wiki))).map((c) => c.wiki),
   };

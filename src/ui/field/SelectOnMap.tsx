@@ -98,6 +98,7 @@ function nearOrInsideRing(pt: LngLat, ring: LngLat[]): boolean {
 export interface SelectOnMapControl {
   state: SelectMapState;
   place?: PlaceInfo;
+  lastPickAt: LngLat | null;
   selectCandidate: (index: number) => void;
   setPromptMode: (mode: 'positive' | 'negative') => void;
   regularize: () => void;
@@ -115,6 +116,7 @@ export function useSelectOnMap(active: boolean): SelectOnMapControl {
   const drawMode = useMission((s) => s.drawMode);
   const { zoom } = useMapView();
   const [state, setState] = useState<SelectMapState>({ kind: 'idle' });
+  const [lastPickAt, setLastPickAt] = useState<LngLat | null>(null);
   const abort = useRef<AbortController | null>(null);
   const sessionRef = useRef<FieldPromptSession | null>(null);
   const zoomRef = useRef(zoom);
@@ -280,6 +282,7 @@ export function useSelectOnMap(active: boolean): SelectOnMapControl {
       sessionRef.current = null;
       const ac = new AbortController();
       abort.current = ac;
+      setLastPickAt(at);
       setPromptMarkers([]);
       setPickTarget(at, true);
       setState({ kind: 'detecting' });
@@ -332,6 +335,7 @@ export function useSelectOnMap(active: boolean): SelectOnMapControl {
       // Zoom guard: fly to field scale first instead of running Sentinel-2 on a random district click.
       if (zoomRef.current < MIN_PICK_ZOOM) {
         abort.current?.abort();
+        setLastPickAt(at);
         setPickTarget(at, false);
         flyToPoint(at, TARGET_PICK_ZOOM);
         setState({ kind: 'zoomed' });
@@ -401,7 +405,7 @@ export function useSelectOnMap(active: boolean): SelectOnMapControl {
   }, [active, lang, applyVertices]);
 
   const place = state.kind === 'found' || state.kind === 'manual' ? state.place : undefined;
-  return { state, place, selectCandidate, setPromptMode, regularize, undo, startManual, backToAuto };
+  return { state, place, lastPickAt, selectCandidate, setPromptMode, regularize, undo, startManual, backToAuto };
 }
 
 /**
@@ -426,16 +430,21 @@ export function SelectOnMapHint({ control, onAddress }: { control: SelectOnMapCo
         )}
         {message}
       </span>
-      {kind !== 'detecting' && (
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {kind === 'detecting' && (
+          <button type="button" onClick={control.startManual} className="shrink-0 rounded-xs font-medium text-ink-1 underline underline-offset-4 hover:text-signal-strong">
+            {t('field.select.manualBtn')}
+          </button>
+        )}
         <button type="button" onClick={onAddress} className="shrink-0 rounded-xs font-medium text-ink-1 underline underline-offset-4 hover:text-signal-strong">
           {t('field.select.orAddress')}
         </button>
-      )}
+      </span>
     </div>
   );
 }
 
-export function SelectOnMapStatus({ control }: { control: SelectOnMapControl }) {
+export function SelectOnMapStatus({ control, onAddress }: { control: SelectOnMapControl; onAddress?: () => void }) {
   const t = useT();
   const draft = useMission((s) => s.draft);
   const { zoom } = useMapView();
@@ -443,9 +452,21 @@ export function SelectOnMapStatus({ control }: { control: SelectOnMapControl }) 
 
   if (state.kind === 'detecting') {
     return (
-      <div role="status" className="flex items-center gap-3 rounded-md bg-surface-2 p-4">
-        <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-signal border-t-transparent" aria-hidden />
-        <span className="text-sm text-ink-2">{t('field.select.detecting')}</span>
+      <div role="status" className="flex flex-col gap-3 rounded-md bg-surface-2 p-4">
+        <div className="flex items-center gap-3">
+          <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-signal border-t-transparent" aria-hidden />
+          <span className="text-sm text-ink-2">{t('field.select.detecting')}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" icon={<PenLine />} onClick={startManual}>
+            {t('field.select.manualBtn')}
+          </Button>
+          {onAddress && (
+            <Button variant="ghost" size="sm" onClick={onAddress}>
+              {t('field.select.orAddress')}
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
