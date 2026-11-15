@@ -4,16 +4,16 @@
  "field": "nevada-alfalfa",
  "question": "Can I grow rice on this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:24:59.443Z",
+ "askedAt": "2026-11-15T08:51:22.628Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 19554,
- "outputTokens": 1029,
- "ms": 4578,
+ "inputTokens": 19569,
+ "outputTokens": 411,
+ "ms": 3425,
  "calls": [
   {
    "cite": "S7",
@@ -181,24 +181,17 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "Growing rice on this field has a low suitability score of 13 out of 100 [S1]. The field has severe limitations for rice production, primarily due to soil pH and drainage conditions [S1]. \n\nThe soil pH is 8.8 (SSURGO soil survey), which is well above the optimal range of 5.5 to 7 for rice [S2][S1]. Additionally, the field is classified as well drained (SSURGO soil survey), whereas rice is optimal in poorly drained soils that remain saturated for more than half the year [S2][S1]. \n\nWater availability is another major challenge. Rice requires an optimal annual rainfall or water supply of 1500 to 2000 mm [S2][S1], but the mean annual rainfall at this location is 288 mm (ERA5 reanalysis (ECMWF), daily aggregates, 25 km pixel, modelled, 2006-2025). While irrigation can supply the water deficit, the high pH and well-drained sandy loam soil (SSURGO soil survey) make this field poorly suited for flooded rice cultivation [S3].\n\nHave a soil test performed to confirm the exact local pH and nutrient status before considering major soil amendments.",
+ "answer": "Growing rice on this field has a low overall suitability score of 13 out of 100, primarily limited by soil pH and drainage conditions. \n\nThe soil pH is 8.8 (SSURGO soil survey, dominant component of the map unit), which is well above the optimal range of 5.5 to 7 for rice (FAO EcoCrop). Additionally, the field has well-drained soil (SSURGO), whereas rice optimally requires poorly drained, saturated conditions where water is held on the surface for much of the growing season [S1][S2]. \n\nThe climate in Nevada provides only about 63 mm of rain and stored soil water during the growing window (ERA5 reanalysis, 25 km pixel, 2006–2025), falling far short of the optimal 1500 mm to 2000 mm annual rainfall requirement [S1]. While temperature scores reasonably well at an actual 18.7 °C compared to an optimal 20 °C to 30 °C [S1], bridging the massive water deficit through irrigation and managing the high alkalinity would present severe agronomic hurdles.\n\nConsider conducting a soil test to confirm local pH levels before planning alternative crops that tolerate alkaline soils.",
  "citations": [
   {
    "n": 1,
-   "chunkId": "table:field-suitability:nevada-alfalfa:oryza-sativa",
-   "title": "How Rice (Oryza sativa) suits the field",
-   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
-   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
-  },
-  {
-   "n": 2,
    "chunkId": "eco:oryza-sativa:facts",
    "title": "Rice (Oryza sativa): ecological requirements",
    "source": "FAO EcoCrop",
    "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
   },
   {
-   "n": 3,
+   "n": 2,
    "chunkId": "wiki-en:rice:04",
    "title": "Rice: Agronomy / Growing",
    "source": "Wikipedia (en): Rice",

@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "Đất của tôi có cần bón vôi không?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:23:45.919Z",
+ "askedAt": "2026-11-15T08:50:06.728Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 17402,
- "outputTokens": 326,
- "ms": 2882,
+ "inputTokens": 17585,
+ "outputTokens": 934,
+ "ms": 3870,
  "calls": [
   {
    "cite": "S7",
@@ -55,14 +55,14 @@
     ]
    },
    "isError": false,
-   "ms": 2
+   "ms": 1
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "pH hiện tại của đất là 5,7 (ước tính từ SoilGrids 2.0 (0-30 cm), 250 m pixel) [S1], nằm trong khoảng pH tối ưu 5-6,3 mà cà phê vối ưa thích, do đó kế hoạch đề xuất hiện tại là chưa cần bón vôi [S2].\n\nLưu ý rằng giá trị pH này là ước tính mô hình cho khu vực 250 m chứ không phải đo trực tiếp trên thửa ruộng, và pH có thể thay đổi tùy khu vực trong vườn [S1]. \n\nNên lấy mẫu đất gửi phòng thí nghiệm để kiểm tra pH thực tế và độ pH đệm trước khi quyết định mua vôi [S3][S2].",
+ "answer": "pH đất của thửa ruộng hiện được ước tính là 5,7 (SoilGrids 2.0 (0-30 cm), điểm ảnh 250 m) [S1]. Mức pH này nằm trong khoảng 5 đến 6,3 mà cây cà phê vối ưa thích [S2].\n\nDo đó, hiện tại không cần bón vôi cho đất [S2]. Giá trị này là ước tính từ mô hình cho khu vực xung quanh chứ không phải đo trực tiếp tại thửa ruộng, và việc bón vôi nông nghiệp làm tăng pH chậm trong nhiều tháng [S3][S2].\n\nHãy lấy mẫu đất để kiểm tra pH thực tế và độ pH đệm tại phòng thí nghiệm địa phương trước khi quyết định mua chất cải tạo [S3][S2].",
  "citations": [
   {
    "n": 1,

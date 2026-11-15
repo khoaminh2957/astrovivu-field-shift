@@ -2,38 +2,23 @@
  "id": "04",
  "lang": "vi",
  "question": "Việt Nam có trồng sầu riêng không, diện tích bao nhiêu?",
- "expect": "no-data",
- "askedAt": "2026-11-15T08:23:27.539Z",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:49:50.594Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
- "requests": 2,
- "inputTokens": 8853,
- "outputTokens": 836,
- "ms": 4191,
- "calls": [
-  {
-   "name": "whereGrown",
-   "input": {
-    "crop": "durian"
-   },
-   "output": {
-    "ok": false,
-    "reason": "group-item",
-    "message": "FAOSTAT tính cây này trong mặt hàng Other tropical fruits, n.e.c., cùng 30 cây khác của atlas: không có số riêng cho cây này, ở nước nào cũng vậy.",
-    "crop": "Sầu riêng (Durio zibethinus)"
-   },
-   "isError": false,
-   "ms": 3
-  }
- ],
+ "requests": 1,
+ "inputTokens": 4374,
+ "outputTokens": 453,
+ "ms": 2173,
+ "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Theo số liệu từ FAOSTAT, không có diện tích riêng cho cây sầu riêng (Durio zibethinus) vì cây này được tính gộp chung trong mặt hàng Other tropical fruits, n.e.c. cùng 30 loại quả nhiệt đới khác [S1]. Do đó, hệ thống thống kê không có số liệu diện tích riêng biệt cho Việt Nam hay bất kỳ quốc gia nào.\n\nBạn có muốn tham khảo thêm về các điều kiện sinh thái mà cây sầu riêng cần để sinh trưởng không?",
+ "answer": "Việt Nam có trồng sầu riêng [S1]. Theo thống kê quốc gia năm 2024, diện tích thu hoạch sầu riêng của cả nước là 178.800 ha và sản lượng đạt 1.470.000 tấn [S1].",
  "citations": [
   {
    "n": 1,

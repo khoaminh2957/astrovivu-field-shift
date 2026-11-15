@@ -4,16 +4,16 @@
  "field": "cantho-rice",
  "question": "Giá lúa tham chiếu và lãi một vụ ở ruộng tôi khoảng bao nhiêu?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:23:57.460Z",
+ "askedAt": "2026-11-15T08:50:19.864Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18734,
- "outputTokens": 522,
- "ms": 3415,
+ "inputTokens": 18836,
+ "outputTokens": 302,
+ "ms": 2133,
  "calls": [
   {
    "cite": "S7",
@@ -79,14 +79,14 @@
     ]
    },
    "isError": false,
-   "ms": 21
+   "ms": 16
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Giá lúa tham chiếu là 228,5 USD mỗi tấn, dựa trên giá thu mua lúa tại ruộng ở An Giang vào tháng 4 năm 2026 [S1]. Chi phí và doanh thu này dựa trên các giá trị tham chiếu khu vực, không phải số liệu thực tế của riêng bạn hay dự báo tương lai [S1].\n\nTrên diện tích 1,35 ha của ruộng, doanh thu ước tính một vụ là 1.897 USD, chi phí khoảng 1.170 USD, mang lại mức lãi khoảng 727 USD (dao động từ 639 đến 727 USD tùy theo năm) [S1]. Năng suất tham chiếu áp dụng là 6,15 tấn mỗi hécta theo mức trung bình toàn quốc của Việt Nam [S1].\n\nBạn có muốn đối chiếu các khoản chi phí thực tế tại hộ của mình để có con số chính xác hơn không?",
+ "answer": "Năng suất tham chiếu cho lúa (Oryza sativa) tại Việt Nam là 6,15 tấn/ha [S1]. Giá tham chiếu là 228,5 USD/tấn, dựa trên giá lúa thương lái mua tại An Giang tháng 4/2026 [S1]. \n\nTrên diện tích 1,35 ha của ruộng, doanh thu dự kiến cho một vụ là 1.897 USD, với tổng chi phí ước tính khoảng 1.170 USD [S1].\n\nLãi ròng cho một vụ trên toàn bộ diện tích ruộng khoảng 727 USD, với khoảng dao động từ 639 USD đến 727 USD [S1]. Các số liệu này dựa trên giá trị tham chiếu và không phải số liệu thực tế của riêng bạn hay là dự báo [S1].\n\nBạn có muốn đối chiếu chi phí thực tế của mình để tính lại mức lãi này chính xác hơn không?",
  "citations": [
   {
    "n": 1,

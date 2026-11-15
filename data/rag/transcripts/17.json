@@ -3,23 +3,22 @@
  "lang": "en",
  "question": "What are the main crops of the United States by harvested area?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:24:26.736Z",
+ "askedAt": "2026-11-15T08:50:47.376Z",
  "intent": "term",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 9748,
- "outputTokens": 417,
- "ms": 2358,
+ "inputTokens": 12056,
+ "outputTokens": 497,
+ "ms": 3418,
  "calls": [
   {
    "cite": "S7",
    "name": "cropsInPlace",
    "input": {
-    "country": "USA",
-    "limit": 15
+    "country": "USA"
    },
    "output": {
     "cite": "S7",
@@ -61,6 +60,18 @@
        "Wheat (Triticum aestivum)",
        "Durum (Triticum durum)",
        "Spelt (Triticum spelta)"
+      ]
+     },
+     {
+      "name": "Alfalfa",
+      "areaHa": 5939230,
+      "productionT": 45552470,
+      "sharePct": 6.01,
+      "rank": 4,
+      "level": "major",
+      "source": "USDA NASS Crop Production 2025 Summary (ISSN 1057-7823)",
+      "crops": [
+       "Alfalfa (Medicago sativa)"
       ]
      },
      {
@@ -189,27 +200,18 @@
       "crops": [
        "Potato (Solanum tuberosum)"
       ]
-     },
-     {
-      "name": "Sugar cane",
-      "areaHa": 376267,
-      "productionT": 30986710,
-      "sharePct": 0.381,
-      "rank": 15,
-      "level": "minor",
-      "crops": [
-       "Sugarcane (Saccharum officinarum)"
-      ]
      }
     ],
-    "rowCount": 72,
+    "rowCount": 85,
     "rowsShown": 15,
     "facts": {
      "country": "United States of America",
-     "items": 72,
-     "crops": 107,
-     "inGroups": 102,
-     "notReported": 58
+     "items": 85,
+     "crops": 120,
+     "inGroups": 98,
+     "notReported": 56,
+     "fromNationalStatistics": 13,
+     "nationalWithoutFigure": 14
     },
     "sources": [
      {
@@ -218,29 +220,122 @@
       "year": "2022-2024",
       "url": "https://www.fao.org/faostat/en/#data/QCL",
       "accessed": "2026-11-15"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 36: Vegetables, Potatoes, and Melons Harvested for Sale (p. 35, Onions, green)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 36: Vegetables, Potatoes, and Melons Harvested for Sale (pp. 33-34, Cabbage, mustard & Mustard greens)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf"
+     },
+     {
+      "name": "USDA NASS Vegetables 2025 Summary (ISSN 0884-6413), Bell Peppers and Chile Peppers for Fresh Market and Processing Area Planted and Harvested (pp. 54, 58)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2025",
+      "accessed": "2026-11-15",
+      "url": "https://release.nass.usda.gov/reports/vegean26.txt"
+     },
+     {
+      "name": "USDA NASS Vegetables 2025 Summary (ISSN 0884-6413), Head Lettuce for Fresh Market Area Planted and Harvested, Yield, Production, Price, and Value (p. 45)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2025",
+      "accessed": "2026-11-15",
+      "url": "https://release.nass.usda.gov/reports/vegean26.txt"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 37: Specified Fruits and Nuts (p. 39, Mangoes)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_037_037.pdf"
+     },
+     {
+      "name": "USDA NASS Crop Production 2025 Summary (ISSN 1057-7823), Crop Area Planted and Harvested, Yield, and Production in Metric Units (pp. 96-97, Hay, Alfalfa)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2025",
+      "accessed": "2026-11-15",
+      "url": "https://release.nass.usda.gov/reports/cropan26.txt"
+     },
+     {
+      "name": "USDA NASS Crop Production 2025 Summary (ISSN 1057-7823), Crop Area Planted and Harvested, Yield, and Production in Metric Units (pp. 96-97, Spearmint oil)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2025",
+      "accessed": "2026-11-15",
+      "url": "https://release.nass.usda.gov/reports/cropan26.txt"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 37: Specified Fruits and Nuts (p. 37, Bananas)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_037_037.pdf"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 36: Vegetables, Potatoes, and Melons Harvested for Sale (pp. 33, 36, Daikon & Radishes)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 27: Other Crops (p. 496, Sesame)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_2_US_State_Level/st99_2_027_027.pdf"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage (p. 484, Sudangrass seed)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_2_US_State_Level/st99_2_026_026.pdf"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage (p. 482, Crimson clover seed)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_2_US_State_Level/st99_2_026_026.pdf"
+     },
+     {
+      "name": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage (p. 484, Red clover seed)",
+      "licence": "Public domain of the United States federal government (17 U.S.C. § 105)",
+      "year": "2022",
+      "accessed": "2026-11-15",
+      "url": "https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_2_US_State_Level/st99_2_026_026.pdf"
      }
     ],
     "caveats": [
-     "102 more crops are counted inside group items the country reports (\"Other vegetables\" and the like): they may be grown, and have no figure of their own.",
+     "98 more crops are counted inside group items the country reports (\"Other vegetables\" and the like): they may be grown, and have no figure of their own.",
+     "13 rows name a source: they are figures of national statistics, of one year, where the others are FAOSTAT's means of three years. The atlas ranks them together.",
+     "For 14 more crops the national statistics were read and have no figure: that does not say they are not grown.",
      "A crop the statistics report none of is not thereby a crop that is not grown: a country that does not itemise a crop reads the same way."
     ]
    },
    "isError": false,
-   "ms": 2
+   "ms": 5
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "The main crops of the United States by harvested area are led by soybeans and maize, which together account for over two-thirds of the country's harvested crop area [S1]. According to FAOSTAT statistics (2022-2024), the principal crops by harvested area are:\n\n- Soya beans: 34,330,527 hectares (34.7% of the harvested area) [S1]\n- Maize (corn): 33,613,081 hectares (34.0% of the harvested area) [S1]\n- Wheat: 15,004,017 hectares (15.2% of the harvested area) [S1]\n- Seed cotton, unginned: 3,052,090 hectares (3.1% of the harvested area) [S1]\n- Sorghum: 2,197,467 hectares (2.2% of the harvested area) [S1]\n\nOther common crops include rice, rapeseed, barley, groundnuts, almonds, sunflower seed, sugar beet, dry peas, potatoes, and sugar cane [S1]. Note that 102 additional crops are counted inside group items and have no separate figures [S1].\n\nWhat specific region or crop would you like to explore next?",
+ "answer": "The main crops of the United States by harvested area are soybeans and maize, which together cover over two-thirds of the country's harvested crop land [S1]. \n\n- Soya beans: 34,330,527 hectares (34.7% of the harvested area) [S1]\n- Maize (corn): 33,613,081 hectares (34.0% of the harvested area) [S1]\n- Wheat: 15,004,017 hectares (15.2% of the harvested area) [S1]\n- Alfalfa: 5,939,230 hectares (6.0% of the harvested area) [S1]\n- Seed cotton, unginned: 3,052,090 hectares (3.1% of the harvested area) [S1]\n\nWould you like to know the main crops for a specific US state?",
  "citations": [
   {
    "n": 1,
    "chunkId": "table:country:USA",
    "title": "Crops of United States of America by harvested area",
-   "source": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2022-2024",
-   "license": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)"
+   "source": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2022-2024; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 36: Vegetables, Potatoes, and Melons Harvested for Sale (p. 35, Onions, green), 2022; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 36: Vegetables, Potatoes, and Melons Harvested for Sale (pp. 33-34, Cabbage, mustard & Mustard greens), 2022; USDA NASS Vegetables 2025 Summary (ISSN 0884-6413), Bell Peppers and Chile Peppers for Fresh Market and Processing Area Planted and Harvested (pp. 54, 58), 2025; USDA NASS Vegetables 2025 Summary (ISSN 0884-6413), Head Lettuce for Fresh Market Area Planted and Harvested, Yield, Production, Price, and Value (p. 45), 2025; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 37: Specified Fruits and Nuts (p. 39, Mangoes), 2022; USDA NASS Crop Production 2025 Summary (ISSN 1057-7823), Crop Area Planted and Harvested, Yield, and Production in Metric Units (pp. 96-97, Hay, Alfalfa), 2025; USDA NASS Crop Production 2025 Summary (ISSN 1057-7823), Crop Area Planted and Harvested, Yield, and Production in Metric Units (pp. 96-97, Spearmint oil), 2025; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 37: Specified Fruits and Nuts (p. 37, Bananas), 2022; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data), Volume 1, Chapter 1, Table 36: Vegetables, Potatoes, and Melons Harvested for Sale (pp. 33, 36, Daikon & Radishes), 2022; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 27: Other Crops (p. 496, Sesame), 2022; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage (p. 484, Sudangrass seed), 2022; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage (p. 482, Crimson clover seed), 2022; USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data), Volume 1, Chapter 2, Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage (p. 484, Red clover seed), 2022",
+   "license": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/); Public domain of the United States federal government (17 U.S.C. § 105)"
   }
  ]
 }

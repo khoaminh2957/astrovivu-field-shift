@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "Trồng sầu riêng ở thửa này được không?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:23:50.329Z",
+ "askedAt": "2026-11-15T08:50:12.126Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18734,
- "outputTokens": 1570,
- "ms": 5602,
+ "inputTokens": 19266,
+ "outputTokens": 1980,
+ "ms": 6204,
  "calls": [
   {
    "cite": "S7",
@@ -176,14 +176,14 @@
     ]
    },
    "isError": false,
-   "ms": 8
+   "ms": 13
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Thửa đất ở Đắk Lắk có thể trồng sầu riêng (Durio zibethinus) với mức độ thích hợp đạt 86/100 điểm và phù hợp trong 19 trên 19 năm được phân tích [S1]. Yếu tố giới hạn chính là thành phần cơ giới đất nặng (heavy), trong khi điều kiện lý tưởng là trung bình hoặc nhẹ, đạt 70 điểm [S1].\n\nCác điều kiện khí hậu và đất đai khác khá thuận lợi: nhiệt độ trong vụ đạt 21.3 °C (lý tưởng 22-40 °C, đạt 93 điểm), lượng nước trong vụ là 1500 mm (lý tưởng 1500-2500 mm, đạt 100 điểm), pH đất là 5.7 (lý tưởng 5-6.5, đạt 100 điểm) và độ dốc 7.7 ° (lý tưởng từ 9 ° trở xuống, đạt 100 điểm) [S1]. Tuy nhiên, dữ liệu về khả năng thoát nước, độ sâu tầng đất và độ mặn hiện chưa có [S1].\n\nBạn hãy kiểm tra thực tế khả năng thoát nước và độ sâu tầng đất tại thửa ruộng trước khi quyết định trồng.",
+ "answer": "Trồng sầu riêng (Durio zibethinus) ở thửa này đạt mức độ thích hợp 86/100 theo mô hình đánh giá của Astrovivu dựa trên dữ liệu ngày 14-11-2026 [S1]. Cây sầu riêng có thể thích nghi tốt với điều kiện khí hậu và đất đai tại đây trong cả 19 năm được phân tích [S1].\n\nYếu tố giới hạn chính là thành phần cơ giới đất nặng (đất sét pha thịt theo SoilGrids 2.0 (0-30 cm), điểm 70/100), trong khi cây chuộng đất trung bình hoặc nhẹ [S1]. Nhiệt độ trung bình trong vụ đạt 21.3 °C (ERA5 reanalysis (ECMWF), điểm 93/100, so với mức tối ưu 22-40 °C) và lượng nước trong vụ đạt 1500 mm (ERA5 reanalysis (ECMWF), điểm 100/100, nằm trong khoảng tối ưu 1500-2500 mm) [S1].\n\npH đất đạt 5.7 (SoilGrids 2.0 (0-30 cm), điểm 100/100, nằm trong khoảng tối ưu 5-6.5) và độ dốc đạt 7.7 ° (SRTM GL1 30 m point elevations, điểm 100/100) [S1]. Tuy nhiên, dữ liệu hiện chưa có thông tin chi tiết về khả năng thoát nước và độ sâu tầng đất [S1].\n\nBước tiếp theo: Nên kiểm tra thực tế khả năng thoát nước của đất nặng tại thửa ruộng trước khi tiến hành trồng sầu riêng [S1].",
  "citations": [
   {
    "n": 1,

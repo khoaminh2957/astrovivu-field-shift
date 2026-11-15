@@ -3,7 +3,7 @@
  "lang": "vi",
  "question": "Aibika trồng thế nào?",
  "expect": "router",
- "askedAt": "2026-11-15T08:24:15.651Z",
+ "askedAt": "2026-11-15T08:50:37.319Z",
  "intent": "dropped",
  "mode": "extractive",
  "fallback": "answered by the router: species not in the atlas",

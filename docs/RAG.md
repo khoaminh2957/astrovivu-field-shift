@@ -177,6 +177,7 @@ With a key in `.env`, `npm run server` (Hono, port 8787; Vite proxies `/api` to 
 
 - A crop is given by name, in English, Vietnamese or Latin, and found with the alias table of the retrieval; the longest name wins. A name that only holds a crop name among other words ("moon cabbage") is not taken for that crop: the result says which crop was seen in it, for the model to ask again if that is the one meant.
 - A country is given by ISO3 code or by FAOSTAT's English name; Viet Nam and the United States also by their Vietnamese names. Left out, it is the country of the locked field.
+- For Viet Nam and the United States the figure of a crop can be one of national statistics ("Looking numbers up"). The row then names its publication, the publication is what the answer cites, and the function's description tells the model to say that it is a national figure.
 - The field's country table is put in on the server from the same file the app loads; what the request carried is not used.
 - Scores go to the model out of 100, as the app shows them (`score100`), so it has nothing to convert. In the first runs the model turned a compatibility of 0.86 into "86 %", a number that stands in no source, and the answer was dropped.
 - A result with rows carries a `cite` id that follows the ids of the passages. A second call with the same input returns the same result under the same id.
@@ -227,16 +228,16 @@ At its own default Flash-Lite answered the rotation question without calling `ro
 | Answered by the router without the model | 5: four declined (price forecast, pesticide product and dose, photo diagnosis, legal), one about a dropped species |
 | Generated answers given | 25 of 25 |
 | Number check | 25 of 25 answers held only numbers of their sources |
-| Function calls | 18, none failed; 43 requests to the model; three calls returned "no data" (durian, asked about for Viet Nam and for Thailand: counted inside a group item; quinoa: no reference price) and the answer said so |
-| Tokens | 318,594 in, 18,423 out |
-| Time per answer | median 3.4 s, longest 6.4 s |
+| Function calls | 16, none failed; 41 requests to the model; two calls returned "no data" (durian in Thailand: counted inside a group item; quinoa: no reference price) and the answer said so |
+| Tokens | 314,646 in, 19,471 out |
+| Time per answer | median 3.4 s, longest 6.2 s |
 
-This is the fifth run of the same 30 questions; the code changed between runs as the runs showed what was wrong, and the last run followed the corrections to the sheets on where a crop is grown. In the fourth, as in this one, every answer passed. In the first three the number check dropped two, one and one answers: a harvested area with two digits transposed (671,148 ha for 667,148), a sum of two shares the model made ("over 99 %", twice), and a score turned into a percentage (which is why scores now go out of 100). The first run also showed two questions the router did not decline ("Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "Is it legal to lease farmland to a foreign company?"); the model declined both by itself, the rules were then widened, and both questions are in the eval set.
+This is the sixth run of the same 30 questions. The code changed between the first four runs as they showed what was wrong; the fifth followed the corrections to the sheets on where a crop is grown, the sixth the figures of national statistics in the atlas (the question about durian in Viet Nam, which had no figure before, is now answered with the 178,800 ha of the national report). In the last three runs every answer passed. In the first three the number check dropped two, one and one answers: a harvested area with two digits transposed (671,148 ha for 667,148), a sum of two shares the model made ("over 99 %", twice), and a score turned into a percentage (which is why scores now go out of 100). The first run also showed two questions the router did not decline ("Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "Is it legal to lease farmland to a foreign company?"); the model declined both by itself, the rules were then widened, and both questions are in the eval set.
 
-What the runs show that no check catches (the first two are in the recorded transcripts, the last two were seen in earlier runs):
+What the runs show that no check catches (the first is in the recorded transcripts, the others were seen in earlier runs):
 
-- **A caveat left out.** The figures for coffee are those of the FAOSTAT item "Coffee, green", which four coffee crops share, and the function result says so. The recorded answer (16) gives them as coffee's without saying the item is shared; an earlier one gave them as robusta's.
 - **A looser reading of the days asked about.** "Is there frost next week?" (12) is answered with the warning of the week after as well, each with its dates. The rule-based answer keeps to the days asked about.
+- **A caveat left out.** The figures for coffee are those of the FAOSTAT item "Coffee, green", which four coffee crops share. The recorded answer (16) says so; in two earlier runs the answer gave them as robusta's, or as coffee's, without it.
 - **A citation of the wrong source.** In an earlier run the model cited the EcoCrop sheet for figures it had taken from the suitability score, so the list of sources named EcoCrop where the number came from the model's score.
 - **A wrong function, or none.** At the model's own thinking level (see the trial above), not at the level the run used.
 

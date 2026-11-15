@@ -3,7 +3,7 @@
  "lang": "vi",
  "question": "Giá cà phê tuần sau lên hay xuống?",
  "expect": "declined",
- "askedAt": "2026-11-15T08:24:17.157Z",
+ "askedAt": "2026-11-15T08:50:38.824Z",
  "intent": "off-topic",
  "mode": "extractive",
  "fallback": "declined by the router",
@@ -12,7 +12,7 @@
  "requests": 0,
  "inputTokens": 0,
  "outputTokens": 0,
- "ms": 5,
+ "ms": 3,
  "calls": [],
  "numberGuard": {
   "passed": true,

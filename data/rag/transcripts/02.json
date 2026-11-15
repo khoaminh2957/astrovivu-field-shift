@@ -3,23 +3,23 @@
  "lang": "vi",
  "question": "Ở Việt Nam người ta trồng những cây gì nhiều nhất?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:23:18.243Z",
+ "askedAt": "2026-11-15T08:49:40.531Z",
  "intent": "general",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 10494,
- "outputTokens": 958,
- "ms": 3710,
+ "inputTokens": 11186,
+ "outputTokens": 556,
+ "ms": 3619,
  "calls": [
   {
    "cite": "S7",
    "name": "cropsInPlace",
    "input": {
     "country": "VNM",
-    "limit": 10
+    "limit": 5
    },
    "output": {
     "cite": "S7",
@@ -87,72 +87,18 @@
       "crops": [
        "Sắn (Manihot esculenta)"
       ]
-     },
-     {
-      "name": "Cashew nuts, in shell",
-      "areaHa": 286817,
-      "productionT": 327549,
-      "sharePct": 2.124,
-      "rank": 7,
-      "level": "common",
-      "crops": [
-       "Điều (Anacardium occidentale)"
-      ]
-     },
-     {
-      "name": "Cinnamon and cinnamon-tree flowers, raw",
-      "areaHa": 191575,
-      "productionT": 68102,
-      "sharePct": 1.419,
-      "rank": 9,
-      "level": "common",
-      "crops": [
-       "Cinnamomum cassia",
-       "Ceylon cinnamon (Cinnamomum verum)"
-      ]
-     },
-     {
-      "name": "Coconuts, in shell",
-      "areaHa": 177318,
-      "productionT": 2112013,
-      "sharePct": 1.313,
-      "rank": 10,
-      "level": "common",
-      "crops": [
-       "Dừa (Cocos nucifera)"
-      ]
-     },
-     {
-      "name": "Sugar cane",
-      "areaHa": 173030,
-      "productionT": 11592168,
-      "sharePct": 1.281,
-      "rank": 11,
-      "level": "common",
-      "crops": [
-       "Mía (Saccharum officinarum)"
-      ]
-     },
-     {
-      "name": "Groundnuts, excluding shelled",
-      "areaHa": 152837,
-      "productionT": 401805,
-      "sharePct": 1.132,
-      "rank": 13,
-      "level": "common",
-      "crops": [
-       "Đậu phộng (Arachis hypogaea)"
-      ]
      }
     ],
-    "rowCount": 32,
-    "rowsShown": 10,
+    "rowCount": 36,
+    "rowsShown": 5,
     "facts": {
      "country": "Viet Nam",
-     "items": 32,
-     "crops": 60,
-     "inGroups": 95,
-     "notReported": 105
+     "items": 36,
+     "crops": 64,
+     "inGroups": 93,
+     "notReported": 96,
+     "fromNationalStatistics": 4,
+     "nationalWithoutFigure": 28
     },
     "sources": [
      {
@@ -161,29 +107,59 @@
       "year": "2022-2024",
       "url": "https://www.fao.org/faostat/en/#data/QCL",
       "accessed": "2026-11-15"
+     },
+     {
+      "name": "Báo cáo thường niên thị trường Rau quả 2025 (Bộ Nông nghiệp và Môi trường / Cục Trồng trọt và Bảo vệ thực vật), Mục 1.2.1 & 1.2.2.(i) Sản xuất sầu riêng (tr. 13, 15-17)",
+      "licence": "Official ministry/sector report of Viet Nam; public citation with attribution",
+      "year": "2024",
+      "accessed": "2026-11-15",
+      "url": "https://thitruongnongsan.gov.vn/images/2013/DANGNHAP/Bao%20cao%20thuong%20nien%20rau%20qua%202025.pdf"
+     },
+     {
+      "name": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê), Biểu 220 & 221: Diện tích cho sản phẩm và sản lượng một số cây lâu năm chủ yếu (tr. 612-613, Vải - Litchi)",
+      "licence": "Official government statistical publication of Viet Nam (Law on Statistics No. 89/2015/QH13 and Law No. 01/2021/QH15; open for public citation with source attribution)",
+      "year": "2024",
+      "accessed": "2026-11-15",
+      "url": "https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf"
+     },
+     {
+      "name": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê), Biểu 220 & 221: Diện tích cho sản phẩm và sản lượng một số cây lâu năm chủ yếu (tr. 612-613, Xoài - Mango)",
+      "licence": "Official government statistical publication of Viet Nam (Law on Statistics No. 89/2015/QH13 and Law No. 01/2021/QH15; open for public citation with source attribution)",
+      "year": "2024",
+      "accessed": "2026-11-15",
+      "url": "https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf"
+     },
+     {
+      "name": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê), Biểu 220 & 221: Diện tích cho sản phẩm và sản lượng một số cây lâu năm chủ yếu (tr. 612-613, Chuối - Banana)",
+      "licence": "Official government statistical publication of Viet Nam (Law on Statistics No. 89/2015/QH13 and Law No. 01/2021/QH15; open for public citation with source attribution)",
+      "year": "2024",
+      "accessed": "2026-11-15",
+      "url": "https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf"
      }
     ],
     "caveats": [
-     "Còn 95 cây được tính trong các mặt hàng gộp mà nước này có báo cáo (\"Other vegetables\" và tương tự): có thể có trồng, nhưng không có số riêng.",
+     "Còn 93 cây được tính trong các mặt hàng gộp mà nước này có báo cáo (\"Other vegetables\" và tương tự): có thể có trồng, nhưng không có số riêng.",
+     "4 dòng có ghi nguồn: đó là số liệu thống kê quốc gia của một năm, còn các dòng khác là trung bình ba năm của FAOSTAT. Atlas xếp hạng chung các dòng này.",
+     "Với 28 cây nữa, thống kê quốc gia đã được đọc và không có số riêng: điều đó không có nghĩa là không trồng.",
      "Cây mà thống kê không ghi nhận chưa chắc là cây không được trồng: nước nào không thống kê riêng một cây thì cũng hiện ra như vậy."
     ]
    },
    "isError": false,
-   "ms": 7
+   "ms": 9
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Ở Việt Nam, cây trồng có diện tích lớn nhất là **lúa**, với diện tích thu hoạch đạt 7.089.041 ha, chiếm khoảng 52,49% tổng diện tích [S1]. Các loại cây trồng phổ biến tiếp theo bao gồm ngô với diện tích 875.899 ha và cao su thiên nhiên với 728.509 ha [S1].\n\nBên cạnh đó, các cây công nghiệp và cây lấy củ cũng đóng vai trò quan trọng trong cơ cấu nông nghiệp, bao gồm cà phê xanh với 667.148 ha, sắn tươi với 519.296 ha, hạt điều với 286.817 ha, cùng các loại cây như quế, dừa, mía và đậu phộng [S1]. \n\nBạn có muốn tìm hiểu chi tiết về vùng trồng hoặc điều kiện sinh trưởng của một trong những loại cây này không?",
+ "answer": "Theo số liệu thống kê (FAOSTAT, 2022-2024), những cây trồng có diện tích thu hoạch lớn nhất ở Việt Nam gồm:\n\n- Lúa (Rice): 7.089.041 ha, chiếm 52,49% diện tích thu hoạch [S1].\n- Ngô (Maize): 875.899 ha, chiếm 6,49% diện tích thu hoạch [S1].\n- Cao su (Natural rubber): 728.509 ha, chiếm 5,39% diện tích thu hoạch [S1].\n- Cà phê (Coffee, green): 667.148 ha, chiếm 4,94% diện tích thu hoạch [S1].\n- Sắn (Cassava): 519.296 ha, chiếm 3,85% diện tích thu hoạch [S1].\n\nBạn có muốn tìm hiểu chi tiết về điều kiện sinh trưởng hoặc kỹ thuật canh tác của một trong các loại cây trồng này không?",
  "citations": [
   {
    "n": 1,
    "chunkId": "table:country:VNM",
    "title": "Cây trồng của Viet Nam theo diện tích thu hoạch",
-   "source": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2022-2024",
-   "license": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)"
+   "source": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2022-2024; Báo cáo thường niên thị trường Rau quả 2025 (Bộ Nông nghiệp và Môi trường / Cục Trồng trọt và Bảo vệ thực vật), Mục 1.2.1 & 1.2.2.(i) Sản xuất sầu riêng (tr. 13, 15-17), 2024; Niên giám Thống kê Việt Nam 2025 (Cục Thống kê), Biểu 220 & 221: Diện tích cho sản phẩm và sản lượng một số cây lâu năm chủ yếu (tr. 612-613, Vải - Litchi), 2024; Niên giám Thống kê Việt Nam 2025 (Cục Thống kê), Biểu 220 & 221: Diện tích cho sản phẩm và sản lượng một số cây lâu năm chủ yếu (tr. 612-613, Xoài - Mango), 2024; Niên giám Thống kê Việt Nam 2025 (Cục Thống kê), Biểu 220 & 221: Diện tích cho sản phẩm và sản lượng một số cây lâu năm chủ yếu (tr. 612-613, Chuối - Banana), 2024",
+   "license": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/); Official ministry/sector report of Viet Nam; public citation with attribution; Official government statistical publication of Viet Nam (Law on Statistics No. 89/2015/QH13 and Law No. 01/2021/QH15; open for public citation with source attribution)"
   }
  ]
 }

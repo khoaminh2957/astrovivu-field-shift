@@ -3,117 +3,22 @@
  "lang": "en",
  "question": "Where is coffee grown, and how much does Viet Nam grow?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:24:20.180Z",
+ "askedAt": "2026-11-15T08:50:41.836Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
- "requests": 2,
- "inputTokens": 9285,
- "outputTokens": 1303,
- "ms": 5053,
- "calls": [
-  {
-   "cite": "S7",
-   "name": "whereGrown",
-   "input": {
-    "crop": "coffee"
-   },
-   "output": {
-    "cite": "S7",
-    "ok": true,
-    "crop": "Robusta coffee (Coffea canephora)",
-    "rows": [
-     {
-      "iso3": "BRA",
-      "country": "Brazil",
-      "areaHa": 1905536,
-      "productionT": 3305192,
-      "level": "common",
-      "rank": 1,
-      "years": [
-       2022,
-       2024
-      ]
-     },
-     {
-      "iso3": "IDN",
-      "country": "Indonesia",
-      "areaHa": 1267388,
-      "productionT": 780421,
-      "level": "common",
-      "rank": 2,
-      "years": [
-       2022,
-       2024
-      ]
-     },
-     {
-      "iso3": "COL",
-      "country": "Colombia",
-      "areaHa": 840479,
-      "productionT": 728573,
-      "level": "major",
-      "rank": 3,
-      "years": [
-       2022,
-       2024
-      ]
-     },
-     {
-      "iso3": "ETH",
-      "country": "Ethiopia",
-      "areaHa": 833661,
-      "productionT": 560221,
-      "level": "common",
-      "rank": 4,
-      "years": [
-       2022,
-       2024
-      ]
-     },
-     {
-      "iso3": "UGA",
-      "country": "Uganda",
-      "areaHa": 832866,
-      "productionT": 459000,
-      "level": "major",
-      "rank": 5,
-      "years": [
-       2022,
-       2024
-      ]
-     }
-    ],
-    "rowCount": 5,
-    "facts": {
-     "item": "Coffee, green",
-     "countriesReporting": 79,
-     "countriesWithArea": 79
-    },
-    "sources": [
-     {
-      "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
-      "licence": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)",
-      "year": "2021-2024",
-      "url": "https://www.fao.org/faostat/en/#data/QCL",
-      "accessed": "2026-11-15"
-     }
-    ],
-    "caveats": [
-     "These are the figures of the FAOSTAT item Coffee, green, which the atlas ties to 4 crops; they are not for one crop alone."
-    ]
-   },
-   "isError": false,
-   "ms": 4
-  }
- ],
+ "requests": 1,
+ "inputTokens": 4260,
+ "outputTokens": 1347,
+ "ms": 4036,
+ "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Coffee is reported by 79 countries to FAOSTAT, with a total global harvested area of 12,353,073 ha [S1]. The largest harvested areas are in Brazil (1,905,536 ha), Indonesia (1,267,388 ha), Colombia (840,479 ha), Ethiopia (833,661 ha), and Uganda (832,866 ha) [S1].\n\nViet Nam has a harvested area of 667,148 ha (mean of 2022-2024), making it the 7th largest grower [S1]. Viet Nam is also the world's largest exporter of robusta coffee, accounting for over 40% of total production [S2], with nearly 90% of its coffee area dedicated to robusta [S3].\n\n- Would you like to know the ecological requirements for growing coffee?",
+ "answer": "Robusta coffee is reported by 79 countries to FAOSTAT, with a world harvested area of 12,353,073 ha as a mean of each country's latest three years with data within 2021-2024 [S1]. The largest harvested areas are in Brazil with 1,905,536 ha, Indonesia with 1,267,388 ha, Colombia with 840,479 ha, Ethiopia with 833,661 ha, and Uganda with 832,866 ha (means of 2022-2024) [S1].\n\nViet Nam has 667,148 ha harvested (mean of 2022-2024), making it the 7th largest grower [S1]. Viet Nam is also the world's largest exporter of robusta coffee, accounting for over 40% of the total production [S2]. These FAOSTAT figures are for the item Coffee, green, which is tied to 4 crops rather than just one [S1].\n\nWould you like to check the ecological requirements for growing robusta coffee on a specific parcel of land?",
  "citations": [
   {
    "n": 1,
@@ -127,13 +32,6 @@
    "chunkId": "wiki-en:coffea-canephora:02",
    "title": "Coffea canephora: Cultivation and use",
    "source": "Wikipedia (en): Coffea canephora",
-   "license": "CC BY-SA 4.0"
-  },
-  {
-   "n": 3,
-   "chunkId": "wiki-vi:coffea-canephora:02",
-   "title": "Cà phê vối: Trồng và xuất khẩu tại Việt Nam",
-   "source": "Wikipedia (vi): Cà phê vối",
    "license": "CC BY-SA 4.0"
   }
  ]

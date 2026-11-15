@@ -4,16 +4,16 @@
  "field": "iowa-corn-soy",
  "question": "Which rotation would you suggest for this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:24:44.092Z",
+ "askedAt": "2026-11-15T08:51:06.481Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 21811,
- "outputTokens": 571,
- "ms": 3817,
+ "inputTokens": 21992,
+ "outputTokens": 1641,
+ "ms": 6107,
  "calls": [
   {
    "cite": "S7",
@@ -566,14 +566,14 @@
     ]
    },
    "isError": false,
-   "ms": 49
+   "ms": 181
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "For your 29.25 ha parcel in Story County, Iowa (zea-mays), the current practice is a two-year maize and soybean rotation [S1]. Here are four rotation options to consider alongside your current practice, each balancing different priorities.\n\n- Current practice: Maize followed by soybean, with winter fallow [S1]. This is the established local system with zero equipment or market change needed, yielding an expected reference margin of 407 USD/ha/yr [S1]. It provides a familiar baseline but lacks diverse pest breaks beyond the two crops [S1].\n\n- Soil-health rotation: Maize followed by soybean sown in June [S1]. This keeps maize as the primary cash crop while optimizing the legume season, reducing annual water use by about 93 mm and raising the expected reference margin to 631 USD/ha/yr [S1].\n\n- Water-saver rotation: Watermelon followed by a buckwheat cover crop, with subsequent months left fallow [S1]. This strategy reduces annual crop water use by about 156 mm compared to your current practice and increases the expected reference margin to 2,011 USD/ha/yr [S1], though local market demand and seed supply for watermelon and buckwheat must be confirmed [S1].\n\n- Income rotation: Maize followed by common bean and canola [S1]. This two-year sequence achieves an expected reference margin of 613 USD/ha/yr [S1] with a lower overall risk score (24 against 33) and higher soil health index (45 against 41) [S1], though common bean presence in local statistics should be verified with your extension office [S1].\n\n- Resilience rotation: A three-year sequence of maize, common bean, and potato [S1]. This option spreads risk across three plant families [S1], reduces annual crop water use by about 159 mm [S1], and raises the expected reference margin to 3,290 USD/ha/yr [S1] with a lower risk score of 23 [S1].\n\nThese margins are based on regional reference values rather than your specific costs [S1]. Sowing dates and fertilizer plans should be confirmed locally against the frost calendar [S1].\n\nWould you like to check a soil test to confirm the SSURGO pH and texture values for your specific parcel?",
+ "answer": "For your Story County corn-soybean field in Iowa, United States, we can compare three rotation strategies: your current practice, a soil-health rotation, and an income rotation [S1].\n\n- Current practice (Maize and Soybean): This familiar system is the reference every alternative is compared with, achieving 72/100 suitability and an expected reference margin of 407 USD/ha a year [S1]. Benefits include no need for new equipment and existing nitrogen supply from legumes [S1]. Missing information includes a direct on-farm soil test and local price data [S1]. Risks include adjusting sowing dates to the local frost calendar [S1].\n- Soil-health rotation: Suggested to keep maize as the main cash crop while filling gaps with legumes that protect the soil and break pest cycles [S1]. Evidence shows an 85/100 suitability score, a reference margin of 631 USD/ha a year, and about 93 mm less water use [S1]. Gaps and risks require local extension confirmation for sowing months and frost adjustments, as well as a physical soil test [S1].\n- Income rotation: Suggested for achieving a higher reference margin of 613 USD/ha a year, a lower risk score of 24, and a higher soil-health index of 45 [S1]. Evidence includes 114 mm less water use than current practices [S1]. Missing information includes local market statistics for common bean, and risks require checking local seed supply and market demand before switching [S1].\n\nWould you like to check local seed availability and market buyers for common bean?",
  "citations": [
   {
    "n": 1,

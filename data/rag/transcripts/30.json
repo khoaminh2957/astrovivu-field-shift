@@ -3,7 +3,7 @@
  "lang": "en",
  "question": "Is it legal to lease farmland to a foreign company?",
  "expect": "declined",
- "askedAt": "2026-11-15T08:25:23.865Z",
+ "askedAt": "2026-11-15T08:51:47.846Z",
  "intent": "off-topic",
  "mode": "extractive",
  "fallback": "declined by the router",

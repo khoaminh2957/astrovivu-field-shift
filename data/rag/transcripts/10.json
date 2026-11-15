@@ -4,21 +4,21 @@
  "field": "cantho-rice",
  "question": "Đất ruộng tôi có bị mặn không?",
  "expect": "no-data",
- "askedAt": "2026-11-15T08:24:02.395Z",
+ "askedAt": "2026-11-15T08:50:23.525Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
- "inputTokens": 8561,
- "outputTokens": 685,
- "ms": 3086,
+ "inputTokens": 8630,
+ "outputTokens": 533,
+ "ms": 2415,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Hiện tại, dữ liệu độ mặn cho thửa ruộng của bạn đang bị thiếu (chưa có số đo thực tế n/a dS/m trong thông tin vệ tinh và mô hình đất). \n\nDo đó, chưa có cơ sở để kết luận đất ruộng của bạn có bị mặn hay không chỉ dựa vào dữ liệu hiện có.\n\nCách tốt nhất và tiết kiệm nhất để biết chính xác độ mặn của đất là mang mẫu đất đi xét nghiệm tại phòng thí nghiệm hoặc liên hệ với trạm khuyến nông địa phương để được hỗ trợ đo đạc.",
+ "answer": "Hiện tại, dữ liệu từ hệ thống không có số đo độ mặn cụ thể cho thửa ruộng của bạn (n/a dS/m). \n\nCách rẻ nhất để biết chính xác độ mặn của đất là mang mẫu đất đi phân tích tại phòng thí nghiệm hoặc liên hệ với trạm khuyến nông địa phương để được hướng dẫn đo đạc thực tế.",
  "citations": []
 }

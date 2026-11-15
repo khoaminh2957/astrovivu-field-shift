@@ -3,16 +3,16 @@
  "lang": "en",
  "question": "Compare maize and soybean: what does each need?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:24:34.599Z",
+ "askedAt": "2026-11-15T08:50:56.594Z",
  "intent": "compare",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 10858,
- "outputTokens": 484,
- "ms": 3657,
+ "inputTokens": 10924,
+ "outputTokens": 1145,
+ "ms": 4710,
  "calls": [
   {
    "cite": "S7",
@@ -147,14 +147,14 @@
     ]
    },
    "isError": false,
-   "ms": 7
+   "ms": 6
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Maize and soybean share several ecological requirements but differ in their specific tolerances and soil preferences [S1]. For temperature during growth, maize has an optimal mean of 18-33 °C and tolerates 10-47 °C, while soybean has an optimal mean of 20-33 °C and tolerates 10-38 °C [S1]. \n\nRegarding moisture, maize requires an annual rainfall of 600-1200 mm optimally, with a tolerance of 400-1800 mm [S1]. Soybean needs an optimal annual rainfall of 600-1500 mm, with a tolerance of 450-1800 mm [S1]. Both crops share optimal high soil fertility, low salinity below 4 dS/m, and very bright light conditions [S1]. \n\nFor soil conditions, maize prefers a soil pH of 5-7 (tolerating 4.5-8.5), whereas soybean prefers a pH of 5.5-6.5 (tolerating 4.5-8.4) [S1]. Both crops thrive in a medium soil depth of 50-150 cm and tolerate shallow depths of 20-50 cm [S1]. Soybean also specifically requires medium, organic soil texture for optimal growth and well-drained conditions [S1].",
+ "answer": "Maize and soybean share similar broad climatic and soil requirements while differing in specific optimal ranges [S1]. For temperature, maize has an optimal mean temperature of 18-33 °C and tolerates 10-47 °C, whereas soybean prefers an optimal temperature of 20-33 °C and tolerates 10-38 °C [S1].\n\nRegarding water, maize requires an annual rainfall of 600-1200 mm with a tolerance of 400-1800 mm, while soybean needs an optimal 600-1500 mm and tolerates 450-1800 mm [S1]. Both crops thrive best in soils with high fertility and a medium depth of 50-150 cm [S1].\n\nFor soil pH, maize performs best at 5-7 and tolerates 4.5-8.5, while soybean prefers a narrower range of 5.5-6.5 and tolerates 4.5-8.4 [S1]. Soybean additionally specifies an optimal medium organic soil texture and well-drained conditions [S1].",
  "citations": [
   {
    "n": 1,

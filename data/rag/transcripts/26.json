@@ -4,16 +4,16 @@
  "field": "nevada-alfalfa",
  "question": "Should I lime this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:25:08.201Z",
+ "askedAt": "2026-11-15T08:51:30.810Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18300,
- "outputTokens": 544,
- "ms": 3640,
+ "inputTokens": 18410,
+ "outputTokens": 673,
+ "ms": 4022,
  "calls": [
   {
    "cite": "S7",
@@ -56,14 +56,14 @@
     ]
    },
    "isError": false,
-   "ms": 4
+   "ms": 1
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "No, you should not lime this field. Liming raises soil pH [S1], but your field already has an alkaline soil pH of 8.8 (SSURGO soil survey (dominant component of the map unit)), which exceeds the ideal range of 6.5 to 8.2 for alfalfa (medicago-sativa) and is noted as the limiting factor for productivity. \n\nInstead of lime, which would further increase the pH, the soil plan suggests sulfur if any amendment is considered [S2]. However, at a pH of 8.8 the soil is likely calcareous with free lime, meaning lowering the pH is slow and rarely economic; it is usually better to prefer tolerant crops or acidifying fertilisers after confirming with a laboratory carbonate and buffer pH test [S2].\n\nThe current pH value of 8.8 is a map estimate from the SSURGO soil survey rather than a direct measurement on your parcel [S2]. \n\nNext step: Take a ground soil sample for a laboratory test to confirm the exact pH and buffer pH before applying any soil amendments [S2].",
+ "answer": "No, you should not lime this field. Agricultural lime raises soil pH [S1], but your soil is already alkaline with a pH of 8.8 (SSURGO soil survey) [S2], which exceeds the ideal range of 6.5 to 8.2 for alfalfa (medicago-sativa) [S2]. Adding lime would increase the alkalinity further.\n\nAt a pH of 8.8, the soil is likely calcareous [S2]. Lowering the pH is slow and rarely economic, so a carbonate test and a laboratory soil test are needed before attempting any amendment [S2]. If an adjustment is ever considered, elements like agricultural sulfur rather than lime would be used to lower the pH [S2], though preferring tolerant management or acidifying fertilisers is more practical [S2].\n\nWould you like to take a soil sample for a local laboratory test to confirm the exact pH and buffer capacity of your parcel [S2]?",
  "citations": [
   {
    "n": 1,

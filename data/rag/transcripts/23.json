@@ -4,16 +4,16 @@
  "field": "iowa-corn-soy",
  "question": "What is the reference price and margin for maize here?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:24:54.195Z",
+ "askedAt": "2026-11-15T08:51:18.509Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18897,
- "outputTokens": 596,
- "ms": 3723,
+ "inputTokens": 18944,
+ "outputTokens": 218,
+ "ms": 2592,
  "calls": [
   {
    "cite": "S7",
@@ -81,14 +81,14 @@
     ]
    },
    "isError": false,
-   "ms": 11
+   "ms": 18
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "For maize on this parcel, the reference economics are based on USDA NASS and Iowa State University Extension figures for the Iowa (grain) region [S1]. The reference yield is 13.18 t/ha, with a farm-gate price of 161.4 USD/t [S1]. \n\nThe estimated total cost is 1195 USD/ha, leading to a reference margin of 27268 USD for the 29.25 ha parcel, or a margin percentage of 43.8% [S1]. These are reference values rather than the grower's own figures and do not constitute a forecast [S1].",
+ "answer": "The reference price for maize in this region (US-HEARTLAND, Iowa 2026) is 161.4 USD per tonne, based on USDA NASS marketing-year price figures [S1].\n\nThe reference yield is 13.18 tonnes per hectare, giving an expected revenue of 62,222 USD, estimated costs of 34,954 USD, and a margin of 27,268 USD for the 29.25 hectare parcel [S1]. These figures rely on reference regional yields, prices, and budgets rather than the grower's own records [S1].\n\nAsk local extension agents for your specific costs and contracts to verify these margins.",
  "citations": [
   {
    "n": 1,

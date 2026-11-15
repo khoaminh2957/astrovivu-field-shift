@@ -3,34 +3,27 @@
  "lang": "en",
  "question": "What conditions does quinoa need?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:24:39.760Z",
+ "askedAt": "2026-11-15T08:51:02.808Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
- "inputTokens": 4492,
- "outputTokens": 617,
- "ms": 2810,
+ "inputTokens": 4561,
+ "outputTokens": 530,
+ "ms": 2154,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Quinoa needs specific conditions to grow well, thriving best in temperatures with a mean of 14-18 °C, though it tolerates 2-35 °C [S1]. It requires very bright to clear skies and can grow up to an altitude of 4000 m [S1]. \n\nFor moisture and soil, optimal annual rainfall is 500-1000 mm, with well-drained soil that has dry spells [S1]. It prefers a soil pH of 5.5-8, moderate soil fertility, and low salinity of under 4 dS/m, while tolerating a range of soil textures from heavy, medium, to light [S1]. \n\nThe growing period ranges from 90 to 240 days, and the plant can withstand killing temperatures down to -8 °C in early growth or during rest [S1]. Average seed yield is about 400-900 kg/ha, but yields can reach up to 2-3 t/ha [S2]. \n\nWould you like to know which ecotypes of quinoa are suited to specific elevations or climates?",
+ "answer": "Quinoa thrives in mean temperatures of 14 to 18 °C during growth, though it can tolerate temperatures from 2 to 35 °C [S1]. Its optimal annual rainfall is between 500 and 1000 mm, with a tolerance range from 250 to 2600 mm [S1]. \n\nThe crop prefers a soil pH between 5.5 and 8 and can tolerate a range of 4.5 to 9.5 [S1]. It does best in well-drained soils with heavy, medium, or light texture, moderate fertility, and medium depth of 50 to 150 cm [S1]. Quinoa also prefers low salinity under 4 dS/m and very bright to clear skies [S1]. Its growing period lasts between 90 and 240 days [S1].",
  "citations": [
   {
    "n": 1,
    "chunkId": "eco:chenopodium-quinoa:facts",
    "title": "Quinoa (Chenopodium quinoa): ecological requirements",
-   "source": "FAO EcoCrop",
-   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
-  },
-  {
-   "n": 2,
-   "chunkId": "eco:chenopodium-quinoa:notes-0",
-   "title": "Quinoa (Chenopodium quinoa): description, uses, growing period, further information",
    "source": "FAO EcoCrop",
    "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
   }

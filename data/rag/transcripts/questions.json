@@ -4,7 +4,7 @@
     { "id": "01", "lang": "vi", "question": "Việt Nam trồng bao nhiêu lúa, và những nước nào trồng lúa nhiều nhất?", "expect": "answer" },
     { "id": "02", "lang": "vi", "question": "Ở Việt Nam người ta trồng những cây gì nhiều nhất?", "expect": "answer" },
     { "id": "03", "lang": "vi", "question": "Tỉnh Đắk Lắk trồng cây gì nhiều nhất?", "expect": "answer" },
-    { "id": "04", "lang": "vi", "question": "Việt Nam có trồng sầu riêng không, diện tích bao nhiêu?", "expect": "no-data" },
+    { "id": "04", "lang": "vi", "question": "Việt Nam có trồng sầu riêng không, diện tích bao nhiêu?", "expect": "answer" },
     { "id": "05", "lang": "vi", "question": "So sánh yêu cầu của cà phê vối và hồ tiêu.", "expect": "answer" },
     { "id": "06", "lang": "vi", "field": "daklak-coffee", "question": "Tôi nên luân canh thế nào trên thửa này?", "expect": "answer" },
     { "id": "07", "lang": "vi", "field": "daklak-coffee", "question": "Đất của tôi có cần bón vôi không?", "expect": "answer" },

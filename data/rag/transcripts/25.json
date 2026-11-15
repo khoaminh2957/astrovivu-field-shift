@@ -4,22 +4,22 @@
  "field": "nevada-alfalfa",
  "question": "What is my soil pH and where does that number come from?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:25:05.546Z",
+ "askedAt": "2026-11-15T08:51:27.577Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
- "inputTokens": 8340,
- "outputTokens": 63,
- "ms": 1137,
+ "inputTokens": 8409,
+ "outputTokens": 251,
+ "ms": 1708,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "The soil pH is 8.8 (SSURGO soil survey (dominant component of the map unit)) [S1].\n\nThis number comes from the SSURGO soil survey for the Alhambra-Kobeh complex map unit, which represents the dominant soil component for this parcel in Nevada, United States.",
+ "answer": "Your soil pH is 8.8. \n\nThis number comes from the SSURGO soil survey (dominant component of the map unit). In the United States, Astrovivu uses SSURGO survey data for soil properties [S1].\n\nConfirm this value with a local soil test.",
  "citations": [
   {
    "n": 1,
