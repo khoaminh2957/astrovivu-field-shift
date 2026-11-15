@@ -12,6 +12,7 @@ The rule of this module: every number, threshold and formula has a source that c
 | `buildSoilPlan(diagnosis, input, ph)` | `plan.ts` | The steps that follow from the diagnosis: measure first, correct pH, leach salts, drain | `AdvisoryReport.soilPlan` |
 | `leachingRequirement(input, measured)` | `salinity.ts` | Salinity and sodicity class, leaching requirement, gypsum requirement | The salinity item of the soil plan (leaching note); the gypsum dose is not in the report yet |
 | `aluminiumRisk(input, measured)` | `aluminium.ts` | What is known about exchangeable aluminium and the lime that neutralises a measured amount | Not in the report yet |
+| `soilAnswer(input, opts)` | `answer.ts` | Pure entry point for the chatbot: returns `{ diagnosis, plan, summary }` for any crop and temporary `groundTruth` override, with every figure in `summary` present in `{ diagnosis, plan }` | Chatbot lookup (`src/rag`, C2 #31) |
 | `calculateBufferPhPlan(input)` | `buffer.ts` | A pH plan scaled by buffer capacity | **Not used.** See section 3 |
 
 Statuses of a diagnosis row: `optimal`, `tolerable`, `outside`, `uncertain` (a map estimate whose interval reaches across a limit of the crop), `no_data` (no reading: the value is `null`, nothing stands in for it), `reading_only` (a reading with no requirement in the crop catalogue: no verdict).
@@ -141,6 +142,18 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Aluminium saturation = Al / (Al + exchangeable Ca, Mg, K, Na). The CEC of a soil map is measured at pH 7 and is not the effective CEC: without the exchangeable bases the saturation is not computed, and the result asks for them.
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
+
+### 5.6 Using from the chatbot / Dùng từ chatbot (`answer.ts`)
+
+```ts
+export function soilAnswer(
+  input: ModelInput,
+  opts?: { cropId?: string; groundTruth?: Partial<GroundTruth> },
+): { diagnosis: SoilDiagnosis | null; plan: SoilPlan; summary: I18nText[] }
+```
+
+- `opts.cropId` temporarily substitutes the crop being asked about; `opts.groundTruth` overlays the soil reading stated in the user's question (for example `{ ph: 4.8 }`).
+- Example (`cantho-rice`, `cropId: 'glycine-max'`, `groundTruth: { ph: 4.8 }`): `diagnosis` reports pH 4.8 below soybean's optimum (5.5-6.5); `plan` includes liming towards pH 5.8 with `rateRange: { min: 5, max: 8, unit: 't/ha' }`; `summary` returns 4 bilingual sentences naming Soybean / Đậu nành, the 5-8 t/ha liming range with the on-site verification caveat, and the 3 unmeasured factors to test first. Every number in `summary` is guaranteed to exist in `JSON.stringify({ diagnosis, plan })`.
 
 ## 6. Removed from the output for lack of a source
 

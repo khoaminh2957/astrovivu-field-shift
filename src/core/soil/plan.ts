@@ -1,5 +1,7 @@
-import type { I18nText, ModelInput, PhPlan } from '@/contracts';
+import type { I18nText, ModelInput, PhPlan, ScoreTimeline } from '@/contracts';
 import { tx } from '@/contracts';
+import { phPlan } from '@/core/advisory/actions';
+import { diagnoseSoil } from './diagnosis';
 import { leachingRequirement, LR_METHOD } from './salinity';
 import type { SoilDiagnosis, SoilPlan, SoilPlanItem, SoilStatus } from './types';
 
@@ -227,3 +229,14 @@ export function buildSoilPlan(diagnosis: SoilDiagnosis, input: ModelInput, ph?: 
     mostLimitingFactor: diagnosis.mostLimitingFactor?.key ?? null,
   };
 }
+
+/**
+ * Convenience entry point for S2 (#43) and S14 (#74): computes `diagnoseSoil(input)` and
+ * `phPlan(input)` and returns `buildSoilPlan(diagnosis, input, ph)`.
+ */
+export function soilPlan(input: ModelInput, _score?: ScoreTimeline): SoilPlan {
+  const diagnosis = diagnoseSoil(input);
+  const ph = phPlan(input);
+  return buildSoilPlan(diagnosis, input, ph);
+}
+
