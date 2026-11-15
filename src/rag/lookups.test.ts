@@ -30,7 +30,7 @@ const tables = tableSource(fileReader(path.join(ROOT, 'public')));
 let t: AtlasTables;
 let store: KnowledgeStore;
 beforeAll(async () => {
-  t = { crops: await tables.crops(), countries: await tables.countries(), sources: await tables.sources(), spam: await tables.spam() };
+  t = { crops: await tables.crops(), countries: await tables.countries(), sources: await tables.sources(), spam: await tables.spam(), national: await tables.national() };
   store = new KnowledgeStore(fileLoader(path.join(ROOT, 'public/rag')));
   await store.ensureFull();
 });
@@ -67,15 +67,43 @@ describe('what a place grows', () => {
     expect(sharing).toHaveLength(3);
     expect(r.rows[0].cropIds).toEqual(sharing);
     expect(r.rows.filter((x) => x.name === 'Rice')).toHaveLength(1);
-    // As many rows as items with a reported quantity; every crop with one is in exactly one row.
+    // As many rows as FAOSTAT items with a reported quantity, plus one for each crop whose figure
+    // is from national statistics; every crop with a quantity is in exactly one row.
     const grown = cropCountry.filter((x) => x.iso3 === 'VNM' && ['major', 'common', 'minor', 'present'].includes(x.level));
-    expect(r.rows).toHaveLength(new Set(grown.map((x) => x.faostat_item_code)).size);
+    const fromNational = grown.filter((x) => x.match === 'national');
+    expect(r.rows).toHaveLength(new Set(grown.filter((x) => x.match !== 'national').map((x) => x.faostat_item_code)).size + fromNational.length);
     expect(r.rows.flatMap((x) => x.cropIds).sort()).toEqual(grown.map((x) => x.crop_id).sort());
     // Largest area first.
     const areas = r.rows.map((x) => x.areaHa ?? -1);
     expect(areas).toEqual([...areas].sort((a, b) => b - a));
     expect(r.sources[0]).toMatchObject({ licence: expect.stringContaining('CC BY 4.0'), accessed: '2026-11-15' });
-    expect(r.sources[0].year).toBe(`${Math.min(...grown.map((x) => Number(x.year_from)))}-${Math.max(...grown.map((x) => Number(x.year_to)))}`);
+    const faostat = grown.filter((x) => x.match !== 'national');
+    expect(r.sources[0].year).toBe(`${Math.min(...faostat.map((x) => Number(x.year_from)))}-${Math.max(...faostat.map((x) => Number(x.year_to)))}`);
+  });
+
+  it('Viet Nam: durian, from national statistics, as a row of its own with its publication', async () => {
+    const r = cropsInPlace(t, { country: await tables.country('VNM') }, 'VNM');
+    sourced(r);
+    const row = cc('durio-zibethinus', 'VNM');
+    expect(row.match).toBe('national');
+    const durian = r.rows.find((x) => x.cropIds.includes('durio-zibethinus'))!;
+    // Under the crop's name, not under "Other tropical fruits, n.e.c.", the item FAOSTAT counts it in.
+    expect(durian).toEqual({ cropIds: ['durio-zibethinus'], name: 'Durian', areaHa: Number(row.area_ha), productionT: Number(row.production_t), sharePct: Number(row.share_of_country_harvested_area_pct), rank: Number(row.rank_in_country), level: row.level, source: row.source });
+    expect(r.rows.filter((x) => x.name.startsWith('Other tropical fruits'))).toEqual([]);
+    // Its publication is a source of the result, with the table read, the address and the terms.
+    const src = r.sources.find((x) => x.name.startsWith(row.source))!;
+    expect(src).toMatchObject({ year: row.year_from, accessed: '2026-11-15', url: expect.stringMatching(/^https:\/\//) });
+    expect(src.licence.length).toBeGreaterThan(10);
+    // Every national row with a figure is a row; those without are counted and said, not listed.
+    const national = cropCountry.filter((x) => x.iso3 === 'VNM' && x.match === 'national');
+    const withFigure = national.filter((x) => Number(x.area_ha) > 0);
+    expect(r.rows.filter((x) => x.source).map((x) => x.cropIds[0]).sort()).toEqual(withFigure.map((x) => x.crop_id).sort());
+    expect(r.facts).toMatchObject({ fromNationalStatistics: withFigure.length, nationalWithoutFigure: national.length - withFigure.length });
+    expect(r.caveats.some((c) => c.en.includes(`${withFigure.length} rows name a source: they are figures of national statistics`))).toBe(true);
+    expect(r.caveats.some((c) => c.vi.includes(`Với ${national.length - withFigure.length} cây nữa, thống kê quốc gia đã được đọc và không có số riêng`))).toBe(true);
+    const tomato = cc('lycopersicon-esculentum', 'VNM');
+    expect([tomato.match, tomato.level]).toEqual(['national', 'unknown']);
+    expect(r.rows.some((x) => x.cropIds.includes('lycopersicon-esculentum'))).toBe(false);
   });
 
   it('never gives a crop of a group item a number, and says how many there are', async () => {
@@ -83,8 +111,8 @@ describe('what a place grows', () => {
     sourced(r);
     const inGroups = cropCountry.filter((x) => x.iso3 === 'VNM' && x.match === 'group' && x.item_reported === 'yes').map((x) => x.crop_id);
     const anyGroup = cropCountry.filter((x) => x.iso3 === 'VNM' && x.match === 'group').map((x) => x.crop_id);
-    // Durian, and African rice, which FAOSTAT counts inside "Rice": neither gets the numbers of its item.
-    expect(anyGroup).toEqual(expect.arrayContaining(['durio-zibethinus', 'oryza-glaberrima']));
+    // Jackfruit, and African rice, which FAOSTAT counts inside "Rice": neither gets the numbers of its item.
+    expect(anyGroup).toEqual(expect.arrayContaining(['artocarpus-heterophyllus', 'oryza-glaberrima']));
     expect(r.rows.flatMap((x) => x.cropIds).filter((id) => anyGroup.includes(id))).toEqual([]);
     expect(r.facts!.inGroups).toBe(inGroups.length);
     expect(r.caveats[0].en).toContain(`${inGroups.length} more crops are counted inside group items`);
@@ -151,19 +179,69 @@ describe('where a crop is grown', () => {
     expect(vnm.facts!.countriesWithArea).toBe(byArea.length);
   });
 
-  it('durian in Viet Nam: counted inside a group item, so no number at all', async () => {
-    const r = whereGrown(t, await tables.crop('durio-zibethinus'), 'durio-zibethinus', 'VNM');
+  it('jackfruit in Viet Nam: counted inside a group item, so no number at all', async () => {
+    const r = whereGrown(t, await tables.crop('artocarpus-heterophyllus'), 'artocarpus-heterophyllus', 'VNM', { country: await tables.country('VNM') });
     expect(r).toMatchObject({ ok: false, reason: 'group-item' });
     expect(JSON.stringify(r)).not.toMatch(/\d{3,}/);
-    // The atlas has the group's numbers on durian's row; they are not durian's.
-    expect(cc('durio-zibethinus', 'VNM').match).toBe('group');
-    expect(await tables.crop('durio-zibethinus')).toBeNull();
+    // The atlas has the group's numbers on jackfruit's row; they are not jackfruit's.
+    expect(cc('artocarpus-heterophyllus', 'VNM').match).toBe('group');
+    expect(await tables.crop('artocarpus-heterophyllus')).toBeNull();
+  });
+
+  it('durian in Viet Nam: no figure from FAOSTAT, and the figure of the national statistics with its publication', async () => {
+    const row = cc('durio-zibethinus', 'VNM');
+    const r = whereGrown(t, await tables.crop('durio-zibethinus'), 'durio-zibethinus', 'VNM', { country: await tables.country('VNM') });
+    sourced(r);
+    expect(r.rows).toEqual([{ iso3: 'VNM', country: 'Viet Nam', areaHa: Number(row.area_ha), productionT: Number(row.production_t), level: row.level, rank: null, years: [Number(row.year_from), Number(row.year_to)], source: row.source }]);
+    expect(r.sources).toHaveLength(1);
+    expect(r.sources[0].name.startsWith(row.source)).toBe(true);
+    expect(r.sources[0]).toMatchObject({ year: row.year_from, url: expect.stringMatching(/^https:\/\//) });
+    expect(r.caveats[0].en).toContain('FAOSTAT has no figure for it alone, in any country');
+    expect(r.caveats[1].en).toContain('is from its national statistics');
+    expect(r.caveats[1].vi).toContain('lấy từ thống kê quốc gia');
+    // Without the country's file, or for another country, there is nothing to give, as before.
+    expect(whereGrown(t, null, 'durio-zibethinus', 'VNM')).toMatchObject({ ok: false, reason: 'group-item' });
+    expect(whereGrown(t, null, 'durio-zibethinus', 'THA', { country: await tables.country('THA') })).toMatchObject({ ok: false, reason: 'group-item' });
+    expect(whereGrown(t, null, 'durio-zibethinus')).toMatchObject({ ok: false, reason: 'group-item' });
+  });
+
+  it('banana, a crop the atlas ties no item to: the national figures of Viet Nam and of the United States', async () => {
+    for (const iso3 of ['VNM', 'USA']) {
+      const row = cc('musa-acuminata', iso3);
+      const r = whereGrown(t, await tables.crop('musa-acuminata'), 'musa-acuminata', iso3, { country: await tables.country(iso3) });
+      sourced(r);
+      expect(r.rows[0]).toMatchObject({ iso3, areaHa: Number(row.area_ha), rank: null, source: row.source });
+      expect(r.caveats[0].en).toBe('The crop atlas ties no FAOSTAT item to it, so it has no FAOSTAT figures by country for it.');
+    }
+    expect(whereGrown(t, null, 'musa-acuminata', 'THA', { country: await tables.country('THA') })).toMatchObject({ ok: false, reason: 'no-data' });
+  });
+
+  it('a crop with an item of its own: the largest growers from FAOSTAT, and the country asked about from its national statistics', async () => {
+    // Sesame in the United States: FAOSTAT's row was replaced by the 2022 Census of Agriculture.
+    const row = cc('sesamum-indicum', 'USA');
+    expect(row.match).toBe('national');
+    const r = whereGrown(t, await tables.crop('sesamum-indicum'), 'sesamum-indicum', 'USA', { country: await tables.country('USA') });
+    sourced(r);
+    expect(r.rows.slice(0, 5).every((x) => x.rank != null && !x.source)).toBe(true);
+    expect(r.rows.at(-1)).toMatchObject({ iso3: 'USA', areaHa: Number(row.area_ha), rank: null, source: row.source });
+    expect(r.sources.map((x) => x.name)).toEqual([expect.stringContaining('FAOSTAT'), expect.stringContaining('2022 Census of Agriculture')]);
+    expect(r.caveats.some((c) => c.en.includes('not ranked among FAOSTAT\'s countries'))).toBe(true);
+  });
+
+  it('a crop the national statistics have no figure of is given as unknown, not as absent', async () => {
+    // Tomato in Viet Nam: FAOSTAT has no series; the yearbook was read and does not itemise it.
+    expect([cc('lycopersicon-esculentum', 'VNM').match, cc('lycopersicon-esculentum', 'VNM').level]).toEqual(['national', 'unknown']);
+    const r = whereGrown(t, await tables.crop('lycopersicon-esculentum'), 'lycopersicon-esculentum', 'VNM', { country: await tables.country('VNM') });
+    sourced(r);
+    expect(r.rows.find((x) => x.iso3 === 'VNM')).toMatchObject({ level: 'unknown', areaHa: null, rank: null });
+    expect(r.caveats.some((c) => c.vi.includes('không có số riêng cho cây này: điều đó không có nghĩa là không trồng'))).toBe(true);
+    expect(r.facts!.askedLevel).toBe('unknown');
   });
 
   it('a crop the country reports none of is given as that, with the caution that goes with it', async () => {
-    // Tomato in Viet Nam: the atlas has it as absent (FAOSTAT has no series).
-    expect(cc('lycopersicon-esculentum', 'VNM').level).toBe('absent');
-    const r = whereGrown(t, await tables.crop('lycopersicon-esculentum'), 'lycopersicon-esculentum', 'VNM');
+    // A crop with an item of its own that Viet Nam reports nothing of to FAOSTAT, and that no national row covers.
+    const absent = cropCountry.find((x) => x.iso3 === 'VNM' && x.match === 'exact' && x.level === 'absent')!;
+    const r = whereGrown(t, await tables.crop(absent.crop_id), absent.crop_id, 'VNM', { country: await tables.country('VNM') });
     sourced(r);
     expect(r.rows.find((x) => x.iso3 === 'VNM')).toMatchObject({ level: 'absent', areaHa: null, rank: null });
     expect(r.caveats.some((c) => c.vi.includes('chưa chắc là cây không được trồng'))).toBe(true);

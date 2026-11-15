@@ -63,12 +63,20 @@ export interface SourceEntry {
 }
 export type SourcesTable = Record<string, SourceEntry>;
 
+/**
+ * What is needed to cite a row of national statistics (`match = national` in the atlas): the
+ * publication as the atlas names it, where it is, the table read, the day it was read and its
+ * terms. Keyed `<crop_id>:<ISO3>`. The figures themselves are in the country's file.
+ */
+export type NationalTable = Record<string, { source: string; url: string; licence: string; accessed?: string; table?: string }>;
+
 /** Loads the tables. Every method resolves to null when the table does not exist (a crop without an item, a country without regions). */
 export interface TableSource {
   crops(): Promise<CropsTable>;
   countries(): Promise<CountriesTable>;
   sources(): Promise<SourcesTable>;
   spam(): Promise<SpamTable>;
+  national(): Promise<NationalTable>;
   country(iso3: string): Promise<CountryTableFile | null>;
   crop(cropId: string): Promise<CropCountriesFile | null>;
   regions(iso3: string): Promise<RegionFile | null>;
@@ -104,6 +112,7 @@ export function tableSource(read: TableReader, paths = { tables: 'rag/tables/', 
     countries: () => must<CountriesTable>(`${paths.tables}countries.json`),
     sources: () => must<SourcesTable>(`${paths.tables}sources.json`),
     spam: () => must<SpamTable>(`${paths.tables}spam.json`),
+    national: () => must<NationalTable>(`${paths.tables}national.json`),
     country: (iso3) => (safe(iso3) ? once<CountryTableFile>(`${paths.countries}${iso3.toUpperCase()}.json`) : Promise.resolve(null)),
     crop: (cropId) => (safe(cropId) ? once<CropCountriesFile>(`${paths.tables}crop/${cropId}.json`) : Promise.resolve(null)),
     regions: (iso3) => (safe(iso3) ? once<RegionFile>(`${paths.tables}region/${iso3.toUpperCase()}.json`) : Promise.resolve(null)),

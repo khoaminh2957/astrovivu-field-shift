@@ -134,11 +134,29 @@ describe('what a lookup hands back', () => {
   });
 
   it('whereGrown: a crop counted inside a group has no figure, and no citation', async () => {
-    const out = await tools().whereGrown.run({ crop: 'durian', country: 'VNM' });
+    const out = await tools().whereGrown.run({ crop: 'jackfruit', country: 'VNM' });
     expect(out.result).toMatchObject({ ok: false, reason: 'group-item' });
-    expect(out.result.message).toMatch(/there is no figure for it alone/);
+    expect(out.result.message).toMatch(/FAOSTAT has no figure for it alone/);
     expect(JSON.stringify(out.result)).not.toMatch(/areaHa/);
     expect(out.citation).toBeUndefined();
+    // Durian is counted in the same group, and Thailand has no national row in the atlas.
+    expect((await tools().whereGrown.run({ crop: 'durian', country: 'Thailand' })).result).toMatchObject({ ok: false, reason: 'group-item' });
+  });
+
+  it('whereGrown: the figure of a country\'s own statistics, said to be that, with its publication', async () => {
+    const row = cropCountry.find((r) => r.crop_id === 'durio-zibethinus' && r.iso3 === 'VNM')!;
+    expect(row.match).toBe('national');
+    const out = await tools('vi').whereGrown.run({ crop: 'sầu riêng', country: 'Việt Nam' });
+    const r = found(out);
+    expect(r.rows).toEqual([{ iso3: 'VNM', country: 'Viet Nam', areaHa: Number(row.area_ha), productionT: Number(row.production_t), level: row.level, rank: null, years: [Number(row.year_from), Number(row.year_to)], source: row.source }]);
+    expect(r.sources).toHaveLength(1);
+    expect(r.sources[0].name.startsWith(row.source)).toBe(true);
+    expect(r.caveats.join(' ')).toMatch(/FAOSTAT không có số riêng cho cây này/);
+    expect(r.caveats.join(' ')).toMatch(/lấy từ thống kê quốc gia/);
+    // Cited as the publication, with its address; the snippet says whose figure it is.
+    expect(out.citation!.source.startsWith(row.source)).toBe(true);
+    expect(out.citation!.url).toMatch(/^https:\/\//);
+    expect(out.citation!.snippet).toBe(`Viet Nam ${Number(row.area_ha).toLocaleString('vi-VN')} ha (thống kê quốc gia)`);
   });
 
   it('cropsInPlace: the first rows of a long table, and how many there are', async () => {

@@ -9,7 +9,10 @@
  *  - a FAOSTAT item tied to several crops is one row with all of them, not one row per crop;
  *  - a crop counted inside a group item never gets the numbers of the group;
  *  - "the statistics cannot tell" is never turned into "not grown";
- *  - a figure of another country is not given in place of a missing one.
+ *  - a figure of another country is not given in place of a missing one;
+ *  - a figure of national statistics (the atlas's `match = national` rows, for Viet Nam and the
+ *    United States) is given as that, with its publication, and is not ranked among FAOSTAT's
+ *    countries.
  */
 import type { CropPrevalence, I18nText, ModelInput, PhPlan, RotationStrategy, ScoreTimeline, SeasonEconomics } from '@/contracts';
 import { phPlan } from '@/core/advisory/actions';
@@ -18,7 +21,7 @@ import { estimateSeasonEconomics, type ReferenceEconomics, referenceEconomics } 
 import { assessCrop, computeScoreTimeline, type CropAssessment } from '@/core/scoring';
 import type { CountryTableFile } from '@/data/countryTable';
 import { factLines } from './facts';
-import type { CountriesTable, CropCountriesFile, CropEntry, CropsTable, RegionFile, SourcesTable, SpamTable } from './tables';
+import type { CountriesTable, CropCountriesFile, CropEntry, CropsTable, NationalTable, RegionFile, SourcesTable, SpamTable } from './tables';
 import { fold } from './text';
 import type { CropFacts } from './types';
 
@@ -50,6 +53,7 @@ export interface AtlasTables {
   countries: CountriesTable;
   sources: SourcesTable;
   spam: SpamTable;
+  national: NationalTable;
 }
 
 const tx = (en: string, vi: string): I18nText => ({ en, vi });
@@ -68,6 +72,15 @@ function span(years: ([number, number] | undefined)[]): string {
   const to = Math.max(...known.map((y) => y[1]));
   return from === to ? String(from) : `${from}-${to}`;
 }
+
+/** The publication behind a row of national statistics, as a source: its name with the table read, its terms, its address. */
+function nationalSource(t: AtlasTables, cropId: string, iso3: string, p: CropPrevalence): LookupSource {
+  const n = t.national[`${cropId}:${iso3}`];
+  return { name: `${p.source}${n?.table ? `, ${n.table}` : ''}`, licence: n?.licence ?? 'not recorded', year: span([p.years]), ...(n?.accessed ? { accessed: n.accessed } : {}), ...(n?.url ? { url: n.url } : {}) };
+}
+
+/** A row of national statistics with a figure; one without says only that the publication has none. */
+const hasFigure = (p: CropPrevalence): boolean => p.level !== 'unknown' && (p.areaHa != null || p.productionT != null);
 
 const NOT_ITEMISED = tx(
   'A crop the statistics report none of is not thereby a crop that is not grown: a country that does not itemise a crop reads the same way.',
@@ -100,6 +113,8 @@ export interface PlaceCropRow {
   level?: CropPrevalence['level'];
   /** For a region: true for a SPAM class of several crops ("Other Vegetables"), which names none of ours. */
   residual?: boolean;
+  /** The national publication the row is from; absent for a row of FAOSTAT or of MapSPAM. */
+  source?: string;
 }
 
 /** MapSPAM writes region names in its own way ("Can Tho city", "Thua Thien - Hue"): compare what is left when that is taken off. */
@@ -144,29 +159,56 @@ export function cropsInPlace(t: AtlasTables, place: { country: CountryTableFile 
   }
   const file = place.country;
   if (!file) return fail('no-data');
-  // One row per FAOSTAT item: the three rice crops share one item and one set of numbers.
+  // One row per FAOSTAT item: the three rice crops share one item and one set of numbers. A crop
+  // whose figure is from national statistics is a row of its own, under the crop's name.
   const byItem = new Map<string, { ids: string[]; p: CropPrevalence }>();
+  let withoutFigure = 0;
   for (const [id, p] of Object.entries(file.prevalence)) {
+    if (p.match === 'national') {
+      if (hasFigure(p)) byItem.set(`national:${id}`, { ids: [id], p });
+      else withoutFigure++;
+      continue;
+    }
     const item = t.crops.crops[id]?.item ?? `crop:${id}`;
     const row = byItem.get(item);
     if (row) row.ids.push(id);
     else byItem.set(item, { ids: [id], p });
   }
+  const cropName = (id: string) => t.crops.crops[id]?.en ?? t.crops.crops[id]?.sci ?? id;
   const rows = [...byItem.entries()]
-    .map(([item, { ids, p }]): PlaceCropRow => ({ cropIds: ids.sort(), name: t.crops.items[item]?.name ?? item, areaHa: p.areaHa ?? null, productionT: p.productionT ?? null, sharePct: p.sharePct ?? null, rank: p.rankInCountry ?? null, level: p.level }))
+    .map(([item, { ids, p }]): PlaceCropRow => ({
+      cropIds: ids.sort(),
+      name: p.match === 'national' ? cropName(ids[0]) : (t.crops.items[item]?.name ?? item),
+      areaHa: p.areaHa ?? null,
+      productionT: p.productionT ?? null,
+      sharePct: p.sharePct ?? null,
+      rank: p.rankInCountry ?? null,
+      level: p.level,
+      ...(p.match === 'national' ? { source: p.source } : {}),
+    }))
     .sort((a, b) => (b.areaHa ?? -1) - (a.areaHa ?? -1) || (b.productionT ?? 0) - (a.productionT ?? 0) || a.name.localeCompare(b.name));
   const grouped = file.group.reported.length;
+  const national = [...byItem.values()].filter(({ p }) => p.match === 'national');
+  const sources = [source(t, 'faostat-qcl', span(Object.values(file.prevalence).filter((p) => p.match !== 'national').map((p) => p.years)))];
+  for (const { ids, p } of national) {
+    const s = nationalSource(t, ids[0], iso3, p);
+    if (!sources.some((x) => x.name === s.name && x.year === s.year)) sources.push(s);
+  }
   return {
     ok: true,
     rows,
-    sources: [source(t, 'faostat-qcl', span(Object.values(file.prevalence).map((p) => p.years)))],
+    sources,
     caveats: [
       ...(grouped
         ? [tx(`${grouped} more crops are counted inside group items the country reports ("Other vegetables" and the like): they may be grown, and have no figure of their own.`, `Còn ${grouped} cây được tính trong các mặt hàng gộp mà nước này có báo cáo ("Other vegetables" và tương tự): có thể có trồng, nhưng không có số riêng.`)]
         : []),
+      ...(national.length
+        ? [tx(`${national.length} rows name a source: they are figures of national statistics, of one year, where the others are FAOSTAT's means of three years. The atlas ranks them together.`, `${national.length} dòng có ghi nguồn: đó là số liệu thống kê quốc gia của một năm, còn các dòng khác là trung bình ba năm của FAOSTAT. Atlas xếp hạng chung các dòng này.`)]
+        : []),
+      ...(withoutFigure ? [tx(`For ${withoutFigure} more crops the national statistics were read and have no figure: that does not say they are not grown.`, `Với ${withoutFigure} cây nữa, thống kê quốc gia đã được đọc và không có số riêng: điều đó không có nghĩa là không trồng.`)] : []),
       NOT_ITEMISED,
     ],
-    facts: { country: file.country, items: rows.length, crops: Object.keys(file.prevalence).length, inGroups: grouped, notReported: file.absent.length },
+    facts: { country: file.country, items: rows.length, crops: Object.keys(file.prevalence).length - withoutFigure, inGroups: grouped, notReported: file.absent.length, fromNationalStatistics: national.length, nationalWithoutFigure: withoutFigure },
   };
 }
 
@@ -181,27 +223,58 @@ export interface CropCountryRow {
   productionT: number | null;
   /** `absent`: the country's statistics report none of it. */
   level: CropPrevalence['level'];
-  /** Place among the countries that report an area, 1 = largest. */
+  /** Place among the countries that report an area to FAOSTAT, 1 = largest; null for a figure of national statistics. */
   rank: number | null;
   years?: [number, number];
+  /** The national publication the row is from; absent for a row of FAOSTAT. */
+  source?: string;
 }
 
 /**
  * The countries with the largest harvested area of a crop and, with `iso3`, that country's own
- * figures. `file` is the crop's file: null for a crop without an item of its own.
+ * figures. `file` is the crop's file: null for a crop without an item of its own. `opts.country`
+ * is the file of the country asked about: where the atlas has the crop there from national
+ * statistics, that figure is given, also for a crop FAOSTAT has no figure of.
  */
-export function whereGrown(t: AtlasTables, file: CropCountriesFile | null, cropId: string, iso3?: string, opts: { top?: number; isDropped?: (id: string) => boolean } = {}): LookupResult<CropCountryRow> {
+export function whereGrown(
+  t: AtlasTables,
+  file: CropCountriesFile | null,
+  cropId: string,
+  iso3?: string,
+  opts: { top?: number; isDropped?: (id: string) => boolean; country?: CountryTableFile | null } = {},
+): LookupResult<CropCountryRow> {
   const unknown = unknownCrop(t, cropId, opts.isDropped);
   if (unknown) return unknown;
   const crop = t.crops.crops[cropId];
   const item = crop.item ? t.crops.items[crop.item] : undefined;
+  if (iso3 && !t.countries[iso3]) return fail('unknown-place');
   // The crops the item's numbers stand for: those tied to it as their own item.
   const sharing = (item?.crops ?? []).filter((id) => t.crops.crops[id]?.match === 'exact').length;
+
+  // What the country asked about says in its own statistics, when the atlas has read them for this crop.
+  const own = iso3 && opts.country?.iso3 === iso3 ? opts.country.prevalence[cropId] : undefined;
+  const national = own?.match === 'national' ? own : undefined;
+  const nationalRow: CropCountryRow | undefined =
+    national && iso3 && hasFigure(national)
+      ? { iso3, country: t.countries[iso3], areaHa: national.areaHa ?? null, productionT: national.productionT ?? null, level: national.level, rank: null, ...(national.years ? { years: national.years } : {}), source: national.source }
+      : undefined;
+  const fromNational = national && iso3 ? tx(`The figure of ${t.countries[iso3]} is from its national statistics (${national.source}), not from FAOSTAT, and is not ranked among FAOSTAT's countries.`, `Số của ${t.countries[iso3]} lấy từ thống kê quốc gia (${national.source}), không phải của FAOSTAT, và không được xếp hạng chung với các nước của FAOSTAT.`) : null;
+  const nationalHasNone = national && iso3 ? tx(`The national statistics read for ${t.countries[iso3]} (${national.source}) have no figure for it: that does not say it is not grown.`, `Thống kê quốc gia đã đọc cho ${t.countries[iso3]} (${national.source}) không có số riêng cho cây này: điều đó không có nghĩa là không trồng.`) : null;
+  /** The answer for a crop FAOSTAT has no figure of: the national figure when there is one, else why there is none. */
+  const withoutFaostat = (reason: LookupFailure, why: I18nText): LookupResult<CropCountryRow> =>
+    nationalRow && national && iso3 && fromNational
+      ? { ok: true, rows: [nationalRow], sources: [nationalSource(t, cropId, iso3, national)], caveats: [why, fromNational], facts: { item: item?.name ?? '', countriesReporting: 0, countriesWithArea: 0, askedLevel: nationalRow.level } }
+      : fail(reason, why, ...(nationalHasNone ? [nationalHasNone] : []));
+
   if (crop.match === 'group')
-    return fail('group-item', tx(`FAOSTAT counts it inside the item ${item?.name ?? 'of a group'}, with ${(item?.crops.length ?? 1) - 1} other crops of the atlas: there is no figure for it alone, in any country.`, `FAOSTAT tính cây này trong mặt hàng ${item?.name ?? 'gộp'}, cùng ${(item?.crops.length ?? 1) - 1} cây khác của atlas: không có số riêng cho cây này, ở nước nào cũng vậy.`));
+    return withoutFaostat(
+      'group-item',
+      tx(`FAOSTAT counts it inside the item ${item?.name ?? 'of a group'}, with ${(item?.crops.length ?? 1) - 1} other crops of the atlas: FAOSTAT has no figure for it alone, in any country.`, `FAOSTAT tính cây này trong mặt hàng ${item?.name ?? 'gộp'}, cùng ${(item?.crops.length ?? 1) - 1} cây khác của atlas: FAOSTAT không có số riêng cho cây này, ở nước nào cũng vậy.`),
+    );
   // What the atlas did, not what FAOSTAT has: FAOSTAT has an item for bananas, and the atlas ties none to Musa acuminata.
-  if (crop.match === 'none' || !file) return fail('no-data', tx('The crop atlas ties no FAOSTAT item to it, so it has no figures by country for it.', 'Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với cây này, nên không có số liệu theo nước cho cây này.'));
-  if (iso3 && !t.countries[iso3]) return fail('unknown-place');
+  if (crop.match === 'none' || !file)
+    return withoutFaostat('no-data', tx('The crop atlas ties no FAOSTAT item to it, so it has no FAOSTAT figures by country for it.', 'Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với cây này, nên không có số liệu FAOSTAT theo nước cho cây này.'));
+
   const withArea = file.rows.filter((r) => r.areaHa != null);
   const rankOf = (code: string) => {
     const i = withArea.findIndex((r) => r.iso3 === code);
@@ -209,20 +282,30 @@ export function whereGrown(t: AtlasTables, file: CropCountriesFile | null, cropI
   };
   const row = (r: CropCountriesFile['rows'][number]): CropCountryRow => ({ iso3: r.iso3, country: t.countries[r.iso3] ?? r.iso3, areaHa: r.areaHa, productionT: r.productionT, level: r.level, rank: rankOf(r.iso3), years: r.years });
   const rows = withArea.slice(0, opts.top ?? 5).map(row);
+  const sources = [source(t, file.source, span(file.rows.map((r) => r.years)))];
   const caveats: I18nText[] = [];
   let asked: CropCountryRow | undefined;
   if (iso3) {
-    const own = file.rows.find((r) => r.iso3 === iso3);
-    asked = own ? row(own) : { iso3, country: t.countries[iso3], areaHa: null, productionT: null, level: 'absent', rank: null };
+    const reported = file.rows.find((r) => r.iso3 === iso3);
+    if (nationalRow && national && fromNational) {
+      asked = nationalRow;
+      caveats.push(fromNational);
+      sources.push(nationalSource(t, cropId, iso3, national));
+    } else if (national && nationalHasNone) {
+      asked = { iso3, country: t.countries[iso3], areaHa: null, productionT: null, level: 'unknown', rank: null };
+      caveats.push(nationalHasNone);
+    } else {
+      asked = reported ? row(reported) : { iso3, country: t.countries[iso3], areaHa: null, productionT: null, level: 'absent', rank: null };
+      if (!reported) caveats.push(NOT_ITEMISED);
+    }
     if (!rows.some((r) => r.iso3 === iso3)) rows.push(asked);
-    if (!own) caveats.push(NOT_ITEMISED);
   }
   if (item && sharing > 1)
     caveats.push(tx(`These are the figures of the FAOSTAT item ${item.name}, which the atlas ties to ${sharing} crops; they are not for one crop alone.`, `Đây là số liệu của mặt hàng FAOSTAT ${item.name}, mặt hàng mà atlas gắn với ${sharing} cây; không phải số riêng của một cây.`));
   return {
     ok: true,
     rows,
-    sources: [source(t, file.source, span(file.rows.map((r) => r.years)))],
+    sources,
     caveats,
     facts: { item: item?.name ?? '', countriesReporting: file.rows.length, countriesWithArea: withArea.length, ...(asked ? { askedLevel: asked.level } : {}) },
   };
@@ -278,7 +361,7 @@ export function compareCrops(
   a: { cropId: string; facts: CropFacts | undefined; file: CropCountriesFile | null },
   b: { cropId: string; facts: CropFacts | undefined; file: CropCountriesFile | null },
   iso3?: string,
-  opts: { isDropped?: (id: string) => boolean } = {},
+  opts: { isDropped?: (id: string) => boolean; country?: CountryTableFile | null } = {},
 ): LookupResult<CompareRow> {
   const fa = cropFigures(t, a.facts, a.cropId, opts);
   if (!fa.ok) return fa;
@@ -295,7 +378,10 @@ export function compareCrops(
       const own = w.rows.find((r) => r.iso3 === iso3)!;
       for (const s of w.sources) if (!sources.some((x) => x.name === s.name && x.year === s.year)) sources.push(s);
       for (const c of w.caveats) if (!caveats.some((x) => x.en === c.en)) caveats.push(c);
-      return own.level === 'absent' ? tx('none reported', 'không ghi nhận') : tx(`${own.level}${own.areaHa != null ? `, ${own.areaHa} ha` : ''}`, `${own.level}${own.areaHa != null ? `, ${own.areaHa} ha` : ''}`);
+      if (own.level === 'absent') return tx('none reported', 'không ghi nhận');
+      if (own.level === 'unknown') return tx('the national statistics read have no figure', 'thống kê quốc gia đã đọc không có số riêng');
+      const figure = `${own.level}${own.areaHa != null ? `, ${own.areaHa} ha` : ''}`;
+      return own.source ? tx(`${figure} (national statistics)`, `${figure} (thống kê quốc gia)`) : tx(figure, figure);
     };
     rows.push({ key: `in:${iso3}`, a: level(a), b: level(b) });
   }

@@ -123,23 +123,58 @@ describe('the sheet on where a crop is grown', () => {
     expect(vi).toBe(renderWhere(rice, 'vi'));
   });
 
-  it('durian, counted inside a group item: no area of any country', () => {
-    const durian = crops.get('durio-zibethinus')!;
-    expect(durian.prevalence).toEqual({ match: 'group', faostatItem: 'Other tropical fruits, n.e.c.', sharedBy: 31 });
-    for (const id of ['eco:durio-zibethinus:where', 'eco:durio-zibethinus:where-vi']) {
+  it('a crop counted inside a group item: no area from FAOSTAT, of any country', () => {
+    // Jackfruit is in the same group item as durian and has no row of national statistics.
+    const jackfruit = crops.get('artocarpus-heterophyllus')!;
+    expect(jackfruit.prevalence).toEqual({ match: 'group', faostatItem: 'Other tropical fruits, n.e.c.', sharedBy: 31 });
+    for (const id of ['eco:artocarpus-heterophyllus:where', 'eco:artocarpus-heterophyllus:where-vi']) {
       const text = chunks.find((c) => c.id === id)!.text;
       expect(text).not.toMatch(/\d ha\b/);
       expect(text).toContain('Other tropical fruits, n.e.c.');
     }
-    expect(chunks.find((c) => c.id === 'eco:durio-zibethinus:where')!.text).toMatch(/^FAOSTAT has no figures for Durian \(Durio zibethinus\) alone: it is counted inside the item Other tropical fruits, n\.e\.c\., with 30 other crops of the atlas\. No area can be given for any country\./);
+    expect(chunks.find((c) => c.id === 'eco:artocarpus-heterophyllus:where')!.text).toMatch(/: it is counted inside the item Other tropical fruits, n\.e\.c\., with 30 other crops of the atlas\. FAOSTAT gives no area for any country\. Source: FAOSTAT \(QCL\)/);
+  });
+
+  it('durian: no area from FAOSTAT, and the figure of Viet Nam\'s own statistics with its publication', () => {
+    const row = cropCountry.find((r) => r.crop_id === 'durio-zibethinus' && r.iso3 === 'VNM')!;
+    expect(row.match).toBe('national');
+    const durian = crops.get('durio-zibethinus')!;
+    expect(durian.prevalence).toEqual({
+      match: 'group',
+      faostatItem: 'Other tropical fruits, n.e.c.',
+      sharedBy: 31,
+      national: [{ iso3: 'VNM', name: 'Viet Nam', areaHa: Number(row.area_ha), productionT: Number(row.production_t), years: row.year_from, source: row.source }],
+    });
+    const en = chunks.find((c) => c.id === 'eco:durio-zibethinus:where')!.text;
+    expect(en).toContain('FAOSTAT gives no area for any country.');
+    expect(en).toContain(`Viet Nam, from its national statistics: ${groupDigits(Number(row.area_ha), 'en')} ha harvested and ${groupDigits(Number(row.production_t), 'en')} t produced in ${row.year_from} (${row.source}).`);
+    expect(en).toContain('Sources: FAOSTAT (QCL) and the national statistics named above');
+    const vi = chunks.find((c) => c.id === 'eco:durio-zibethinus:where-vi')!.text;
+    expect(vi).toContain(`Việt Nam, theo thống kê quốc gia: ${groupDigits(Number(row.area_ha), 'vi')} ha thu hoạch`);
+  });
+
+  it('gives every figure of national statistics the atlas has, and none it has not', () => {
+    const withFigure = cropCountry.filter((r) => r.match === 'national' && Number(r.area_ha) > 0);
+    expect(withFigure.length).toBeGreaterThan(10);
+    for (const r of withFigure) {
+      const text = renderWhere(crops.get(r.crop_id)!, 'en');
+      expect(text, `${r.crop_id} ${r.iso3}`).toContain(`${r.country}, from its national statistics: ${groupDigits(Number(r.area_ha), 'en')} ha harvested`);
+      expect(text, `${r.crop_id} ${r.iso3}`).toContain(`(${r.source.trim()}).`);
+    }
+    // A national row without a figure says only that the publication has none: the sheet does not turn it into a statement.
+    const without = cropCountry.filter((r) => r.match === 'national' && !(Number(r.area_ha) > 0));
+    expect(without.length).toBeGreaterThan(10);
+    for (const r of without) expect((crops.get(r.crop_id)!.prevalence!.national ?? []).some((n) => n.iso3 === r.iso3), `${r.crop_id} ${r.iso3}`).toBe(false);
+    // The count of sheets with a national line is the count of crops with such a row.
+    expect([...crops.values()].filter((c) => c.prevalence?.national?.length).length).toBe(new Set(withFigure.map((r) => r.crop_id)).size);
   });
 
   it('a crop no FAOSTAT item covers, and the crop EcoCrop has no record of', () => {
     const marigold = crops.get('tagetes-erecta')!;
     expect(marigold.ecocropId).toBeUndefined();
     expect(marigold.prevalence).toEqual({ match: 'none' });
-    expect(whereLines(marigold, 'en')).toEqual(['The crop atlas ties no FAOSTAT item to Marigold (Tagetes erecta), so it has no figures by country for it.']);
-    expect(whereLines(marigold, 'vi')).toEqual(['Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với Cúc vạn thọ (Tagetes erecta), nên không có số liệu theo nước cho cây này.']);
+    expect(whereLines(marigold, 'en')).toEqual(['The crop atlas ties no FAOSTAT item to Marigold (Tagetes erecta), so it has no FAOSTAT figures by country for it.']);
+    expect(whereLines(marigold, 'vi')).toEqual(['Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với Cúc vạn thọ (Tagetes erecta), nên không có số liệu FAOSTAT theo nước cho cây này.']);
     const sheet = chunks.find((c) => c.id === 'eco:tagetes-erecta:facts')!;
     expect(sheet.text).toContain('FAO EcoCrop has no record of this crop');
     // The atlas is a document of the repository: named, with no link a reader could not open.
@@ -150,7 +185,8 @@ describe('the sheet on where a crop is grown', () => {
     // Banana: the atlas ties no item to Musa acuminata (and "Plantains and cooking bananas" to Musa
     // sapientum). That FAOSTAT has no item for bananas does not follow, and is not so.
     const banana = crops.get('musa-acuminata')!;
-    expect(banana.prevalence).toEqual({ match: 'none' });
+    expect(banana.prevalence).toMatchObject({ match: 'none' });
+    expect(banana.prevalence).not.toHaveProperty('faostatItem');
     expect(cropsCsv.find((r) => r.crop_id === 'musa-acuminata')).toMatchObject({ match: 'none', faostat_item: '' });
     expect(cropsCsv.find((r) => r.crop_id === 'musa-sapientum')!.faostat_item).toBe('Plantains and cooking bananas');
     expect(atlas.filter((x) => x.match === 'none')).toHaveLength(20);
@@ -211,8 +247,10 @@ describe('the sheet on where a crop is grown', () => {
       for (const v of [w.countries, w.worldAreaHa, w.sharedBy, w.sharedBy != null ? w.sharedBy - 1 : undefined]) if (v != null) allowed.add(String(v));
       for (const c of [...(w.top ?? []), ...(w.also ?? [])]) [c.areaHa, c.rank, ...(c.years ?? '').split('-').filter(Boolean)].forEach((v) => allowed.add(String(v)));
       for (const y of (w.years ?? '').split('-')) if (y) allowed.add(y);
-      // The digits of the names (crop, item, country) are not figures.
-      const text = renderWhere(crops.get(a.cropId)!, 'en').replace(a.sci, '').replace(w.faostatItem ?? '\u0000', '');
+      for (const n of w.national ?? []) [n.areaHa, n.productionT, ...(n.years ?? '').split('-').filter(Boolean)].forEach((v) => v != null && allowed.add(String(v)));
+      // The digits of the names (crop, item, country, publication) are not figures.
+      let text = renderWhere(crops.get(a.cropId)!, 'en').replace(a.sci, '').replace(w.faostatItem ?? '\u0000', '');
+      for (const n of w.national ?? []) text = text.replace(n.source, '');
       const found = (text.match(/\d[\d,]*/g) ?? []).map((n) => n.replace(/,/g, ''));
       expect(found.filter((n) => !allowed.has(n)), `${a.cropId}: ${text}`).toEqual([]);
     }

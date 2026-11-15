@@ -120,9 +120,9 @@ const SCHEMAS = {
 
 const DESCRIPTIONS: Record<keyof typeof SCHEMAS, string> = {
   cropsInPlace:
-    'What a country grows, largest harvested area first, from the FAOSTAT crop statistics; with `region`, what one province or state grows as MapSPAM estimates it for 2020. Use it for "what is grown here", "which crops are common in this country or province". Each row is one item of the statistics with its crops, area in hectares, share of the harvested area, rank and level (major, common, minor, present). A crop missing from the rows is not thereby a crop that is not grown: the caveats say why.',
+    'What a country grows, largest harvested area first, from the FAOSTAT crop statistics; with `region`, what one province or state grows as MapSPAM estimates it for 2020. Use it for "what is grown here", "which crops are common in this country or province". Each row is one item of the statistics with its crops, area in hectares, share of the harvested area, rank and level (major, common, minor, present); a row that names a `source` is a figure of national statistics, not of FAOSTAT. A crop missing from the rows is not thereby a crop that is not grown: the caveats say why.',
   whereGrown:
-    'The countries that harvest the largest area of one crop, from the FAOSTAT crop statistics, and, with `country`, the area, production, level and rank of that country. Use it for "where is this crop grown", "does this country grow it", "how much of it does this country grow". A crop counted only inside a group of crops has no figure of its own, and the result says so.',
+    'The countries that harvest the largest area of one crop, from the FAOSTAT crop statistics, and, with `country`, the area, production, level and rank of that country. Use it for "where is this crop grown", "does this country grow it", "how much of it does this country grow". For Viet Nam and the United States the figure of the country can be one of its national statistics: the row then names its `source`, has no rank among the countries of FAOSTAT, and is said to be a national figure. A crop FAOSTAT counts only inside a group of crops has no figure of its own, and the result says so.',
   cropFigures:
     'What one crop needs (FAO EcoCrop: temperature, rainfall, soil pH, texture, depth, drainage, salinity, cycle length) and how widely it is grown (FAOSTAT: the number of countries reporting it and the harvested area of the world). Use it for "what does this crop need" when the knowledge passages do not already give the figures.',
   compareCrops: 'The requirements and world figures of two crops, line against line, and, with `country`, how much of each that country grows. Use it when the user asks to compare two crops.',
@@ -149,7 +149,7 @@ class Lookups {
 
   private tables(): Promise<AtlasTables> {
     const t = this.ctx.tables;
-    this.atlas ??= Promise.all([t.crops(), t.countries(), t.sources(), t.spam()]).then(([crops, countries, sources, spam]) => ({ crops, countries, sources, spam }));
+    this.atlas ??= Promise.all([t.crops(), t.countries(), t.sources(), t.spam(), t.national()]).then(([crops, countries, sources, spam, national]) => ({ crops, countries, sources, spam, national }));
     return this.atlas;
   }
 
@@ -276,12 +276,13 @@ class Lookups {
     if (near) return this.notThatCrop(t, input.crop, near);
     const iso3 = input.country ? this.iso3(t, input.country) : undefined;
     if (iso3 === null) return { result: { ok: false, reason: 'unknown-place', message: FAILURE['unknown-place'][lang] } };
-    const r = whereGrown(t, await this.ctx.tables.crop(id), id, iso3, { top: input.top, isDropped: this.isDropped });
+    // The file of the country asked about: where the atlas has the crop there from national statistics, that figure is given.
+    const r = whereGrown(t, await this.ctx.tables.crop(id), id, iso3, { top: input.top, isDropped: this.isDropped, country: iso3 ? await this.ctx.tables.country(iso3) : null });
     const crop = this.cropName(t, id);
     return this.output(r, { crop }, (rows) => rows, {
       chunkId: `table:crop-countries:${id}${iso3 ? `:${iso3}` : ''}`,
       title: tx(lang, `Where ${crop} is grown`, `Nơi trồng ${crop}`),
-      snippet: (rows) => rows.slice(0, 4).map((x) => (x.areaHa != null ? `${x.country} ${this.num(x.areaHa)} ha` : `${x.country}: ${x.level}`)).join('; '),
+      snippet: (rows) => rows.slice(0, 4).map((x) => (x.areaHa != null ? `${x.country} ${this.num(x.areaHa)} ha${x.source ? tx(lang, ' (national statistics)', ' (thống kê quốc gia)') : ''}` : `${x.country}: ${x.level}`)).join('; '),
     });
   }
 
@@ -308,7 +309,7 @@ class Lookups {
     const iso3 = input.country ? this.iso3(t, input.country) : undefined;
     if (iso3 === null) return { result: { ok: false, reason: 'unknown-place', message: FAILURE['unknown-place'][lang] } };
     const side = async (id: string) => ({ cropId: id, facts: store.crops.get(id), file: await tables.crop(id) });
-    const r = compareCrops(t, await side(a), await side(b), iso3, { isDropped: this.isDropped });
+    const r = compareCrops(t, await side(a), await side(b), iso3, { isDropped: this.isDropped, country: iso3 ? await tables.country(iso3) : null });
     const [nameA, nameB] = [this.cropName(t, a), this.cropName(t, b)];
     return this.output(r, { cropA: nameA, cropB: nameB }, (rows) => rows, {
       chunkId: `table:compare:${a}:${b}`,

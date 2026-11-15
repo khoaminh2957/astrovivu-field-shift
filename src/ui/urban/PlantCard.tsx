@@ -23,7 +23,7 @@ export function PlantCard({ rec, month, rank, onOpen }: { rec: UrbanRecommendati
       onClick={onOpen}
       aria-haspopup="dialog"
       className={cn(
-        'flex w-full min-w-0 flex-col gap-3 rounded-sm border bg-surface-0 p-3 text-left transition-colors duration-(--dur-instant) hover:bg-surface-2',
+        'workspace-urban-card flex w-full min-w-0 flex-col gap-3 rounded-sm border bg-surface-0 p-3 text-left transition-colors duration-(--dur-instant) hover:bg-surface-2',
         top ? 'border-line-3 shadow-md' : 'border-line-2',
       )}
     >

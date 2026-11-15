@@ -5916,6 +5916,10 @@ export const CURATED_CROPS: CropProfile[] = [
         "opt": "high",
         "abs": "low"
       },
+      "alToxicity": {
+        "opt": "low",
+        "abs": "medium"
+      },
       "altitudeMaxM": 1400,
       "latitudeAbs": [
         18,

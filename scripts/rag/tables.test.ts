@@ -41,15 +41,34 @@ describe('the lookup tables', () => {
     const exact = csv('crops.csv').filter((c) => c.match === 'exact');
     expect(built.crop.size).toBe(exact.length);
     for (const c of exact) {
-      const reporting = rows.filter((r) => r.crop_id === c.crop_id && ['major', 'common', 'minor', 'present'].includes(r.level));
+      // The countries that report it to FAOSTAT. A country whose figure is from national statistics
+      // is not in the crop's file: that figure is in the country's own file, with its publication.
+      const reporting = rows.filter((r) => r.crop_id === c.crop_id && r.match === 'exact' && ['major', 'common', 'minor', 'present'].includes(r.level));
       const file = built.crop.get(c.crop_id)!;
       expect(file.rows, c.crop_id).toHaveLength(reporting.length);
-      expect(file.rows.length).toBe(Number(c.n_countries_producing));
     }
+    // Rice has no national row: its file has every country the atlas counts as producing.
+    expect(built.crop.get('oryza-sativa')!.rows.length).toBe(Number(csv('crops.csv').find((c) => c.crop_id === 'oryza-sativa')!.n_countries_producing));
     const rice = built.crop.get('oryza-sativa')!;
     const vnm = rows.find((r) => r.crop_id === 'oryza-sativa' && r.iso3 === 'VNM')!;
     expect(rice.rows.find((r) => r.iso3 === 'VNM')).toEqual({ iso3: 'VNM', areaHa: Number(vnm.area_ha), productionT: Number(vnm.production_t), level: vnm.level, years: [Number(vnm.year_from), Number(vnm.year_to)] });
     expect(built.crop.has('durio-zibethinus')).toBe(false);
+  });
+
+  it('name, for every row of national statistics, the publication, its address, the table read and its terms', () => {
+    const national = csv('crop_country.csv').filter((r) => r.match === 'national');
+    expect(national.length).toBeGreaterThan(50);
+    expect(Object.keys(built.national).sort()).toEqual(national.map((r) => `${r.crop_id}:${r.iso3}`).sort());
+    for (const r of national) {
+      const n = built.national[`${r.crop_id}:${r.iso3}`];
+      expect(n.source, r.crop_id).toBe(r.source.trim());
+      expect(n.url, r.crop_id).toMatch(/^https:\/\//);
+      expect(n.licence.length, r.crop_id).toBeGreaterThan(10);
+      expect(n.accessed, r.crop_id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+    // The terms are those of sources.csv for the same address.
+    const durian = built.national['durio-zibethinus:VNM'];
+    expect(csv('sources.csv').find((x) => x.url === durian.url)!.licence).toBe(durian.licence);
   });
 
   it('give the regions of a country every MapSPAM row of the atlas, and describe each SPAM crop once', () => {
@@ -77,12 +96,13 @@ describe('the files under public/rag/tables', () => {
   it('are the tables, file for file', () => {
     expect(files.filter((f) => f.startsWith('crop/'))).toHaveLength(built.crop.size);
     expect(files.filter((f) => f.startsWith('region/'))).toHaveLength(built.region.size);
-    expect(files.filter((f) => !f.includes('/')).sort()).toEqual(['countries.json', 'crops.json', 'sources.json', 'spam.json']);
+    expect(files.filter((f) => !f.includes('/')).sort()).toEqual(['countries.json', 'crops.json', 'national.json', 'sources.json', 'spam.json']);
     const read = (rel: string) => JSON.parse(fs.readFileSync(path.join(TABLES_DIR, rel), 'utf8')) as unknown;
     expect(read('crops.json')).toEqual(built.crops);
     expect(read('crop/oryza-sativa.json')).toEqual(built.crop.get('oryza-sativa'));
     expect(read('region/VNM.json')).toEqual(built.region.get('VNM'));
     expect(read('spam.json')).toEqual(built.spam);
+    expect(read('national.json')).toEqual(built.national);
   });
 
   it('none is larger than 150 kB', () => {

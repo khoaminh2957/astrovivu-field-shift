@@ -8,6 +8,7 @@
  *   region/<ISO3>.json   MapSPAM harvested area by first-level region of the country
  *   spam.json            the 46 SPAM crops: name, class, the crops of ours tied to each
  *   sources.json         title, publisher, licence, landing page and day of access of the sources
+ *   national.json        for each row of national statistics: publication, address, table, licence
  *
  * The crops of one country are not written here: `public/data/crops/country/<ISO3>.json`
  * (scripts/crops/country-tables.ts) already holds the same rows, and the assistant reads those.
@@ -19,7 +20,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Papa from 'papaparse';
-import type { CountriesTable, CropCountriesFile, CropsTable, RegionFile, SourcesTable, SpamTable } from '../../src/rag/tables';
+import type { CountriesTable, CropCountriesFile, CropsTable, NationalTable, RegionFile, SourcesTable, SpamTable } from '../../src/rag/tables';
 import { ATLAS_DIR } from './atlas';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
@@ -39,7 +40,11 @@ export interface BuiltTables {
   region: Map<string, RegionFile>;
   spam: SpamTable;
   sources: SourcesTable;
+  national: NationalTable;
 }
+
+/** The hand-read national statistics behind the atlas's `match = national` rows (data/crops/national, read-only here). */
+const NATIONAL_CSV = path.join(ROOT, 'data/crops/national/prevalence.csv');
 
 export function buildTables(): BuiltTables {
   const cropRows = read('crops.csv');
@@ -85,7 +90,21 @@ export function buildTables(): BuiltTables {
   for (const r of read('sources.csv')) if (CITED.includes(r.source)) sources[r.source] = { title: r.title, publisher: r.publisher, url: r.landing_page || r.url, licence: r.licence, ...(r.accessed ? { accessed: r.accessed } : {}) };
   for (const id of CITED) if (!sources[id]) throw new Error(`sources.csv has no source "${id}"`);
 
-  return { crops, countries, crop, region, spam, sources };
+  // A row of national statistics is cited by its publication: where it is and under which terms
+  // is in prevalence.csv (address, table, day read) and in sources.csv (terms, by the same address).
+  const national: NationalTable = {};
+  const read1 = Papa.parse<Row>(fs.readFileSync(NATIONAL_CSV, 'utf8').replace(/^\uFEFF/, ''), { header: true, skipEmptyLines: true }).data;
+  const terms = new Map(read('sources.csv').filter((r) => r.source.startsWith('national-')).map((r) => [r.url, r.licence]));
+  for (const r of read('crop_country.csv')) {
+    if (r.match !== 'national') continue;
+    const from = read1.find((x) => x.crop_id === r.crop_id && x.iso3 === r.iso3 && x.source.trim() === r.source.trim()) ?? read1.find((x) => x.crop_id === r.crop_id && x.iso3 === r.iso3);
+    if (!from) throw new Error(`crop_country.csv: ${r.crop_id} ${r.iso3} is from national statistics, and data/crops/national/prevalence.csv has no such row`);
+    const licence = terms.get(from.url);
+    if (!licence) throw new Error(`sources.csv has no national source at ${from.url} (${r.crop_id} ${r.iso3}): its terms are not known`);
+    national[`${r.crop_id}:${r.iso3}`] = { source: r.source.trim(), url: from.url, licence, ...(from.accessed ? { accessed: from.accessed } : {}), ...(from.table ? { table: from.table } : {}) };
+  }
+
+  return { crops, countries, crop, region, spam, sources, national };
 }
 
 /** Writes the files; returns their sizes in bytes, by path under public/rag/tables. */
@@ -104,6 +123,7 @@ export function writeTables(dir = TABLES_DIR): Map<string, number> {
   write('countries.json', t.countries);
   write('sources.json', t.sources);
   write('spam.json', t.spam);
+  write('national.json', t.national);
   for (const [id, f] of [...t.crop].sort(([a], [b]) => a.localeCompare(b))) write(`crop/${id}.json`, f);
   for (const [iso3, f] of [...t.region].sort(([a], [b]) => a.localeCompare(b))) write(`region/${iso3}.json`, f);
   return sizes;
@@ -114,7 +134,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
   const kb = (n: number) => `${(n / 1024).toFixed(1)} kB`;
   const group = (prefix: string) => [...sizes].filter(([k]) => k.startsWith(prefix));
   const total = (xs: [string, number][]) => xs.reduce((a, [, n]) => a + n, 0);
-  for (const f of ['crops.json', 'countries.json', 'sources.json', 'spam.json']) console.log(`${f}: ${kb(sizes.get(f)!)}`);
+  for (const f of ['crops.json', 'countries.json', 'sources.json', 'spam.json', 'national.json']) console.log(`${f}: ${kb(sizes.get(f)!)}`);
   for (const p of ['crop/', 'region/']) {
     const xs = group(p);
     const largest = xs.reduce((a, b) => (b[1] > a[1] ? b : a));

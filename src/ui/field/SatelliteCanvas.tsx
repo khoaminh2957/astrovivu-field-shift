@@ -32,24 +32,34 @@ function loadTile(url: string): Promise<HTMLImageElement | null> {
   return p;
 }
 
-export function SatelliteCanvas({ parcel, className, pad = 12 }: { parcel: Parcel; className?: string; pad?: number }) {
+export function SatelliteCanvas({ parcel, className, pad = 12, thumbnail = false }: { parcel: Parcel; className?: string; pad?: number; thumbnail?: boolean }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const [failed, setFailed] = useState(false);
+  const [thumbnailSize, setThumbnailSize] = useState('');
 
   useEffect(() => {
     const canvas = ref.current;
-    if (!canvas) return;
+    if (!thumbnail || !canvas) return;
+    const observer = new ResizeObserver(() => setThumbnailSize(`${canvas.clientWidth}x${canvas.clientHeight}`));
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [thumbnail]);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas || (thumbnail && (!thumbnailSize || canvas.clientWidth <= 2 * pad || canvas.clientHeight <= 2 * pad))) return;
     let alive = true;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = (canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr)));
     const h = (canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr)));
     const [west, south, east, north] = parcel.bbox;
+    const tileTarget = thumbnail ? Math.min(256, Math.max(64, Math.min(w, h) - 2 * pad * dpr)) : 256;
     let z = 19;
     for (let k = 10; k <= 19; k++) {
       const [ax, ay] = merc([west, north], k);
       const [bx, by] = merc([east, south], k);
       const span = Math.max(bx - ax, by - ay);
-      if (span >= 256) {
+      if (span >= tileTarget) {
         z = k;
         break;
       }
@@ -96,7 +106,7 @@ export function SatelliteCanvas({ parcel, className, pad = 12 }: { parcel: Parce
     return () => {
       alive = false;
     };
-  }, [parcel, pad]);
+  }, [parcel, pad, thumbnail, thumbnailSize]);
 
   return (
     <>
