@@ -73,7 +73,7 @@ Workflow **không làm gì** cho đến khi các biến dưới đây tồn tạ
 
 ### Cài đặt lần đầu (chủ repo)
 
-1. Tạo dự án trên <https://supabase.com/dashboard> (vùng Singapore gần người dùng Việt Nam). Ghi lại mật khẩu cơ sở dữ liệu. Muốn có staging thì tạo dự án thứ hai.
+1. Tạo dự án trên <https://supabase.com/dashboard> (vùng Singapore gần người dùng Việt Nam). Mật khẩu cơ sở dữ liệu giữ cho riêng mình, không cần đưa vào GitHub. Muốn có staging thì tạo dự án thứ hai.
 2. GitHub → Settings → Environments: tạo `production` (và `staging`), ở `production` bật **Required reviewers** và chọn người duyệt.
 3. Settings → Secrets and variables → Actions:
 
@@ -81,8 +81,7 @@ Workflow **không làm gì** cho đến khi các biến dưới đây tồn tạ
    |---|---|---|
    | Variable của repo | `SUPABASE_PRODUCTION_PROJECT_REF` | mã 20 ký tự của dự án (trong URL của dashboard) |
    | Variable của repo | `SUPABASE_STAGING_PROJECT_REF` | như trên cho staging; bỏ qua nếu không có |
-   | Secret của từng environment | `SUPABASE_ACCESS_TOKEN` | Account → Access Tokens trên Supabase |
-   | Secret của từng environment | `SUPABASE_DB_PASSWORD` | mật khẩu ở bước 1 |
+   | Secret của từng environment | `SUPABASE_ACCESS_TOKEN` | Account → Access Tokens trên Supabase. Workflow dùng token này để xin một vai trò đăng nhập cơ sở dữ liệu chỉ sống vài phút, nên không có secret mật khẩu nào |
    | Secret của từng environment | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API keys, khoá `service_role`; chỉ cần cho việc nạp dữ liệu |
    | Secret của từng environment | `SUPABASE_ANON_KEY` | khoá `anon`; tuỳ chọn, để chạy bước đọc thử |
 
@@ -146,6 +145,7 @@ Căn cứ của thiết kế (đo ngày 15/11/2026):
 | Commit trên `main` có trạng thái `Vercel` do `vercel[bot]` ghi; repo không có GitHub Deployment nào | Vercel tự triển khai: workflow không triển khai lần hai, chỉ kiểm tra sau đó, kích hoạt bằng sự kiện `status` |
 | Toàn bộ lịch sử của repo (44 commit lúc quét) không có khoá bí mật (gitleaks 8.30.1) | job dò khoá bắt đầu từ trạng thái sạch |
 | Bản build hiện tại là một tệp script 2,5 MB | tóm tắt CI ghi kích thước mỗi lần để thấy khi nó tăng; chưa đặt ngưỡng chặn |
+| Hai lần triển khai đầu dừng ở bước kết nối: mật khẩu cơ sở dữ liệu trong secret không khớp (Postgres báo 28P01), kể cả sau khi đặt lại | workflow không dùng mật khẩu nữa: không truyền `--password` thì Supabase CLI 3.1.0 xin vai trò đăng nhập tạm thời qua Management API bằng access token |
 | Dependency graph của repo đang tắt (API trả 403) | job `Dependencies` tự kiểm điều này: tắt thì chạy `npm audit` trên cả cây thư viện và cảnh báo, bật thì chỉ xét phần pull request thêm vào |
 
 Đã kiểm trên máy trước khi mở pull request: toàn bộ lệnh của job `Typecheck, test, build`, `Preview smoke test` và `Database migrations and tests` trong container Linux với Node 24; actionlint và zizmor trên mọi workflow; gitleaks trên toàn bộ lịch sử; bài smoke test trên trang thật.
