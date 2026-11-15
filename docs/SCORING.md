@@ -518,3 +518,31 @@ Without reported production in the country, compatibility from 60: none.
 - **Crops at score 0 are still listed** (Nevada, places 5 to 15), now ordered by what the country grows.
 - **The app does not pass a country table yet** (tasks T6 and B1). Until it does, the lists in the app are as before, except that equal scores are ordered by reliability before the crop id.
 
+## 13. The latitude gate, reviewed (K6)
+
+Code: `LATITUDE_GATE` and `AssessOptions.latitudeGate` in `src/core/scoring/index.ts`; the comparison is part of `scripts/crops/evaluate-prevalence.ts` (`npx tsx scripts/crops/evaluate-prevalence.ts`, about a minute), result in `data/crops/prevalence-eval-results.json` under `latitudeGate`.
+
+**The gate.** EcoCrop gives an absolute latitude limit for most crops. Where a field lies more than 3° beyond it, the crop's compatibility is multiplied by 0.7. It was the only geographic knowledge in the score; with country prevalence available (section 12) the question was whether to keep it, change it or drop it.
+
+**The test.** The experiment of `docs/SCORING_PAPER.md` section 6.7 (crops a country grows against crops it does not, 155 sites in 36 countries), run with six gates. The gate in use applies to 3,768 of the 15,653 labelled crop-site pairs, at 125 of 155 sites: 3,544 of 11,785 pairs of a crop the country does not grow (30.1 %), and 224 of 3,868 pairs of a crop it does grow (5.8 %).
+
+| Gate | Mean country ROC-AUC, rainfed | Change (95 % interval) | Irrigated | Change (95 % interval) |
+|---|---:|---|---:|---|
+| **In use**: factor 0.7 beyond 3° past the limit | 0.699 | | 0.750 | |
+| No gate | 0.696 | -0.003 (-0.004 to -0.002) | 0.744 | -0.006 (-0.008 to -0.004) |
+| Factor 0.7 from the limit itself | 0.700 | +0.001 (0.000 to 0.001) | 0.751 | +0.001 (0.000 to 0.002) |
+| Factor 0.7 beyond 10° past the limit | 0.698 | -0.002 (-0.003 to -0.001) | 0.747 | -0.003 (-0.004 to -0.001) |
+| Factor 0.4 beyond 3° past the limit | 0.702 | +0.003 (0.002 to 0.004) | 0.754 | +0.004 (0.002 to 0.005) |
+| Excluded (factor 0) beyond 3° past the limit | 0.704 | +0.004 (-0.001 to 0.010) | 0.755 | +0.005 (0.000 to 0.011) |
+
+The change is the mean over countries of the country's ROC-AUC with that gate minus its ROC-AUC with the gate in use; the interval resamples countries.
+
+**Decision: the gate stays as it is.**
+
+- **Dropping it makes the score worse**, a little but in the same direction rainfed and irrigated, and the interval does not reach zero. The gate mostly hits crops the country does not grow, which is what it is for.
+- **The tolerance does not matter.** Starting at the limit itself, or 10° beyond it, moves the result by 0.003 at most.
+- **A harsher factor gains 0.003 to 0.004.** The sign is clear (the interval is above zero), the size is not worth it: under half a percent of the ROC-AUC, measured with labels that have the limits listed in section 6.7, against lowering every score the gate touches, among them the 5.8 % of grown crop-site pairs it applies to. A crop grown beyond its EcoCrop limit is a crop whose limit is wrong, and a factor of 0.4 would cap its score at 40, below the "suitable" class.
+- **Excluding outright** gains the same on average, but by country it swings from -0.029 to +0.038 rainfed: it helps where EcoCrop's limits are right and costs where they are not.
+
+What would reopen the question: labels per region instead of per country, or national statistics (task T4) that tell an unreported crop from one that is not grown. No test had to change: the default is the gate that was there, and the new option is used by the comparison only.
+

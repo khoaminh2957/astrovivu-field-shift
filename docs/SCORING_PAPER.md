@@ -332,7 +332,7 @@ Notably, on the Diamond Valley, Nevada center pivot—where SSURGO records stron
 
 ### 6.7 Experiment 7: Do the Crops a Country Grows Score Higher Than Those It Does Not?
 
-Code: `scripts/crops/evaluate-prevalence.ts` (and its test). Result: `data/crops/prevalence-eval-results.json`. Re-run: `npx tsx scripts/crops/evaluate-prevalence.ts` (15 s, no network).
+Code: `scripts/crops/evaluate-prevalence.ts` (and its test). Result: `data/crops/prevalence-eval-results.json`. Re-run: `npx tsx scripts/crops/evaluate-prevalence.ts` (about a minute, no network; it also compares latitude gates, `docs/SCORING.md` section 13).
 
 **Question.** Experiments 1 to 6 test the score against itself and against 56 cases written by the team. This one asks an outside source: in a country, do the crops farmers grow at scale get a higher suitability score than the crops nobody reports?
 
