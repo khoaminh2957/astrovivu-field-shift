@@ -11,6 +11,7 @@ The one principle: every value is copied or computed from a named source file by
 | File | Rows | Content |
 |---|---|---|
 | `crops.csv` | 387 | One row per kept crop: ids, names, EcoCrop description and requirements, FAOSTAT item, match, MapSPAM crop, evidence, commonness, world totals |
+| `urban_candidates.csv` | 387 | One row per crop of `crops.csv`, in its order: whether the EcoCrop rule selects it as an urban / container candidate, and the clause that matched (section 13) |
 | `crop_country.csv` | 72,706 | One row per crop and country: area, production, yield, share, rank, level, source (15 columns, the ones the market database mirrors; 11,416 with quantities, 21,260 `absent`, 40,030 `unknown`; 59 `match = national`, of which 17 with a figure and 42 without) |
 | `item_country.csv` | 9,358 | The same quantities per FAOSTAT item and country, group items included |
 | `country_crops.csv` | 198 | One row per country: what is grown there, largest first |
@@ -20,10 +21,10 @@ The one principle: every value is copied or computed from a named source file by
 | `dropped.csv` | 2,182 | Every EcoCrop species that was not kept, with the reason |
 | `economics_template.csv` | 0 | Header only; yields, prices and costs are for the team to fill |
 | `sources.csv` | 33 | Source, URL, licence, access date, file, SHA-256, rows used (22 files of the build and the 11 publications the national rows cite, which have no checksum: the build keeps no copy) |
-| `columns.csv` | 207 | Every column: meaning in English and Vietnamese, unit, source, rule |
-| `summary.csv` | 57 | The counts of the build |
+| `columns.csv` | 210 | Every column: meaning in English and Vietnamese, unit, source, rule |
+| `summary.csv` | 58 | The counts of the build |
 
-`.cache/atlas/astrovivu-crop-atlas.xlsx` (git-ignored, 5.9 MB, 1,419,230 cells) holds one sheet per table behind a README sheet, for upload to Google Sheets. It leaves out the `absent` rows of `crop_country` and keeps the 15 largest crops of each region in `region_crops`; the CSV files are complete. Values are plain: numbers are numeric cells, codes such as CPC `0113` are text, there are no formulas and no dates. Excel 16 opens it without repair (checked).
+`.cache/atlas/astrovivu-crop-atlas.xlsx` (git-ignored, 6.0 MB, 1,421,337 cells) holds one sheet per table behind a README sheet, for upload to Google Sheets. It leaves out the `absent` rows of `crop_country` and keeps the 15 largest crops of each region in `region_crops`; the CSV files are complete. Values are plain: numbers are numeric cells, codes such as CPC `0113` are text, there are no formulas and no dates. Excel 16 opens it without repair (checked).
 
 ## 2. Sources
 
@@ -315,9 +316,11 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 
 `economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
 
-## 13. Urban candidates (`urban_candidate`, `urban_candidate_rule`)
+## 13. Urban candidates (`urban_candidates.csv`)
 
-`scripts/crops/atlas/urban.ts` (`urbanCandidate(s)`, constants in `URBAN_RULE`) selects urban / container candidate crops from the 387 kept atlas rows using only EcoCrop columns (`life_form`, `habit`, `category`, `life_span`, `cycle_min_days`) and writes `urban_candidate` (`yes` or empty) and `urban_candidate_rule` (`short-cycle`, `perennial-aromatic-herb`, or `short-cycle;perennial-aromatic-herb`) into `data/crops/atlas/crops.csv` and `urban_candidates` into `data/crops/atlas/summary.csv`.
+`scripts/crops/atlas/urban.ts` (`urbanCandidate(s)`, constants in `URBAN_RULE`) selects urban / container candidate crops from the 387 kept atlas rows using only EcoCrop columns (`life_form`, `habit`, `category`, `life_span`, `cycle_min_days`) and writes one row per crop to `data/crops/atlas/urban_candidates.csv`, in the order of `crops.csv`: `crop_id`, `urban_candidate` (`yes` or empty) and `urban_candidate_rule` (`short-cycle`, `perennial-aromatic-herb`, or `short-cycle;perennial-aromatic-herb`). The count goes to `urban_candidates` in `data/crops/atlas/summary.csv`.
+
+The result has a file of its own and `crops.csv` has no `urban_` column: the market database mirrors `crops.csv` column for column (`scripts/market/atlas.ts`, `docs/DATABASE.md`), so a column added there would change the table of a migration that is already applied. Join on `crop_id`.
 
 ### 13.1 Rule and variants tested
 
@@ -356,5 +359,6 @@ The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts
 
 ### 13.3 Limitations
 
+- **The thresholds are a choice of the project.** The 120-day limit of the short-cycle clause (`maxCycleMinDays`) and the 60-day limit for staple categories (`maxStapleVegetableCycleMinDays`) are a choice of the project, not taken from a publication.
 - **Empty EcoCrop cells.** Missing `life_form`, `category`, or `cycle_min_days` evaluates to `false` rather than guessing.
-- **Dropped species.** 676 cultivated EcoCrop species with no FAOSTAT crop item are in `dropped.csv` (section 10), including many ornamentals and culinary herbs; `urban_candidate` is evaluated on the 387 kept atlas crops only.
+- **Dropped species.** 676 cultivated EcoCrop species with no FAOSTAT crop item are in `dropped.csv` (section 10), including many ornamentals and culinary herbs; the rule is evaluated on the 387 kept atlas crops only.
