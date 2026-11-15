@@ -9,7 +9,6 @@ import type { Parcel } from '@/contracts';
 
 export type MapPopover = 'layers' | 'measure' | null;
 export type FieldTab = 'overview' | 'soil' | 'data';
-export type WorkspacePage = 'home';
 /**
  * What the decision steps show. ② Rotation: the farm stage, the comparison of strategies, the plan
  * of the year. ③ Dossier: how the answer was reached, on one sheet. Both live in the advisory phase.
@@ -25,8 +24,6 @@ function viewFromUrl(): AdvisoryView {
 }
 
 export interface MissionUiState {
-  workspacePage: WorkspacePage | null;
-  setWorkspacePage(page: WorkspacePage | null): void;
   advisoryView: AdvisoryView;
   setAdvisoryView(view: AdvisoryView): void;
   /** Soil-and-practice section expanded (the older single-column summary). */
@@ -96,8 +93,6 @@ function storeFold(folded: boolean): void {
 }
 
 export const useMissionUi = create<MissionUiState>()((set) => ({
-  workspacePage: null,
-  setWorkspacePage: (workspacePage) => set({ workspacePage }),
   advisoryView: viewFromUrl(),
   setAdvisoryView: (advisoryView) => set({ advisoryView }),
   overrideOpen: false,

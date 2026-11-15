@@ -3,8 +3,8 @@
  *   No field open (the landing, and the map while the visitor looks for their field): the finder at
  *   the bottom centre is the whole interface; on the map the tools join it on the right edge.
  *   A field open, wide screens (1100 px and up): the rail and the field panel sit on the left.
- *   The rail is the path a grower walks: Home, (1) the field as it is, (2) the rotation (the farm
- *   stage, the comparison, the plan), (3) the dossier. Urban and Ask stand apart under a rule.
+ *   The rail is the path a grower walks: (1) the field as it is, (2) the rotation (the farm stage,
+ *   the comparison, the plan), (3) the dossier. Urban and Ask stand apart under a rule.
  *   The map fills the right, with its tools, legend and timeline inside it.
  *   A field open, narrow screens: the map keeps the top of the screen, one scrolling sheet holds
  *   the field panel, the timeline is pinned above a tab bar.
@@ -12,7 +12,7 @@
  * place the camera flies to, in what is left.
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowLeft, Building2, FileText, House, Map as MapIcon, MessageCircleQuestion, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Building2, FileText, Map as MapIcon, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { BRANCHES } from '@/contracts';
 import { DEMO_FIELD } from '@/data';
@@ -29,7 +29,6 @@ import { TimelineScrubber } from '@/ui/timeline';
 import { UrbanCompanion } from '@/ui/urban';
 import { Finder } from './Finder';
 import { goLanding } from './finderActions';
-import { HomePage } from './HomePage';
 import { MapLayerPill, MapLegend, MapToolbar } from './MapToolbar';
 import { PlaceSearch } from './PlaceSearch';
 import { getShellInsets } from './shellInsets';
@@ -37,10 +36,9 @@ import { useStepUrl } from './stepUrl';
 import { useMissionUi, useNarrow } from './uiState';
 import './strings';
 
-type NavId = 'home' | 'field' | 'advisory' | 'dossier' | 'urban' | 'ask';
-/** Home, the three steps of a field, numbered, then what stands apart from them. */
+type NavId = 'field' | 'advisory' | 'dossier' | 'urban' | 'ask';
+/** The three steps of a field, numbered, then what stands apart from them. */
 const NAV: { id: NavId; icon: ReactNode; key: string; step?: number; rule?: boolean }[] = [
-  { id: 'home', icon: <House />, key: 'nav.home' },
   { id: 'field', icon: <MapIcon />, key: 'nav.field', step: 1 },
   { id: 'advisory', icon: <RefreshCw />, key: 'nav.advisory', step: 2 },
   { id: 'dossier', icon: <FileText />, key: 'nav.dossier', step: 3 },
@@ -54,30 +52,24 @@ export function useNav() {
   const askOpen = useMission((s) => s.askOpen);
   const setPhase = useMission((s) => s.setPhase);
   const setAskOpen = useMission((s) => s.setAskOpen);
-  const workspacePage = useMissionUi((s) => s.workspacePage);
-  const setWorkspacePage = useMissionUi((s) => s.setWorkspacePage);
   const view = useMissionUi((s) => s.advisoryView);
   const setView = useMissionUi((s) => s.setAdvisoryView);
   const active = (id: NavId): boolean =>
     id === 'ask'
       ? askOpen
-      : workspacePage
-        ? workspacePage === id
-        : id === 'field'
-          ? phase === 'explore' || phase === 'locked'
-          : id === 'advisory'
-            ? phase === 'advisory' && view !== 'dossier'
-            : id === 'dossier'
-              ? phase === 'advisory' && view === 'dossier'
-              : phase === id;
+      : id === 'field'
+        ? phase === 'explore' || phase === 'locked'
+        : id === 'advisory'
+          ? phase === 'advisory' && view !== 'dossier'
+          : id === 'dossier'
+            ? phase === 'advisory' && view === 'dossier'
+            : phase === id;
   const selected = askOpen ? NAV.find((item) => item.id === 'ask') : NAV.find((item) => active(item.id));
   const disabled = (id: NavId): boolean => (id === 'advisory' || id === 'dossier') && !hasParcel;
   const go = (id: NavId) => {
     if (disabled(id)) return;
     if (id === 'ask') return setAskOpen(!askOpen);
     if (askOpen) setAskOpen(false);
-    if (id === 'home') return setWorkspacePage('home');
-    setWorkspacePage(null);
     if (id === 'field') return setPhase(hasParcel ? 'locked' : 'explore');
     if (id === 'dossier') {
       setView('dossier');
@@ -209,7 +201,7 @@ function Rail() {
         {NAV.map((n) => (
           <div key={n.id} className="contents">
             {n.rule && <span aria-hidden className="workspace-nav-rule" />}
-            <Tooltip content={disabled(n.id) ? `${t(`chrome.${n.key}`)}: ${t('chrome.nav.needField')}` : t(`chrome.${n.id === 'home' ? 'nav.home' : `${n.key}Long`}`)} side="right" delay={150}>
+            <Tooltip content={disabled(n.id) ? `${t(`chrome.${n.key}`)}: ${t('chrome.nav.needField')}` : t(`chrome.${n.key}Long`)} side="right" delay={150}>
               <button
                 type="button"
                 aria-current={n.id !== 'ask' && active(n.id) ? 'page' : undefined}
@@ -245,7 +237,7 @@ function TabBar() {
   const { active, selected, disabled, go } = useNav();
   const navRef = useNavHighlight(selected?.id);
   return (
-    <nav ref={navRef} aria-label={t('chrome.nav.label')} className="workspace-tab-bar workspace-theme absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-6 safe-bottom">
+    <nav ref={navRef} aria-label={t('chrome.nav.label')} className="workspace-tab-bar workspace-theme absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-5 safe-bottom">
       {selected && <span className="workspace-nav-highlight" aria-hidden="true" />}
       {NAV.map((n) => (
         <button
@@ -437,14 +429,12 @@ function useReportInsets(narrow: boolean, phase: Phase, hasParcel: boolean, cove
 export function Shell() {
   const phase = useMission((s) => s.phase);
   const hasParcel = useMission((s) => !!s.parcel);
-  const workspacePage = useMissionUi((s) => s.workspacePage);
-  const { go } = useNav();
   const narrow = useNarrow();
-  const locked = !workspacePage && phase === 'locked' && hasParcel;
+  const locked = phase === 'locked' && hasParcel;
   const hero = phase === 'hero';
   /** No field is open and the visitor is finding one: on the landing, or on the map after it. */
-  const finding = !workspacePage && (hero || ((phase === 'explore' || phase === 'locked') && !locked));
-  useReportInsets(narrow, phase, hasParcel, !!workspacePage);
+  const finding = hero || ((phase === 'explore' || phase === 'locked') && !locked);
+  useReportInsets(narrow, phase, hasParcel, false);
   useStepUrl();
   const setListMode = useMissionUi((s) => s.setListMode);
   const setFieldTab = useMissionUi((s) => s.setFieldTab);
@@ -478,23 +468,18 @@ export function Shell() {
     if (phase === 'urban') setVisitedUrban(true);
     if (phase === 'advisory') setAdvisoryParcel(parcelId);
   }, [phase, parcelId]);
-  const advisory = phase === 'advisory' && !workspacePage;
-  const urban = phase === 'urban' && !workspacePage;
+  const advisory = phase === 'advisory';
+  const urban = phase === 'urban';
   return (
     <>
       {finding && <Finder />}
       {finding && !hero && <ExploreMap narrow={narrow} />}
       {!finding && (narrow ? <TabBar /> : <Rail />)}
       {locked && (narrow ? <NarrowField /> : <WideField />)}
-      {(workspacePage || advisory || urban) && narrow && (
+      {(advisory || urban) && narrow && (
         <div className="workspace-theme workspace-mobile-top absolute inset-x-0 top-0 z-(--z-chrome) flex h-12 items-center justify-between border-b border-line-1 px-3">
           <Mark />
           <LangSwitch />
-        </div>
-      )}
-      {workspacePage && (
-        <div className="workspace-page-shell">
-          <HomePage onField={() => go('field')} onRotation={() => go('advisory')} onUrban={() => go('urban')} onAsk={() => go('ask')} />
         </div>
       )}
       {(advisory || (parcelId && parcelId === advisoryParcel)) && (
