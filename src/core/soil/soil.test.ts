@@ -2,162 +2,69 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { FieldTelemetry, ModelInput } from '@/contracts';
 import { getSampleParcel } from '@/data/samples';
-import { calculateBufferPhPlan } from './buffer';
+import { computeScoreTimeline } from '@/core/scoring';
 import { diagnoseSoil } from './diagnosis';
-import { buildSoilPlan } from './plan';
 
 const IDS = ['daklak-coffee', 'cantho-rice', 'iowa-corn-soy', 'nevada-alfalfa'] as const;
-const load = (id: string): FieldTelemetry =>
-  JSON.parse(readFileSync(`public/data/samples/${id}.json`, 'utf8')) as FieldTelemetry;
+const load = (id: string): FieldTelemetry => JSON.parse(readFileSync(`public/data/samples/${id}.json`, 'utf8')) as FieldTelemetry;
 
-function inputFor(id: string, gt = true): ModelInput {
-  const p = getSampleParcel(id)!;
-  const dgt = (p as { defaultGroundTruth?: ModelInput['groundTruth'] }).defaultGroundTruth;
-  return {
-    parcel: p,
-    telemetry: load(id),
-    cropId: p.defaultCropId,
-    groundTruth: gt ? { ...(dgt ?? {}) } : {},
-    priorities: ['profit', 'water', 'soil'],
-    today: '2026-11-14',
-  };
+function inputFor(id: string, groundTruth: ModelInput['groundTruth'] = {}): ModelInput {
+  const parcel = getSampleParcel(id)!;
+  return { parcel, telemetry: load(id), cropId: parcel.defaultCropId, groundTruth, priorities: ['soil'], today: '2026-11-14' };
 }
 
-describe('Soil diagnosis & management on real sample fields', () => {
+describe('S1 soil diagnosis', () => {
   for (const id of IDS) {
-    for (const gt of [true, false]) {
-      it(`runs pure diagnosis and plan on ${id} (groundTruth: ${gt})`, () => {
-        const input = inputFor(id, gt);
-        const diag = diagnoseSoil(input);
-
-        expect(diag.fieldId).toBe(input.parcel.id);
-        expect(diag.metrics.length).toBeGreaterThanOrEqual(6);
-        expect(diag.summary.en && diag.summary.vi).toBeTruthy();
-
-        // Bilingual check
-        for (const m of diag.metrics) {
-          expect(m.label.en && m.label.vi).toBeTruthy();
-          expect(m.note.en && m.note.vi).toBeTruthy();
-        }
-
-        const plan = buildSoilPlan(diag, input);
-        // A field with no diagnosed deficit must not receive an invented fertilizer rate.
-        expect(plan.items.length).toBeGreaterThan(0);
-        expect(plan.items.some((item) => item.metric === 'macronutrients')).toBe(false);
-        expect(plan.summary.en && plan.summary.vi).toBeTruthy();
-
-        for (const item of plan.items) {
-          expect(item.title.en && item.title.vi).toBeTruthy();
-          expect(item.action.en && item.action.vi).toBeTruthy();
-          expect(item.timing.en && item.timing.vi).toBeTruthy();
-          expect(item.verification.en && item.verification.vi).toBeTruthy();
-          for (const ev of item.evidence) {
-            expect(ev.label.en && ev.label.vi).toBeTruthy();
-            if (typeof ev.value === 'object' && ev.value !== null) {
-              expect(ev.value.en && ev.value.vi).toBeTruthy();
-            }
-          }
-        }
-      });
-    }
+    it(`diagnoses all six soil factors for ${id}`, () => {
+      const input = inputFor(id);
+      const diagnosis = diagnoseSoil(input, computeScoreTimeline(input));
+      expect(diagnosis?.gaps.map((gap) => gap.key)).toEqual(['ph', 'texture', 'drainage', 'depth', 'salinity', 'fertility']);
+      for (const gap of diagnosis?.gaps ?? []) {
+        expect(gap.label.en).toBeTruthy();
+        expect(gap.label.vi).toBeTruthy();
+      }
+    });
   }
 
-  it('Nevada alfalfa: pH 8.8 is reported as outside optimal and limits growth', () => {
-    const input = inputFor('nevada-alfalfa', true);
-    const diag = diagnoseSoil(input);
-    const phMetric = diag.metrics.find((m) => m.key === 'ph');
-
-    expect(phMetric).toBeDefined();
-    expect(phMetric?.currentValue).toBe(8.8);
-    // Alfalfa optimal is 6.5 - 8.2; 8.8 is reported as outside optimal (tolerable with deficit 0.6)
-    expect(['tolerable', 'outside']).toContain(phMetric?.status);
-    expect(phMetric?.note.vi).toContain('ngoài khoảng tối ưu');
-    expect(phMetric?.note.en).toContain('outside optimal');
-    expect(phMetric?.deficit).toBe(0.6);
-    expect(phMetric?.isLimiting).toBe(true);
-    expect(diag.mostLimitingFactor?.key).toBe('ph');
-
-    const plan = buildSoilPlan(diag, input);
-    const phItem = plan.items.find((i) => i.metric === 'ph');
-    expect(phItem).toBeDefined();
-    expect(phItem?.action.en).toContain('sulfur');
+  it('reports missing data without inventing a score', () => {
+    const input = inputFor('cantho-rice');
+    const diagnosis = diagnoseSoil(input, computeScoreTimeline(input));
+    expect(diagnosis?.gaps.find((gap) => gap.key === 'drainage')?.status).toBe('unknown');
+    expect(diagnosis?.gaps.find((gap) => gap.key === 'depth')?.status).toBe('unknown');
+    expect(diagnosis?.gaps.find((gap) => gap.key === 'salinity')?.status).toBe('unknown');
   });
 
-  it('Can Tho rice: salinity and drainage report no_data and trigger "measure first"', () => {
-    const input = inputFor('cantho-rice', false); // without ground truth override
-    const diag = diagnoseSoil(input);
-
-    const salMetric = diag.metrics.find((m) => m.key === 'salinity');
-    expect(salMetric).toBeDefined();
-    expect(salMetric?.status).toBe('no_data');
-
-    const drainMetric = diag.metrics.find((m) => m.key === 'drainage');
-    expect(drainMetric).toBeDefined();
-    expect(drainMetric?.status).toBe('no_data');
-
-    const plan = buildSoilPlan(diag, input);
-    const salItem = plan.items.find((i) => i.metric === 'salinity');
-    expect(salItem).toBeDefined();
-    expect(salItem?.status).toBe('no_data');
-    expect(salItem?.rateRange).toBeNull();
-    expect(salItem?.action.vi).toContain('Lấy mẫu đất');
-  });
-
-  it('uses crop drainage requirements instead of treating every well-drained field as optimal', () => {
-    const input: ModelInput = {
-      ...inputFor('cantho-rice', false),
-      groundTruth: { drainage: 'well' },
-    };
-    const drainage = diagnoseSoil(input).metrics.find((metric) => metric.key === 'drainage');
-
+  it('uses crop drainage requirements instead of treating well-drained soil as universally optimal', () => {
+    const input = inputFor('cantho-rice', { drainage: 'well' });
+    const diagnosis = diagnoseSoil(input, computeScoreTimeline(input));
+    const drainage = diagnosis?.gaps.find((gap) => gap.key === 'drainage');
     expect(drainage?.status).toBe('outside');
-    expect(drainage?.isLimiting).toBe(true);
+    expect(drainage?.limiting).toBe(false);
   });
 
-  it('reports missing crop depth data instead of deriving an optimal depth', () => {
-    const input = inputFor('nevada-alfalfa', false);
-    const depth = diagnoseSoil(input).metrics.find((metric) => metric.key === 'depth');
-
-    expect(depth?.status).toBe('no_data');
-    expect(depth?.currentValue).toBeNull();
+  it('uses a grower pH measurement in the diagnosis', () => {
+    const input = inputFor('daklak-coffee', { ph: 4.5 });
+    const diagnosis = diagnoseSoil(input, computeScoreTimeline(input));
+    const ph = diagnosis?.gaps.find((gap) => gap.key === 'ph');
+    expect(ph?.facts[0].value).toBe(4.5);
+    expect(ph?.status).toBe('tolerated');
   });
 
-  it('does not emit an unsupported organic-matter dose', () => {
-    const input = inputFor('nevada-alfalfa', false);
-    const plan = buildSoilPlan(diagnoseSoil(input), input);
-    const organic = plan.items.find((item) => item.metric === 'organic_matter');
-
-    expect(organic).toBeDefined();
-    expect(organic?.rateRange).toBeNull();
-    expect(organic?.needsLocalReview).toBe(true);
+  it('uses the score summary for Nevada limiting and reports the organic-matter conflict', () => {
+    const input = inputFor('nevada-alfalfa');
+    const score = computeScoreTimeline(input);
+    const diagnosis = diagnoseSoil(input, score);
+    expect(diagnosis?.limitingKey).toBeNull();
+    expect(diagnosis?.gaps.find((gap) => gap.key === 'ph')).toMatchObject({ status: 'tolerated', gap: { amount: 0.6, direction: 'lower' }, limiting: false });
+    expect(diagnosis?.conflicts[0].en).toContain('1.5%');
+    expect(diagnosis?.conflicts[0].en).toContain('3.1%');
   });
 
-  it('Buffer capacity: clay soil requires more lime than sandy soil for same pH delta', () => {
-    // Fabricate two inputs differing only in texture and CEC
-    const base = inputFor('iowa-corn-soy', true);
-
-    const sandyInput: ModelInput = {
-      ...base,
-      cropId: 'glycine-max', // Soybean (opt pH 6.0 - 7.0)
-      groundTruth: { ph: 5.0, texture: 'light' },
-    };
-
-    const clayInput: ModelInput = {
-      ...base,
-      cropId: 'glycine-max',
-      groundTruth: { ph: 5.0, texture: 'heavy' },
-    };
-
-    const sandyPlan = calculateBufferPhPlan(sandyInput);
-    const clayPlan = calculateBufferPhPlan(clayInput);
-
-    expect(sandyPlan?.amendment).toBe('lime');
-    expect(clayPlan?.amendment).toBe('lime');
-    expect(sandyPlan?.rateTHa).not.toBeNull();
-    expect(clayPlan?.rateTHa).not.toBeNull();
-
-    // Clay buffer capacity requires significantly higher lime than sandy soil
-    expect(clayPlan!.rateTHa![1]).toBeGreaterThan(sandyPlan!.rateTHa![1]);
+  it('reports pH uncertainty endpoints and unknown soil factors for Can Tho', () => {
+    const input = inputFor('cantho-rice');
+    const diagnosis = diagnoseSoil(input, computeScoreTimeline(input));
+    expect(diagnosis?.limitingKey).toBeNull();
+    expect(diagnosis?.gaps.find((gap) => gap.key === 'ph')?.gapAtEnds).toEqual([{ amount: 1.3, unit: 'pH', direction: 'raise' }, { amount: 1.2, unit: 'pH', direction: 'lower' }]);
+    expect(diagnosis?.gaps.filter((gap) => ['drainage', 'depth', 'salinity'].includes(gap.key)).every((gap) => gap.status === 'unknown')).toBe(true);
   });
 });
-

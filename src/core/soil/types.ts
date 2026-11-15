@@ -1,6 +1,6 @@
-import type { I18nText, SoilPlan, SoilPlanItem, SoilStatus } from '@/contracts';
+import type { FactorKind, I18nText } from '@/contracts';
 
-export type { SoilStatus, SoilPlanItem, SoilPlan };
+export type SoilStatus = 'optimal' | 'tolerable' | 'outside' | 'uncertain' | 'no_data';
 
 export type ReferenceSoilType =
   | 'Sandy'
@@ -34,32 +34,35 @@ export interface SoilTypeReference {
   };
 }
 
-export interface SoilMetricDiagnosis {
-  key: string;
+export type SoilGapStatus = 'optimal' | 'tolerated' | 'outside' | 'unknown';
+
+export interface SoilGapAmount {
+  amount: number;
+  unit: string;
+  direction: 'raise' | 'lower';
+}
+
+export type SoilGapKey = 'ph' | 'texture' | 'drainage' | 'depth' | 'salinity' | 'fertility';
+
+export interface SoilGap {
+  key: SoilGapKey;
   label: I18nText;
-  currentValue: number | string | null;
-  unit?: string;
-  sourceId?: string;
-  uncertainty?: [number, number] | null;
-  targetRange?: {
-    optLo?: number | string;
-    optHi?: number | string;
-    absLo?: number | string;
-    absHi?: number | string;
-  };
-  status: SoilStatus;
-  deficit?: number | null;
-  note: I18nText;
-  isLimiting: boolean;
+  facts: SoilFact[];
+  optimal: string;
+  tolerated: string;
+  status: SoilGapStatus;
+  gap: SoilGapAmount | null;
+  gapAtEnds?: [SoilGapAmount | null, SoilGapAmount | null];
+  limiting: boolean;
+  kind: FactorKind;
+  note?: I18nText;
 }
 
 export interface SoilDiagnosis {
-  fieldId: string;
-  cropId: string | null;
-  soilType: ReferenceSoilType;
-  metrics: SoilMetricDiagnosis[];
-  mostLimitingFactor: SoilMetricDiagnosis | null;
-  summary: I18nText;
+  cropId: string;
+  gaps: SoilGap[];
+  limitingKey: SoilGapKey | null;
+  conflicts: I18nText[];
 }
 
 export interface SoilFact {

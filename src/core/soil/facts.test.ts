@@ -20,6 +20,10 @@ function inputFor(id: string, groundTruth: ModelInput['groundTruth'] = {}): Mode
 }
 
 describe('soilFacts (S0)', () => {
+  it('keeps the four sample fact counts', () => {
+    expect(['daklak-coffee', 'cantho-rice', 'iowa-corn-soy', 'nevada-alfalfa'].map((id) => soilFacts(inputFor(id)).length)).toEqual([10, 10, 17, 17]);
+  });
+
   it('preserves source facts, null values, and uncertainty', () => {
     const facts = soilFacts(inputFor('nevada-alfalfa'));
     const ph = facts.find((fact) => fact.key === 'ph');
