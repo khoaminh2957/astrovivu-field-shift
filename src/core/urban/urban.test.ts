@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { UrbanClimate, UrbanClimateMonth } from '@/contracts';
-import { getCrop } from '@/core/crops';
+import { getCrop, listCrops } from '@/core/crops';
 import { jpegSize } from '../../../scripts/crops/crop-images';
-import { climateScale, cropImage, ecocropPageUrl, ecocropPhotoUrl, nextSow, recommendUrban, recommendUrbanAhead, sowLevel, sowLevels, yearFrom, type CropImageManifest } from './index';
+import { BERLIN, HO_CHI_MINH_CITY, PHOENIX } from './__fixtures__/cities';
+import { SOW_FIT, climateScale, cropImage, ecocropPageUrl, ecocropPhotoUrl, nextSow, recommendUrban, recommendUrbanAhead, sowLevel, sowLevels, windowFit, yearFrom, type CropImageManifest } from './index';
 
 const month = (m: number, tMean: number, rainMm: number, par: number | null = null): UrbanClimateMonth => ({ month: m, tMean, tMin: tMean - 4, tMax: tMean + 5, rainMm, par, rh: null });
 
@@ -88,6 +89,86 @@ describe('recommendUrbanAhead', () => {
   it('returns null when no month of the year has a pick', () => {
     const frozen: UrbanClimate = { ...TEMPERATE, months: TEMPERATE.months.map((m) => ({ ...m, tMean: -20, tMin: -25, tMax: -15 })) };
     expect(recommendUrbanAhead(site, frozen, ['vegetables'], 11)).toBeNull();
+  });
+});
+
+describe('climateFit (D4)', () => {
+  it('verifies three reference cities (Ho Chi Minh City, Berlin, Phoenix) from real ERA5 + NASA POWER fixtures', () => {
+    const urbanCrops = listCrops().filter((c) => c.urban?.suitable);
+    expect(urbanCrops).toHaveLength(32);
+
+    // 1. Berlin (52.52° N): no crop with killTempC >= 0 can be sown in winter months (Dec=12, Jan=1, Feb=2)
+    // because Berlin winter tMin (-0.8, -0.4, 0.8 °C) is well inside the 4 °C frost margin.
+    const frostTender = urbanCrops.filter((c) => (c.req.killTempC ?? -99) >= 0);
+    expect(frostTender.length).toBeGreaterThan(10);
+    for (const c of frostTender) {
+      for (const winterMonth of [12, 1, 2]) {
+        const d = windowFit(c, BERLIN, winterMonth);
+        expect(d.cold).toBeLessThan(SOW_FIT);
+        expect(d.fit).toBeLessThan(SOW_FIT);
+      }
+    }
+
+    // 2. Ho Chi Minh City (10.78° N): water spinach (ipomoea-aquatica, tempC 10/15/35/40) is suitable in November
+    // (tMean 26.8 °C, tMin 24.0 °C, tMax 30.7 °C), whereas cool-season head lettuce (lactuca-sativa-var-capitata)
+    // is heat-limited in March/April (tMax 34.6 / 34.3 °C).
+    const waterSpinach = getCrop('ipomoea-aquatica')!;
+    const hcmcNov = windowFit(waterSpinach, HO_CHI_MINH_CITY, 11);
+    expect(hcmcNov.mean).toBe(1);
+    expect(hcmcNov.cold).toBe(1);
+    expect(hcmcNov.heat).toBe(1);
+    expect(hcmcNov.fit).toBeGreaterThanOrEqual(SOW_FIT);
+
+    // 3. Phoenix (33.45° N): head lettuce (lactuca-sativa-var-capitata, tempC 7/15/24/30) is sowable in autumn/winter
+    // (November tMean 18.1 °C, tMax 25.3 °C <= 30 °C) but blocked by extreme heat in July (tMax 41.8 °C > 30 °C).
+    const lettuce = getCrop('lactuca-sativa-var-capitata')!;
+    const phxNov = windowFit(lettuce, PHOENIX, 11);
+    expect(phxNov.fit).toBeGreaterThanOrEqual(SOW_FIT);
+    const phxJul = windowFit(lettuce, PHOENIX, 7);
+    expect(phxJul.heat).toBeLessThan(SOW_FIT);
+    expect(phxJul.fit).toBeLessThan(SOW_FIT);
+    expect(phxJul.limiting).toBe('heat');
+  });
+
+  it('scores photoperiod softly for short-day okra (abelmoschus-esculentus) at 52.5° N June vs 10.78° N December', () => {
+    const okra = getCrop('abelmoschus-esculentus')!;
+    expect(okra.req.photoperiod).toEqual(['short']);
+
+    const berlinJune = windowFit(okra, BERLIN, 6);
+    expect(berlinJune.photo).toBeLessThan(1);
+    expect(berlinJune.photo).toBeCloseTo(0.7, 2);
+
+    const hcmcDec = windowFit(okra, HO_CHI_MINH_CITY, 12);
+    expect(hcmcDec.photo).toBe(1);
+  });
+
+  it('reduces fit when tMax exceeds tempC[3] while tMean is held constant', () => {
+    const lettuce = getCrop('lactuca-sativa-var-capitata')!;
+    const absMax = lettuce.req.tempC[3]; // 30 °C
+    const baseClim: UrbanClimate = {
+      location: [106.7, 10.78],
+      months: Array.from({ length: 12 }, (_, i) => ({
+        month: i + 1,
+        tMean: 20,
+        tMin: 15,
+        tMax: absMax - 2,
+        rainMm: 50,
+        par: 8,
+        rh: 60,
+      })),
+      sourceIds: ['test'],
+    };
+    const hotClim: UrbanClimate = {
+      ...baseClim,
+      months: baseClim.months.map((m) => ({ ...m, tMax: absMax + 4 })),
+    };
+
+    const fitMild = windowFit(lettuce, baseClim, 1);
+    const fitHot = windowFit(lettuce, hotClim, 1);
+    expect(fitMild.heat).toBe(1);
+    expect(fitHot.heat).toBeLessThan(fitMild.heat);
+    expect(fitHot.fit).toBeLessThan(fitMild.fit);
+    expect(fitHot.limiting).toBe('heat');
   });
 });
 
