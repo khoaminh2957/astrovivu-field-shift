@@ -72,6 +72,20 @@
    "gzip": 1174133
   }
  },
+ "tables": {
+  "files": 348,
+  "bytes": 2066120,
+  "largest": "crops.json",
+  "largestBytes": 50333,
+  "crop": {
+   "files": 165,
+   "bytes": 983932
+  },
+  "region": {
+   "files": 179,
+   "bytes": 1023472
+  }
+ },
  "wikipedia": [
   {
    "source": "wikipedia-en",

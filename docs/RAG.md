@@ -69,6 +69,47 @@ Declined, whether or not a crop is named:
 | Pesticide, herbicide and fungicide products and doses (also by the name of a substance, such as glyphosate) | it names neither; the local plant-protection office knows the registered options |
 | Finance, medicine, politics, sport (only when no crop is named) | it answers about crops, soil, water and the readings of the field |
 
+## Looking numbers up
+
+Code: `src/rag/lookups.ts` (the lookups), `src/rag/tables.ts` (loading), `scripts/rag/tables.ts` (the files); the server reads the same files through `fileReader` in `server/loader.ts`. Tests: `src/rag/lookups.test.ts`, `scripts/rag/tables.test.ts`; every expected number is read from `data/crops/atlas/*.csv` in the test.
+
+A question about a number is better answered from a table than from a passage that happens to hold the number. The lookups are pure functions over tables that are already loaded; they return rows, the source of the rows (name, licence, years, day of access) and the cautions a reader needs, in both languages, or a reason why there are no rows. The extractive answers (issue C3) and the language model's tools (issue C4) are to call the same functions.
+
+| Lookup | Answers | From | No rows when |
+|---|---|---|---|
+| `cropsInPlace(iso3)` | the crops a country grows, largest harvested area first, with level, share and rank | the country's table (FAOSTAT QCL) | `unknown-place`: the atlas has no such country |
+| `cropsInPlace(iso3, admin1)` | the crops of a province or state | MapSPAM 2020, a model estimate, said as such | `no-data`: MapSPAM has no such region (Nevada is not among its 44 for the United States) |
+| `whereGrown(cropId, iso3?)` | the five countries with the largest area, how many report it, and the level and place of the country asked about | the crop's table (FAOSTAT QCL) | `group-item`: the crop is counted inside a group item; `no-data`: no item at all; `dropped-crop`, `unknown-crop` |
+| `cropFigures(cropId)` | what the crop needs and how widely it is grown, as lines in both languages | FAO EcoCrop, FAOSTAT QCL | `no-data`: the crop has neither |
+| `compareCrops(a, b, iso3?)` | the two crops line against line, and how much of each the country grows | the same | as above |
+| `fieldSuitability(input, cropId)` | the model's assessment of the crop on the locked field: `assessCrop`, unchanged | the suitability score | `no-field` |
+| `rotationOptions(input)` | the rotations the app builds: `buildRotations`, unchanged | the rotation planner | `no-field` |
+| `soilPlan(input)` | the pH plan, with the caution that it is the pH part only: the soil module (issue S2) is not built | the advisory report | `no-field`, `no-data` |
+| `priceAndMargin(input, cropId)` | the reference yield, price and cost of the field's region and the season built on them, with the quality of each source | the reference economics | `no-data`: no record, or only a record of another country |
+
+Four rules hold in every lookup, each with a test:
+
+- **A shared item is one row.** FAOSTAT's "Rice" is the item of three rice crops of the atlas; the atlas has the same 7,089,041 ha for Viet Nam on three rows, the lookup has it once with the three crops.
+- **A group crop never gets the group's numbers.** Durian is counted in "Other tropical fruits, n.e.c."; African rice in "Rice". Neither has a figure, in any country, and the lookup says which item it is counted in.
+- **"Cannot tell" is not "not grown".** A crop a country reports none of is given as `absent` with the caution that a country that does not itemise a crop reads the same way.
+- **No figure of another country.** Common bean has no Vietnamese price; the reference table would fall back to the record of the United States, and the lookup returns `no-data` instead.
+
+**The tables** (`public/rag/tables/`, written by `npm run rag:build`; nothing is computed, every value is a cell of the atlas; no date in the files, so a second build writes the same bytes):
+
+| File | Holds | Files | Size | Largest |
+|---|---|---:|---:|---|
+| `crops.json` | the 387 crops (names, match, FAOSTAT item) and each item with its crops | 1 | 49 kB | |
+| `countries.json` | the 198 countries, ISO3 to name | 1 | 4 kB | |
+| `spam.json` | the 46 SPAM crops and classes, with the crops of ours tied to each | 1 | 4 kB | |
+| `sources.json` | title, publisher, licence, landing page and day of access of the three sources cited | 1 | 1 kB | |
+| `crop/<crop_id>.json` | the countries that report the crop; only for the 165 crops with an item of their own | 165 | 961 kB | 14.7 kB |
+| `region/<ISO3>.json` | MapSPAM harvested area by first-level region | 179 | 1,000 kB | 32.1 kB (Viet Nam; 10.4 kB gzip) |
+| **All** | | **348** | **2,018 kB** (551 kB gzip) | 49 kB |
+
+The crops of one country are not written a second time: the lookups read `public/data/crops/country/<ISO3>.json`, the files the app loads for the model (`scripts/crops/country-tables.ts`, 198 files). One file is read per question (a country, a crop or the regions of a country), on demand, and kept; `tableSource` does that over a reader, `fetch` in the browser and the disk on the server.
+
+Not done here: routing a question to a lookup and wording the answer (C3), the language model's tools (C4), the assistant receiving the model input from the interface (a field of `AskRequest`, the project lead's), prices from `economics.csv` (T5) and the soil plan (S2).
+
 ## Pipeline
 
 ```
