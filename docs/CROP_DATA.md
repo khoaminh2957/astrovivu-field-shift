@@ -223,6 +223,21 @@ Downloads are sequential, each with a timeout and at most 3 retries with backoff
 | `columns.ts` | column dictionary (English and Vietnamese) |
 | `csv.ts`, `zip.ts`, `xlsx.ts` | file formats |
 
+### 11.1 The table the app loads (`public/data/crops/country/`)
+
+```
+npx tsx scripts/crops/country-tables.ts   # after an atlas build: 198 files and index.json, 3.5 MB, under a second
+npx vitest run src/data/country.test.ts
+```
+
+The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/crops/country-tables.ts` writes the rows of each country to `public/data/crops/country/<ISO3>.json` (15 to 30 KB), and the app fetches the one file of the country a field lies in when the field is opened (`src/data/country.ts`), then hands it to the model as `ModelInput.country`.
+
+- **Nothing is computed.** A file holds the atlas rows of its country. Crops with a reported quantity keep the full record (level, share, rank, area, production, years, source); the `absent` rows and the group rows are stored as lists of crop ids, and `expandCountryTable` (`src/data/countryTable.ts`) gives every record back. The test compares the files of four countries with `crop_country.csv` record by record, and every file with a fresh build.
+- **`index.json`** lists the countries by two-letter code (the code a geocoder returns) with the three-letter code, the name, the number of crops with a quantity and a hash of the file; the hash is part of the browser's cache key, so a rebuilt table is fetched again. The two-letter codes come from the GeoNames country list the atlas build downloads (`sources.csv`, row `geonames`, CC BY 4.0).
+- **No date in the output**: a second run writes the same bytes.
+- **What the user sees today**: the Data tab of a field names the table ("Viet Nam: 60 crops with a reported area or harvest (FAOSTAT QCL)"), and the "switch to another crop" what-if no longer proposes a crop the country's statistics do not report. The rotation builder does not read the table yet (K10, issue #92), and the labels on crops are B2 (#56).
+- **Known gap carried over**: an `absent` row is "not reported", not "not grown" (section 10; docs/SCORING.md section 12.4 names tomato, cucumber, eggplant, ginger and okra in Viet Nam). Until national statistics are added (T4, #9) those crops are left out of the switch-to suggestion in Viet Nam.
+
 ## 12. Prices
 
 `economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.

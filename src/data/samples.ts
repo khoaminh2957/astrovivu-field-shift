@@ -18,7 +18,7 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
       // Found by detectFieldBoundary (Sentinel-2 NDVI, conf 0.87) on a 1.5 km grid within 3 km of the old centre.
       polygon: { type: 'Polygon', coordinates: [[[108.226389, 12.814519], [108.228067, 12.813556], [108.228165, 12.81346], [108.227968, 12.813171], [108.227277, 12.812979], [108.226389, 12.81346], [108.226093, 12.814134], [108.226389, 12.814519]]] },
       source: 'sample',
-      place: { label: 'Đắk Lắk, Vietnam', country: 'Vietnam', countryCode: 'VN', admin1: 'Đắk Lắk' },
+      place: { label: 'Đắk Lắk, Vietnam', country: 'Vietnam', countryCode: 'VN', iso3: 'VNM', admin1: 'Đắk Lắk' },
     }),
     defaultCropId: 'coffea-canephora',
     defaultGroundTruth: { irrigation: 'supplemental', waterSource: 'well', currentRotation: [{ cropId: 'coffea-canephora', startMonth: 1, endMonth: 12 }] },
@@ -35,7 +35,7 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
       // Found by detectFieldBoundary (Sentinel-2 NDVI, conf 0.82) among the regular paddies of An Giang.
       polygon: { type: 'Polygon', coordinates: [[[105.172489, 10.52764], [105.173413, 10.527135], [105.173105, 10.527034], [105.172797, 10.526631], [105.171873, 10.526631], [105.171771, 10.527438], [105.172489, 10.52764]]] },
       source: 'sample',
-      place: { label: 'An Giang, Vietnam', country: 'Vietnam', countryCode: 'VN', admin1: 'An Giang' },
+      place: { label: 'An Giang, Vietnam', country: 'Vietnam', countryCode: 'VN', iso3: 'VNM', admin1: 'An Giang' },
     }),
     defaultCropId: 'oryza-sativa',
     // Three rice crops a year (winter-spring, summer-autumn, autumn-winter), irrigated from river and canals.
@@ -73,7 +73,7 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
         ],
       },
       source: 'sample',
-      place: { label: 'Iowa, United States', country: 'United States', countryCode: 'US', admin1: 'Iowa' },
+      place: { label: 'Iowa, United States', country: 'United States', countryCode: 'US', iso3: 'USA', admin1: 'Iowa' },
     }),
     defaultCropId: 'zea-mays',
     // Rainfed corn-soybean alternation, as the Cropland Data Layer history in the cache shows (2018-2025).
@@ -91,7 +91,7 @@ export const SAMPLE_PARCELS: SampleParcel[] = [
       // The pivot circle around the verified point: its pivot at the centre, wetted radius about 395 m.
       polygon: circlePolygon([-115.96894, 39.71961], 395),
       source: 'sample',
-      place: { label: 'Nevada, United States', country: 'United States', countryCode: 'US', admin1: 'Nevada' },
+      place: { label: 'Nevada, United States', country: 'United States', countryCode: 'US', iso3: 'USA', admin1: 'Nevada' },
     }),
     defaultCropId: 'medicago-sativa',
     // Continuous alfalfa under a centre pivot fed by a well (Cropland Data Layer: alfalfa every year 2019-2025).

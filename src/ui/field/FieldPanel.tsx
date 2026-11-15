@@ -112,6 +112,26 @@ function Fold({ title, note, children }: { title: string; note: string; children
   );
 }
 
+/** Which crop statistics of the country the ranking uses, or that it has none. Nothing while the table is on its way. */
+function CountryCropsNote() {
+  const t = useT();
+  const lang = useLang();
+  const table = useMission((s) => s.countryTable);
+  if (table.status === 'idle' || table.status === 'loading') return null;
+  // The source names countries in English: the reader's language has its own name for most of them.
+  const name = table.status === 'ready' ? (new Intl.DisplayNames([lang], { type: 'region' }).of(table.iso2) ?? table.name) : '';
+  return (
+    <section aria-labelledby="field-country-crops" className="flex flex-col gap-1.5 border-t border-line-1 pt-4">
+      <h3 id="field-country-crops" className="text-lg font-medium text-ink-1">
+        {t('field.data.country')}
+      </h3>
+      <p className="t-caption" data-country-table={table.status}>
+        {table.status === 'ready' ? t('field.data.country.ready', { name, grown: table.grown, source: table.source }) : t(table.status === 'missing' ? 'field.data.country.missing' : 'field.data.country.error')}
+      </p>
+    </section>
+  );
+}
+
 function DataTab() {
   const t = useT();
   const focus = useMission((s) => s.focusBranch);
@@ -124,6 +144,7 @@ function DataTab() {
       <Fold title={t('field.data.within')} note={t('field.data.withinNote')}>
         <FieldReport />
       </Fold>
+      <CountryCropsNote />
     </div>
   );
 }
