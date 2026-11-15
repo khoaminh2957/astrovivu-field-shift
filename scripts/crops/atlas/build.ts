@@ -23,6 +23,7 @@ import { COMMONNESS, LEVEL, WINDOW, commonnessFor, latestMean, levelFor, rankOf,
 import { DEFAULT_NATIONAL_FILE, nationalSourcesUsed, readNational, resolveCropCountryRow } from './national';
 import { readSpamHarvestedArea, type SpamRegion } from './spam';
 import { taxonKey } from './taxa';
+import { urbanCandidate } from './urban';
 import { buildXlsx, countCells, type Sheet } from './xlsx';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -434,6 +435,8 @@ async function main() {
       k.worldProductionT != null ? Math.round(k.worldProductionT) : null,
       k.yearFrom != null ? (k.yearFrom === k.yearTo ? String(k.yearFrom) : `${k.yearFrom}-${k.yearTo}`) : '',
       k.curated ? 'yes' : 'no',
+      urbanCandidate(s).candidate ? 'yes' : '',
+      urbanCandidate(s).rule,
     ];
   });
 
@@ -708,6 +711,7 @@ async function main() {
     ['curated_crops', curatedRows.length],
     ['curated_kept', curatedKept.length],
     ['curated_only_ids', list(curatedKept.filter((k) => k.evidence.includes('curated-only')).map((k) => k.id))],
+    ['urban_candidates', count(kept, (k) => urbanCandidate(k.s).candidate)],
     ['faostat_crop_items', cropItems.length],
     ['faostat_items_single', count(cropItems, (i) => xw.itemClass.get(i.code)!.class === 'single')],
     ['faostat_items_group', count(cropItems, (i) => xw.itemClass.get(i.code)!.class === 'group')],

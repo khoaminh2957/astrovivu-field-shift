@@ -292,6 +292,7 @@ Downloads are sequential, each with a timeout and at most 3 retries with backoff
 | `faostat.ts`, `spam.ts` | streaming readers of the two large tables |
 | `levels.ts` | thresholds, three-year mean, ranks |
 | `national.ts` | reader and merge rules for `data/crops/national/prevalence.csv` |
+| `urban.ts` | rule-based urban / container candidate classification |
 | `columns.ts` | column dictionary (English and Vietnamese) |
 | `csv.ts`, `zip.ts`, `xlsx.ts` | file formats |
 
@@ -313,3 +314,47 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 ## 12. Prices
 
 `economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
+
+## 13. Urban candidates (`urban_candidate`, `urban_candidate_rule`)
+
+`scripts/crops/atlas/urban.ts` (`urbanCandidate(s)`, constants in `URBAN_RULE`) selects urban / container candidate crops from the 387 kept atlas rows using only EcoCrop columns (`life_form`, `habit`, `category`, `life_span`, `cycle_min_days`) and writes `urban_candidate` (`yes` or empty) and `urban_candidate_rule` (`short-cycle`, `perennial-aromatic-herb`, or `short-cycle;perennial-aromatic-herb`) into `data/crops/atlas/crops.csv` and `urban_candidates` into `data/crops/atlas/summary.csv`.
+
+### 13.1 Rule and variants tested
+
+A row qualifies when all three conditions hold:
+
+1. **Life form (`life_form`)**: contains `herb`, `sub-shrub`, `shrub` or `vine`, and does **not** contain `tree`.
+2. **Use category & broadacre field-crop filter (`category`, `habit`, `cycle_min_days`)**:
+   - `category` contains at least one of `vegetables`, `fruits & nuts`, `ornamentals/turf`, or `medicinals & aromatic`.
+   - If the only qualifying category is `medicinals & aromatic` and the row also carries a broadacre field/industrial category (`cereals & pseudocereals`, `pulses (grain legumes)`, `roots/tubers`, `forage/pasture`, `materials`, `cover crop`, `forest/wood`), it is excluded unless `habit` contains `climber/scrambler/scadent`.
+   - If `category` includes a staple field-crop category (`cereals & pseudocereals`, `pulses (grain legumes)`, `roots/tubers`), it must either have `habit` containing `climber/scrambler/scadent` or `cycle_min_days <= 60` (`maxStapleVegetableCycleMinDays`).
+3. **Cycle / longevity (`cycle_min_days`, `life_span`)**:
+   - **`short-cycle`**: `cycle_min_days <= 120` (`maxCycleMinDays`), **or**
+   - **`perennial-aromatic-herb`**: `life_span` contains `perennial`, `category` contains `medicinals & aromatic`, and `life_form` contains `herb` or `sub-shrub`.
+
+| Variant | Rule summary | Atlas rows matched | Of 32 hand-curated urban crops | Union (`rule ∪ overlay`) | Broadacre field crops excluded (`arachis-hypogaea`, `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`) |
+|---|---|---:|---:|---:|---|
+| `R0` (issue baseline) | Any of the 4 categories + non-tree life form + (`cycle_min_days <= 120` or perennial aromatic herb) | 128 (110 short-cycle, 18 perennial herb) | 23 / 32 | 137 | None (all 4 included) |
+| `R1` (strict medicinal only) | Disqualify `medicinals & aromatic`-only rows when paired with any field category | 106 | 22 / 32 (drops `pisum-sativum`) | 116 | Excludes `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`; keeps `arachis-hypogaea` |
+| **`R` (adopted in `urban.ts`)** | `R1` + allow `climber/scrambler/scadent` on pulses (`pisum-sativum`) + require `climber` or `cycle_min_days <= 60` on staple categories | **106** (79 `short-cycle`, 15 `perennial-aromatic-herb`, 12 both) | **23 / 32** | **115** | **All 4 excluded** |
+
+### 13.2 Hand-curated urban crops not matched by the rule (9 of 32)
+
+The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts`) that the EcoCrop rule does not select remain in the urban pool through the overlay (`candidate set = rule ∪ overlay = 115 crops`):
+
+| `crop_id` | Name | Why `urbanCandidate` returns `false` on its EcoCrop row |
+|---|---|---|
+| `ipomoea-batatas` | Sweet potato (Khoai lang) | `life_form`, `habit`, and `category` are empty in EcoCrop (`ecocrop_id = 1265`) |
+| `tagetes-erecta` | Marigold (Cúc vạn thọ) | Not in the FAO EcoCrop CSV (`curated-only`, `ecocrop_id` empty) |
+| `mentha-spicata-var-crispa` | Spearmint (Húng lủi) | EcoCrop `category` is only `materials` (missing `medicinals & aromatic` and `vegetables`) |
+| `cymbopogon-citratus` | Lemongrass (Sả) | EcoCrop `life_form` is `grass` (excluded so cereal/forage grasses do not enter) |
+| `vigna-radiata` | Mung bean (Đậu xanh) | EcoCrop `category` is `pulses (grain legumes), forage/pasture, cover crop, environmental` (lacks `vegetables`) |
+| `vigna-unguiculata-ssp-sesquipedalis` | Yardlong bean (Đậu đũa) | EcoCrop `category` is `pulses (grain legumes), forage/pasture, environmental` (lacks `vegetables`) |
+| `arachis-pintoi` | Pinto peanut (Lạc dại) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
+| `musa-acuminata` | Banana (Chuối) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
+| `fragaria-x-ananassa` | Strawberry (Dâu tây) | `cycle_min_days = 180` (> 120) and `category` is `fruits & nuts` without `medicinals & aromatic` |
+
+### 13.3 Limitations
+
+- **Empty EcoCrop cells.** Missing `life_form`, `category`, or `cycle_min_days` evaluates to `false` rather than guessing.
+- **Dropped species.** 676 cultivated EcoCrop species with no FAOSTAT crop item are in `dropped.csv` (section 10), including many ornamentals and culinary herbs; `urban_candidate` is evaluated on the 387 kept atlas crops only.
