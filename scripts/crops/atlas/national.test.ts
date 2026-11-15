@@ -159,7 +159,7 @@ describe('national prevalence', () => {
     expect(resolved!.row).toHaveLength(15);
   });
 
-  it('covers all 32 group+none curated crops in VNM and USA plus T1 forwarded rows, and gives all 73 curated crops rows in crop_country.csv', () => {
+  it('covers all 32 group+none curated crops in VNM, USA, IND and BRA plus T1 forwarded rows, and gives all 73 curated crops rows in crop_country.csv', () => {
     const nationalMap = readNational(DEFAULT_NATIONAL_FILE);
     const cropsRows = parseCsvObjects(fs.readFileSync(path.join(ATLAS, 'crops.csv'), 'utf8'));
     const curated = cropsRows.filter((r) => r.curated === 'yes');
@@ -168,14 +168,15 @@ describe('national prevalence', () => {
     const groupAndNone = curated.filter((r) => r.match === 'group' || r.match === 'none');
     expect(groupAndNone.length).toBe(32);
     for (const c of groupAndNone) {
-      expect(nationalMap.has(`${c.crop_id}|VNM`), `missing ${c.crop_id}|VNM in prevalence.csv`).toBe(true);
-      expect(nationalMap.has(`${c.crop_id}|USA`), `missing ${c.crop_id}|USA in prevalence.csv`).toBe(true);
+      for (const iso3 of ['VNM', 'USA', 'IND', 'BRA']) {
+        expect(nationalMap.has(`${c.crop_id}|${iso3}`), `missing ${c.crop_id}|${iso3} in prevalence.csv`).toBe(true);
+      }
     }
 
     const cropCountry = parseCsvObjects(fs.readFileSync(path.join(ATLAS, 'crop_country.csv'), 'utf8'));
     const byKey = new Map(cropCountry.map((r) => [`${r.crop_id}|${r.iso3}`, r]));
     for (const c of curated) {
-      for (const iso3 of ['VNM', 'USA']) {
+      for (const iso3 of ['VNM', 'USA', 'IND', 'BRA']) {
         const row = byKey.get(`${c.crop_id}|${iso3}`);
         expect(row, `missing ${c.crop_id}|${iso3} in crop_country.csv`).toBeDefined();
         if (row!.level === 'unknown') {
@@ -192,6 +193,10 @@ describe('national prevalence', () => {
     expect(byKey.get('medicago-sativa|USA')?.level).toBe('major');
     expect(byKey.get('allium-fistulosum|USA')?.level).toBe('minor');
     expect(byKey.get('sesamum-indicum|USA')?.level).toBe('minor');
+    expect(byKey.get('vigna-radiata|IND')?.level).toBe('common');
+    expect(byKey.get('mangifera-indica|IND')?.level).toBe('common');
+    expect(byKey.get('musa-acuminata|BRA')?.level).toBe('minor');
+    expect(byKey.get('mangifera-indica|BRA')?.level).toBe('minor');
   });
 
   it('gives no level to a crop whose source has a local figure or the figure of a group only', () => {
@@ -231,7 +236,7 @@ describe('national prevalence', () => {
     expect(summary.get('crop_country_rows_national')).toBe(national.length);
     expect(summary.get('crop_country_rows_national_with_figure')).toBe(national.filter((r) => r.level !== 'unknown').length);
     expect(summary.get('crop_country_rows_national_without_figure')).toBe(national.filter((r) => r.level === 'unknown').length);
-    expect(summary.get('crop_country_rows_national_with_figure')).toBe(17);
+    expect(summary.get('crop_country_rows_national_with_figure')).toBe(25);
 
     const rows = readNational(DEFAULT_NATIONAL_FILE);
     expect(summary.get('national_rows_read')).toBe(rows.size);
@@ -253,7 +258,7 @@ describe('national prevalence', () => {
     }
   });
 
-  it('keeps crop_country.csv to the 15 columns the market database mirrors, and changes no row outside VNM and USA', () => {
+  it('keeps crop_country.csv to the 15 columns the market database mirrors, and changes no row outside VNM, USA, IND and BRA', () => {
     const text = fs.readFileSync(path.join(ATLAS, 'crop_country.csv'), 'utf8');
     expect(text.slice(0, text.indexOf('\n')).split(',')).toEqual([
       'crop_id',
@@ -273,8 +278,8 @@ describe('national prevalence', () => {
       'source',
     ]);
     for (const r of parseCsvObjects(text)) {
-      if (r.iso3 === 'VNM' || r.iso3 === 'USA') continue;
-      if (r.match === 'national' || r.source !== 'FAOSTAT QCL') throw new Error(`${r.crop_id}|${r.iso3}: a national row outside VNM and USA`);
+      if (r.iso3 === 'VNM' || r.iso3 === 'USA' || r.iso3 === 'IND' || r.iso3 === 'BRA') continue;
+      if (r.match === 'national' || r.source !== 'FAOSTAT QCL') throw new Error(`${r.crop_id}|${r.iso3}: a national row outside VNM, USA, IND and BRA`);
     }
   });
 
