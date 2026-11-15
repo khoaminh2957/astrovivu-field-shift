@@ -58,6 +58,8 @@ export interface ResolvedCropCountry {
   productionT: number | null;
   inCountryCrops: boolean;
   inPossibleCrops: boolean;
+  /** The national row of this crop and country was not used, because FAOSTAT reports the crop there. The build lists these. */
+  nationalIgnored?: boolean;
 }
 
 function defaultCrops(): Set<string> {
@@ -140,21 +142,126 @@ export function readNational(
 }
 
 /**
+ * One publication a national row cites, for `sources.csv`. Keyed by the URL the row gives, because
+ * one publisher's census is several documents. The licence is the wording of docs/CROP_DATA.md
+ * section 7.1; a URL that is not listed here stops the build rather than getting a guessed licence.
+ */
+export interface NationalSource {
+  id: string;
+  url: string;
+  title: string;
+  publisher: string;
+  licence: string;
+}
+
+const VN_EXTENSION = 'Official agricultural extension publications (.gov.vn / Khuyến nông); public citation with attribution';
+const US_PUBLIC_DOMAIN = 'Public domain of the United States federal government (17 U.S.C. § 105)';
+const NASS = 'USDA National Agricultural Statistics Service (NASS)';
+const CENSUS = 'https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report';
+const census = (id: string, chapter: string, file: string, table: string): NationalSource => ({
+  id: `national-usa-census2022-${id}`,
+  url: `${CENSUS}/${chapter}/${file}`,
+  title: `2022 Census of Agriculture, Volume 1, ${table}`,
+  publisher: NASS,
+  licence: US_PUBLIC_DOMAIN,
+});
+
+export const NATIONAL_SOURCES: readonly NationalSource[] = [
+  {
+    id: 'national-vnm-nso-yearbook-2025',
+    url: 'https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf',
+    title: 'Niên giám Thống kê Việt Nam năm 2025 (Statistical Yearbook of Viet Nam 2025)',
+    publisher: 'Cục Thống kê (NSO, Bộ Tài chính), Nxb Thống kê',
+    licence: 'Official government statistical publication of Viet Nam (Law on Statistics No. 89/2015/QH13 and Law No. 01/2021/QH15; open for public citation with source attribution)',
+  },
+  {
+    id: 'national-vnm-fruit-vegetable-report-2025',
+    url: 'https://thitruongnongsan.gov.vn/images/2013/DANGNHAP/Bao%20cao%20thuong%20nien%20rau%20qua%202025.pdf',
+    title: 'Báo cáo thường niên thị trường Rau quả 2025',
+    publisher: 'Bộ Nông nghiệp và Môi trường (Cục Trồng trọt và Bảo vệ thực vật / IPSARD)',
+    licence: 'Official ministry/sector report of Viet Nam; public citation with attribution',
+  },
+  {
+    id: 'national-vnm-extension-hcmc-water-spinach',
+    url: 'https://khuyennongtphcm.vn/cam-nang-trong-rau-muon-nuoc-toan/',
+    title: 'Cẩm nang trồng rau muống nước an toàn (water spinach of Ho Chi Minh City only; no national figure)',
+    publisher: 'Trung tâm Khuyến nông TP. Hồ Chí Minh (Sở Nông nghiệp và Môi trường TP.HCM)',
+    licence: VN_EXTENSION,
+  },
+  {
+    id: 'national-vnm-extension-nghe-an-basil',
+    url: 'https://khuyennongvn.gov.vn/chuong-trinh-nganh-nong-nghiep/tai-co-cau-nganh-nong-nghiep/nghe-an-hieu-qua-mo-hinh-tham-canh-cay-hung-que-gan-voi-che-bien-tinh-dau-va-tieu-thu-san-pham-19592.html',
+    title: 'Article on one intensive basil model in Lạc Sơn commune, Đô Lương district, Nghệ An (one plot; no national figure)',
+    publisher: 'Trung tâm Khuyến nông Quốc gia (Bộ Nông nghiệp và Môi trường)',
+    licence: VN_EXTENSION,
+  },
+  {
+    id: 'national-vnm-ntm-ha-tinh-malabar-spinach',
+    url: 'https://nongthonmoi.hatinh.gov.vn/Tin-trong-nuoc/long-an-trong-mong-toi-tot-um-tum-nong-dan-o-day-khong-hai-la-ma-tuot-hat-dem-ban-200-000-dong-kg-110805.html',
+    title: 'Article on Malabar spinach grown in Hưng Điền commune, Tân Hưng district, Long An (one commune; no national figure)',
+    publisher: 'Văn phòng Điều phối Nông thôn mới tỉnh Hà Tĩnh',
+    licence: VN_EXTENSION,
+  },
+  {
+    id: 'national-usa-crop-production-2025',
+    url: 'https://release.nass.usda.gov/reports/cropan26.txt',
+    title: 'Crop Production 2025 Summary (January 2026, ISSN 1057-7823)',
+    publisher: NASS,
+    licence: US_PUBLIC_DOMAIN,
+  },
+  {
+    id: 'national-usa-vegetables-2025',
+    url: 'https://release.nass.usda.gov/reports/vegean26.txt',
+    title: 'Vegetables 2025 Summary (February 2026, ISSN 0884-6413)',
+    publisher: NASS,
+    licence: US_PUBLIC_DOMAIN,
+  },
+  census('table36', 'Volume_1,_Chapter_1_US', 'st99_1_036_036.pdf', 'Chapter 1 (U.S. National Level Data), Table 36: Vegetables, Potatoes, and Melons Harvested for Sale'),
+  census('table37', 'Volume_1,_Chapter_1_US', 'st99_1_037_037.pdf', 'Chapter 1 (U.S. National Level Data), Table 37: Specified Fruits and Nuts'),
+  census('table26', 'Volume_1,_Chapter_2_US_State_Level', 'st99_2_026_026.pdf', 'Chapter 2 (U.S. State-Level Data), Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage'),
+  census('table27', 'Volume_1,_Chapter_2_US_State_Level', 'st99_2_027_027.pdf', 'Chapter 2 (U.S. State-Level Data), Table 27: Other Crops'),
+];
+
+/** A publication of `NATIONAL_SOURCES` with what the national rows took from it. */
+export interface NationalSourceUse extends NationalSource {
+  /** Latest access date among the rows that cite it. */
+  accessed: string;
+  rows: number;
+  rowsWithFigure: number;
+}
+
+/** The publications the national rows cite, in the order of `NATIONAL_SOURCES`. Throws on a URL that is not registered. */
+export function nationalSourcesUsed(national: ReadonlyMap<string, NationalRow>, registry: readonly NationalSource[] = NATIONAL_SOURCES): NationalSourceUse[] {
+  const byUrl = new Map(registry.map((s): [string, NationalSourceUse] => [s.url, { ...s, accessed: '', rows: 0, rowsWithFigure: 0 }]));
+  for (const [key, r] of national) {
+    if (!r.url) continue;
+    const use = byUrl.get(r.url);
+    if (!use) throw new Error(`national prevalence (${key}): url ${r.url} is not in NATIONAL_SOURCES (scripts/crops/atlas/national.ts): add it with its publisher and licence`);
+    use.rows++;
+    if (r.areaHa != null || r.productionT != null) use.rowsWithFigure++;
+    if (r.accessed > use.accessed) use.accessed = r.accessed;
+  }
+  return [...byUrl.values()].filter((s) => s.rows > 0);
+}
+
+/**
  * Resolves a single `(crop, country)` entry for `crop_country.csv`.
  * - Rule 3: For `group` and `none` crops (and `absent` `exact` rows), a national row with a figure
  *   writes `match = 'national'`, empty `faostat_item_code`, `year_from = year_to = year`,
  *   `share = (area_ha / totalAreaHa) * 100`, and `level = levelFor(...)`; without a figure it
  *   stays `unknown` (never inferred from a group item).
- * - Rule 4: A national row only replaces `unknown` or `absent`; it never overrides an `exact` row
- *   that already has an area.
+ * - Rule 4: A national row only replaces `unknown` or `absent`. An `exact` row for which FAOSTAT
+ *   reports the crop in the country (an area, or production alone: `present`) is never touched,
+ *   whether the national row has a figure or not: a note saying "no national figure" must not
+ *   erase a quantity the country reported. The row comes back with `nationalIgnored`.
  */
 export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCountry | null {
   const { cropId, match, items, primary, iso3, countryName, totalAreaHa, itemAreas, faostat, groupItemReported, national } = input;
   const list = (xs: readonly (string | number)[]) => xs.join(';');
 
-  // Rule 4: Never override an `exact` row that already has an area in FAOSTAT.
-  if (match === 'exact' && faostat && faostat.areaHa != null && faostat.areaHa > 0) {
-    const share = totalAreaHa > 0 ? (faostat.areaHa / totalAreaHa) * 100 : null;
+  // Rule 4: FAOSTAT reports this crop in this country. The row is FAOSTAT's, as it was before national rows existed.
+  if (match === 'exact' && faostat) {
+    const share = faostat.areaHa != null && totalAreaHa > 0 ? (faostat.areaHa / totalAreaHa) * 100 : null;
     const others = [...itemAreas].filter(([code]) => !items.includes(code)).map(([, a]) => a);
     const level = levelFor(faostat.areaHa, share, faostat.productionT);
     return {
@@ -165,13 +272,13 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
         list(faostat.codes),
         'exact',
         'yes',
-        Math.round(faostat.areaHa),
+        faostat.areaHa != null ? Math.round(faostat.areaHa) : null,
         faostat.productionT != null ? Math.round(faostat.productionT) : null,
         faostat.yieldTHa != null ? round(faostat.yieldTHa, 3) : null,
         faostat.yearFrom,
         faostat.yearTo,
         share != null ? round(share, 3) : null,
-        rankOf(faostat.areaHa, others),
+        faostat.areaHa != null ? rankOf(faostat.areaHa, others) : null,
         level,
         FAOSTAT_SOURCE,
         '',
@@ -184,6 +291,7 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
       productionT: faostat.productionT,
       inCountryCrops: true,
       inPossibleCrops: false,
+      ...(national ? { nationalIgnored: true } : {}),
     };
   }
 
@@ -288,46 +396,15 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
     };
   }
 
-  // No national row: fall back to FAOSTAT logic.
+  // No national row. An exact crop reaching this point has nothing above zero in FAOSTAT: absent.
   if (match === 'exact') {
-    if (!faostat) {
-      return {
-        row: [cropId, iso3, countryName, list(items), 'exact', 'no', null, null, null, null, null, null, null, 'absent', FAOSTAT_SOURCE, '', '', ''],
-        level: 'absent',
-        match: 'exact',
-        areaHa: null,
-        productionT: null,
-        inCountryCrops: false,
-        inPossibleCrops: false,
-      };
-    }
-    const level = levelFor(faostat.areaHa, null, faostat.productionT);
     return {
-      row: [
-        cropId,
-        iso3,
-        countryName,
-        list(faostat.codes),
-        'exact',
-        'yes',
-        null,
-        faostat.productionT != null ? Math.round(faostat.productionT) : null,
-        faostat.yieldTHa != null ? round(faostat.yieldTHa, 3) : null,
-        faostat.yearFrom,
-        faostat.yearTo,
-        null,
-        null,
-        level,
-        FAOSTAT_SOURCE,
-        '',
-        '',
-        '',
-      ],
-      level,
+      row: [cropId, iso3, countryName, list(items), 'exact', 'no', null, null, null, null, null, null, null, 'absent', FAOSTAT_SOURCE, '', '', ''],
+      level: 'absent',
       match: 'exact',
-      areaHa: faostat.areaHa,
-      productionT: faostat.productionT,
-      inCountryCrops: true,
+      areaHa: null,
+      productionT: null,
+      inCountryCrops: false,
       inPossibleCrops: false,
     };
   }

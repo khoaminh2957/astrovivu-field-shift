@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parseCsvObjects } from './csv';
-import { DEFAULT_NATIONAL_FILE, parseNational, readNational, resolveCropCountryRow } from './national';
+import { DEFAULT_NATIONAL_FILE, NATIONAL_SOURCES, nationalSourcesUsed, parseNational, readNational, resolveCropCountryRow, type CropCountryInput, type NationalRow } from './national';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const ATLAS = path.join(ROOT, 'data/crops/atlas');
@@ -180,12 +180,163 @@ describe('national prevalence', () => {
     expect(byKey.get('durio-zibethinus|VNM')?.match).toBe('national');
     expect(byKey.get('musa-acuminata|VNM')?.level).toBe('common');
     expect(byKey.get('mangifera-indica|VNM')?.level).toBe('common');
-    expect(byKey.get('ipomoea-aquatica|VNM')?.level).toBe('minor');
-    expect(byKey.get('basella-alba|VNM')?.level).toBe('minor');
-    expect(byKey.get('ocimum-basilicum|VNM')?.level).toBe('minor');
     expect(byKey.get('medicago-sativa|USA')?.level).toBe('major');
-    expect(byKey.get('phaseolus-vulgaris|USA')?.level).toBe('common');
     expect(byKey.get('allium-fistulosum|USA')?.level).toBe('minor');
     expect(byKey.get('sesamum-indicum|USA')?.level).toBe('minor');
+  });
+
+  it('gives no level to a crop whose source has a local figure or the figure of a group only', () => {
+    const cropCountry = parseCsvObjects(fs.readFileSync(path.join(ATLAS, 'crop_country.csv'), 'utf8'));
+    const byKey = new Map(cropCountry.map((r) => [`${r.crop_id}|${r.iso3}`, r]));
+    // One city, one demonstration plot, one commune: not the area of Viet Nam.
+    // All dry edible beans, pumpkins and squash of every species, all Chinese cabbages, all vetches: not the species.
+    const noNationalFigure = [
+      'ipomoea-aquatica|VNM',
+      'ocimum-basilicum|VNM',
+      'basella-alba|VNM',
+      'phaseolus-vulgaris|USA',
+      'cucurbita-moschata|USA',
+      'brassica-rapa-pak-choi|USA',
+      'vicia-villosa-ssp-villosa|USA',
+    ];
+    for (const key of noNationalFigure) {
+      const row = byKey.get(key);
+      expect(row, key).toBeDefined();
+      expect(row!.level, key).toBe('unknown');
+      expect([row!.area_ha, row!.production_t, row!.share_of_country_harvested_area_pct, row!.rank_in_country], key).toEqual(['', '', '', '']);
+      expect(row!.note.trim().length, key).toBeGreaterThan(0);
+    }
+    // A row with match = national has a level exactly when it has a quantity.
+    for (const r of cropCountry) {
+      if (r.match !== 'national') continue;
+      const hasFigure = r.area_ha !== '' || r.production_t !== '';
+      expect(r.level === 'unknown', `${r.crop_id}|${r.iso3}`).toBe(!hasFigure);
+    }
+  });
+
+  it('counts the national rows with a figure apart from those without, and lists every national source', () => {
+    const cropCountry = parseCsvObjects(fs.readFileSync(path.join(ATLAS, 'crop_country.csv'), 'utf8'));
+    const summary = new Map(parseCsvObjects(fs.readFileSync(path.join(ATLAS, 'summary.csv'), 'utf8')).map((r) => [r.metric, Number(r.value)]));
+    const national = cropCountry.filter((r) => r.match === 'national');
+    expect(summary.get('crop_country_rows_national')).toBe(national.length);
+    expect(summary.get('crop_country_rows_national_with_figure')).toBe(national.filter((r) => r.level !== 'unknown').length);
+    expect(summary.get('crop_country_rows_national_without_figure')).toBe(national.filter((r) => r.level === 'unknown').length);
+    expect(summary.get('crop_country_rows_national_with_figure')).toBe(17);
+
+    const rows = readNational(DEFAULT_NATIONAL_FILE);
+    expect(summary.get('national_rows_read')).toBe(rows.size);
+    const used = nationalSourcesUsed(rows);
+    expect(used.reduce((n, s) => n + s.rows, 0)).toBe(rows.size);
+    expect(new Set(NATIONAL_SOURCES.map((s) => s.id)).size).toBe(NATIONAL_SOURCES.length);
+    const sources = new Map(parseCsvObjects(fs.readFileSync(path.join(ATLAS, 'sources.csv'), 'utf8')).map((r) => [r.source, r]));
+    for (const s of used) {
+      expect(sources.get(s.id), s.id).toMatchObject({ title: s.title, publisher: s.publisher, url: s.url, licence: s.licence, accessed: s.accessed, file: 'data/crops/national/prevalence.csv' });
+      expect(s.licence.length, s.id).toBeGreaterThan(0);
+    }
+    // Every url a row of the atlas cites is a source of sources.csv.
+    const urls = new Set([...sources.values()].map((s) => s.url));
+    for (const r of cropCountry) if (r.url) expect(urls.has(r.url), `${r.crop_id}|${r.iso3}`).toBe(true);
+  });
+
+  it('refuses a national row whose url is not a registered source', () => {
+    const rows = parseNational(
+      ['crop_id,iso3,area_ha,production_t,year,source,url,accessed,table,note', 'durio-zibethinus,VNM,178800,1470000,2024,Somebody,https://example.org/unknown.pdf,2026-11-15,Table 1,note'].join('\n'),
+      crops,
+      countries,
+    );
+    expect(() => nationalSourcesUsed(rows)).toThrow(/not in NATIONAL_SOURCES/);
+  });
+});
+
+describe('a national row beside what FAOSTAT says', () => {
+  const VNM_TOTAL = 13_504_720;
+  const row = (over: Partial<NationalRow>): NationalRow => ({
+    cropId: 'x',
+    iso3: 'VNM',
+    areaHa: null,
+    productionT: null,
+    year: 2024,
+    source: 'National statistics office',
+    url: 'https://example.gov.vn/yearbook.pdf',
+    accessed: '2026-11-15',
+    table: 'Table 1',
+    note: 'Counted inside a group; no figure of its own.',
+    ...over,
+  });
+  const input = (over: Partial<CropCountryInput>): CropCountryInput => ({
+    cropId: 'x',
+    match: 'none',
+    items: [],
+    primary: null,
+    iso3: 'VNM',
+    countryName: 'Viet Nam',
+    totalAreaHa: VNM_TOTAL,
+    itemAreas: new Map([
+      [27, 7_089_041],
+      [56, 875_899],
+    ]),
+    faostat: null,
+    groupItemReported: false,
+    ...over,
+  });
+  // Column positions of crop_country.csv.
+  const AREA = 6;
+  const SHARE = 11;
+  const RANK = 12;
+  const LEVEL = 13;
+  const SOURCE = 14;
+  const NOTE = 17;
+
+  it('a row with a figure gets its level from the 5 % and 0.5 % thresholds of the country area', () => {
+    const levelOf = (areaHa: number) => resolveCropCountryRow(input({ national: row({ areaHa }) }))!;
+    // 5 % of 13,504,720 ha is 675,236 ha; 0.5 % is 67,523.6 ha.
+    expect(levelOf(675_237).level).toBe('major');
+    expect(levelOf(675_235).level).toBe('common');
+    expect(levelOf(67_524).level).toBe('common');
+    expect(levelOf(67_523).level).toBe('minor');
+    expect(levelOf(1).level).toBe('minor');
+
+    const durian = resolveCropCountryRow(input({ cropId: 'durio-zibethinus', match: 'group', items: [603], primary: 603, national: row({ areaHa: 178_800, productionT: 1_470_000 }) }))!;
+    expect(durian).toMatchObject({ level: 'common', match: 'national', areaHa: 178_800, productionT: 1_470_000, inCountryCrops: true, inPossibleCrops: false });
+    expect(durian.row[AREA]).toBe(178_800);
+    expect(durian.row[SHARE]).toBe(1.324);
+    // Smaller than rice and maize of the country: third.
+    expect(durian.row[RANK]).toBe(3);
+    expect(durian.row[SOURCE]).toBe('National statistics office');
+    expect(durian.nationalIgnored).toBeUndefined();
+
+    // Production without an area: no share can be computed, so the crop is present and no more.
+    expect(resolveCropCountryRow(input({ national: row({ productionT: 500 }) }))).toMatchObject({ level: 'present', match: 'national', areaHa: null });
+  });
+
+  it('a row without a figure on an absent row makes it unknown, with the note', () => {
+    const before = resolveCropCountryRow(input({ match: 'exact', items: [388], primary: 388 }))!;
+    expect(before).toMatchObject({ level: 'absent', match: 'exact' });
+
+    const after = resolveCropCountryRow(input({ match: 'exact', items: [388], primary: 388, national: row({}) }))!;
+    expect(after).toMatchObject({ level: 'unknown', match: 'national', areaHa: null, productionT: null, inCountryCrops: false, inPossibleCrops: false });
+    expect(after.row[AREA]).toBeNull();
+    expect(after.row[SHARE]).toBeNull();
+    expect(after.row[LEVEL]).toBe('unknown');
+    expect(after.row[NOTE]).toBe('Counted inside a group; no figure of its own.');
+    expect(after.nationalIgnored).toBeUndefined();
+  });
+
+  it('a row without a figure leaves a present exact row as FAOSTAT has it, and says it was ignored', () => {
+    // FAOSTAT reports production and no area: present.
+    const faostat = { codes: [388], areaHa: null, productionT: 12_000, yieldTHa: null, yearFrom: 2022, yearTo: 2024 };
+    const without = resolveCropCountryRow(input({ match: 'exact', items: [388], primary: 388, faostat }))!;
+    const withNote = resolveCropCountryRow(input({ match: 'exact', items: [388], primary: 388, faostat, national: row({}) }))!;
+    expect(without).toMatchObject({ level: 'present', match: 'exact', productionT: 12_000 });
+    expect(without.nationalIgnored).toBeUndefined();
+    expect(withNote.row).toEqual(without.row);
+    expect(withNote).toMatchObject({ level: 'present', match: 'exact', productionT: 12_000, inCountryCrops: true, nationalIgnored: true });
+    expect(withNote.row[SOURCE]).toBe('FAOSTAT QCL');
+    expect(withNote.row[NOTE]).toBe('');
+
+    // The same holds for a national row with a figure, and for an exact row that has an area.
+    expect(resolveCropCountryRow(input({ match: 'exact', items: [388], primary: 388, faostat, national: row({ areaHa: 900 }) }))).toMatchObject({ level: 'present', match: 'exact', nationalIgnored: true });
+    const minor = { ...faostat, areaHa: 50_916 };
+    expect(resolveCropCountryRow(input({ match: 'exact', items: [388], primary: 388, faostat: minor, national: row({}) }))).toMatchObject({ level: 'minor', match: 'exact', areaHa: 50_916, nationalIgnored: true });
   });
 });

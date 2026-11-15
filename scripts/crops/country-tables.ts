@@ -43,6 +43,8 @@ export function countryTable(iso3: string, rows: Record<string, string>[]): Coun
     const level = r.level as PrevalenceLevel;
     const match = r.match as PrevalenceMatch;
     const reported = r.item_reported === 'yes';
+    // A full record for a crop with a quantity, and for a row that names its own source (match
+    // national, with or without a figure): the two lists below can only say "FAOSTAT, nothing".
     if (GROWN.includes(level) || match === 'national' || r.source !== source) {
       const from = num(r.year_from);
       const to = num(r.year_to);
@@ -98,7 +100,10 @@ export function buildCountryTables(atlasDir = ATLAS, iso2: Map<string, string> =
       withoutIso2.push(iso3);
       continue;
     }
-    countries[code] = { iso3, name: file.country, hash: createHash('sha1').update(serialise(file)).digest('hex').slice(0, 8), grown: Object.keys(file.prevalence).length };
+    // `prevalence` also holds the records that name their own source, and some of those have no
+    // quantity (level unknown): only the crops with a reported quantity count as grown.
+    const grown = Object.values(file.prevalence).filter((p) => GROWN.includes(p.level)).length;
+    countries[code] = { iso3, name: file.country, hash: createHash('sha1').update(serialise(file)).digest('hex').slice(0, 8), grown };
   }
   return { files, index: { source: files.values().next().value!.source, years: [from, to], countries }, withoutIso2 };
 }

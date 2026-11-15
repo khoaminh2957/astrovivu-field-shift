@@ -222,10 +222,10 @@ add(SO, 'publisher', 'Who publishes it.', 'Đơn vị công bố.', '', BUILD, '
 add(SO, 'url', 'Address the bytes were downloaded from (or the repository path).', 'Địa chỉ tải tệp (hoặc đường dẫn trong kho mã).', '', BUILD, '');
 add(SO, 'landing_page', 'Page to cite or visit.', 'Trang để trích dẫn hoặc tham khảo.', '', BUILD, '');
 add(SO, 'licence', 'Licence as read on the publisher\'s terms page.', 'Giấy phép theo trang điều khoản của đơn vị công bố.', '', BUILD, '');
-add(SO, 'accessed', 'Date of download.', 'Ngày tải về.', 'date', BUILD, 'empty for repository files');
-add(SO, 'file', 'Where the file is kept.', 'Nơi lưu tệp.', '', BUILD, '');
-add(SO, 'sha256', 'SHA-256 checksum of the file.', 'Mã kiểm tra SHA-256 của tệp.', '', BUILD, '');
-add(SO, 'bytes', 'File size.', 'Kích thước tệp.', 'bytes', BUILD, '');
+add(SO, 'accessed', 'Date of download.', 'Ngày tải về.', 'date', BUILD, 'empty for repository files; for a national source, the date it was read (data/crops/national/prevalence.csv)');
+add(SO, 'file', 'Where the file is kept.', 'Nơi lưu tệp.', '', BUILD, 'for a national source, the file its figures were read into by hand: the build keeps no copy of the publication');
+add(SO, 'sha256', 'SHA-256 checksum of the file.', 'Mã kiểm tra SHA-256 của tệp.', '', BUILD, 'empty for a national source (no copy kept)');
+add(SO, 'bytes', 'File size.', 'Kích thước tệp.', 'bytes', BUILD, 'empty for a national source (no copy kept)');
 add(SO, 'rows_used', 'What the build took from it.', 'Phần dữ liệu chương trình đã dùng.', '', BUILD, '');
 const CL = 'columns';
 add(CL, 'table', 'Table (file name without .csv).', 'Bảng (tên tệp không kèm .csv).', '', BUILD, '');

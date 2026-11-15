@@ -20,7 +20,7 @@ import { cleanSpecies, type AtlasSpecies } from './ecocrop';
 import { readQcl } from './faostat';
 import { SOURCES, ensureSources, md5File } from './fetch';
 import { COMMONNESS, LEVEL, WINDOW, commonnessFor, latestMean, levelFor, rankOf, type Mean } from './levels';
-import { DEFAULT_NATIONAL_FILE, readNational, resolveCropCountryRow } from './national';
+import { DEFAULT_NATIONAL_FILE, nationalSourcesUsed, readNational, resolveCropCountryRow } from './national';
 import { readSpamHarvestedArea, type SpamRegion } from './spam';
 import { taxonKey } from './taxa';
 import { buildXlsx, countCells, type Sheet } from './xlsx';
@@ -501,6 +501,8 @@ async function main() {
     new Set(countryList.map((c) => c.iso3)),
   );
   const cropCountryRows: Cell[][] = [];
+  /** National rows that changed nothing, because FAOSTAT reports the crop in the country: listed in the report. */
+  const nationalIgnored: string[] = [];
   interface CountryCrop {
     id: string;
     areaHa: number | null;
@@ -526,6 +528,7 @@ async function main() {
       });
       if (!resolved) continue;
       cropCountryRows.push(resolved.row);
+      if (resolved.nationalIgnored) nationalIgnored.push(`${k.id} ${c.iso3} (FAOSTAT level ${resolved.level})`);
       if (resolved.inCountryCrops) {
         cropsOfCountry.get(c.iso3)!.push({ id: k.id, areaHa: resolved.areaHa, productionT: resolved.productionT, level: resolved.level });
       }
@@ -671,6 +674,13 @@ async function main() {
     const f = fetched.get(s.id)!;
     return [s.id, s.title, s.publisher, s.url || s.file, s.landing, s.licence, f.accessed, s.url ? `.cache/atlas/raw/${s.file}` : s.file, f.sha256, f.bytes, rowsUsed.get(s.id) ?? ''];
   });
+  // The publications of the national rows. The build holds no copy of them (the figures were read
+  // into data/crops/national/prevalence.csv by hand), so they have no checksum and no size.
+  const nationalSources = nationalSourcesUsed(national);
+  const nationalFile = path.relative(ROOT, DEFAULT_NATIONAL_FILE).split(path.sep).join('/');
+  for (const s of nationalSources) {
+    sourceRows.push([s.id, s.title, s.publisher, s.url, s.url, s.licence, s.accessed, nationalFile, null, null, `${s.rows} row(s) of ${nationalFile}, ${s.rowsWithFigure} with a figure`]);
+  }
   const columnRows: Cell[][] = COLUMNS.map((c: ColumnDoc) => [c.table, c.column, c.en, c.vi, c.unit, c.source, c.rule]);
 
   const count = <T>(xs: readonly T[], f: (x: T) => boolean) => xs.filter(f).length;
@@ -710,7 +720,12 @@ async function main() {
     ['crop_country_rows_present', count(cropCountryRows, (r) => r[CC.level] !== 'absent' && r[CC.level] !== 'unknown')],
     ['crop_country_rows_absent', count(cropCountryRows, (r) => r[CC.level] === 'absent')],
     ['crop_country_rows_unknown', count(cropCountryRows, (r) => r[CC.level] === 'unknown')],
+    // match = national says where the row comes from, not that it has a quantity: the two parts are counted apart.
     ['crop_country_rows_national', count(cropCountryRows, (r) => r[CC.match] === 'national')],
+    ['crop_country_rows_national_with_figure', count(cropCountryRows, (r) => r[CC.match] === 'national' && r[CC.level] !== 'unknown')],
+    ['crop_country_rows_national_without_figure', count(cropCountryRows, (r) => r[CC.match] === 'national' && r[CC.level] === 'unknown')],
+    ['national_rows_read', national.size],
+    ['national_rows_ignored', nationalIgnored.length],
     ['item_country_rows', itemCountryRows.length],
     ['spam_crops', spamCrops.length],
     ['spam_crops_individual', count(spamCrops, (c) => c.class === 'individual')],
@@ -766,6 +781,7 @@ async function main() {
     ['level', `major: at least ${LEVEL.majorPct} % of the country's harvested area; common: at least ${LEVEL.commonPct} %; minor: any area below that; present: production reported without area; absent: FAOSTAT covers the country and reports nothing above zero; unknown: group item.`],
     ['commonness', `global: at least ${COMMONNESS.global.countries} producing countries and ${COMMONNESS.global.areaHa} ha; widespread: ${COMMONNESS.widespread.countries} and ${COMMONNESS.widespread.areaHa} ha; regional: ${COMMONNESS.regional.countries} and ${COMMONNESS.regional.areaHa} ha; local: less.`],
     ...SOURCES.map((s): Cell[] => [`Source ${s.id}`, `${s.title}. ${s.publisher}. ${s.landing}. Licence: ${s.licence}`]),
+    ...nationalSources.map((s): Cell[] => [`Source ${s.id}`, `${s.title}. ${s.publisher}. ${s.url}. Licence: ${s.licence}`]),
     ['MapSPAM notice', 'This data was provided by the International Food Policy Research Institute (IFPRI). IFPRI bears no responsibility for the analyses or interpretations of the data presented here.'],
     ['FAOSTAT citation', `FAO. ${qcl.maxYear + 1}. FAOSTAT: Crops and livestock products. Accessed on ${accessed}. https://www.fao.org/faostat/en/#data/QCL Licence: CC-BY-4.0.`],
   ];
@@ -814,6 +830,7 @@ async function main() {
     }
   };
   for (const id of ['durio-zibethinus', 'abelmoschus-manihot', 'oryza-sativa', 'zea-mays', 'glycine-max', 'coffea-canephora', 'medicago-sativa', 'ipomoea-batatas']) show(id);
+  report.push(`national rows ignored (FAOSTAT already reports the crop in the country, the row stays FAOSTAT's): ${nationalIgnored.join('; ') || 'none'}`);
   for (const t of tables) report.push(`${t.name}.csv: ${t.rows.length} rows, ${fs.statSync(path.join(OUT, `${t.name}.csv`)).size} bytes`);
   report.push(`astrovivu-crop-atlas.xlsx: ${fs.statSync(path.join(CACHE, 'astrovivu-crop-atlas.xlsx')).size} bytes`);
   report.push(`FAOSTAT areas without ISO3 (dropped): ${droppedAreas.join('; ')}`);
