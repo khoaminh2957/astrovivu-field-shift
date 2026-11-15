@@ -143,8 +143,9 @@ export function whereLines(f: CropFacts, lang: Lang): string[] {
   const vi = lang === 'vi';
   const name = cropLabel(f, lang);
   const country = (c: { iso3: string; name: string }) => (vi ? (VI_COUNTRY[c.iso3] ?? c.name) : c.name);
+  // `none` says what the atlas did, not what FAOSTAT has: FAOSTAT has an item "Bananas", and the atlas ties it to another Musa.
   if (w.match === 'none')
-    return [vi ? `Thống kê cây trồng của FAOSTAT không có mặt hàng nào cho ${name}, nên không có số liệu theo nước.` : `FAOSTAT's crop statistics have no item for ${name}, so there are no figures by country.`];
+    return [vi ? `Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với ${name}, nên không có số liệu theo nước cho cây này.` : `The crop atlas ties no FAOSTAT item to ${name}, so it has no figures by country for it.`];
   if (w.match === 'group') {
     const others = (w.sharedBy ?? 1) - 1;
     return [
@@ -154,21 +155,33 @@ export function whereLines(f: CropFacts, lang: Lang): string[] {
     ];
   }
   const out: string[] = [];
-  const years = w.years ? (vi ? ` (trung bình ${w.years})` : ` (mean of ${w.years})`) : '';
+  // Each country's figure is the mean of its own latest three years with a value; `w.years` only covers them all.
+  const span = w.years ? (vi ? ` (mỗi nước lấy trung bình ba năm gần nhất có số liệu, trong khoảng ${w.years})` : ` (each country's mean of its latest three years with data, within ${w.years})`) : '';
   if (w.countries != null && w.worldAreaHa != null)
     out.push(
       vi
-        ? `${name}: ${w.countries} nước báo cáo sản xuất với FAOSTAT, diện tích thu hoạch toàn thế giới ${groupDigits(w.worldAreaHa, 'vi')} ha${years}.`
-        : `${name}: ${w.countries} countries report production to FAOSTAT, with ${groupDigits(w.worldAreaHa, 'en')} ha harvested in the world${years}.`,
+        ? `${name}: ${w.countries} nước báo cáo sản xuất với FAOSTAT, diện tích thu hoạch toàn thế giới ${groupDigits(w.worldAreaHa, 'vi')} ha${span}.`
+        : `${name}: ${w.countries} countries report production to FAOSTAT, with ${groupDigits(w.worldAreaHa, 'en')} ha harvested in the world${span}.`,
     );
   if (w.commonness) out.push(vi ? `Atlas cây trồng xếp mức phổ biến: ${VI_COMMONNESS[w.commonness] ?? w.commonness}.` : `The crop atlas classes it as ${w.commonness}.`);
-  if (w.top?.length) out.push(`${vi ? 'Diện tích thu hoạch lớn nhất' : 'Largest harvested areas'}: ${w.top.map((c) => `${country(c)} ${groupDigits(c.areaHa, lang)} ha`).join('; ')}.`);
-  for (const c of w.also ?? []) out.push(vi ? `${country(c)}: ${groupDigits(c.areaHa, 'vi')} ha, lớn thứ ${c.rank}.` : `${country(c)}: ${groupDigits(c.areaHa, 'en')} ha, the ${ordinal(c.rank)} largest.`);
-  if ((w.sharedBy ?? 1) > 1)
+  const of = (c: { years?: string }) => (c.years ? (vi ? `, trung bình ${c.years}` : `, mean of ${c.years}`) : '');
+  if (w.top?.length) {
+    // The years are said once when the listed countries share them, and country by country when they do not.
+    const shared = w.top.every((c) => c.years === w.top![0].years) ? w.top[0].years : undefined;
+    const lead = vi ? 'Diện tích thu hoạch lớn nhất' : 'Largest harvested areas';
+    out.push(`${lead}${shared ? (vi ? ` (trung bình ${shared})` : ` (means of ${shared})`) : ''}: ${w.top.map((c) => `${country(c)} ${groupDigits(c.areaHa, lang)} ha${shared ? '' : of(c)}`).join('; ')}.`);
+  }
+  for (const c of w.also ?? []) out.push(vi ? `${country(c)}: ${groupDigits(c.areaHa, 'vi')} ha${of(c)}, lớn thứ ${c.rank}.` : `${country(c)}: ${groupDigits(c.areaHa, 'en')} ha${of(c)}, the ${ordinal(c.rank)} largest.`);
+  // The item is always named: "Carrots and turnips" is not carrots alone, whether or not the atlas ties a second crop to it.
+  if (w.faostatItem)
     out.push(
-      vi
-        ? `Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}, mặt hàng mà atlas gắn với ${w.sharedBy} cây; không phải số riêng của một cây.`
-        : `These are the figures of the FAOSTAT item ${w.faostatItem}, which the atlas ties to ${w.sharedBy} crops; they are not for one crop alone.`,
+      (w.sharedBy ?? 1) > 1
+        ? vi
+          ? `Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}, mặt hàng mà atlas gắn với ${w.sharedBy} cây; không phải số riêng của một cây.`
+          : `These are the figures of the FAOSTAT item ${w.faostatItem}, which the atlas ties to ${w.sharedBy} crops; they are not for one crop alone.`
+        : vi
+          ? `Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}.`
+          : `These are the figures of the FAOSTAT item ${w.faostatItem}.`,
     );
   return out;
 }

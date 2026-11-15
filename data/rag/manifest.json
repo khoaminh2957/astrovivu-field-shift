@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-11-15T05:48:34.254Z",
+ "builtAt": "2026-11-15T08:17:50.838Z",
  "sources": {
   "ecocrop": {
    "license": "FAO EcoCrop (attribution, non-commercial)",
@@ -64,12 +64,12 @@
  },
  "artifacts": {
   "public/rag/core.json": {
-   "bytes": 4158881,
-   "gzip": 1023474
+   "bytes": 4164541,
+   "gzip": 1023636
   },
   "public/rag/full.json": {
-   "bytes": 6071317,
-   "gzip": 1174133
+   "bytes": 6156324,
+   "gzip": 1183193
   }
  },
  "tables": {

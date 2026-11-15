@@ -10,8 +10,10 @@ export interface CropCountry {
   iso3: string;
   /** As FAOSTAT names the country. */
   name: string;
-  /** Harvested area in hectares, mean of the years of `CropWhere.years`. */
+  /** Harvested area in hectares: the mean of this country's latest three years with a value, the years of `years`. */
   areaHa: number;
+  /** The years that mean is of, "2022-2024": each country has its own. */
+  years?: string;
   /** `major`, `common` or `minor` in that country (docs/CROP_DATA.md, section 7). */
   level: string;
   /** Place among the countries that report an area of the crop, 1 = largest. */
@@ -34,7 +36,7 @@ export interface CropWhere {
   worldAreaHa?: number;
   /** The atlas's word for how widely the crop is grown: global, widespread, regional, local. */
   commonness?: string;
-  /** Years the figures are means of: "2021-2024". */
+  /** The span that covers the years of every country's mean, "2021-2024". No figure is a mean of exactly this span. */
   years?: string;
   /** The five countries with the largest harvested area. */
   top?: CropCountry[];

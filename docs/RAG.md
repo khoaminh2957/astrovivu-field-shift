@@ -6,7 +6,7 @@ It works as a static site with no key: retrieval and a grounded extractive answe
 
 ## Corpus
 
-The index holds the crops the crop atlas keeps (`data/crops/atlas/crops.csv`, 387; `docs/CROP_DATA.md`) and no other species. Until 15 November 2026 it held all 2,568 species of EcoCrop, of which 2,182 have no evidence of being grown as a crop (`dropped.csv`): the assistant answered about them as confidently as about rice.
+The index holds the crops the crop atlas keeps (`data/crops/atlas/crops.csv`, 387; `docs/CROP_DATA.md`) and no other species. Until 15 November 2026 it held all 2,568 species of EcoCrop, of which 2,182 are species no statistical item of FAOSTAT names, or that are named only inside a group item and that EcoCrop does not describe as cultivated (`dropped.csv`). The atlas has no figures for them, which is not a finding that nobody grows them: `dropped.csv` itself records dragon fruit as "grown on small scale" and white clover as "grown on large scale". The assistant answered about them as confidently as about rice.
 
 | Source | Licence | Documents | Chunks | In first load |
 |---|---|---|---|---|
@@ -23,11 +23,11 @@ Details, revision ids and the sources considered and rejected: `data/rag/ATTRIBU
 
 | `match` | Crops | The sheet says |
 |---|---:|---|
-| `exact` | 165 | how many countries report production, the harvested area of the world, the years the figures are means of, the atlas's commonness class, the five countries with the largest area, and Viet Nam and the United States with their place when they are not among the five. For 80 of them the FAOSTAT item is tied to more than one crop, and the sheet says the figures are the item's, not one crop's |
+| `exact` | 165 | how many countries report production; the harvested area of the world, with the span of years that covers the countries' figures and the statement that each country's figure is the mean of its own latest three years with data; the atlas's commonness class; the five countries with the largest area and, when they are not among the five, Viet Nam and the United States with their place, each with the years its figure is the mean of (said once when the countries listed share them); and the FAOSTAT item the figures are of, always. For 80 of them the item is tied to more than one crop, and the sheet says the figures are the item's, not one crop's; for the other 85 it names the item all the same, because an item can be wider than the crop ("Carrots and turnips" for carrot) |
 | `group` | 202 | the name of the FAOSTAT item the crop is counted in and how many other crops share it; no area of any country |
-| `none` | 20 | that FAOSTAT's crop statistics have no item for it |
+| `none` | 20 | that the atlas ties no FAOSTAT item to it and so has no figures by country. Not that FAOSTAT has no such item: bananas have one, and the atlas ties none to *Musa acuminata* |
 
-Every number of every sheet is a column of `crops.csv` or `crop_country.csv` (a test checks all 387). Country names are FAOSTAT's, in both languages, except Viet Nam and the United States, which have their Vietnamese name in the Vietnamese sheet.
+Every number of every sheet is a column of `crops.csv` or `crop_country.csv` (a test checks all 387), the years included (`year_from`, `year_to` of each country's row). In an extractive answer the sheet is given whole, with the sentence that names the item, or not at all: sentences are never picked out of it. Country names are FAOSTAT's, in both languages, except Viet Nam and the United States, which have their Vietnamese name in the Vietnamese sheet.
 
 **Names.** A curated crop is shown under its curated names. Any other crop takes `name_en` and `name_vi` of the atlas where it has them (162 and 16 of the 317), and its scientific name otherwise.
 
@@ -281,10 +281,10 @@ The answers themselves are checked in `src/rag/fieldAnswer.test.ts`: on the fixt
 
 | Artifact | Raw | gzip | Loaded |
 |---|---|---|---|
-| `public/rag/core.json` (1,522 chunks, 70 crops, index over core) | 4,061 kB | 999 kB | on the first question (or `warmUp()`) |
-| `public/rag/full.json` (index over all 2,951 chunks + 1,429 extra chunks, 317 crops, names of 2,178 dropped species) | 5,929 kB | 1,147 kB | in the background after core; awaited when a question matches nothing in core, or asks what a crop needs and names no curated crop |
+| `public/rag/core.json` (1,522 chunks, 70 crops, index over core) | 4,067 kB | 1,000 kB | on the first question (or `warmUp()`) |
+| `public/rag/full.json` (index over all 2,951 chunks + 1,429 extra chunks, 317 crops, names of 2,178 dropped species) | 6,012 kB | 1,155 kB | in the background after core; awaited when a question matches nothing in core, or asks what a crop needs and names no curated crop |
 
-Before the corpus was cut down to the atlas (13 November 2026): 4,130 kB (1,015 kB gzip) and 16,266 kB (2,962 kB gzip), 6,108 chunks. The first load is 2 % smaller, the lazy file 64 % smaller.
+Before the corpus was cut down to the atlas (13 November 2026): 4,130 kB (1,015 kB gzip) and 16,266 kB (2,962 kB gzip), 6,108 chunks. The first load is 2 % smaller, the lazy file 63 % smaller.
 
 The serialised MiniSearch index is about two thirds of each file.
 

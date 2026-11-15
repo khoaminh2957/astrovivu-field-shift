@@ -56,7 +56,8 @@ function pair(row: Row, base: string): { opt?: string; abs?: string } | undefine
 }
 
 /** Source of a sheet that states only what the crop atlas holds (a crop EcoCrop has no record of). */
-export const ATLAS_SOURCE = { name: 'Astrovivu crop atlas', url: 'docs/CROP_DATA.md', license: 'CC BY 4.0 (Astrovivu team)' };
+// No link: the atlas is described in docs/CROP_DATA.md of this repository, which is not an address a reader can open from the answer panel.
+export const ATLAS_SOURCE = { name: 'Astrovivu crop atlas (docs/CROP_DATA.md)', url: '', license: 'CC BY 4.0 (Astrovivu team)' };
 
 /** Facts of a crop the atlas keeps and EcoCrop has no record of: its names and where it is grown, no requirements. */
 export function factsFromAtlas(crop: AtlasCrop, curated?: CuratedCrop): CropFacts {

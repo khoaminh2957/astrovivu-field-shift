@@ -84,6 +84,8 @@ export interface CountryArea {
   level: string;
   /** Place among the countries that report an area of the crop, 1 = largest. */
   rank: number;
+  /** The years the area is the mean of (`year_from`, `year_to` of crop_country.csv). */
+  years?: string;
 }
 
 let byCrop: Map<string, CountryArea[]> | null = null;
@@ -96,7 +98,8 @@ export function countriesOf(cropId: string): CountryArea[] {
       const areaHa = num(r.area_ha);
       if (areaHa == null || areaHa <= 0 || r.match !== 'exact') continue;
       const list = byCrop.get(r.crop_id) ?? [];
-      list.push({ iso3: r.iso3, name: r.country, areaHa, level: r.level, rank: 0 });
+      const years = r.year_from && r.year_to ? (r.year_from === r.year_to ? r.year_from : `${r.year_from}-${r.year_to}`) : undefined;
+      list.push({ iso3: r.iso3, name: r.country, areaHa, level: r.level, rank: 0, ...(years ? { years } : {}) });
       byCrop.set(r.crop_id, list);
     }
     for (const list of byCrop.values()) {
@@ -127,7 +130,7 @@ export function whereOf(crop: AtlasCrop): CropWhere {
   where.commonness = text(r.commonness);
   where.years = text(r.data_years);
   const top = topCountries(crop.cropId, 5);
-  const pick = (c: CountryArea) => ({ iso3: c.iso3, name: c.name, areaHa: c.areaHa, level: c.level, rank: c.rank });
+  const pick = (c: CountryArea) => ({ iso3: c.iso3, name: c.name, areaHa: c.areaHa, level: c.level, rank: c.rank, ...(c.years ? { years: c.years } : {}) });
   if (top.length) where.top = top.map(pick);
   const also = countriesOf(crop.cropId).filter((c) => HOME_COUNTRIES.includes(c.iso3) && !top.some((t) => t.iso3 === c.iso3));
   if (also.length) where.also = also.map(pick);
