@@ -200,6 +200,23 @@ Thửa Iowa: 2.240 px. Thửa Nevada (bảy mục lời khuyên): 2.412 px, tứ
 | Hai thứ tiếng | không còn chuỗi tiếng Anh nào ở chế độ tiếng Việt |
 | Tương phản | chữ trắng trên nền xanh lá hiện 2,87:1; nâng lên mức đạt chuẩn hoặc đổi sang xanh đậm |
 
+### U11. Nông trại sống ở đầu trang Luân canh (bản thứ hai, 15/11)
+
+Issue B21 (#101), tài liệu `docs/FARM.md`.
+
+Bản đầu đặt nông trại vào thẻ Tổng quan của bảng ruộng và bỏ thẻ Luân canh. Chủ dự án không muốn vậy: bảng ruộng giữ nguyên bốn thẻ, nông trại thay chỗ mục "Luân canh" ở thanh bên trái. Bản thứ hai làm đúng như thế.
+
+- Mục "Luân canh" ở thanh bên đổi tên thành "Nông trại". Trang đó mở đầu bằng cảnh nông trại; phần so sánh các phương án luân canh (thẻ phương án, lịch mùa vụ, đánh đổi, bằng chứng, rủi ro) giữ nguyên ở ngay bên dưới, vì đó là phần đề bài yêu cầu.
+- Cảnh vẽ bằng SVG từ số liệu của ngày đang xem: trời (quang, nhiều mây, mưa, mưa lớn, nắng nóng, sương giá), cây trên luống theo giai đoạn và độ xanh, đất theo độ ẩm tầng rễ, xe thu hoạch và xe gieo theo lịch vụ. Nền phía sau được vẽ lại: dãy núi xa, hai lớp đồi có ruộng, cây nhiều tầng, nhà kho có bóng đổ, cối xay gió quay theo gió, hàng rào.
+- Ba mascot (Vũ trụ, Đất, Lúa) đứng ở trời, mép đất và giữa luống; mỗi con nói một câu dựng từ số liệu, có tên nguồn; luân phiên 8 giây một lượt cho tới khi người dùng chọn.
+- Đất và Lúa đề xuất các bản thử lấy từ `whatIf` và `rankCrops`: chỉnh pH, tưới, thoát nước, dời ngày gieo, đổi cây. Bản thử chạy lại điểm của cả năm trên bản sao của dữ liệu; số người dùng nhập không đổi.
+- Trang rộng: cảnh bên trái, mascot đang nói bên phải; bên dưới là bốn số của ngày và dải thời tiết hôm nay cùng dự báo. Thanh kéo ngày dùng chung con trỏ với thanh dưới bản đồ, và nút phát chạy được ngay trên trang này.
+- Hình mascot là hình giữ chỗ cho tới khi có hình của người phụ trách mascot (U2, U3).
+
+Đã kiểm trên trình duyệt (15/11, 1440 × 900): trang Nông trại của thửa Iowa, bấm phát thì ngày tiến và ngô lớn dần; bảng ruộng có lại bốn thẻ.
+
+Còn lại: chọn một phương án luân canh thì cảnh vẽ đúng các cây của phương án đó qua từng vụ; lời mascot cho các việc của `SoilPlan` khi #96 vào `main`; kịch bản tương tác của U4 (#40); ghép với bố cục mới của #102.
+
 ## 4. Thứ tự
 
 | Đợt | Hạng mục | Phụ thuộc |

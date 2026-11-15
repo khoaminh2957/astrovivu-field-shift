@@ -516,7 +516,40 @@ Without reported production in the country, compatibility from 60: none.
 - **The level is per country.** Robusta coffee is second on the Mekong Delta paddy field: it reaches the full score there and is `common` in Viet Nam as a whole. Regions inside a country (`region_crops.csv`) are not used yet.
 - **Prevalence breaks ties, it does not re-weight scores.** Maize is seventh in Iowa, not first: its rank score is 90 against 97.5 for potato, onion and cabbage, because 20 % of the analysed years fell short of its needs. Whether a crop grown on a third of the country's cropland should rank above a better-scoring minor crop is a question for K5.
 - **Crops at score 0 are still listed** (Nevada, places 5 to 15), now ordered by what the country grows.
-- **The app passes the country table since 15 November 2026** (B20: `src/data/country.ts`, `src/state/mission.ts`; docs/CROP_DATA.md section 11.1). `rankCrops` therefore leaves out `absent` crops in the one place the app calls it, the "switch to another crop" what-if. The rotation builder does not read the table yet (K10), and no screen shows the two lists of `rankCropLists` yet (B2).
+- **The app passes the country table since 15 November 2026** (B20: `src/data/country.ts`, `src/state/mission.ts`; docs/CROP_DATA.md section 11.1). `rankCrops` therefore leaves out `absent` crops in the one place the app calls it, the "switch to another crop" what-if. The rotation builder reads the table as well (12.5). No screen shows the two lists of `rankCropLists` yet (B2).
+
+### 12.5 The rotation builder reads the same table (K10)
+
+Code: `countryStatus`, `proposable` and `countryKey` in `src/core/advisory/rotation.ts`; the crop choices of a slot in `src/core/advisory/customRotation.ts`. Tests: `src/core/advisory/rotationPrevalence.test.ts`.
+
+What a grower sees is the rotation strategies, not the ranking. The builder that makes them now reads `ModelInput.country` through the same function as the ranking (`prevalenceStatus`, 12.1), so there is one rule and not two:
+
+| The country's table says of a crop | In a strategy the builder proposes | In the crop choices of a slot |
+|---|---|---|
+| grown (major, common, minor, present; an item of its own) | may be used | offered, with its level |
+| cannot tell (a group item, no item, no record) | may be used; the strategy's gaps say that no statistic tells whether the country grows it | offered, marked `unknown` |
+| none reported (`absent`, an item of its own) | not used | offered after every other crop, and only from a suitability of 60 (`TRIAL_MIN_COMPATIBILITY`), marked `absent`; a rotation the grower puts it into carries the risk line "New crop, needs a trial" |
+| anything, for a crop the grower grows now (`cropId`, `currentRotation`) | used as before | offered as before, without a level when the table reports none |
+
+The filter is applied wherever the builder draws candidate crops: cash crops, cover crops, companion trees, the search for the most profitable sequence (`docs/ECONOMICS.md`, section 5) and the fallback crop when the field has none. Without a table nothing is filtered and nothing is said: the rotations of the four demo fields are then the ones built before, sequence for sequence (the test pins them; the full strategies were compared by checksum on 15 November 2026 and were identical).
+
+**On the demo fields, with the atlas table of the field's country** (15 November 2026):
+
+| Field | Country | Rotations that changed | What changed | Rotations with a "no statistic" line |
+|---|---|---:|---|---:|
+| Central Highlands robusta block | VNM | 0 of 4 | | 3 (Pinto peanut, common bean) |
+| Mekong Delta paddy | VNM | 1 of 5 | water-saver: buckwheat (`absent`) gives way to daikon radish (`unknown`); reference margin 223 to 283 USD/ha/year | 3 (sesbania, common bean, daikon radish) |
+| Story County corn-soybean field | USA | 0 of 5 | | 2 (common bean) |
+| Diamond Valley alfalfa pivot | USA | 0 of 3 | | 0 (alfalfa has no FAOSTAT item, but it is the grower's crop) |
+
+**The remembered result.** The rotations and the advisory report are memoised on the telemetry object and on the value of the other inputs. The key now holds the country and, for each crop of its table, whether it is grown, absent or not known, so another table gives another result and an equal table carried by another object gives the remembered one.
+
+**Limits.**
+
+- **Unreported is not the same as not grown** (12.4) applies here with more weight, because a crop now leaves a strategy. Whether Viet Nam grows no buckwheat, or reports none, was not checked. Of the crops offered last for the third rice slot of the paddy field, tomato, cucumber and eggplant are three of those 12.4 names as unreported. The levels are the atlas's and are not changed here; national statistics (task T4) are what will correct them.
+- **Where a crop the country reports none of should appear is not settled.** It is offered in the crop choices of a slot, last and marked, and nowhere else. A strategy of its own under a "trial" label is the alternative; it is not built. The decision is the project lead's, with the interface (task B2).
+- **This is what a grower sees.** The app gives the model the country's table (12.4), so the changes of the table above are in the product: on the Mekong Delta demo field the water-saver rotation no longer holds buckwheat, and the rotations with a crop the statistics cannot tell about say so. The marks on the crop choices of a slot are in the data; the interface does not show them yet (task B2).
+- **A cover crop is filtered like any other.** Most have no FAOSTAT item and read as "cannot tell"; buckwheat has one, which is why it is the crop that left.
 
 ## 13. The latitude gate, reviewed (K6)
 
