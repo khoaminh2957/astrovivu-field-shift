@@ -68,3 +68,53 @@ Yields: FAOSTAT 2024 (Vietnam), USDA ERS and NASS 2025 (US). Prices: FAOSTAT pro
 ## 4. Limits
 
 Reference prices are annual averages or single quotes, not forecasts; price risk is not modelled. Yields are national or state averages, so the "attainable" yield of a well-managed field is understated for good farmers and overstated on poor land; the farmer's own yield corrects this. Irrigation water, drying, storage and transport costs are included only where the source budget includes them.
+
+## 5. The most profitable sequence under constraints
+
+Code: `profitSearch`, `meetsConstraints` and `profitSearchFor` in `src/core/advisory/rotation.ts`. Tests: `src/core/economics/profit-search.test.ts`.
+
+On a field whose main crop is an annual, the "income" rotation of the advisory report is the sequence of crops with the highest expected margin among all sequences that could be compared, under three constraints. It replaces a greedy rule (best-paying crop first, then the best-paying crop for the months left), which stays as the fallback.
+
+**Expected margin of a season.** As in section 1: reference yield x field score / 100 x price - cost, for the whole parcel; the grower's own yield, price and cost replace the reference for the crop they grow. A sequence is worth the sum of its seasons, per year.
+
+**What is compared.**
+
+| Rule | Value | Where it comes from |
+|---|---|---|
+| Crops | annual cash crops with rotation traits, not on the grower's avoid list | the pool the rotation engine has always used |
+| Price and cost | a reference of the parcel's own region, or the grower's own numbers | `referenceEconomics` falls back to another region when a crop has no figure here; a comparison of margins does not use such a figure |
+| A season | a crop sown in a month in which the field scores at least 55 for it | the threshold of the greedy rule |
+| Reliability | the sowing month met the crop's needs in at least half of the analysed years, when a history exists | the scorer's reliability threshold (0.5) |
+| One year | every set of up to four seasons that do not overlap; two seasons that follow each other, the last and the first included, are of different pest groups | the pest-group rule of the greedy rule |
+| Two years | every pair of different one-year sequences in alternation (maize, then soybean), with the same two rules across the turn of the year | from the best 300 one-year sequences when there are more |
+
+Nothing is sampled: the sequences are enumerated, sorted by margin, and equal margins are ordered by the names of their crops, so the same field gives the same answer.
+
+**Constraints.** The sequences are checked best margin first, and the first one that passes is chosen:
+
+- its soil-health index is not below that of the current rotation;
+- its water fit (modelled supply over demand, with the grower's irrigation and the reliability of their water source) is not below that of the current rotation;
+- when "low risk" is among the grower's priorities, its risk score is not above that of the current rotation.
+
+The floor is what the grower does now, not a fixed number: a plan may earn more, it may not leave soil or water worse off than today. The three indices are those of the rotation report (`evaluate`); the search adds no threshold of its own. When the current rotation itself comes out first, the report says so and shows the next sequence.
+
+**On the demo fields** (15 November 2026, default priorities profit, water, soil):
+
+| Field | Compared: one-year sequences | two-year alternations | Current rotation, USD/ha/year | Chosen | USD/ha/year | Set aside for a constraint | Crops that suit the field but have no price or cost for the region |
+|---|---:|---:|---:|---|---:|---:|---:|
+| Mekong Delta paddy | 1,278 | 11,676 | 1,616 (rice three times) | soybean in January, sweet potato in May, rice in September | 2,284 | 0 | 31 |
+| Story County corn-soybean field | 23 | 204 | 407 (maize, then soybean) | maize in June; the next year common bean in May and canola in August | 613 | 56 (soil health 54, water fit 54) | 13 |
+
+In Iowa the sequence with the highest margin outright would earn 8,710 USD/ha/year; it and 55 others lower the soil-health index or the water fit below the maize-soybean rotation. On the two other demo fields the main crop is a perennial stand (robusta coffee, alfalfa): the search is not run there, and the report keeps its own alternatives for stands.
+
+**Time.** First call of the advisory report, three fresh runs each, in milliseconds, before and after: Mekong Delta paddy 37-43 and 67-68; Story County 33-35 and 37-38; the two perennial fields unchanged (55-97 and 25-27).
+
+**Limits.**
+
+- **The comparison is only as wide as the reference table.** 31 crops that suit the paddy field and 13 that suit the Iowa field were left out because no price or cost is known for their region; the report names them. Outside Viet Nam and the United States there is no figure of the field's own region at all: the search does not run, the greedy rule is used on the figures of another region, and the report says that its margins then show an order of magnitude only.
+- **The indices are the report's own.** Soil health, water fit and risk are scores built for comparing rotations (section 4 and `docs/ADVISORY.md`), not measurements.
+- **No effect of one crop on the next.** The yield of a season depends on the field score alone; a legume before a cereal changes the soil-health index, not the cereal's yield.
+- **One and two years.** Longer rotations are not searched; the report's other alternatives cover three years.
+- **Reference prices are single values.** How the choice moves when prices, yields or costs move is the subject of section 6.
+- **The floor is as good as the current practice.** Where today's rotation is hard on the soil, the constraint asks for no more than that.
+
