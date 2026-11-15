@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { ChevronDown, CircleAlert, FileText, Pause, Play, Sprout, Undo2, X } from 'lucide-react';
 import { type Lang, type RotationStrategy, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
-import { type FarmNote, type FarmOption, type FarmPeriod, type FarmStep, type FarmTrial, type FarmVoice, cropLook, seasonOutcome } from '@/core/farm';
+import { type FarmNote, type FarmOption, type FarmPeriod, type FarmStep, type FarmTrial, type FarmVoice, type PeriodLand, cropLook, seasonOutcome } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
 import { cropNameOnly, monthLong, monthShort } from '@/ui/advisory/format';
 import { StrategyCards } from '@/ui/advisory/StrategyCards';
@@ -40,9 +40,11 @@ export interface TimeBarProps {
   onPlay: () => void;
   onPick: (idx: number | null) => void;
   trailing?: ReactNode;
+  /** What stands on the field in each period, in the order of `periods`: drawn under each step. */
+  land?: (PeriodLand & { name: string | null })[];
 }
 
-export function TimeBar({ periods, idx, step, playing, holdMs, onStep, onPlay, onPick, trailing }: TimeBarProps) {
+export function TimeBar({ periods, idx, step, playing, holdMs, onStep, onPlay, onPick, trailing, land }: TimeBarProps) {
   const t = useT();
   const lang = useLang();
   return (
@@ -64,15 +66,23 @@ export function TimeBar({ periods, idx, step, playing, holdMs, onStep, onPlay, o
           const on = idx === i;
           const done = idx == null || i < idx;
           const newYear = i > 0 && p.to.slice(0, 4) !== periods[i - 1].to.slice(0, 4);
+          const l = land?.[i];
+          const what = !l ? null : l.bare ? t('farm.land.bare') : l.harvested != null ? t('farm.land.harvest', { crop: l.name ?? '' }) : l.name;
           return (
             <li key={p.id} className={cn('flex min-w-9 flex-1', newYear && 'ml-1 border-l border-line-2 pl-1')}>
               <button
                 type="button"
                 aria-current={on ? 'step' : undefined}
-                aria-label={periodLabel(p, lang, true)}
+                aria-label={[periodLabel(p, lang, true), what].filter(Boolean).join(': ')}
+                title={what ?? undefined}
                 onClick={() => onPick(i)}
                 className={cn('group flex w-full flex-col items-center gap-1 rounded-sm px-1 pt-1.5 pb-1 text-xs transition-colors', on ? 'bg-surface-0 font-semibold text-ink-1 shadow-sm' : 'text-ink-2 hover:bg-surface-2')}
               >
+                {l && (
+                  <span className={cn('farm-land flex h-6 items-end justify-center', l.bare && 'opacity-60')} data-farm-land={l.bare ? 'bare' : l.harvested != null ? 'harvest' : 'crop'}>
+                    <PlantIcon look={l.look} size={24} growth={Math.max(0.25, l.growth)} ripeness={l.ripeness} cut={l.harvested != null && l.harvested >= 0.5} />
+                  </span>
+                )}
                 <span className="whitespace-nowrap">{periodLabel(p, lang)}</span>
                 <span className="relative h-1 w-full overflow-hidden rounded-full bg-line-2">
                   {on ? (

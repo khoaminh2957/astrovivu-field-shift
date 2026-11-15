@@ -9,7 +9,7 @@
 import type { FieldTelemetry, ISODate, ModelInput, ScoreTimeline } from '@/contracts';
 import { addDays, diffDays } from '@/lib/time';
 import { getCrop } from '@/core/crops';
-import { type FarmScene, type SkyKind, farmSceneAt, harvestedShare, weatherAt } from './index';
+import { type CropLook, type FarmScene, type SkyKind, farmSceneAt, harvestedShare, weatherAt } from './index';
 
 export type FarmStep = 'month' | 'quarter';
 
@@ -156,4 +156,22 @@ export function farmSceneOfPeriod(input: ModelInput, score: ScoreTimeline, perio
       weather: { t: period.to, kind: summary.kind, tMaxC: summary.tMaxMeanC, tMinC: summary.tMinMeanC, rainMm: summary.rainMm, rain7Mm: null, rhPct: null, windMs: scene.weather.windMs, forecast: false, sourceIds: summary.sourceIds },
     },
   };
+}
+
+/** What stands on the field in a period, for the strip of the time bar: the crop drawn and how far it has grown. */
+export interface PeriodLand {
+  cropId: string | null;
+  look: CropLook;
+  growth: number;
+  ripeness: number;
+  /** Share cut when the period is drawn on a harvest; null otherwise. */
+  harvested: number | null;
+  /** Nothing growing: no crop, or a stage when the ground is bare (fallow, before sowing). */
+  bare: boolean;
+}
+
+export function periodLand(input: ModelInput, score: ScoreTimeline, period: FarmPeriod): PeriodLand {
+  const c = farmSceneAt(input, score, periodDay(input, score, period)).crop;
+  const bare = c.look === 'none' || c.growth <= 0;
+  return { cropId: bare ? null : c.cropId, look: bare ? 'none' : c.look, growth: c.growth, ripeness: c.ripeness, harvested: c.harvested, bare };
 }

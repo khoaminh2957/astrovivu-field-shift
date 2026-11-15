@@ -231,6 +231,11 @@ export function cropLook(crop: CropProfile | null | undefined): CropLook {
   return 'row';
 }
 
+/** Silhouettes of perennials that keep their height through the year. */
+const WOODY = new Set<CropLook>(['tree', 'bush', 'palm', 'vine']);
+/** Height drawn for a herbaceous perennial while dormant or between seasons: its crown and stubble. A drawing rule. */
+export const CROWN = 0.3;
+
 /** Stages after which an annual crop is no longer on the field. */
 const OFF_FIELD = new Set<string>(['initial', 'fallow', 'pre-sowing', 'dormant']);
 
@@ -269,7 +274,11 @@ function cropAt(input: ModelInput, score: ScoreTimeline, day: ISODate): FarmCrop
   const progress = stage?.progress ?? 0;
   const standing = id != null && id !== 'fallow' && id !== 'pre-sowing';
   // An annual is at its full height from mid-season on; a perennial stands the whole year.
-  const growth = !crop ? 0 : perennial ? 1 : !standing ? 0 : id === 'initial' || id === 'development' ? Math.min(0.95, 0.12 + progress / 0.5) : 1;
+  // A woody perennial (tree, bush, palm, vine) keeps its height all year. A herbaceous one (alfalfa,
+  // pasture) dies back to its crown while dormant and grows again through its stages, as an annual does.
+  const woody = WOODY.has(cropLook(crop));
+  const growing = id === 'initial' || id === 'development' ? Math.min(0.95, 0.12 + progress / 0.5) : 1;
+  const growth = !crop ? 0 : perennial && woody ? 1 : perennial ? (standing && id !== 'dormant' ? Math.max(CROWN, growing) : CROWN) : !standing ? 0 : growing;
   const ripeness = !standing ? 0 : id === 'harvest' ? 1 : clamp01((progress - 0.75) / 0.25);
 
   const ndviSeries = seriesOf(input.telemetry, 'ndvi');

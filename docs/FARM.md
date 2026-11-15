@@ -13,7 +13,7 @@ The scene is an illustration of readings the app already has. It adds no data an
 | Temperature, rain | `t2m_max`, `t2m_min` (agromet branch); `rain`, else `rain_era5` | `--`, sky drawn as "no weather reading" |
 | Sky: clear, overcast, rain, heavy rain, hot, frost | the day's figures against the thresholds below | grey sky without sun or rain |
 | Plants: kind | `cropLook(CropProfile)`: thirteen silhouettes, section 5 | bare soil |
-| Plants: height, ripeness | `ScoreSnapshot.stage` of the day (`id`, `progress`) | bare soil |
+| Plants: height, ripeness | `ScoreSnapshot.stage` of the day (`id`, `progress`). An annual grows through its initial and development stages and stands full from mid-season. A woody perennial (tree, bush, palm, vine) keeps its height all year. A herbaceous perennial (alfalfa, pasture) is drawn at its crown (`CROWN`, 0.3 of full height, a drawing rule) while dormant and grows again through its stages | bare soil |
 | Plants: colour | the latest `ndvi` that is not stale for its cadence | a neutral grey-green |
 | Cut rows and the harvester | days since the crop entered its `harvest` stage, over the 14 days that stage lasts in the scorer; for an annual whose late season runs straight into the next sowing, fallow or dormancy (rice cropped back to back has no `harvest` stage), the last 14 days of the late season, because the late season ends at harvest (FAO-56, Allen et al. 1998, ch. 6). A perennial gets no harvester. A drawing rule, not an observation of machines | no harvester |
 | The seeder | stage `pre-sowing`, or the first 6 % of the cycle | no seeder |
@@ -58,6 +58,8 @@ The stage opens on **today**. Play rewinds a year and steps forward; a step can 
 - `periodWeather` sums a period from its days: total rain, wet days, days of heavy rain, hot days, frost nights, mean daily high and low. Nothing is added to the record.
 - `farmSceneOfPeriod` draws the field of the period's day (`periodDay`: the middle of a harvest inside the period, otherwise its **last day**) under the sky of the **whole** period. Without that, a month or a quarter would skip a harvest that is over by its last day: the maize harvest in Iowa (3 to 16 September) falls between 31 August and 30 September.
 - **The sky of a period is a drawing rule** (`periodSky`), on the share of the days read: heavy rain when at least two days and 7 % of the days had it; rain from 40 % wet days; frost from 15 %; hot from 30 %; overcast from 50 %; clear otherwise. Rain first, as for a day.
+
+Under each step of the time bar a small plant shows what stands on the field that month or quarter (`periodLand`): the crop as it has grown, stubble when the period is drawn on a harvest, a dashed line for bare ground. The strip follows the same crop source as the stage (the current practice, a strategy, or a trial), so a rotation shows where the ground is used and where it stands bare.
 
 Playback holds 2.4 s on a month and 3.4 s on a quarter. Plants rise into each new stage (a CSS animation keyed on the step); under `prefers-reduced-motion` the steps still change, without motion.
 

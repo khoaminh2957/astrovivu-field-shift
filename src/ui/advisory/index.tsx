@@ -71,14 +71,15 @@ export function AdvisoryPanel() {
 
   return (
     <main aria-labelledby="adv-title" className="rotation-workspace" data-rotation-page={parcel && !loading ? page : undefined}>
-        <header className="rotation-inner rotation-header">
-          {parcel && (
-            <button type="button" className="rotation-back" onClick={() => (dossier ? setPage('compare') : setPhase('locked'))}>
-              <ArrowLeft size={16} aria-hidden />{t(dossier ? 'advisory.workspace.backRotation' : 'advisory.workspace.back')}
+        {/* Compare and Plan sit under the rotation tabs, which already say where the grower is: no title block there. */}
+        <header className={cn('rotation-inner rotation-header', !dossier && parcel && 'rotation-header-compact')}>
+          {parcel && dossier && (
+            <button type="button" className="rotation-back" onClick={() => setPage('compare')}>
+              <ArrowLeft size={16} aria-hidden />{t('advisory.workspace.backRotation')}
             </button>
           )}
           <div className="rotation-header-row">
-            <div>
+            <div className={cn(!dossier && parcel && 'sr-only')}>
               <h1 id="adv-title">
                 <span className="rotation-step-num" aria-hidden>{dossier ? 3 : 2}</span>
                 {t(dossier ? 'advisory.workspace.dossierTitle' : 'advisory.title')}

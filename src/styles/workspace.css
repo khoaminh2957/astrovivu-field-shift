@@ -415,6 +415,7 @@
 .workspace-map-tools { top: 23px; z-index: var(--z-map-ui); display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
 .workspace-map-button,
 .rotation-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 11px; height: 42px; border-radius: 11px; font-size: 14px; font-weight: 720; }
+.workspace-map-button-icon { width: 42px; padding: 0; }
 .workspace-map-button:hover,
 .workspace-zoom button:hover { background: #d8f4e8; }
 .workspace-zoom { display: grid; overflow: hidden; border-radius: 11px; }
@@ -529,6 +530,9 @@
 .rotation-inner { width: min(var(--rotation-width), calc(100% - 2 * var(--rotation-gutter))); margin-inline: auto; }
 .rotation-header { padding-top: 20px; }
 .rotation-header-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 12px; }
+/* Compare and Plan: the title block is for screen readers only, the currency switch stays at the right. */
+.rotation-header-compact { padding-top: 12px; }
+.rotation-header-compact .rotation-header-row { justify-content: flex-end; margin: 0 0 4px; }
 .rotation-action { height: 39px; border: 1px solid var(--workspace-line); border-radius: 8px; background: var(--workspace-card); color: var(--workspace-ink); }
 .rotation-header-row [role='radiogroup'] { border-radius: 9px; background: #dcece7; padding: 3px; }
 .rotation-header-row [role='radio'] { min-height: 30px; padding-inline: 11px; font-weight: 700; }

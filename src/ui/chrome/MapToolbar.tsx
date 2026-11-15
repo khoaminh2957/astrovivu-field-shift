@@ -195,8 +195,8 @@ export function MapToolbar({ className, workspace = false }: { className?: strin
         <button type="button" aria-label={t('map.zoomIn')} onClick={() => zoomBy(1)}><Plus size={20} aria-hidden /></button>
         <button type="button" aria-label={t('map.zoomOut')} onClick={() => zoomBy(-1)}><Minus size={20} aria-hidden /></button>
       </div>
-      <button className="workspace-map-button" type="button" aria-expanded={expanded} onClick={() => { if (expanded) setPopover(null); setExpanded(!expanded); }}>
-        <SlidersHorizontal size={17} aria-hidden />{t('map.tools')}
+      <button className="workspace-map-button workspace-map-button-icon" type="button" aria-label={t('map.tools')} title={t('map.tools')} aria-expanded={expanded} onClick={() => { if (expanded) setPopover(null); setExpanded(!expanded); }}>
+        <SlidersHorizontal size={17} aria-hidden />
       </button>
       {expanded && <>{stacks}<WeatherChip className="pointer-events-none absolute top-full right-14" /></>}
     </div>

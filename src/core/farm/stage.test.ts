@@ -6,7 +6,7 @@ import { getCrop } from '@/core/crops';
 import { computeScoreTimeline } from '@/core/scoring';
 import { getSampleParcel } from '@/data/samples';
 import { addDays, diffDays } from '@/lib/time';
-import { HARVEST_DAYS, bareRun, cropLook, farmNotes, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodDay, periodScore, periodSky, periodWeather, runOn, seasonMonths, seasonRuns, weatherAt } from './index';
+import { CROWN, HARVEST_DAYS, bareRun, cropLook, farmNotes, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodDay, periodLand, periodScore, periodSky, periodWeather, runOn, seasonMonths, seasonRuns, weatherAt } from './index';
 
 function demo(id: string): ModelInput {
   const parcel = getSampleParcel(id)!;
@@ -203,5 +203,43 @@ describe('the short notes of the three characters', () => {
     });
     expect(withPlan.soil.alert).toBe(true);
     expect(withPlan.soil.points.some((p) => p.vi.includes('Nâng pH bằng vôi'))).toBe(true);
+  });
+});
+
+describe('the land month by month', () => {
+  it('lets a herbaceous perennial die back while dormant and grow again: alfalfa in Nevada', () => {
+    const alfalfa = demo('nevada-alfalfa');
+    const score = computeScoreTimeline(alfalfa);
+    const land = farmPeriods(alfalfa.telemetry.window, 'month').map((p) => ({ id: p.id, ...periodLand(alfalfa, score, p) }));
+    const growth = land.map((l) => l.growth);
+    // Dormant from November to May: its crown only; full height from mid-season.
+    expect(Math.min(...growth)).toBe(CROWN);
+    expect(Math.max(...growth)).toBe(1);
+    expect(land.every((l) => !l.bare && l.look === 'grass')).toBe(true);
+    // It rises from the crown to full height without stepping down on the way.
+    const start = growth.findIndex((g) => g > CROWN);
+    const top = growth.indexOf(1);
+    expect(start).toBeGreaterThan(-1);
+    for (let i = start; i <= top; i++) expect(growth[i]).toBeGreaterThanOrEqual(growth[i - 1]);
+  });
+
+  it('keeps a woody perennial at full height: coffee in Dak Lak', () => {
+    const coffee = demo('daklak-coffee');
+    const score = computeScoreTimeline(coffee);
+    for (const p of farmPeriods(coffee.telemetry.window, 'month')) expect(periodLand(coffee, score, p).growth).toBe(1);
+  });
+
+  it('shows bare ground, sowing, growth and the harvest of the maize field, and the three rice harvests', () => {
+    const maize = demo('iowa-corn-soy');
+    const ms = computeScoreTimeline(maize);
+    const land = farmPeriods(maize.telemetry.window, 'month').map((p) => periodLand(maize, ms, p));
+    expect(land.some((l) => l.bare)).toBe(true);
+    expect(land.filter((l) => l.harvested != null)).toHaveLength(1);
+    const grown = land.filter((l) => !l.bare).map((l) => l.growth);
+    expect(Math.min(...grown)).toBeLessThan(1);
+    for (const l of land) if (l.bare) expect(l).toMatchObject({ cropId: null, look: 'none' });
+    const rice = demo('cantho-rice');
+    const rs = computeScoreTimeline(rice);
+    expect(farmPeriods(rice.telemetry.window, 'month').filter((p) => periodLand(rice, rs, p).harvested != null)).toHaveLength(3);
   });
 });

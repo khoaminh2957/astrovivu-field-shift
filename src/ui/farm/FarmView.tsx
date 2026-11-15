@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronsDown, FlaskConical, MapPin } from 'lucide-react';
 import { type AdvisoryReport, type RotationStrategy, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
-import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
+import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodLand, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
 import { Button, Dialog, cn, usePrefersReducedMotion } from '@/ui/design';
@@ -155,6 +155,16 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   // The soil plan of the report is for the field's own crop: it is not quoted over a simulated one.
   const notes = useMemo(() => (shown && view ? farmNotes(shown.input, view.scene, { summary: view.summary, report: simulated ? null : report }) : null), [shown, view, simulated, report]);
   const year = useFarmYear(shown?.input ?? null, shown?.score ?? null);
+  // What stands on the field each month or quarter, with the same crop source as the stage (trial, strategy or current).
+  const land = useMemo(() => {
+    if (!input || !score) return undefined;
+    return periods.map((p) => {
+      const src = trial ? { input: trial.input, score: trial.score } : runs ? (runOn(runs, p.to) ?? bare ?? { input, score }) : { input, score };
+      const l = periodLand(src.input, src.score, p);
+      const c = getCrop(l.cropId);
+      return { ...l, name: c ? (lang === 'vi' && c.names.vi ? c.names.vi : c.names.en) : null };
+    });
+  }, [input, score, periods, trial, runs, bare, lang]);
   const frame = useMemo(() => (view && notes ? frameOf(view.scene, notes) : null), [view, notes]);
   const { beats, looks, act } = useStageDirector({ root: stageRef, open, frame, reduced });
 
@@ -283,7 +293,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
       )}
 
       <div className="absolute inset-x-3 bottom-3 z-30 flex flex-col gap-2 md:inset-x-4 md:bottom-4">
-        <TimeBar periods={periods} idx={idx} step={step} playing={playing} holdMs={reduced ? 0 : HOLD_MS[step]} onStep={(s) => { setPlaying(false); setIdx(null); setStep(s); }} onPlay={play} onPick={pickStep} trailing={<StageLinks onDossier={onDossier} />} />
+        <TimeBar periods={periods} land={land} idx={idx} step={step} playing={playing} holdMs={reduced ? 0 : HOLD_MS[step]} onStep={(s) => { setPlaying(false); setIdx(null); setStep(s); }} onPlay={play} onPick={pickStep} trailing={<StageLinks onDossier={onDossier} />} />
         <button type="button" onClick={onAnalysis} className="mx-auto flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-medium text-white [text-shadow:0_1px_3px_rgb(8_20_14/0.7)] hover:bg-white/15" data-farm-analysis>
           <ChevronsDown size={14} aria-hidden />
           {t('farm.analysis')}
