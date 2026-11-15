@@ -1,4 +1,5 @@
 import type { I18nText, Quad } from './common';
+import type { CropPrevalence, Iso3 } from './country';
 
 export type TextureClass = 'heavy' | 'medium' | 'light' | 'organic';
 export type DrainageClass = 'poor' | 'well' | 'excessive';
@@ -99,6 +100,8 @@ export interface CropProfile {
   cycleDays: [min: number, max: number];
   water?: CropWaterModel;
   economics?: CropEconomics;
+  /** Prevalence by country (ISO 3166-1 alpha-3), from the crop atlas (crop_country.csv). */
+  prevalence?: Record<Iso3, CropPrevalence>;
   rotation?: CropRotationTraits;
   urban?: CropUrbanTraits;
   summary?: I18nText;
