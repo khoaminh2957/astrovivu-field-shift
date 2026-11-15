@@ -7,9 +7,12 @@
  * the two side by side, so that later changes to the ranking (K3, K4, K5) have something to be
  * measured against.
  *
- *   npx tsx scripts/crops/rank-baseline.ts
- *     -> data/crops/rank-baseline.json
- *     -> prints the tables of docs/SCORING.md, section 11
+ *   npx tsx scripts/crops/rank-baseline.ts            prints the tables of docs/SCORING.md, section 11
+ *   npx tsx scripts/crops/rank-baseline.ts --write    also overwrites data/crops/rank-baseline.json
+ *
+ * The committed file is the ranking as it was on commit c11874c, before prevalence and the new
+ * tie-break (section 12): it is what later work is compared with, so it is overwritten on request
+ * only. `scripts/crops/rank-prevalence.ts` prints the ranking as it is now.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -26,7 +29,7 @@ export const TOP = 15;
 /** The telemetry window of the demo caches ends on this day (AGENTS.md). */
 const TODAY = '2026-11-14';
 /** The demo fields lie in two countries. The app's general conversion of country codes is decided in K2. */
-const ISO3: Record<string, string> = { VN: 'VNM', US: 'USA' };
+export const ISO3: Record<string, string> = { VN: 'VNM', US: 'USA' };
 
 /** How much of a crop a country grows: a level of the atlas, or why the atlas has none. */
 export type Prevalence = 'major' | 'common' | 'minor' | 'present' | 'absent' | 'unknown' | 'no-item' | 'not-in-atlas';
@@ -133,7 +136,7 @@ export function fieldBaseline(field: string, name: string, iso3: string, grownCr
 }
 
 /** The demo field as the app scores it: its cached telemetry and the practice it is opened with. */
-function inputFor(id: string): ModelInput {
+export function inputFor(id: string): ModelInput {
   const parcel = getSampleParcel(id);
   if (!parcel) throw new Error(`No demo field ${id}`);
   const defaults = (parcel as { defaultGroundTruth?: ModelInput['groundTruth'] }).defaultGroundTruth ?? {};
@@ -185,9 +188,11 @@ function main() {
     note: 'Ranking of the curated crops by rankCrops (climate and soil at the field only), next to the atlas level of each crop in the field\'s country. Taken before prevalence enters the ranking.',
     fields,
   };
-  writeFileSync(BASELINE_FILE, JSON.stringify(out, null, 1) + '\n');
   console.log(markdown(fields));
-  console.error(`\nWrote ${BASELINE_FILE} (commit ${out.commit ?? 'unknown'}).`);
+  if (process.argv.includes('--write')) {
+    writeFileSync(BASELINE_FILE, JSON.stringify(out, null, 1) + '\n');
+    console.error(`\nWrote ${BASELINE_FILE} (commit ${out.commit ?? 'unknown'}).`);
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
