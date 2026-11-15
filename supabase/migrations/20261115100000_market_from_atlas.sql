@@ -137,8 +137,6 @@ create table public.crops (
   world_production_t          numeric check (world_production_t >= 0),
   data_years                  text,
   curated                     boolean not null,
-  urban_candidate             text,
-  urban_candidate_rule        text,
   -- A crop the atlas attaches to no item says so, and the other way round.
   check ((match = 'none') = (faostat_item_code is null))
 );

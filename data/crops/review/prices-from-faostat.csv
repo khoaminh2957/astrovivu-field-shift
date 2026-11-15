@@ -1,0 +1,26 @@
+crop_id,iso3,item_code,item,year,element_code,unit,value,flag,source_file,accessed
+abelmoschus-esculentus,USA,430,Okra,1997,5532,USD,1642.000000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+carthamus-tinctorius,USA,280,Safflower seed,2024,5532,USD,535.700000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+citrullus-lanatus,USA,567,Watermelons,2024,5532,USD,410.100000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+cucumis-sativus,USA,397,Cucumbers and gherkins,2024,5532,USD,848.800000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+ipomoea-batatas,USA,122,Sweet potatoes,2024,5532,USD,551.200000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+lycopersicon-esculentum,USA,388,Tomatoes,2024,5532,USD,1243.400000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+saccharum-officinarum,USA,156,Sugar cane,2023,5532,USD,84.000000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+solanum-melongena,USA,399,Eggplants (aubergines),2004,5532,USD,610.000000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+vigna-unguiculata,USA,195,"Cow peas, dry",2005,5532,USD,842.000000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+zingiber-officinale,USA,720,"Ginger, raw",2008,5532,USD,3527.000000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+anacardium-occidentale,VNM,217,"Cashew nuts, in shell",2024,5532,USD,1959.600000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+arachis-hypogaea,VNM,242,"Groundnuts, excluding shelled",2024,5532,USD,1226.700000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+brassica-oleracea-var-capitata,VNM,358,Cabbages,2024,5532,USD,400.800000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+camellia-sinensis,VNM,667,Tea leaves,2024,5532,USD,406.100000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+citrullus-lanatus,VNM,567,Watermelons,2024,5532,USD,327.100000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+citrus-grandis,VNM,507,Pomelos and grapefruits,2024,5532,USD,1030.900000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+glycine-max,VNM,236,Soya beans,2024,5532,USD,927.900000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+hevea-brasiliensis,VNM,836,Natural rubber in primary forms,2024,5532,USD,1125.400000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+ipomoea-batatas,VNM,122,Sweet potatoes,2024,5532,USD,480.000000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+mangifera-indica,VNM,571,"Mangoes, guavas and mangosteens",2024,5532,USD,1048.600000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+musa-acuminata,VNM,486,Bananas,2024,5532,USD,304.200000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+sesamum-indicum,VNM,289,Sesame seed,2024,5532,USD,2100.200000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+solanum-tuberosum,VNM,116,Potatoes,2024,5532,USD,622.900000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+vigna-radiata,VNM,176,"Beans, dry",2024,5532,USD,1273.000000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15
+zea-mays,VNM,56,Maize (corn),2024,5532,USD,260.100000,A,https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip,2026-11-15

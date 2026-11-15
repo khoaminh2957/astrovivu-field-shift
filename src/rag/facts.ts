@@ -166,25 +166,39 @@ export function whereLines(f: CropFacts, lang: Lang): string[] {
   const out: string[] = [];
   // Each country's figure is the mean of its own latest three years with a value; `w.years` only covers them all.
   const span = w.years ? (vi ? ` (mỗi nước lấy trung bình ba năm gần nhất có số liệu, trong khoảng ${w.years})` : ` (each country's mean of its latest three years with data, within ${w.years})`) : '';
+  const allItems = [w.faostatItem, ...(w.otherItems ?? [])].filter((x): x is string => !!x);
   if (w.countries != null && w.worldAreaHa != null)
     out.push(
       vi
         ? `${name}: ${w.countries} nước báo cáo sản xuất với FAOSTAT, diện tích thu hoạch toàn thế giới ${groupDigits(w.worldAreaHa, 'vi')} ha${span}.`
         : `${name}: ${w.countries} countries report production to FAOSTAT, with ${groupDigits(w.worldAreaHa, 'en')} ha harvested in the world${span}.`,
     );
+  // The items a country's figure is of, when they are not the crop's first item alone.
+  const itemsOf = (c: { items?: string[] }) => (c.items ? (vi ? ` (${c.items.length > 1 ? 'tổng các mặt hàng' : 'mặt hàng'} ${c.items.join(' + ')})` : ` (${c.items.length > 1 ? 'sum of the items' : 'item'} ${c.items.join(' + ')})`) : '');
   if (w.commonness) out.push(vi ? `Atlas cây trồng xếp mức phổ biến: ${VI_COMMONNESS[w.commonness] ?? w.commonness}.` : `The crop atlas classes it as ${w.commonness}.`);
   const of = (c: { years?: string }) => (c.years ? (vi ? `, trung bình ${c.years}` : `, mean of ${c.years}`) : '');
   if (w.top?.length) {
     // The years are said once when the listed countries share them, and country by country when they do not.
     const shared = w.top.every((c) => c.years === w.top![0].years) ? w.top[0].years : undefined;
     const lead = vi ? 'Diện tích thu hoạch lớn nhất' : 'Largest harvested areas';
-    out.push(`${lead}${shared ? (vi ? ` (trung bình ${shared})` : ` (means of ${shared})`) : ''}: ${w.top.map((c) => `${country(c)} ${groupDigits(c.areaHa, lang)} ha${shared ? '' : of(c)}`).join('; ')}.`);
+    out.push(`${lead}${shared ? (vi ? ` (trung bình ${shared})` : ` (means of ${shared})`) : ''}: ${w.top.map((c) => `${country(c)} ${groupDigits(c.areaHa, lang)} ha${shared ? '' : of(c)}${itemsOf(c)}`).join('; ')}.`);
   }
-  for (const c of w.also ?? []) out.push(vi ? `${country(c)}: ${groupDigits(c.areaHa, 'vi')} ha${of(c)}, lớn thứ ${c.rank}.` : `${country(c)}: ${groupDigits(c.areaHa, 'en')} ha${of(c)}, the ${ordinal(c.rank)} largest.`);
-  // The item is always named: "Carrots and turnips" is not carrots alone, whether or not the atlas ties a second crop to it.
-  if (w.faostatItem)
+  for (const c of w.also ?? []) out.push(vi ? `${country(c)}: ${groupDigits(c.areaHa, 'vi')} ha${of(c)}${itemsOf(c)}, lớn thứ ${c.rank}.` : `${country(c)}: ${groupDigits(c.areaHa, 'en')} ha${of(c)}${itemsOf(c)}, the ${ordinal(c.rank)} largest.`);
+  // The items are always named: "Carrots and turnips" is not carrots alone, and melons are
+  // "Melonseed" in some countries and "Cantaloupes and other melons" in others.
+  const shared = (w.sharedBy ?? 1) > 1;
+  if (allItems.length > 1)
     out.push(
-      (w.sharedBy ?? 1) > 1
+      vi
+        ? `Đây là số liệu của các mặt hàng FAOSTAT ${allItems.join(', ')}: với mỗi nước, là tổng các mặt hàng nước đó có báo cáo (cộng cả số tấn của các sản phẩm khác nhau); số thế giới là tổng của các nước.`
+        : `These are the figures of the FAOSTAT items ${allItems.join(', ')}: for each country, the sum of those it reports (tonnes of different products added together); the world figure is the sum over the countries.`,
+      ...(shared
+        ? [vi ? `Mặt hàng ${w.faostatItem} được atlas gắn với ${w.sharedBy} cây; số liệu không phải số riêng của một cây.` : `The item ${w.faostatItem} is tied to ${w.sharedBy} crops of the atlas; the figures are not for one crop alone.`]
+        : []),
+    );
+  else if (w.faostatItem)
+    out.push(
+      shared
         ? vi
           ? `Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}, mặt hàng mà atlas gắn với ${w.sharedBy} cây; không phải số riêng của một cây.`
           : `These are the figures of the FAOSTAT item ${w.faostatItem}, which the atlas ties to ${w.sharedBy} crops; they are not for one crop alone.`

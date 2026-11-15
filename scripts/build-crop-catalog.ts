@@ -2,22 +2,32 @@
  * `npm run crops:build` - builds the crop catalogue.
  *
  *   data/ecocrop/ecocrop_2568_plants.csv            FAO EcoCrop, 2,568 rows, 70 columns
- *        |  parse + clean (scripts/crops/parse.ts)
+ *   data/crops/atlas/crop_country.csv               atlas prevalence by country (387 crops, 198 countries)
+ *   data/crops/atlas/economics.csv                  reference economics by country and region
+ *        |  parse + clean (scripts/crops/parse.ts, scripts/crops/atlas-tables.ts)
  *        v
  *   public/data/crops/ecocrop.json                  every scorable species, compact, lazy-loaded
+ *   public/data/crops/prevalence.json               prevalence of all atlas crops, lazy-loaded
  *   src/core/crops/curated.generated.ts             curated crops (bundled, synchronous) and the
  *                                                   regional reference economics
  *   data/crops/CLEANING_LOG.md                      what was repaired, merged, dropped, overridden
  *   data/crops/curated-crops.csv                    the curated values in one table, for review
  *
+ * Order of commands when adding a new curated crop (because the atlas build reads the top block
+ * of `data/crops/curated-crops.csv`):
+ *   1. npm run crops:build
+ *   2. npx tsx scripts/crops/atlas/build.ts --offline
+ *   3. npm run crops:build
+ *
  * Deterministic: the same CSV and overlay always produce the same files.
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import type { CropEconomics, CropProfile, Quad } from '../src/contracts';
+import type { CropEconomics, CropPrevalence, CropProfile, Iso3, Quad } from '../src/contracts';
 import { encodeCatalog } from '../src/core/crops/codec';
 import { slugify } from '../src/core/crops/text';
-import type { EconRegion, ReferenceEconomics } from '../src/core/economics/types';
+import type { EconRegion, ReferenceEconomics, ReferenceTable } from '../src/core/economics/types';
+import { readEconomics, readPrevalence, toCropPrevalence } from './crops/atlas-tables';
 import { DEFAULT_REGION_ORDER, FX_DATE, FX_SOURCE, PREFER_VN, REFERENCE_ECONOMICS, VND_PER_USD } from './crops/economics';
 import { FIELD_CROPS } from './crops/overlay-field';
 import { GARDEN_CROPS } from './crops/overlay-garden';
@@ -29,10 +39,14 @@ import type { CuratedSpec } from './crops/types';
 import { mergeUrbanTraits, qualifiesForUrbanCatalog, readUrbanTable } from './crops/urban-table';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
+const ATLAS_DIR = path.join(ROOT, 'data/crops/atlas');
 const CSV = path.join(ROOT, 'data/ecocrop/ecocrop_2568_plants.csv');
 const ATLAS_CROPS_CSV = path.join(ROOT, 'data/crops/atlas/crops.csv');
+/** Which atlas crops the EcoCrop rule selects (scripts/crops/atlas/urban.ts). Not a column of crops.csv, which the market database mirrors. */
+const ATLAS_URBAN_CANDIDATES_CSV = path.join(ROOT, 'data/crops/atlas/urban_candidates.csv');
 const ATLAS_URBAN_CSV = path.join(ROOT, 'data/crops/atlas/urban.csv');
 const OUT_JSON = path.join(ROOT, 'public/data/crops/ecocrop.json');
+const OUT_PREV = path.join(ROOT, 'public/data/crops/prevalence.json');
 const OUT_TS = path.join(ROOT, 'src/core/crops/curated.generated.ts');
 const OUT_LOG = path.join(ROOT, 'data/crops/CLEANING_LOG.md');
 const OUT_CSV = path.join(ROOT, 'data/crops/curated-crops.csv');
@@ -60,8 +74,8 @@ const URBAN_CANDIDATE_WATER: Record<string, ReturnType<typeof water>> = {
   'thymus-vulgaris': water('mint', { stages: 'generic', assumed: 'Thyme uses the FAO-56 Mint row (same family Lamiaceae)' }),
 };
 
-function defaultEconomics(id: string): CropEconomics | undefined {
-  const byRegion = REFERENCE_ECONOMICS[id];
+function defaultEconomics(id: string, table: ReferenceTable): CropEconomics | undefined {
+  const byRegion = table[id];
   if (!byRegion) return undefined;
   const order: EconRegion[] = PREFER_VN.has(id) ? ['VN', ...DEFAULT_REGION_ORDER] : DEFAULT_REGION_ORDER;
   for (const region of order) {
@@ -85,10 +99,17 @@ function main(): void {
   const cleaned = cleanEcoCrop(raw);
   const byName = new Map<string, CropProfile>();
   for (const p of cleaned.profiles.values()) byName.set(p.scientificName.toLowerCase(), p);
+  const atlasPrevalence = readPrevalence(ATLAS_DIR);
+  const referenceEconomics = readEconomics(ATLAS_DIR);
 
   const atlasCropRows = parseCsvObjects(fs.readFileSync(ATLAS_CROPS_CSV, 'utf8'));
   const atlasById = new Map(atlasCropRows.map((r) => [r.crop_id, r]));
   const validAtlasIds = new Set(atlasById.keys());
+  const urbanCandidateIds = new Set(
+    parseCsvObjects(fs.readFileSync(ATLAS_URBAN_CANDIDATES_CSV, 'utf8'))
+      .filter((r) => r.urban_candidate === 'yes')
+      .map((r) => r.crop_id),
+  );
   const urbanTable = readUrbanTable(fs.readFileSync(ATLAS_URBAN_CSV, 'utf8'), validAtlasIds);
 
   // ---------------------------------------------------------------------------- curated profiles
@@ -116,7 +137,7 @@ function main(): void {
     if (spec.water.assumed) flags.add('water-model-assumed');
     const aliases = [...(spec.aliases ?? [])];
     if (spec.eco && spec.scientificName && spec.scientificName !== spec.eco) aliases.push(spec.eco);
-    const economics = defaultEconomics(id);
+    const economics = defaultEconomics(id, referenceEconomics);
     const cycleDays = spec.cycleDays ?? base!.cycleDays;
     const urbanMerged = spec.urban
       ? mergeUrbanTraits({ id, category: spec.category, cycleDays, req }, spec.urban, urbanTable.byCrop.get(id))
@@ -151,6 +172,31 @@ function main(): void {
   if (problems.length) throw new Error(`Curated overlay is inconsistent:\n  ${problems.join('\n  ')}`);
   if (curated.length < 45) throw new Error(`Only ${curated.length} curated crops; at least 45 are required`);
 
+  for (const profile of curated) {
+    const byCountry = atlasPrevalence[profile.id];
+    if (!byCountry) continue;
+    const prev: Record<Iso3, CropPrevalence> = {};
+    for (const iso3 of ['VNM', 'USA']) {
+      if (byCountry[iso3]) prev[iso3] = toCropPrevalence(byCountry[iso3]);
+    }
+    if (Object.keys(prev).length > 0) profile.prevalence = prev;
+  }
+
+  // ----------------------------------------------------------------------- prevalence (387 crops)
+  const GROWN = new Set(['major', 'common', 'minor', 'present']);
+  const prevalenceJson: Record<string, Record<Iso3, CropPrevalence>> = {};
+  for (const [cropId, byCountry] of Object.entries(atlasPrevalence)) {
+    const entry: Record<Iso3, CropPrevalence> = {};
+    for (const [iso3, row] of Object.entries(byCountry)) {
+      if (GROWN.has(row.level) || row.match === 'national' || iso3 === 'VNM' || iso3 === 'USA') {
+        entry[iso3] = toCropPrevalence(row);
+      }
+    }
+    prevalenceJson[cropId] = entry;
+  }
+  fs.mkdirSync(path.dirname(OUT_PREV), { recursive: true });
+  fs.writeFileSync(OUT_PREV, JSON.stringify(prevalenceJson));
+
   // ------------------------------------------------------------------------------ full catalogue
   const rest = [...cleaned.profiles.values()].filter((p) => !usedEcoIds.has(p.ecocropId!) && !curated.some((c) => c.id === p.id));
   rest.sort((a, b) => a.id.localeCompare(b.id));
@@ -158,13 +204,20 @@ function main(): void {
   for (const p of rest) {
     const atlasRow = atlasById.get(p.id);
     const entry = urbanTable.byCrop.get(p.id);
-    if (atlasRow?.urban_candidate === 'yes' && qualifiesForUrbanCatalog(entry)) {
+    if (atlasRow && urbanCandidateIds.has(p.id) && qualifiesForUrbanCatalog(entry)) {
       const merged = mergeUrbanTraits(p, undefined, entry);
       if (merged.urban) {
         const enName = atlasRow.name_en?.trim() || p.names.en;
         const w = URBAN_CANDIDATE_WATER[p.id] ?? water('smallVegGroup', { assumed: 'Uses the FAO-56 Small vegetables group default' });
         const flags = new Set(p.flags ?? []);
         if (w.assumed) flags.add('water-model-assumed');
+        const byCountry = atlasPrevalence[p.id];
+        const prev: Record<Iso3, CropPrevalence> = {};
+        if (byCountry) {
+          for (const iso3 of ['VNM', 'USA']) {
+            if (byCountry[iso3]) prev[iso3] = toCropPrevalence(byCountry[iso3]);
+          }
+        }
         const candidate: CropProfile = {
           ...p,
           names: {
@@ -174,6 +227,7 @@ function main(): void {
           },
           water: w.model,
           urban: merged.urban,
+          ...(Object.keys(prev).length > 0 ? { prevalence: prev } : {}),
           ...(flags.size ? { flags: [...flags].sort() } : {}),
         };
         urbanCandidates.push(candidate);
@@ -224,7 +278,7 @@ export const CURATED_CROPS: CropProfile[] = ${JSON.stringify(curated, null, 2)};
 export const URBAN_CANDIDATE_CROPS: CropProfile[] = ${JSON.stringify(urbanCandidates, null, 2)};
 
 /** Yield, price and operating cost by region, with the quality of each source. */
-export const REFERENCE_ECONOMICS: ReferenceTable = ${JSON.stringify(REFERENCE_ECONOMICS, null, 2)};
+export const REFERENCE_ECONOMICS: ReferenceTable = ${JSON.stringify(referenceEconomics, null, 2)};
 
 /** Why each curated threshold differs from EcoCrop, and where the water model comes from. */
 export const CURATION_NOTES: Record<string, string[]> = ${JSON.stringify(curationNotes, null, 2)};
@@ -234,14 +288,18 @@ export const CURATION_NOTES: Record<string, string[]> = ${JSON.stringify(curatio
   // --------------------------------------------------------------------------------- cleaning log
   fs.mkdirSync(path.dirname(OUT_LOG), { recursive: true });
   fs.writeFileSync(OUT_LOG, cleaningLog(cleaned.events, cleaned.stats, curated, urbanCandidates, urbanTable.resolutions, curationNotes, rest.length));
-  fs.writeFileSync(OUT_CSV, curatedCsv(curated));
+  fs.writeFileSync(OUT_CSV, curatedCsv(curated, REFERENCE_ECONOMICS));
 
+  const econRecordCount = Object.values(referenceEconomics).reduce((n, r) => n + Object.keys(r).length, 0);
   const kb = (f: string) => `${Math.round(fs.statSync(f).size / 1024)} kB`;
   console.log(`EcoCrop rows read:        ${cleaned.stats.rows}`);
   console.log(`Scorable species:         ${cleaned.stats.scorable} (${cleaned.stats['dropped:no-climate-window'] ?? 0} rows without a temperature or rainfall window dropped, ${cleaned.stats['merged-duplicates'] ?? 0} duplicate rows merged)`);
   console.log(`Repairs logged:           ${cleaned.events.length}`);
-  console.log(`Curated crops:            ${curated.length} (${curated.filter((c) => c.economics).length} with complete reference economics, ${curated.filter((c) => c.urban).length} curated + ${urbanCandidates.length} atlas candidates = ${curated.filter((c) => c.urban).length + urbanCandidates.length} for the urban tool)`);
+  console.log(`Curated crops:            ${curated.length} (${curated.filter((c) => c.prevalence).length} with bundled prevalence, ${curated.filter((c) => c.economics).length} with complete reference economics, ${curated.filter((c) => c.urban).length} curated + ${urbanCandidates.length} atlas candidates = ${curated.filter((c) => c.urban).length + urbanCandidates.length} for the urban tool)`);
+  console.log(`Atlas prevalence crops:   ${Object.keys(prevalenceJson).length}`);
+  console.log(`Reference economics rows: ${econRecordCount} (${Object.keys(referenceEconomics).length} crops)`);
   console.log(`Wrote ${path.relative(ROOT, OUT_JSON)} (${rest.length} species, ${kb(OUT_JSON)})`);
+  console.log(`Wrote ${path.relative(ROOT, OUT_PREV)} (${Object.keys(prevalenceJson).length} crops, ${kb(OUT_PREV)})`);
   console.log(`Wrote ${path.relative(ROOT, OUT_TS)} (${kb(OUT_TS)})`);
   console.log(`Wrote ${path.relative(ROOT, OUT_LOG)} and ${path.relative(ROOT, OUT_CSV)}`);
 }
@@ -298,7 +356,7 @@ function cleaningLog(events: CleaningEvent[], stats: Record<string, number>, cur
   return lines.join('\n');
 }
 
-function curatedCsv(curated: CropProfile[]): string {
+function curatedCsv(curated: CropProfile[], referenceEconomics: ReferenceTable): string {
   const cell = (v: unknown) => {
     const s = v == null ? '' : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -334,7 +392,7 @@ function curatedCsv(curated: CropProfile[]): string {
       .join(','),
   );
   const econ: string[] = ['', 'REFERENCE ECONOMICS (reference values, not the farmer\'s own; operating cost only)', 'id,region,yield_t_ha,price_usd_t,cost_usd_ha,year,yield_quality,price_quality,cost_quality,yield_region,sources'];
-  for (const [id, byRegion] of Object.entries(REFERENCE_ECONOMICS))
+  for (const [id, byRegion] of Object.entries(referenceEconomics))
     for (const r of Object.values(byRegion))
       econ.push([id, r.region, r.refYieldTHa, r.priceUsdPerT, r.costUsdPerHa, r.year, r.quality.yield, r.quality.price, r.quality.cost, r.yieldRegion, r.sources.join(' | ')].map(cell).join(','));
   return [header.join(','), ...rows, ...econ].join('\n') + '\n';
