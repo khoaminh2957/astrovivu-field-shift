@@ -142,6 +142,31 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
 
+### 5.6 Soil organic matter targets and rotation pathways (Issue #48 / S7)
+
+- Soil Organic Carbon (SOC) to Soil Organic Matter (SOM) conversion:
+  $$\text{SOM (\%)} = \frac{\text{SOC (g/kg)} \times 1.724}{10}$$
+  Source: Van Bemmelen (1890); Nelson & Sommers (1996).
+- Target SOM thresholds (%) by texture class and climate zone:
+  - Source: FAO (2005), *The importance of soil organic matter: Key to drought-resistant soil and sustained food production*, FAO Soils Bulletin 80; USDA NRCS (2001), *Soil Quality Information Sheet: Soil Organic Matter*; Six et al. (2002), *Soil organic matter dynamics in temperate and tropical ecosystems*.
+
+| Soil Texture Class | Temperate Target Range (%) | Tropical Target Range (%) | Target Minimum Threshold |
+|---|---|---|---|
+| Light (sands, loamy sands) | 1.8 – 2.5 | 1.2 – 2.0 | 1.2 – 1.8 |
+| Medium (loams, silt loams) | 2.8 – 4.0 | 2.2 – 3.2 | 2.2 – 2.8 |
+| Heavy (clay loams, clays) | 3.5 – 5.0 | 2.8 – 4.0 | 2.8 – 3.5 |
+
+- Organic matter status:
+  - `optimal`: current SOM is at or above the minimum target threshold for that soil texture and climate.
+  - `suboptimal`: current SOM is within 70% of the threshold, showing a moderate deficit requiring organic rotation interventions.
+  - `depleted`: current SOM is below 70% of threshold, requiring urgent compost and soil building.
+  - `unknown`: missing SOM or texture data; lab test recommended.
+- Four actionable rotation management pathways:
+  1. Legume cover crops & green manure in rotation (*Sesbania*, *Arachis pintoi*, clover) yielding 2–4 t/ha biomass carbon.
+  2. 100% crop residue retention & reduced tillage to prevent oxidation and erosion.
+  3. Aged compost or farmyard manure (5–10 t/ha).
+  4. Biochar amendment (2–5 t/ha) for recalcitrant, long-term carbon stabilization in rapidly decomposing tropical soils.
+
 ## 6. Removed from the output for lack of a source
 
 Each can come back with a publication, year, table or page, and licence.
