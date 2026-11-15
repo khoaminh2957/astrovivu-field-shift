@@ -111,7 +111,10 @@ const quantities = (table: string, unitOf: string) => {
   add(table, 'share_of_country_harvested_area_pct', 'Share of the country\'s harvested area (all FAOSTAT crop items).', 'Tỷ lệ trong tổng diện tích thu hoạch của quốc gia (mọi mặt hàng cây trồng FAOSTAT).', '%', FAO, 'area / sum of the areas of all crop items of the country');
   add(table, 'rank_in_country', 'Rank by harvested area among the crop items of the country (1 = largest).', 'Thứ hạng theo diện tích thu hoạch trong các mặt hàng cây trồng của quốc gia (1 = lớn nhất).', 'rank', FAO, '1 + number of other items with a larger area');
   add(table, 'level', 'major: at least 5 % of the country\'s harvested area. common: at least 0.5 %. minor: below. present: production without area. absent: FAOSTAT covers the country and reports nothing above zero. unknown: group item.', 'major: từ 5 % diện tích thu hoạch của quốc gia. common: từ 0,5 %. minor: thấp hơn. present: có sản lượng nhưng không có diện tích. absent: FAOSTAT có số liệu quốc gia nhưng không ghi nhận cây này. unknown: thuộc mặt hàng gộp nên không xác định được.', '', BUILD, 'thresholds in scripts/crops/atlas/levels.ts');
-  add(table, 'source', 'Source of the row.', 'Nguồn của dòng số liệu.', '', BUILD, 'constant');
+  // crop_country names the national statistic on a national row; its URL, access date, table and
+  // note are not repeated here (the file keeps the columns the market database mirrors).
+  if (table === 'crop_country') add(table, 'source', 'Source of the row: FAOSTAT QCL, or the national statistic of a row with match = national.', 'Nguồn của dòng số liệu: FAOSTAT QCL, hoặc thống kê quốc gia với dòng có match = national.', '', BUILD, 'constant, or the source column of data/crops/national/prevalence.csv, which also holds the URL, access date, table and note of that row');
+  else add(table, 'source', 'Source of the row.', 'Nguồn của dòng số liệu.', '', BUILD, 'constant');
 };
 const CC = 'crop_country';
 add(CC, 'crop_id', 'Crop (see crops.csv).', 'Cây trồng (xem crops.csv).', '', BUILD, 'join key');
@@ -121,9 +124,6 @@ add(CC, 'faostat_item_code', 'FAOSTAT item(s) the quantities come from, largest 
 add(CC, 'match', 'exact, group or national (from national statistics; see crops.csv).', 'exact, group hoặc national (từ thống kê quốc gia; xem crops.csv).', '', BUILD, 'copied from crops.csv, or national when supplied by data/crops/national/prevalence.csv');
 add(CC, 'item_reported', 'yes when the country reports the item(s) above zero. For a group crop this is all the source says: the item is reported, the species is unknown.', 'yes nếu quốc gia có báo cáo (các) mặt hàng này với giá trị lớn hơn 0. Với cây thuộc mặt hàng gộp, đây là tất cả những gì nguồn cho biết: mặt hàng có báo cáo, còn loài thì không rõ.', '', FAO, 'area or production mean above zero');
 quantities(CC, 'the crop');
-add(CC, 'url', 'Link to the national statistical source (empty for FAOSTAT rows, which are in sources.csv).', 'Đường dẫn tới nguồn thống kê quốc gia (để trống với dòng FAOSTAT vì đã có trong sources.csv).', '', 'data/crops/national/prevalence.csv', 'copied');
-add(CC, 'accessed', 'Date the national source was read.', 'Ngày tra cứu nguồn quốc gia.', 'date', 'data/crops/national/prevalence.csv', 'copied');
-add(CC, 'note', 'Context from the national source, or why no species-level figure is available.', 'Ghi chú từ nguồn quốc gia, hoặc lý do chưa có số liệu riêng cho loài.', '', 'data/crops/national/prevalence.csv', 'copied');
 
 const IC = 'item_country';
 add(IC, 'faostat_item_code', 'FAOSTAT item code.', 'Mã mặt hàng FAOSTAT.', '', FAO, 'copied');

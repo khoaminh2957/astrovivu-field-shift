@@ -54,6 +54,13 @@ describe('national prevalence', () => {
       'durio-zibethinus,USA,,,2022,USDA NASS,https://www.nass.usda.gov,2026-11-15,Table 37,',
     ].join('\n');
     expect(() => parseNational(missingNoteWhenNoFigure, crops, countries)).toThrow(/missing note/i);
+
+    // crop_country.csv keeps only the name of the source of a national row: a row without one says nothing.
+    const missingSourceWhenNoFigure = [
+      'crop_id,iso3,area_ha,production_t,year,source,url,accessed,table,note',
+      'durio-zibethinus,USA,,,2022,,https://www.nass.usda.gov,2026-11-15,Table 37,Not reported separately.',
+    ].join('\n');
+    expect(() => parseNational(missingSourceWhenNoFigure, crops, countries)).toThrow(/missing source/i);
   });
 
   it('a group crop without a national row stays unknown', () => {
@@ -104,7 +111,8 @@ describe('national prevalence', () => {
     expect(withNoteOnly).not.toBeNull();
     expect(withNoteOnly!.level).toBe('unknown');
     expect(withNoteOnly!.match).toBe('group');
-    expect(withNoteOnly!.row[17]).toBe('Not reported separately in Table 37.');
+    // The row is the FAOSTAT group row, cell for cell: the note stays in prevalence.csv.
+    expect(withNoteOnly!.row).toEqual(['durio-zibethinus', 'USA', 'United States of America', '603', 'group', 'no', null, null, null, null, null, null, null, 'unknown', 'FAOSTAT QCL']);
   });
 
   it('a national row never overrides an exact row that has an area', () => {
@@ -148,7 +156,7 @@ describe('national prevalence', () => {
     expect(resolved!.areaHa).toBe(7_089_041);
     expect(resolved!.row[6]).toBe(7_089_041);
     expect(resolved!.row[14]).toBe('FAOSTAT QCL');
-    expect(resolved!.row[17]).toBe('');
+    expect(resolved!.row).toHaveLength(15);
   });
 
   it('covers all 32 group+none curated crops in VNM and USA plus T1 forwarded rows, and gives all 73 curated crops rows in crop_country.csv', () => {
@@ -171,7 +179,8 @@ describe('national prevalence', () => {
         const row = byKey.get(`${c.crop_id}|${iso3}`);
         expect(row, `missing ${c.crop_id}|${iso3} in crop_country.csv`).toBeDefined();
         if (row!.level === 'unknown') {
-          expect(row!.note.trim().length, `empty note on unknown row ${c.crop_id}|${iso3}`).toBeGreaterThan(0);
+          // The reason is not a column of crop_country.csv: it is the note of the row in prevalence.csv.
+          expect(nationalMap.get(`${c.crop_id}|${iso3}`)?.note.trim().length ?? 0, `no note for unknown row ${c.crop_id}|${iso3}`).toBeGreaterThan(0);
         }
       }
     }
@@ -188,6 +197,7 @@ describe('national prevalence', () => {
   it('gives no level to a crop whose source has a local figure or the figure of a group only', () => {
     const cropCountry = parseCsvObjects(fs.readFileSync(path.join(ATLAS, 'crop_country.csv'), 'utf8'));
     const byKey = new Map(cropCountry.map((r) => [`${r.crop_id}|${r.iso3}`, r]));
+    const nationalMap = readNational(DEFAULT_NATIONAL_FILE);
     // One city, one demonstration plot, one commune: not the area of Viet Nam.
     // All dry edible beans, pumpkins and squash of every species, all Chinese cabbages, all vetches: not the species.
     const noNationalFigure = [
@@ -204,7 +214,7 @@ describe('national prevalence', () => {
       expect(row, key).toBeDefined();
       expect(row!.level, key).toBe('unknown');
       expect([row!.area_ha, row!.production_t, row!.share_of_country_harvested_area_pct, row!.rank_in_country], key).toEqual(['', '', '', '']);
-      expect(row!.note.trim().length, key).toBeGreaterThan(0);
+      expect(nationalMap.get(key)?.note.trim().length ?? 0, key).toBeGreaterThan(0);
     }
     // A row with match = national has a level exactly when it has a quantity.
     for (const r of cropCountry) {
@@ -233,9 +243,39 @@ describe('national prevalence', () => {
       expect(sources.get(s.id), s.id).toMatchObject({ title: s.title, publisher: s.publisher, url: s.url, licence: s.licence, accessed: s.accessed, file: 'data/crops/national/prevalence.csv' });
       expect(s.licence.length, s.id).toBeGreaterThan(0);
     }
-    // Every url a row of the atlas cites is a source of sources.csv.
+    // A national row of the atlas names the statistic of its row in prevalence.csv, whose publication is in sources.csv.
     const urls = new Set([...sources.values()].map((s) => s.url));
-    for (const r of cropCountry) if (r.url) expect(urls.has(r.url), `${r.crop_id}|${r.iso3}`).toBe(true);
+    for (const r of national) {
+      const key = `${r.crop_id}|${r.iso3}`;
+      expect(r.source, key).toBe(rows.get(key)?.source);
+      expect(r.source, key).not.toBe('FAOSTAT QCL');
+      expect(urls.has(rows.get(key)!.url), key).toBe(true);
+    }
+  });
+
+  it('keeps crop_country.csv to the 15 columns the market database mirrors, and changes no row outside VNM and USA', () => {
+    const text = fs.readFileSync(path.join(ATLAS, 'crop_country.csv'), 'utf8');
+    expect(text.slice(0, text.indexOf('\n')).split(',')).toEqual([
+      'crop_id',
+      'iso3',
+      'country',
+      'faostat_item_code',
+      'match',
+      'item_reported',
+      'area_ha',
+      'production_t',
+      'yield_t_ha',
+      'year_from',
+      'year_to',
+      'share_of_country_harvested_area_pct',
+      'rank_in_country',
+      'level',
+      'source',
+    ]);
+    for (const r of parseCsvObjects(text)) {
+      if (r.iso3 === 'VNM' || r.iso3 === 'USA') continue;
+      if (r.match === 'national' || r.source !== 'FAOSTAT QCL') throw new Error(`${r.crop_id}|${r.iso3}: a national row outside VNM and USA`);
+    }
   });
 
   it('refuses a national row whose url is not a registered source', () => {
@@ -285,7 +325,6 @@ describe('a national row beside what FAOSTAT says', () => {
   const RANK = 12;
   const LEVEL = 13;
   const SOURCE = 14;
-  const NOTE = 17;
 
   it('a row with a figure gets its level from the 5 % and 0.5 % thresholds of the country area', () => {
     const levelOf = (areaHa: number) => resolveCropCountryRow(input({ national: row({ areaHa }) }))!;
@@ -318,7 +357,8 @@ describe('a national row beside what FAOSTAT says', () => {
     expect(after.row[AREA]).toBeNull();
     expect(after.row[SHARE]).toBeNull();
     expect(after.row[LEVEL]).toBe('unknown');
-    expect(after.row[NOTE]).toBe('Counted inside a group; no figure of its own.');
+    expect(after.row[SOURCE]).toBe('National statistics office');
+    expect(after.row).toHaveLength(15);
     expect(after.nationalIgnored).toBeUndefined();
   });
 
@@ -332,7 +372,6 @@ describe('a national row beside what FAOSTAT says', () => {
     expect(withNote.row).toEqual(without.row);
     expect(withNote).toMatchObject({ level: 'present', match: 'exact', productionT: 12_000, inCountryCrops: true, nationalIgnored: true });
     expect(withNote.row[SOURCE]).toBe('FAOSTAT QCL');
-    expect(withNote.row[NOTE]).toBe('');
 
     // The same holds for a national row with a figure, and for an exact row that has an area.
     expect(resolveCropCountryRow(input({ match: 'exact', items: [388], primary: 388, faostat, national: row({ areaHa: 900 }) }))).toMatchObject({ level: 'present', match: 'exact', nationalIgnored: true });

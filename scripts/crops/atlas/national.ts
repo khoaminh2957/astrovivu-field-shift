@@ -125,8 +125,10 @@ export function parseNational(
       if (!url) throw new Error(`national prevalence (${key}): row with figure is missing url`);
       if (!accessed) throw new Error(`national prevalence (${key}): row with figure is missing accessed`);
       if (year == null) throw new Error(`national prevalence (${key}): row with figure is missing year`);
-    } else if (!note) {
-      throw new Error(`national prevalence (${key}): row without figure is missing note`);
+    } else {
+      if (!note) throw new Error(`national prevalence (${key}): row without figure is missing note`);
+      // crop_country.csv says of such a row only that a national source was read (match, source): it must be named.
+      if (!source) throw new Error(`national prevalence (${key}): row without figure is missing source`);
     }
     out.set(key, { cropId, iso3, areaHa, productionT, year, source, url, accessed, table, note });
   }
@@ -250,6 +252,10 @@ export function nationalSourcesUsed(national: ReadonlyMap<string, NationalRow>, 
  *   writes `match = 'national'`, empty `faostat_item_code`, `year_from = year_to = year`,
  *   `share = (area_ha / totalAreaHa) * 100`, and `level = levelFor(...)`; without a figure it
  *   stays `unknown` (never inferred from a group item).
+ * - `crop_country.csv` keeps the 15 columns the market database mirrors: a national row is known by
+ *   `match = national` and by `source`, which names the national statistic. Its URL, access date,
+ *   table and note stay in `data/crops/national/prevalence.csv`. A group crop whose national row
+ *   has no figure keeps its FAOSTAT group row unchanged.
  * - Rule 4: A national row only replaces `unknown` or `absent`. An `exact` row for which FAOSTAT
  *   reports the crop in the country (an area, or production alone: `present`) is never touched,
  *   whether the national row has a figure or not: a note saying "no national figure" must not
@@ -281,9 +287,6 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
         faostat.areaHa != null ? rankOf(faostat.areaHa, others) : null,
         level,
         FAOSTAT_SOURCE,
-        '',
-        '',
-        '',
       ],
       level,
       match: 'exact',
@@ -321,9 +324,6 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
         rank,
         level,
         national.source,
-        national.url,
-        national.accessed,
-        national.note,
       ],
       level,
       match: 'national',
@@ -334,7 +334,7 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
     };
   }
 
-  // National row without a figure: keeps `unknown` with the documented reason in `note`.
+  // National row without a figure: `unknown`. The reason is the `note` of the row in prevalence.csv.
   if (national) {
     if (match === 'group' && primary != null) {
       return {
@@ -354,9 +354,6 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
           null,
           'unknown',
           FAOSTAT_SOURCE,
-          national.url,
-          national.accessed,
-          national.note,
         ],
         level: 'unknown',
         match: 'group',
@@ -382,10 +379,7 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
         null,
         null,
         'unknown',
-        national.source || FAOSTAT_SOURCE,
-        national.url,
-        national.accessed,
-        national.note,
+        national.source,
       ],
       level: 'unknown',
       match: 'national',
@@ -399,7 +393,7 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
   // No national row. An exact crop reaching this point has nothing above zero in FAOSTAT: absent.
   if (match === 'exact') {
     return {
-      row: [cropId, iso3, countryName, list(items), 'exact', 'no', null, null, null, null, null, null, null, 'absent', FAOSTAT_SOURCE, '', '', ''],
+      row: [cropId, iso3, countryName, list(items), 'exact', 'no', null, null, null, null, null, null, null, 'absent', FAOSTAT_SOURCE],
       level: 'absent',
       match: 'exact',
       areaHa: null,
@@ -411,7 +405,7 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
 
   if (match === 'group' && primary != null) {
     return {
-      row: [cropId, iso3, countryName, String(primary), 'group', groupItemReported ? 'yes' : 'no', null, null, null, null, null, null, null, 'unknown', FAOSTAT_SOURCE, '', '', ''],
+      row: [cropId, iso3, countryName, String(primary), 'group', groupItemReported ? 'yes' : 'no', null, null, null, null, null, null, null, 'unknown', FAOSTAT_SOURCE],
       level: 'unknown',
       match: 'group',
       areaHa: null,
