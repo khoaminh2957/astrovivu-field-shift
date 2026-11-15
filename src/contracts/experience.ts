@@ -106,6 +106,8 @@ export interface UrbanSite {
   place?: PlaceInfo;
   light: 'full' | 'partial' | 'shade';
   space: 'windowsill' | 'balcony' | 'rooftop' | 'yard';
+  /** Growable balcony or rooftop area in square metres, used by `planBalcony` (D7, #20). */
+  areaM2?: number;
   /** Circular container diameter in centimetres, used to compute daily pot water in litres (D6, #19). */
   potDiameterCm?: number;
   /** Direction the balcony or wall faces, in degrees clockwise from North (0 = N, 90 = E, 180 = S, 270 = W). */
@@ -161,6 +163,32 @@ export interface UrbanRecommendation {
     tips: I18nText[];
   };
   calendar: { month: number; tasks: I18nText[] }[];
+}
+
+export interface UrbanPlanBatch {
+  sow: ISODate;
+  firstHarvest: ISODate;
+  lastHarvest: ISODate;
+  plants: number;
+  marginal: boolean;
+}
+
+export interface UrbanPlanBed {
+  cropId: string;
+  name: I18nText;
+  plants: number;
+  areaM2: number;
+  batches: UrbanPlanBatch[];
+}
+
+export interface UrbanPlan {
+  start: ISODate;
+  areaM2: number;
+  usedM2: number;
+  beds: UrbanPlanBed[];
+  months: { month: number; tasks: I18nText[]; waterLitresPerDay?: [min: number, max: number] }[];
+  unplaced: { cropId: string; reason: I18nText }[];
+  notes: I18nText[];
 }
 
 // ---------------------------------------------------------------------------------------------

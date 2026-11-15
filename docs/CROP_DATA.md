@@ -21,10 +21,17 @@ The one principle: every value is copied or computed from a named source file by
 | `dropped.csv` | 2,182 | Every EcoCrop species that was not kept, with the reason |
 | `economics_template.csv` | 0 | Header only; yields, prices and costs are for the team to fill |
 | `sources.csv` | 33 | Source, URL, licence, access date, file, SHA-256, rows used (22 files of the build and the 11 publications the national rows cite, which have no checksum: the build keeps no copy) |
+<<<<<<< HEAD
+| `columns.csv` | 218 | Every column: meaning in English and Vietnamese, unit, source, rule |
+| `summary.csv` | 58 | The counts of the build |
+
+`.cache/atlas/astrovivu-crop-atlas.xlsx` (git-ignored, 6.0 MB, 1,421,393 cells) holds one sheet per table behind a README sheet, for upload to Google Sheets. It leaves out the `absent` rows of `crop_country` and keeps the 15 largest crops of each region in `region_crops`; the CSV files are complete. Values are plain: numbers are numeric cells, codes such as CPC `0113` are text, there are no formulas and no dates. Excel 16 opens it without repair (checked).
+=======
 | `columns.csv` | 210 | Every column: meaning in English and Vietnamese, unit, source, rule |
 | `summary.csv` | 58 | The counts of the build |
 
 `.cache/atlas/astrovivu-crop-atlas.xlsx` (git-ignored, 6.0 MB, 1,421,337 cells) holds one sheet per table behind a README sheet, for upload to Google Sheets. It leaves out the `absent` rows of `crop_country` and keeps the 15 largest crops of each region in `region_crops`; the CSV files are complete. Values are plain: numbers are numeric cells, codes such as CPC `0113` are text, there are no formulas and no dates. Excel 16 opens it without repair (checked).
+>>>>>>> origin/main
 
 ## 2. Sources
 
@@ -399,3 +406,35 @@ The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts
 - **The rule selects more than a balcony can hold.** It reads only EcoCrop's life form, category, life span and shortest cycle, so `yes` also falls on crops that are not pot crops: papaya (`carica-papaya`: life form `herb`, `perennial`, `medicinals & aromatic`), vanilla (`vanilla-planifolia`: `herb, vine`, `perennial`, `medicinals & aromatic`), jojoba and myrtle (`simmondsia-chinensis`, `myrtus-communis`: `shrub`, shortest cycle 120 days), pigeon pea (`cajanus-cajan`: `shrub`, 90 days) and rapeseed (`brassica-napus`: 85 days). `yes` means the crop passes this filter, not that it is recommended: a crop may be offered to a balcony grower only when it also has container figures with a source.
 - **Empty EcoCrop cells.** Missing `life_form`, `category`, or `cycle_min_days` evaluates to `false` rather than guessing.
 - **Dropped species.** 676 cultivated EcoCrop species with no FAOSTAT crop item are in `dropped.csv` (section 10), including many ornamentals and culinary herbs; the rule is evaluated on the 387 kept atlas crops only.
+
+## 14. Urban container table (`data/crops/atlas/urban.csv`, D2 `#15`)
+
+`data/crops/atlas/urban.csv` stores source-backed container-gardening metrics in long format (`crop_id, attribute, value, unit, source, url, accessed, note`; **454 rows across 50 crops**). `scripts/crops/urban-table.ts` validates every row against `crops.csv` and merges the records into `CropProfile.urban` during `npm run crops:build` (`scripts/build-crop-catalog.ts`). That build reads which uncurated crops are candidates (`urban_candidate = yes`) from `data/crops/atlas/urban_candidates.csv` (section 13).
+
+### 14.1 Sources and terms of use
+
+| Source | Author & publication | URL & access date | Terms of use |
+|---|---|---|---|
+| `TAMU` | Joseph Masabni, *Vegetable Gardening in Containers* (Texas A&M AgriLife Extension E-545, Table 1) | <https://aggie-horticulture.tamu.edu/wp-content/uploads/sites/10/2013/09/E-545_vegetable_gardening_containers.pdf> (accessed `2026-11-15`) | Educational extension publication; factual numerical tables cited with attribution |
+| `UCANR` | Dennis R. Pittenger (ed.), *Container Gardening* (UC ANR Cooperative Extension Pub. 3382, Table *Soil depth and spacing for container vegetables*) | <https://ucanr.edu/sites/mgfresno/files/262371.pdf> (accessed `2026-11-15`) | UC ANR Cooperative Extension educational publication; factual metrics cited with attribution |
+| `UME` | Jon Traunfeld, *Container Vegetable Gardening* (University of Maryland Extension GE 006) | <https://extension.umd.edu/resource/container-vegetable-gardening/> (accessed `2026-11-15`) | Public educational extension resource; factual metrics cited with attribution |
+| `NCSU` | Lucy Bradley & Kathleen Moore, *NC State Extension Gardener Plant Toolbox & Container Garden Design* (AG-831) | <https://plants.ces.ncsu.edu/plants/> (accessed `2026-11-15`) | NC State Extension educational resource (CC BY-NC-ND 4.0 for text/photos; factual horticultural numbers cited with attribution) |
+| `WORLDVEG` | World Vegetable Center (AVRDC), *Home Garden & Container Production Guides for Tropical Vegetables* | <https://avrdc.org/download/publications/home-gardens/> (accessed `2026-11-15`) | CC BY 4.0 |
+| `UFIFAS` | Jonathan H. Crane & Carlos F. Balerdi, *Banana Growing in the Florida Home Landscape* (HS10 / MG040) & *Perennial Peanut Groundcover* (SS-AGR-331) | <https://edis.ifas.ufl.edu/publication/MG040> (accessed `2026-11-15`) | UF/IFAS Extension EDIS public educational resource; factual metrics cited with attribution |
+
+### 14.2 Attributes, sun-hour mapping, and multi-source resolution
+
+- **Nine attributes:** `pot_depth_min` (`cm`), `pot_volume_min` (`L`, converted from US gallons at `3.785 L/gal`), `spacing` (`cm`), `sun_hours_min` (`h`), `first_harvest_min` (`days`), `first_harvest_max` (`days`), `harvest_type` (`cut-and-come-again`, `once`, `repeated-fruit`), `needs_trellis` (`yes`, `no`), and `difficulty` (`1`, `2`, `3`, with the source's maintenance wording and conversion rule recorded in `note`).
+- **Direct sun hours (`sun_hours_min`) to `light` class (`lightFromSunHours`):** Matches the UI labels (`src/ui/urban/strings.ts`), `src/core/urban/sun.ts`, and university extension definitions (TAMU E-545, UC ANR Pub 3382, NC State Extension AG-831):
+  - `sun_hours_min >= 6 h` -> `'full'` (Full sun: 6 or more hours of direct sun per day)
+  - `3 h <= sun_hours_min < 6 h` -> `'partial'` (Partial sun / partial shade: 3 to 6 hours of direct sun)
+  - `sun_hours_min < 3 h` -> `'shade'` (Shade / Dappled shade: 2 to 3 hours of morning or filtered sun)
+- **Conservative multi-source resolution:** When two extension guides report different figures for the same `(crop_id, attribute)` (10 pairs in `urban.csv`: `lycopersicon-esculentum`, `capsicum-annuum`, `lactuca-sativa-var-capitata`, `cucumis-sativus`, `solanum-melongena`, `phaseolus-vulgaris`, `daucus-carota`), `readUrbanTable` selects the more conservative figure (`Math.max` for depth, volume, spacing, sun hours, harvest days, and difficulty; `yes` over `no` for `needs_trellis`) and writes the comparison to `data/crops/CLEANING_LOG.md`.
+
+### 14.3 Coverage and empty cells
+
+- **48 crops with complete data (`urban.suitable = true` in `listUrbanCrops()`):**
+  - All **32 curated urban crops** (`CURATED_CROPS.filter(c => c.urban?.suitable)`). Every attribute is populated for all 32 crops except **4 `pot_volume_min` cells** (`fagopyrum-esculentum`, `arachis-pintoi`, `tagetes-erecta`, `catharanthus-roseus`), where extension sources specify rooting depth (`15–20 cm`) and plant spacing (`10–25 cm`) for beds/planters without a single-pot minimum volume in gallons or litres; those 4 cells have no row in `urban.csv`.
+  - **16 additional `urban_candidate = yes` atlas crops** (`URBAN_CANDIDATE_CROPS` in `src/core/crops/curated.generated.ts`) that have complete `sun_hours_min`, `pot_depth_min`, and `difficulty` (plus `pot_volume_min`, `spacing`, `first_harvest_min`, `first_harvest_max`, `harvest_type`, `needs_trellis`) in `urban.csv`: `brassica-oleracea-var-acephala` (Kale), `spinacia-oleracea` (Spinach), `beta-vulgaris-var-cicla` (Swiss chard), `beta-vulgaris-var-crassa` (Garden beet), `daucus-carota` (Carrot), `brassica-oleracea-var-italica` (Broccoli), `brassica-oleracea-var-botrytis` (Cauliflower), `brassica-oleracea-var-gongyloides` (Kohlrabi), `raphanus-sativus-var-radicula` (Garden radish), `cucurbita-pepo` (Summer squash), `capsicum-frutescens` (Cayenne chili), `allium-schoenoprasum` (Chives), `allium-sativum` (Garlic), `petroselinum-crispum` (Parsley), `anethum-graveolens` (Dill), and `thymus-vulgaris` (Thyme).
+- **2 partial candidate crops (`urban_candidate = yes` without `difficulty`):** `foeniculum-vulgare` (Fennel) and `nasturtium-officinale` (Watercress) have container depth, volume, spacing, sun hours, and harvest days in `urban.csv`, but no `difficulty` rating row; `qualifiesForUrbanCatalog` therefore keeps them out of `listUrbanCrops()`.
+- **Remaining 58 uncurated `urban_candidate = yes` crops:** Have no rows in `urban.csv` yet (0 of 9 attributes filled; 522 empty cells) and remain out of `listUrbanCrops()` until sourced extension figures are added.
