@@ -9,6 +9,7 @@
  *   spam.json            the 46 SPAM crops: name, class, the crops of ours tied to each
  *   sources.json         title, publisher, licence, landing page and day of access of the sources
  *   national.json        for each row of national statistics: publication, address, table, licence
+ *   row-items.json       the FAOSTAT items of the rows whose items are not the crop's own item
  *
  * The crops of one country are not written here: `public/data/crops/country/<ISO3>.json`
  * (scripts/crops/country-tables.ts) already holds the same rows, and the assistant reads those.
@@ -20,7 +21,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Papa from 'papaparse';
-import type { CountriesTable, CropCountriesFile, CropsTable, NationalTable, RegionFile, SourcesTable, SpamTable } from '../../src/rag/tables';
+import type { CountriesTable, CropCountriesFile, CropsTable, NationalTable, RegionFile, RowItemsTable, SourcesTable, SpamTable } from '../../src/rag/tables';
 import { ATLAS_DIR } from './atlas';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
@@ -41,6 +42,7 @@ export interface BuiltTables {
   spam: SpamTable;
   sources: SourcesTable;
   national: NationalTable;
+  rowItems: RowItemsTable;
 }
 
 /** The hand-read national statistics behind the atlas's `match = national` rows (data/crops/national, read-only here). */
@@ -48,10 +50,14 @@ const NATIONAL_CSV = path.join(ROOT, 'data/crops/national/prevalence.csv');
 
 export function buildTables(): BuiltTables {
   const cropRows = read('crops.csv');
-  const crops: CropsTable = { crops: {}, items: {} };
+  const itemNames: Record<string, string> = {};
+  for (const r of read('items.csv')) itemNames[r.faostat_item_code] = r.faostat_item;
+  const crops: CropsTable = { crops: {}, items: {}, itemNames };
   for (const r of cropRows) {
     const item = r.faostat_item_code || null;
-    crops.crops[r.crop_id] = { sci: r.scientific_name.trim(), ...(r.name_en ? { en: r.name_en } : {}), ...(r.name_vi ? { vi: r.name_vi } : {}), match: r.match as 'exact' | 'group' | 'none', ...(item ? { item } : {}) };
+    const eco = num(r.ecocrop_id);
+    const otherItems = (r.faostat_other_item_codes ?? '').split(';').filter(Boolean);
+    crops.crops[r.crop_id] = { sci: r.scientific_name.trim(), ...(r.name_en ? { en: r.name_en } : {}), ...(r.name_vi ? { vi: r.name_vi } : {}), match: r.match as 'exact' | 'group' | 'none', ...(item ? { item } : {}), ...(otherItems.length && r.match === 'exact' ? { otherItems } : {}), ...(eco != null ? { eco } : {}) };
     if (item && r.match !== 'none') {
       const entry = (crops.items[item] ??= { name: r.faostat_item, crops: [] });
       entry.crops.push(r.crop_id);
@@ -60,12 +66,19 @@ export function buildTables(): BuiltTables {
 
   const countries: CountriesTable = {};
   const crop = new Map<string, CropCountriesFile>();
+  const rowItems: RowItemsTable = {};
   for (const r of read('crop_country.csv')) {
     countries[r.iso3] ??= r.country;
     // A crop counted inside a group item has no row of its own: its file would hold the group's numbers.
     if (r.match !== 'exact' || !['major', 'common', 'minor', 'present'].includes(r.level)) continue;
-    const file = crop.get(r.crop_id) ?? { cropId: r.crop_id, item: r.faostat_item_code, source: 'faostat-qcl', rows: [] };
-    file.rows.push({ iso3: r.iso3, areaHa: num(r.area_ha), productionT: num(r.production_t), level: r.level as CropCountriesFile['rows'][number]['level'], years: [Number(r.year_from), Number(r.year_to)] });
+    // The items of the row as the atlas writes them; kept where they are not the crop's own item.
+    const own = crops.crops[r.crop_id]?.item;
+    const codes = r.faostat_item_code.split(';').filter(Boolean);
+    for (const c of codes) if (!itemNames[c]) throw new Error(`crop_country.csv: ${r.crop_id} ${r.iso3} has the item ${c}, which items.csv does not name`);
+    const other = codes.length !== 1 || codes[0] !== own;
+    if (other) rowItems[`${r.crop_id}:${r.iso3}`] = codes;
+    const file = crop.get(r.crop_id) ?? { cropId: r.crop_id, item: own ?? codes[0], source: 'faostat-qcl', rows: [] };
+    file.rows.push({ iso3: r.iso3, areaHa: num(r.area_ha), productionT: num(r.production_t), level: r.level as CropCountriesFile['rows'][number]['level'], years: [Number(r.year_from), Number(r.year_to)], ...(other ? { items: codes } : {}) });
     crop.set(r.crop_id, file);
   }
   // Largest harvested area first; countries with production and no area last, by production.
@@ -104,7 +117,7 @@ export function buildTables(): BuiltTables {
     national[`${r.crop_id}:${r.iso3}`] = { source: r.source.trim(), url: from.url, licence, ...(from.accessed ? { accessed: from.accessed } : {}), ...(from.table ? { table: from.table } : {}) };
   }
 
-  return { crops, countries, crop, region, spam, sources, national };
+  return { crops, countries, crop, region, spam, sources, national, rowItems };
 }
 
 /** Writes the files; returns their sizes in bytes, by path under public/rag/tables. */
@@ -124,6 +137,7 @@ export function writeTables(dir = TABLES_DIR): Map<string, number> {
   write('sources.json', t.sources);
   write('spam.json', t.spam);
   write('national.json', t.national);
+  write('row-items.json', t.rowItems);
   for (const [id, f] of [...t.crop].sort(([a], [b]) => a.localeCompare(b))) write(`crop/${id}.json`, f);
   for (const [iso3, f] of [...t.region].sort(([a], [b]) => a.localeCompare(b))) write(`region/${iso3}.json`, f);
   return sizes;
@@ -134,7 +148,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
   const kb = (n: number) => `${(n / 1024).toFixed(1)} kB`;
   const group = (prefix: string) => [...sizes].filter(([k]) => k.startsWith(prefix));
   const total = (xs: [string, number][]) => xs.reduce((a, [, n]) => a + n, 0);
-  for (const f of ['crops.json', 'countries.json', 'sources.json', 'spam.json', 'national.json']) console.log(`${f}: ${kb(sizes.get(f)!)}`);
+  for (const f of ['crops.json', 'countries.json', 'sources.json', 'spam.json', 'national.json', 'row-items.json']) console.log(`${f}: ${kb(sizes.get(f)!)}`);
   for (const p of ['crop/', 'region/']) {
     const xs = group(p);
     const largest = xs.reduce((a, b) => (b[1] > a[1] ? b : a));
