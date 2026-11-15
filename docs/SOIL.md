@@ -142,6 +142,24 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
 
+### 5.6 Relative erosion risk index (`erosion.ts`)
+
+Monthly dimensionless relative index I_m = R_m x K x S x C_m computed across the 12 calendar months without slope length (lambda), so absolute soil loss in t/ha/yr is never reported.
+
+- RUSLE multiplicative structure (A = R x K x LS x C x P): Renard, K.G., Foster, G.R., Weesies, G.A., McCool, D.K., & Yoder, D.C. (1997), *Predicting Soil Erosion by Water: A Guide to Conservation Planning with the Revised Universal Soil Loss Equation (RUSLE)*, USDA Agriculture Handbook No. 703, ch. 1, eq. (1-1), p. 9.
+- Monthly rainfall erosivity R_m = 0.04830 x p_m^1.610 from mean monthly precipitation p_m (mm, `monthlyNormals(telemetry.climateHistory)`): Renard, K.G. & Freimund, J.R. (1994), Using monthly precipitation data to estimate the R-factor in the revised USLE, *Journal of Hydrology*, 157(1-4): 287-306, eq. (9), p. 297. Annual Modified Fournier Index F = sum(p_m^2) / P is also reported: Arnoldus, H.M.J. (1980), An approximation of the rainfall factor in the Universal Soil Loss Equation, in *Assessment of Erosion*, John Wiley & Sons, pp. 127-132.
+- Slope steepness factor S from `slope_deg` (radians theta, SRTM 30 m): S = 10.8 sin(theta) + 0.03 when tan(theta) < 0.09, and S = 16.8 sin(theta) - 0.50 when tan(theta) >= 0.09. Source: McCool, D.K., Brown, L.C., Foster, G.R., Mutchler, C.K., & Meyer, L.D. (1987), Revised slope steepness factor for the Universal Soil Loss Equation, *Transactions of the ASAE* 30(5): 1387-1396, eq. (5)-(6), p. 1391; USDA Agriculture Handbook No. 703 (Renard et al., 1997), ch. 4, eq. (4-9) & (4-10), p. 107. When `slope_deg` is missing or invalid, the module returns `null` with a bilingual explanation rather than treating slope as zero.
+- Soil erodibility factor K (t ha h / (ha MJ mm)) from `clay_pct`, `sand_pct`, `silt_pct`, and `soc_gkg` (OM% = 1.724 x SOC%, capped at 4%; very fine sand = 0.20 x `sand_pct`; structure baseline code b = 2; permeability code c from clay/sand thresholds): Wischmeier, W.H. & Smith, D.D. (1978), *Predicting Rainfall Erosion Losses - A Guide to Conservation Planning*, USDA Agriculture Handbook No. 537, p. 11 (nomograph equation), multiplied by 0.1317 for SI units per USDA Agriculture Handbook No. 703 (Renard et al., 1997), ch. 3, p. 88 & Appendix A, p. 375.
+- Monthly cover-management factor C_m = exp(-2 x NDVI_m / (1 - NDVI_m)) from MODIS MOD13Q1 16-day `ndvi` samples averaged per month (clamped to [0, 0.99]): van der Knijff, J.M., Jones, R.J.A., & Montanarella, L. (2000), *Soil Erosion Risk Assessment in Europe*, EUR 19044 EN, European Soil Bureau, Joint Research Centre, Ispra, section 3.4, p. 17.
+- Conservation recommendations (contour farming and inter-season ground cover/mulch) carry no amendment rate or dosage.
+
+| Parcel | Slope (deg) | S factor | K factor | Annual Rain (mm) | Peak Month | Peak Monthly Index | Annual Relative Index |
+|---|---|---|---|---|---|---|---|
+| daklak-coffee | 7.7 | 1.7510 | 0.0208 | 1516 | 9 | 3.244 | 5.12 |
+| cantho-rice | 1.4 | 0.2939 | 0.0217 | 1891 | 8 | 0.483 | 1.25 |
+| iowa-corn-soy | 2.6 | 0.5199 | 0.0231 | 963 | 5 | 0.524 | 2.33 |
+| nevada-alfalfa | 1.8 | 0.3692 | 0.0243 | 288 | 3 | 0.069 | 0.30 |
+
 ## 6. Removed from the output for lack of a source
 
 Each can come back with a publication, year, table or page, and licence.
@@ -168,3 +186,4 @@ Each can come back with a publication, year, table or page, and licence.
 3. Bulk density comes from SoilGrids with a wide interval (Nevada: 1.12-1.72 t/m3). The dose uses the central value and names it; the interval is not yet carried into the range.
 4. The upper Kamprath factor (2) and the page of the paper where it stands should be confirmed against the article by whoever has access to it.
 5. Prices of lime and gypsum per country are not in the crop tables, so no cost is given.
+6. Slope length ($\lambda$) is not present in SRTM 30 m parcel telemetry, and US SSURGO `kwfact` is not yet extracted by `src/data`, so `erosion.ts` outputs a dimensionless relative index rather than absolute soil loss in t/ha/yr.
