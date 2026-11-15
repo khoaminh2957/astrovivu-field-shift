@@ -19,7 +19,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import type { CropPrevalence, ModelInput } from '@/contracts';
 import { getCrop, loadFullCatalog } from '@/core/crops';
-import { assessCrop, type AssessOptions } from '@/core/scoring';
+import { assessCrop, LATITUDE_GATE, type AssessOptions } from '@/core/scoring';
 import { parseCsvObjects } from './atlas/csv';
 import type { ValidationFile } from './build-mirca-validation';
 import { countryCropsFromAtlas } from './country-crops';
@@ -52,7 +52,15 @@ export interface Variant {
   label: string;
   opts: AssessOptions;
 }
-export const VARIANTS: Variant[] = [{ id: 'current', label: 'Astrovivu-AEZ v2 as it is', opts: {} }];
+/** The score as it is, and the latitude gate changed one way at a time (K6; docs/SCORING.md section 13). */
+export const VARIANTS: Variant[] = [
+  { id: 'current', label: 'Astrovivu-AEZ v2 as it is (latitude gate: factor 0.7 beyond 3° past the limit)', opts: {} },
+  { id: 'no-gate', label: 'No latitude gate', opts: { latitudeGate: null } },
+  { id: 'tolerance-0', label: 'Factor 0.7 from the limit itself', opts: { latitudeGate: { toleranceDeg: 0, factor: 0.7 } } },
+  { id: 'tolerance-10', label: 'Factor 0.7 beyond 10° past the limit', opts: { latitudeGate: { toleranceDeg: 10, factor: 0.7 } } },
+  { id: 'factor-0.4', label: 'Factor 0.4 beyond 3° past the limit', opts: { latitudeGate: { toleranceDeg: 3, factor: 0.4 } } },
+  { id: 'factor-0', label: 'Excluded beyond 3° past the limit', opts: { latitudeGate: { toleranceDeg: 3, factor: 0 } } },
+];
 
 interface Site {
   id: string;
@@ -87,6 +95,8 @@ export interface SiteResult {
   notGrown: number;
   /** ROC-AUC by variant id, for rainfed and irrigated scores. */
   auc: Record<string, Record<WaterSystem, number>>;
+  /** Labelled crops the latitude gate in use applies to at this site. */
+  gated: { grown: number; notGrown: number };
 }
 
 export interface Distribution {
@@ -145,6 +155,12 @@ export function distribution(values: number[], seed = SEED): Distribution {
   };
 }
 
+/** Per country: ROC-AUC of a variant minus that of the score as it is. */
+export function differences(results: SiteResult[], variant: string, system: WaterSystem): number[] {
+  const base = new Map(byCountry(results, 'current', system).map((c) => [c.iso3, c.auc]));
+  return byCountry(results, variant, system).map((c) => r3(c.auc - base.get(c.iso3)!));
+}
+
 /** Mean of the site results of each country. */
 export function byCountry(results: SiteResult[], variant: string, system: WaterSystem): { iso3: string; sites: number; auc: number }[] {
   const groups = new Map<string, number[]>();
@@ -179,7 +195,14 @@ export function evaluate(variants: Variant[], only?: (cropId: string) => boolean
         auc[v.id][system] = r3(rocAuc(y, scores));
       }
     }
-    results.push({ site: site.id, iso3: site.iso3, grown, notGrown: y.length - grown, auc });
+    // Same test as the scorer: the site lies more than the tolerance beyond the crop's latitude limit.
+    const lat = site.input(labelled[0][0], 'rainfed').parcel.centroid[1];
+    const gated = { grown: 0, notGrown: 0 };
+    for (const [id, label] of labelled) {
+      const limits = getCrop(id)?.req.latitudeAbs;
+      if (limits && Math.abs(lat) > (lat >= 0 ? limits[1] : limits[0]) + LATITUDE_GATE.toleranceDeg) gated[label === 1 ? 'grown' : 'notGrown']++;
+    }
+    results.push({ site: site.id, iso3: site.iso3, grown, notGrown: y.length - grown, auc, gated });
   }
   return { crops, results };
 }
@@ -213,6 +236,21 @@ async function main() {
     return { iso3: c.iso3, country: names.get(c.iso3) ?? c.iso3, sites: c.sites, grown: rs[0].grown, notGrown: rs[0].notGrown, rainfed: c.auc, irrigated: countries(all, 'current', 'irrigated').find((x) => x.iso3 === c.iso3)!.auc };
   });
 
+  const gate = {
+    inUse: LATITUDE_GATE,
+    reach: {
+      labelledPairs: all.results.reduce((a, r) => a + r.grown + r.notGrown, 0),
+      gatedGrown: all.results.reduce((a, r) => a + r.gated.grown, 0),
+      gatedNotGrown: all.results.reduce((a, r) => a + r.gated.notGrown, 0),
+      grownPairs: all.results.reduce((a, r) => a + r.grown, 0),
+      notGrownPairs: all.results.reduce((a, r) => a + r.notGrown, 0),
+      sitesWithAGatedCrop: all.results.filter((r) => r.gated.grown + r.gated.notGrown > 0).length,
+    },
+    differenceFromCurrent: Object.fromEntries(
+      VARIANTS.filter((v) => v.id !== 'current').map((v) => [v.id, { label: v.label, rainfed: distribution(differences(all.results, v.id, 'rainfed')), irrigated: distribution(differences(all.results, v.id, 'irrigated')) }]),
+    ),
+  };
+
   const out = {
     generatedBy: 'scripts/crops/evaluate-prevalence.ts',
     design: {
@@ -227,6 +265,7 @@ async function main() {
     sites: all.results.length,
     countries: perCountry.length,
     summary,
+    latitudeGate: gate,
     subsets: subsetSummary,
     perCountry,
     perSite: all.results,
@@ -246,6 +285,16 @@ async function main() {
     '|---|---:|---:|---:|---:|---:|',
     ...[...perCountry].sort((a, b) => b.rainfed - a.rainfed).map((c) => `| ${c.country} | ${c.sites} | ${c.grown} | ${c.notGrown} | ${c.rainfed.toFixed(3)} | ${c.irrigated.toFixed(3)} |`),
   ];
+  const g = gate.reach;
+  const diff = (d: Distribution): string => `${d.mean >= 0 ? '+' : ''}${d.mean.toFixed(3)} | ${d.ci95[0].toFixed(3)} to ${d.ci95[1].toFixed(3)} | ${d.min.toFixed(3)} to ${d.max.toFixed(3)}`;
+  lines.push(
+    '',
+    `Latitude gate in use: ${g.gatedGrown + g.gatedNotGrown} of ${g.labelledPairs} labelled crop-site pairs (${g.gatedGrown} of ${g.grownPairs} grown, ${g.gatedNotGrown} of ${g.notGrownPairs} not grown), at ${g.sitesWithAGatedCrop} of ${all.results.length} sites.`,
+    '',
+    '| Latitude gate | Water | Mean change of country ROC-AUC | 95 % interval | Range over countries |',
+    '|---|---|---:|---|---|',
+    ...Object.values(gate.differenceFromCurrent).flatMap((v) => [`| ${v.label} | rainfed | ${diff(v.rainfed)} |`, `| ${v.label} | irrigated | ${diff(v.irrigated)} |`]),
+  );
   console.log(lines.join('\n'));
   console.error(`\nWrote ${OUT_FILE} in ${out.runtimeSeconds} s.`);
 }

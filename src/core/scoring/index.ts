@@ -142,6 +142,14 @@ export const FACTOR_WEIGHTS = AHP_SOLUTION.exponents;
 /** Sys, Van Ranst & Debaveye (1991) parametric ratings for categorical optimal / tolerated / unsuitable classes. */
 const CLASS_SCORE = { opt: 1, abs: 0.7, out: 0.15 } as const;
 const GATE = { zoneCurated: 0.5, zoneRaw: 0.7, photoperiodMin: 0.7, latitude: 0.7, altitude: 0.8 } as const;
+
+/** The latitude gate: beyond `toleranceDeg` past the latitude limit EcoCrop gives for a crop, its compatibility is multiplied by `factor`. */
+export interface LatitudeGate {
+  toleranceDeg: number;
+  factor: number;
+}
+/** The gate in use. Kept after the comparison of docs/SCORING.md, section 13. */
+export const LATITUDE_GATE: LatitudeGate = { toleranceDeg: 3, factor: GATE.latitude };
 /** Ramirez-Villegas et al. 2013: a month whose mean minimum is below Tkill + 4 °C contains a killing night. */
 const KILL_MARGIN_C = 4;
 /** A year counts as meeting the crop's needs when neither temperature nor water falls below this. */
@@ -704,6 +712,7 @@ function fitFor(
   irrigation: GroundTruth['irrigation'],
   src: { soil?: string; climate?: string; terrain?: string },
   method: ParametricMethod = 'astrovivu-v2',
+  latitudeGate: LatitudeGate | null = LATITUDE_GATE,
 ): Fit {
   const factors: FactorScore[] = [];
   const aggItems: AggregationItem[] = [];
@@ -843,7 +852,7 @@ function fitFor(
   if (season?.photo != null) add('photoperiod', tx('Day length', 'Độ dài ngày'), season.photo, 1, null, req.photoperiod!.join(', '), 'choice', 'agromet', true, undefined, season.photo < 1 ? reviewNote : undefined);
   if (req.latitudeAbs) {
     const limit = site.lat >= 0 ? req.latitudeAbs[1] : req.latitudeAbs[0];
-    if (Math.abs(site.lat) > limit + 3) add('latitude', tx('Latitude', 'Vĩ độ'), GATE.latitude, 1, round(site.lat, 1), `<= ${limit}°`, 'fixed', 'terrain', true, '°', reviewNote);
+    if (latitudeGate && Math.abs(site.lat) > limit + latitudeGate.toleranceDeg) add('latitude', tx('Latitude', 'Vĩ độ'), latitudeGate.factor, 1, round(site.lat, 1), `<= ${limit}°`, 'fixed', 'terrain', true, '°', reviewNote);
   }
   if (req.altitudeMaxM != null && site.elevationM != null && site.elevationM > req.altitudeMaxM * 1.1) add('altitude', tx('Altitude', 'Độ cao'), GATE.altitude, 1, site.elevationM, `<= ${req.altitudeMaxM}`, 'fixed', 'terrain', true, 'm', reviewNote);
 
@@ -1100,6 +1109,8 @@ export interface AssessOptions {
   cropSuite?: Pick<CropSuiteOptions, 'variability' | 'photoperiod'>;
   /** CropSuite only: false skips the multiple-cropping search (used when ranking many crops). */
   multipleCropping?: boolean;
+  /** Another latitude gate than `LATITUDE_GATE`, or null for none. For the comparison of gates only; the app never sets it. */
+  latitudeGate?: LatitudeGate | null;
 }
 
 const sources = (t: FieldTelemetry) => ({ soil: t.branches.soil?.sources[0], terrain: t.branches.terrain?.sources[0], climate: t.climateSourceId });
@@ -1117,7 +1128,7 @@ function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Clima
   const fits: Fit[] = [];
   const stats: (YearStats | null)[] = [];
   for (let m = 1; m <= 12; m++) {
-    fits.push(fitFor(crop, site, climate, m, irrigation, src, method));
+    fits.push(fitFor(crop, site, climate, m, irrigation, src, method, opts.latitudeGate === undefined ? LATITUDE_GATE : opts.latitudeGate));
     stats.push(climate ? yearStats(crop, site, climate, m, irrigation) : null);
   }
   const rel = (i: number) => (stats[i]?.yearsTotal ? stats[i]!.yearsOk / stats[i]!.yearsTotal : 0);
