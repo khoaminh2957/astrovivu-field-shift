@@ -246,86 +246,15 @@ D5 và D6 không phụ thuộc bảng dữ liệu nên làm ngay được.
 
 ## 8. Cải tạo đất (Duy)
 
-### 8.1 Dữ liệu cấp cho Duy
-
-Mọi thứ dưới đây đã có trong web và đã kiểm trong mã ngày 15/11. Duy không phải tự tải gì: hàm của Duy nhận một `ModelInput` (`src/contracts/model.ts`) gồm thửa ruộng, `telemetry`, cây đang chọn và số của người trồng, rồi đọc từ đó.
-
-**Cách lấy một giá trị đất.** `input.telemetry.branches.soil.facts` là danh sách `StaticFact` (`src/contracts/telemetry.ts`): mỗi phần tử có `key`, `value`, `unit`, `sourceId`, và `uncertainty` (phân vị 5 đến 95%) khi nguồn có công bố. Tên và giấy phép của nguồn nằm ở `input.telemetry.sources[sourceId]`. Số của người trồng nằm ở `input.groundTruth` và luôn thắng ước tính.
-
-**a. Đất của thửa** (`src/data/live/ground.ts`)
-
-| `key` | Nội dung | Đơn vị | Nguồn |
-|---|---|---|---|
-| `ph` | pH (nước) | | SoilGrids, có khoảng 5–95%; ở Mỹ lấy SSURGO |
-| `soc_gkg` | cacbon hữu cơ | g/kg | SoilGrids |
-| `om_pct` | chất hữu cơ | % | chỉ SSURGO (ở Mỹ); nơi khác đổi từ `soc_gkg` bằng hệ số 1,724 |
-| `clay_pct`, `sand_pct`, `silt_pct` | sét, cát, limon | % | SoilGrids; SSURGO ở Mỹ |
-| `cec_cmolkg` | dung tích trao đổi cation | cmol(+)/kg | SoilGrids; SSURGO ở Mỹ |
-| `nitrogen_gkg` | đạm tổng số | g/kg | SoilGrids |
-| `bulk_density` | dung trọng | g/cm³ | SoilGrids |
-| `texture_class` | nhóm cơ giới kiểu EcoCrop: heavy, medium, light, organic | | tính từ sét, cát, cacbon hữu cơ |
-| `usda_texture` | tên cơ giới theo tam giác USDA | | tính từ sét, cát, limon |
-| `ec_dsm` | độ dẫn điện (độ mặn) | dS/m | chỉ SSURGO |
-| `drainage_class`, `hydrologic_group` | lớp thoát nước, nhóm thủy văn | | chỉ SSURGO |
-| `depth_cm` | độ sâu đến tầng hạn chế | cm | chỉ SSURGO |
-| `awc_cmcm` | nước hữu hiệu | cm/cm | chỉ SSURGO |
-| `map_unit` | tên đơn vị bản đồ đất | | chỉ SSURGO |
-
-| Nguồn | Phạm vi | Độ phân giải | Giấy phép | Địa chỉ |
-|---|---|---|---|---|
-| SoilGrids 2.0, tầng 0–30 cm (ISRIC) | toàn cầu | ô 250 m | CC BY 4.0 | <https://rest.isric.org/soilgrids/v2.0/docs> |
-| SSURGO, thành phần chính của đơn vị bản đồ (USDA NRCS) | chỉ nước Mỹ | theo đơn vị bản đồ, không phải lưới | chưa ghi trong `src/data/sources.ts`; cần tra và ghi trước khi nộp | <https://sdmdataaccess.sc.egov.usda.gov/> |
-
-Khi cả hai cùng có một chỉ tiêu, SSURGO thắng và ước tính SoilGrids được ghi vào `detail` của giá trị đó.
-
-**Ngoài nước Mỹ không có ước tính nào cho độ mặn, thoát nước, độ sâu tầng đất và nước hữu hiệu.** Ví dụ thửa mẫu Cần Thơ chỉ có mười giá trị SoilGrids. Phần mặn và thoát nước ở Việt Nam vì vậy chỉ chạy được bằng số của người trồng, trừ khi thêm nguồn mới (xem mục e).
-
-**b. Địa hình** (`input.telemetry.branches.terrain.facts`)
-
-| `key` | Nội dung | Nguồn |
-|---|---|---|
-| `elevation_m` | độ cao | SRTM 30 m (Terrain Tiles hoặc OpenTopoData); Copernicus GLO-90 khi thiếu |
-| `slope_deg` | độ dốc | tính từ lưới độ cao |
-| `aspect_deg`, `aspect_label`, `flow_dir_label` | hướng dốc, hướng nước chảy | tính từ lưới độ cao |
-| `relief_m` | chênh cao trong thửa | tính từ lưới độ cao |
-
-**c. Khí hậu và chuỗi theo ngày** (`input.telemetry.branches.<nhánh>.series`, 365 ngày gần nhất)
-
-| Nhánh | `key` của chuỗi | Nguồn | Độ phân giải |
-|---|---|---|---|
-| `rainfall` | `rain` (mm/ngày) | CHIRPS qua ClimateSERV | 5,5 km |
-| `rainfall` | `rain_era5`, `rain_anom` | ERA5 qua Open-Meteo (CC BY 4.0) | 25 km |
-| `soilMoisture` | `sm_surface`, `sm_root` (m³/m³) | ERA5-Land | 9 km |
-| `soilMoisture` | `gwet_top`, `gwet_root` (% bão hoà) | NASA POWER (MERRA-2) | 55 km |
-| `agromet` | `t2m`, `t2m_min`, `t2m_max`, `rh`, `wind` | NASA POWER | 55 km |
-| `agromet` | `par`, `et0` | NASA POWER (CERES), ERA5 | 111 km, 25 km |
-| `thermal` | `lst_day`, `lst_night`, `et` | MODIS MOD11A2, MOD16A2 | 1 km, 500 m |
-| `vegetation` | `ndvi`, `evi` | MODIS MOD13Q1 | 250 m |
-
-Khí hậu nhiều năm theo tháng nằm ở `input.telemetry.climateHistory` (kiểu `YearClimate[]`: mỗi năm mười hai tháng với `rainMm`, `tMean`, `tMin`, `tMax`, `et0Mm`), nguồn ERA5, hai mươi năm (2006–2025 ở các thửa mẫu). Hàm `monthlyNormals` trong `src/lib/climate.ts` cho trung bình và phân vị 10, 90 của từng tháng. Đây là đầu vào cho chỉ số mưa gây xói mòn.
-
-**d. Yêu cầu của cây và số của người trồng**
+### 8.1 Đang có gì
 
 | Thứ | Ở đâu |
 |---|---|
-| Yêu cầu của cây đang chọn: pH, cơ giới, độ sâu, thoát nước, độ mặn, độ phì, mỗi thứ có mức tối ưu và mức chịu được | `getCrop(id).requirements`, kiểu `CropRequirements` trong `src/contracts/crop.ts`; gốc là FAO EcoCrop |
-| Mức chịu độc nhôm của cây (`soil_al_toxicity_opt`, `soil_al_toxicity_abs`) | mới chỉ có trong `data/crops/atlas/crops.csv`, chưa vào `CropRequirements`. Cần thì nhờ Thái thêm vào danh mục |
-| Số người trồng nhập: pH, chất hữu cơ, cơ giới, thoát nước, độ mặn, độ sâu tầng đất, tưới, nguồn nước | `input.groundTruth` (kiểu `GroundTruth` trong `src/contracts/model.ts`); nhập ở thẻ "Đất và canh tác" |
-| Lời khuyên hiện có để chuyển sang mô-đun mới: bón vôi hoặc lưu huỳnh theo khoảng liều, thoát nước, chống xói mòn | `phPlan` và `advisories` trong `src/core/advisory/actions.ts` |
-
-**e. Chưa có, phải thêm hoặc phải hỏi người trồng**
-
-| Thiếu | Cần cho | Cách có |
-|---|---|---|
-| Nhôm trao đổi | liều vôi trên đất chua | số đo của người trồng; chưa có ô nhập |
-| Độ mặn của đất ngoài nước Mỹ, độ mặn nước tưới | rửa mặn, liều thạch cao | HWSD v2 của FAO (chưa nối vào web) hoặc số đo |
-| Lân và kali dễ tiêu | dinh dưỡng theo năng suất mục tiêu | chỉ có từ phiếu phân tích đất |
-| Hệ số N, P, K cây lấy đi theo mỗi tấn sản phẩm | dinh dưỡng theo năng suất mục tiêu | bảng công bố, ghi rõ nguồn |
-| Giá vôi, phân, thạch cao theo nước | chi phí và hoàn vốn | phối hợp với Thái |
-
-Thêm một ô nhập hay một nguồn mới là việc ngoài `src/core/soil`: ô nhập thuộc Bảo (`src/contracts`, `src/ui/override`), nguồn dữ liệu thuộc `src/data`. Duy nêu trong pull request, người giữ phần đó làm.
-
-**f. Dữ liệu để viết test.** Bốn thửa mẫu có sẵn số thật trong `public/data/samples/<id>.json` (`daklak-coffee`, `cantho-rice`, `iowa-corn-soy`, `nevada-alfalfa`). `src/core/advisory/advisory.test.ts` có sẵn cách nạp chúng thành `ModelInput`. Hai thửa ở Mỹ có đủ giá trị SSURGO; hai thửa ở Việt Nam chỉ có SoilGrids, đúng với tình huống thiếu dữ liệu ngoài đời.
+| Dữ liệu đất của thửa: pH, cacbon hữu cơ, sét, cát, limon, đạm, CEC, dung trọng, mỗi giá trị có khoảng tin cậy 5–95% | SoilGrids (`src/data/adapters/soilgrids.ts`); ở Mỹ có thêm SSURGO |
+| Độ dốc, lớp thoát nước | nhánh địa hình |
+| Số đo của nông dân ghi đè số vệ tinh | trang Ground truth |
+| Yêu cầu của cây về pH, thành phần cơ giới, độ sâu, độ phì, độ mặn, thoát nước, độc nhôm | các cột EcoCrop trong bảng `crops` |
+| Lời khuyên hiện có: bón vôi hoặc lưu huỳnh theo khoảng liều, thoát nước, chống xói mòn | `src/core/advisory/actions.ts` (`phPlan`, `advisories`) |
 
 ### 8.2 Việc chính
 
