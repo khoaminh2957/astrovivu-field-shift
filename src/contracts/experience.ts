@@ -106,6 +106,12 @@ export interface UrbanSite {
   place?: PlaceInfo;
   light: 'full' | 'partial' | 'shade';
   space: 'windowsill' | 'balcony' | 'rooftop' | 'yard';
+  /** Direction the balcony or wall faces, in degrees clockwise from North (0 = N, 90 = E, 180 = S, 270 = W). */
+  facingDeg?: number;
+  /** Elevation angle of opposing buildings or horizon obstructions in front of the balcony, degrees (0..90). */
+  horizonDeg?: number;
+  /** Profile angle cutoff of an overhead roof or upper balcony, degrees (0..90). */
+  overhangDeg?: number;
 }
 
 export interface UrbanClimateMonth {
