@@ -101,6 +101,13 @@ add(T, 'world_production_t', 'Sum of the countries\' production (exact matches o
 add(T, 'data_years', 'Years the FAOSTAT means cover.', 'Các năm mà số trung bình FAOSTAT bao phủ.', 'years', FAO, 'earliest and latest year used in any country');
 add(T, 'curated', 'yes when the crop is in our curated list of 73.', 'yes nếu cây thuộc danh sách 73 cây chọn lọc của dự án.', '', CUR, 'join on ecocrop_id');
 
+// ------------------------------------------------------------------------------------------------ urban_candidates
+// Not columns of crops: the market database mirrors crops.csv column for column (scripts/market/atlas.ts).
+const UC = 'urban_candidates';
+add(UC, 'crop_id', 'Crop (see crops.csv). One row per crop of crops.csv, in the same order.', 'Cây trồng (xem crops.csv). Mỗi cây trong crops.csv một dòng, cùng thứ tự.', '', BUILD, 'join key');
+add(UC, 'urban_candidate', 'yes when the crop qualifies as an urban/container candidate by the EcoCrop rule (scripts/crops/atlas/urban.ts); empty otherwise.', 'yes nếu cây đạt điều kiện ứng viên trồng chậu/đô thị theo quy tắc EcoCrop (scripts/crops/atlas/urban.ts); để trống nếu không.', '', `${ECO}; ${BUILD}`, 'urbanCandidate(s) in scripts/crops/atlas/urban.ts');
+add(UC, 'urban_candidate_rule', 'Clause(s) of the urban candidate rule that matched: short-cycle, perennial-aromatic-herb, or both separated by ";".', 'Vế của quy tắc ứng viên đô thị đã khớp: short-cycle (chu kỳ ngắn), perennial-aromatic-herb (cây thơm lâu năm), hoặc cả hai cách nhau bởi ";".', '', BUILD, 'urbanCandidate(s).rule');
+
 // ------------------------------------------------------------------------------------------------ crop_country / item_country
 const quantities = (table: string, unitOf: string) => {
   add(table, 'area_ha', `Harvested area of ${unitOf}.`, `Diện tích thu hoạch của ${unitOf === 'the crop' ? 'cây' : 'mặt hàng'}.`, 'ha', FAO, 'mean of the latest 3 years with data within the last 10 years of the file');
@@ -245,13 +252,13 @@ add(EC, 'iso3', 'Country.', 'Quốc gia.', '', 'to be filled', '');
 add(EC, 'region', 'Region inside the country, if the figure is regional.', 'Vùng trong nước, nếu số liệu theo vùng.', '', 'to be filled', '');
 add(EC, 'yield_t_ha', 'Yield.', 'Năng suất.', 't/ha', 'to be filled', '');
 add(EC, 'price_usd_t', 'Farm-gate price.', 'Giá bán tại ruộng.', 'USD/t', 'to be filled', '');
-add(EC, 'cost_usd_ha', 'Production cost.', 'Chi phí sản xuất.', 'USD/ha', 'to be filled', '');
+add(EC, 'cost_usd_ha', 'Operating (variable) production cost per hectare, matching costUsdPerHa of ReferenceEconomics.', 'Chi phí sản xuất biến đổi (chi phí vận hành) trên một ha, khớp với costUsdPerHa của ReferenceEconomics.', 'USD/ha', 'to be filled', '');
 add(EC, 'year', 'Year of the figures.', 'Năm của số liệu.', 'year', 'to be filled', '');
-add(EC, 'quality_yield', 'Quality of the yield figure (official, press, estimate).', 'Độ tin cậy của số năng suất (chính thức, báo chí, ước tính).', '', 'to be filled', '');
-add(EC, 'quality_price', 'Quality of the price figure.', 'Độ tin cậy của số giá.', '', 'to be filled', '');
-add(EC, 'quality_cost', 'Quality of the cost figure.', 'Độ tin cậy của số chi phí.', '', 'to be filled', '');
-add(EC, 'source', 'Source of the figures.', 'Nguồn số liệu.', '', 'to be filled', '');
-add(EC, 'url', 'Link to the source.', 'Đường dẫn tới nguồn.', '', 'to be filled', '');
+add(EC, 'quality_yield', 'Quality of the yield figure (official, budget, press, derived, none).', 'Độ tin cậy của số năng suất (official, budget, press, derived, none).', '', 'to be filled', '');
+add(EC, 'quality_price', 'Quality of the price figure (official, budget, press, derived, none).', 'Độ tin cậy của số giá (official, budget, press, derived, none).', '', 'to be filled', '');
+add(EC, 'quality_cost', 'Quality of the cost figure (official, budget, press, derived, none).', 'Độ tin cậy của số chi phí (official, budget, press, derived, none).', '', 'to be filled', '');
+add(EC, 'source', 'Source of the figures; when the three figures have separate sources, written in yield | price | cost order (as in data/crops/curated-crops.csv).', 'Nguồn số liệu; khi ba con số lấy từ ba nguồn khác nhau, ghi theo thứ tự yield | price | cost (như trong data/crops/curated-crops.csv).', '', 'to be filled', '');
+add(EC, 'url', 'Link to the source; when the three figures have separate URLs, written in yield | price | cost order.', 'Đường dẫn tới nguồn; khi ba con số có đường dẫn riêng, ghi theo thứ tự yield | price | cost.', '', 'to be filled', '');
 add(EC, 'accessed', 'Date the source was read.', 'Ngày tra cứu nguồn.', 'date', 'to be filled', '');
 
 export const COLUMNS: readonly ColumnDoc[] = out;

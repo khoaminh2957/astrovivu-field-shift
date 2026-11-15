@@ -28,7 +28,10 @@ const cropCountry = csv('crop_country.csv');
 const regionCrops = csv('region_crops.csv');
 const cropsCsv = csv('crops.csv');
 const itemsCsv = csv('items.csv');
-const cc = (cropId: string, iso3: string) => cropCountry.find((r) => r.crop_id === cropId && r.iso3 === iso3)!;
+// Indexed once: the item test reads one row per crop and country (thousands of lookups in about 70,000 rows),
+// which a linear search turned into more than 20 s on a Windows laptop.
+const ccIndex = new Map(cropCountry.map((r) => [`${r.crop_id}|${r.iso3}`, r]));
+const cc = (cropId: string, iso3: string) => ccIndex.get(`${cropId}|${iso3}`)!;
 
 const tables = tableSource(fileReader(path.join(ROOT, 'public')));
 let t: AtlasTables;

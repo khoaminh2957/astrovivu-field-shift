@@ -25,6 +25,9 @@ const atlas = readAtlasCrops();
 type Row = Record<string, string>;
 const csv = (name: string): Row[] => Papa.parse<Row>(fs.readFileSync(path.join(ROOT, 'data/crops/atlas', name), 'utf8').replace(/^\uFEFF/, ''), { header: true, skipEmptyLines: true }).data;
 const cropCountry = csv('crop_country.csv');
+// One row per crop and country (no pair repeats): looked up by key, not by scanning some 70,000 rows each time.
+const ccIndex = new Map(cropCountry.map((r) => [`${r.crop_id}|${r.iso3}`, r]));
+const ccRow = (cropId: string, iso3: string) => ccIndex.get(`${cropId}|${iso3}`)!;
 const cropsCsv = csv('crops.csv');
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/rag/manifest.json'), 'utf8')) as {
   sources: Record<string, { documents: number; chunks: number }>;
@@ -201,7 +204,7 @@ describe('the sheet on where a crop is grown', () => {
 
   it('gives each country the years its own figure is the mean of (review of #107, point 4)', () => {
     const years = (cropId: string, iso3: string) => {
-      const r = cropCountry.find((x) => x.crop_id === cropId && x.iso3 === iso3)!;
+      const r = ccRow(cropId, iso3);
       return r.year_from === r.year_to ? r.year_from : `${r.year_from}-${r.year_to}`;
     };
     for (const a of atlas.filter((x) => x.match === 'exact')) {
@@ -254,7 +257,7 @@ describe('the sheet on where a crop is grown', () => {
       const w = crops.get(a.cropId)!.prevalence!;
       expect(w.otherItems ?? [], a.cropId).toEqual(a.row.faostat_other_item_codes.split(';').filter(Boolean).map(name));
       for (const c of [...(w.top ?? []), ...(w.also ?? [])]) {
-        const codes = cropCountry.find((r) => r.crop_id === a.cropId && r.iso3 === c.iso3)!.faostat_item_code.split(';');
+        const codes = ccRow(a.cropId, c.iso3).faostat_item_code.split(';');
         if (codes.length === 1 && codes[0] === a.row.faostat_item_code) expect(c.items, `${a.cropId} ${c.iso3}`).toBeUndefined();
         else {
           expect(c.items, `${a.cropId} ${c.iso3}`).toEqual(codes.map(name));

@@ -251,17 +251,18 @@ function WideField() {
 function ExploreMap({ narrow }: { narrow: boolean }) {
   const t = useT();
   const { go } = useNav();
+  const flying = useGlobeStatus((s) => s.flying);
   return (
     <>
-      <div className="workspace-theme workspace-explore-nav absolute top-2 left-2 z-(--z-chrome) flex items-center gap-2.5 px-1.5 py-1">
+      <div data-flying={flying || undefined} className="workspace-theme workspace-explore-nav workspace-explore-chrome absolute top-2 left-2 z-(--z-chrome) flex items-center gap-2.5 px-1.5 py-1">
         <Mark />
         <button type="button" className="workspace-nav-item" onClick={() => go('home')}>
           <House aria-hidden />{t('chrome.nav.home')}
         </button>
       </div>
-      <MapToolbar className={cn('absolute z-(--z-map-ui)', narrow ? 'top-2 right-2' : 'top-1/2 right-[15px] -translate-y-1/2')} />
+      <MapToolbar className={cn('workspace-explore-chrome absolute z-(--z-map-ui)', narrow ? 'top-2 right-2' : 'top-1/2 right-[15px] -translate-y-1/2')} />
       {/* The finder owns the bottom edge of a narrow screen, so the credits go to the top there. */}
-      <div className={cn('pointer-events-none absolute left-2.5 z-(--z-map-ui) flex', narrow ? 'top-14 right-16' : 'right-[calc(50%+309px)] bottom-1.5')}>
+      <div className={cn('workspace-explore-chrome pointer-events-none absolute left-2.5 z-(--z-map-ui) flex', narrow ? 'top-14 right-16' : 'right-[calc(50%+309px)] bottom-1.5')}>
         <MapCredits className="min-w-0" />
       </div>
     </>

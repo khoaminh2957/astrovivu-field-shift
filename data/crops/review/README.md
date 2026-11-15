@@ -7,6 +7,7 @@ Thư mục này lưu bảng đối chiếu thủ công kết quả dựng tự �
 | Tệp | Mô tả |
 |---|---|
 | `atlas-check-vnm-usa.csv` | Bảng kiểm 62 dòng: 15 mặt hàng diện tích lớn nhất ở `VNM`, 15 mặt hàng lớn nhất ở `USA`, 20 cây đã biên soạn đang bị xếp `absent` ở `VNM`, 9 cây đã biên soạn đang bị xếp `absent` ở `USA`, và 3 cây biên soạn quan trọng bị thiếu mức (`musa-acuminata`, `durio-zibethinus` ở `VNM`; `medicago-sativa` ở `USA`). |
+| `prices-from-faostat.csv` | Trích FAOSTAT Producer Prices (#10): 25 dòng, mỗi dòng là hàng FAOSTAT (mặt hàng, năm, phần tử 5532 `Producer Price (USD/tonne)`, giá trị năm, cờ) mà một giá trong `data/crops/atlas/economics.csv` trích dẫn; chép nguyên từ `Prices_E_All_Data_(Normalized).zip`. Dựng lại bằng `npx tsx scripts/crops/atlas/prices-extract.ts`; kiểm tra trong `scripts/crops/atlas/economics.test.ts`. Cột `unit` ghi `USD` như FAOSTAT, nghĩa là USD/tấn. |
 
 ## Ý nghĩa các cột trong `atlas-check-vnm-usa.csv`
 
