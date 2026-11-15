@@ -14,7 +14,8 @@ import { getCrop } from '@/core/crops';
 import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodLand, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
-import { Button, Dialog, cn, usePrefersReducedMotion } from '@/ui/design';
+import { Button, Dialog, cn } from '@/ui/design';
+import { setMotion, useGlobeStatus } from '@/globe';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
 import { DeepSheet } from './DeepSheet';
 import { VOICES, frameOf } from './direct';
@@ -56,7 +57,8 @@ export interface FarmStageProps {
 export function FarmView({ rotations, current, bestId, selected, onSelect, report, onAnalysis, onDossier }: FarmStageProps) {
   const t = useT();
   const lang = useLang();
-  const reduced = usePrefersReducedMotion();
+  // The app's motion setting: the system's unless the visitor turned motion on or off (here or on the map).
+  const reduced = useGlobeStatus((s) => s.reducedMotion);
   const parcel = useMission((s) => s.parcel);
   const telemetry = useMission((s) => s.telemetry);
   const cropId = useMission((s) => s.cropId);
@@ -273,7 +275,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
       )}
 
       {VOICES.map((who, k) => (
-        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} className={cn('z-10', SPOT[who].at)} />
+        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} reduced={reduced} className={cn('z-10', SPOT[who].at)} />
       ))}
       {open && (
         <NoteCard
@@ -293,7 +295,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
       )}
 
       <div className="absolute inset-x-3 bottom-3 z-30 flex flex-col gap-2 md:inset-x-4 md:bottom-4">
-        <TimeBar periods={periods} land={land} idx={idx} step={step} playing={playing} holdMs={reduced ? 0 : HOLD_MS[step]} onStep={(s) => { setPlaying(false); setIdx(null); setStep(s); }} onPlay={play} onPick={pickStep} trailing={<StageLinks onDossier={onDossier} />} />
+        <TimeBar periods={periods} land={land} idx={idx} step={step} playing={playing} holdMs={reduced ? 0 : HOLD_MS[step]} onStep={(s) => { setPlaying(false); setIdx(null); setStep(s); }} onPlay={play} onPick={pickStep} trailing={<StageLinks onDossier={onDossier} reduced={reduced} onMotion={() => setMotion(reduced ? 'full' : 'reduced')} />} />
         <button type="button" onClick={onAnalysis} className="mx-auto flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-medium text-white [text-shadow:0_1px_3px_rgb(8_20_14/0.7)] hover:bg-white/15" data-farm-analysis>
           <ChevronsDown size={14} aria-hidden />
           {t('farm.analysis')}
