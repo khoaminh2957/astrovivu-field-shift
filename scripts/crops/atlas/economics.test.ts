@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ECONOMICS_COLUMNS } from './columns';
 import { parseCsv, parseCsvObjects } from './csv';
+import { EXTRACT_COLUMNS, EXTRACT_FILE, faostatPriceCells, PRICE_ELEMENT, SOURCE_FILE } from './prices-extract';
 
 const ECON_FILE = 'data/crops/atlas/economics.csv';
 const TEMPLATE_FILE = 'data/crops/atlas/economics_template.csv';
@@ -102,6 +103,51 @@ describe('data/crops/atlas/economics.csv', () => {
       const key = `${r.crop_id}:${r.iso3}:${r.region}`;
       expect(seen.has(key), `duplicate row for ${key}`).toBe(false);
       seen.add(key);
+    }
+  });
+});
+
+// The extract is rebuilt from the FAOSTAT bulk file by prices-extract.ts; this check needs only the CSVs.
+describe(`FAOSTAT producer prices behind economics.csv (${EXTRACT_FILE})`, () => {
+  const rows = parseCsvObjects(readFileSync(ECON_FILE, 'utf8'));
+  const crops = parseCsvObjects(readFileSync(CROPS_FILE, 'utf8'));
+  const rawExtract = readFileSync(EXTRACT_FILE, 'utf8');
+  const extract = parseCsvObjects(rawExtract);
+  const cells = faostatPriceCells(rows, crops);
+
+  it('the extract holds annual FAOSTAT element 5532 rows (Producer Price, USD/tonne) only', () => {
+    expect(parseCsv(rawExtract)[0]).toEqual([...EXTRACT_COLUMNS]);
+    for (const e of extract) {
+      expect(e.element_code, `${e.crop_id} ${e.iso3}`).toBe(PRICE_ELEMENT);
+      expect(e.unit, `${e.crop_id} ${e.iso3}`).toBe('USD');
+      expect(e.source_file, `${e.crop_id} ${e.iso3}`).toBe(SOURCE_FILE);
+      expect(e.year, `${e.crop_id} ${e.iso3}`).toMatch(/^\d{4}$/);
+      expect(e.accessed, `${e.crop_id} ${e.iso3}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+
+  it('25 prices cite FAOSTAT producer prices: 12 via crop_latest_prices (2 VNM, 10 USA) and 13 VNM reference records', () => {
+    expect(cells).toHaveLength(25);
+    const viaView = rows.filter((r) => r.price_usd_t !== '' && /price: [^|]*crop_latest_prices/.test(r.source));
+    expect(viaView.filter((r) => r.iso3 === 'VNM')).toHaveLength(2);
+    expect(viaView.filter((r) => r.iso3 === 'USA')).toHaveLength(10);
+  });
+
+  it('every price that cites FAOSTAT producer prices equals the extract row of the same crop, country, item and year', () => {
+    for (const c of cells) {
+      const label = `${c.cropId} ${c.iso3} ${c.year}`;
+      const match = extract.filter((e) => e.crop_id === c.cropId && e.iso3 === c.iso3 && e.year === c.year);
+      expect(match, `${label}: no single extract row`).toHaveLength(1);
+      expect(match[0].item_code, `${label}: item`).toBe(c.itemCode);
+      expect(Number(match[0].value), `${label}: price`).toBe(Number(c.price));
+    }
+  });
+
+  it('every extract row is used by one of those prices', () => {
+    expect(extract).toHaveLength(cells.length);
+    for (const e of extract) {
+      const used = cells.filter((c) => c.cropId === e.crop_id && c.iso3 === e.iso3 && c.year === e.year);
+      expect(used, `${e.crop_id} ${e.iso3} ${e.year}: unused extract row`).toHaveLength(1);
     }
   });
 });
