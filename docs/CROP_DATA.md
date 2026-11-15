@@ -238,6 +238,39 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 - **What the user sees today**: the Data tab of a field names the table ("Viet Nam: 60 crops with a reported area or harvest (FAOSTAT QCL)"), and the "switch to another crop" what-if no longer proposes a crop the country's statistics do not report. The rotation builder does not read the table yet (K10, issue #92), and the labels on crops are B2 (#56).
 - **Known gap carried over**: an `absent` row is "not reported", not "not grown" (section 10; docs/SCORING.md section 12.4 names tomato, cucumber, eggplant, ginger and okra in Viet Nam). Until national statistics are added (T4, #9) those crops are left out of the switch-to suggestion in Viet Nam.
 
-## 12. Prices
+## 12. Prices and reference economics (`data/crops/atlas/economics.csv`)
 
-`economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
+`data/crops/atlas/economics.csv` follows the 13-column schema of `economics_template.csv` (`crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`) and covers all 73 curated crops in `VNM` and `USA` (146 national pairs with `region` empty, plus 7 regional rows: 6 `US-HEARTLAND` and 1 `US-WEST`, for **153 rows** in total).
+
+### 12.1 Conventions
+
+- **49 existing records preserved.** All 49 records from `scripts/crops/economics.ts` (`data/crops/curated-crops.csv`) are carried over with their exact figures, years and `SourceQuality` values (`VN` -> `iso3 = VNM, region = ""`; `US` -> `iso3 = USA, region = ""`; `US-HEARTLAND` and `US-WEST` -> `iso3 = USA` with `region` kept until K2, #22).
+- **Operating cost only.** `cost_usd_ha` is the variable (operating) cost per hectare, matching `costUsdPerHa` of `ReferenceEconomics` (`docs/ECONOMICS.md` section 1). Where a budget also prints total cost including land and overhead, the total is noted in `source` and not used.
+- **Three-part provenance.** Both `source` and `url` list the three figures in `yield | price | cost` order (`yield: ... | price: ... | cost: ...`), matching `data/crops/curated-crops.csv`. Every figure has a quality tag from `SourceQuality` (`official`, `budget`, `press`, `derived`, `none`); a quality is `none` if and only if its cell is empty, and `source` records `NOT FOUND: <reason>`.
+- **Remaining curated crops in `VNM` and `USA`.**
+  - *Yield (`yield_t_ha`)*: filled from `crop_country.csv` (2022–2024 three-year mean, `quality_yield = official`), noting in `source` when the FAOSTAT item is shared by multiple species (`coffea-arabica`, `coffea-canephora`, `allium-cepa`, `brassica-oleracea-var-capitata`, `citrus-grandis`, `fragaria-x-ananassa`, `persea-americana`).
+  - *Price (`price_usd_t`)*: filled from the `crop_latest_prices` view of the market database (`match = exact`, `item_shared_by_n_crops = 1`, primary item; 11 curated crops in `VNM`, 20 in `USA`), cross-checked against market and USDA NASS prices (`docs/DATABASE.md` section 8). Shared-item prices (such as FAOSTAT item 656 `Coffee, green` at 709 USD/t in `VNM` vs ~3,359.4 USD/t on the domestic robusta market, or 55,997.5 USD/t in `USA` vs $2.37/lb = 5,225 USD/t cherry in USDA NASS) and pooled `group` item prices are not assigned to single species outside the existing proxy rows (`vigna-radiata`, `mangifera-indica`, `citrus-grandis`, `brassica-oleracea-var-capitata` in `VNM`); both figures are quoted in `source`.
+  - *Cost (`cost_usd_ha`)*: no cross-country extrapolation is performed; crops without an opened national or state enterprise budget remain empty (`quality_cost = none`).
+
+### 12.2 Sources and licences
+
+| Source | Figures used | Licence |
+|---|---|---|
+| FAOSTAT QCL & Producer Prices (PP) | `yield_t_ha` (2022–2024 mean in `crop_country.csv`) and `price_usd_t` (`crop_latest_prices`) | CC BY 4.0 with FAO Statistical Database Terms of Use |
+| USDA ERS Commodity Costs and Returns (2025) | `USA` national and `US-HEARTLAND` yields, harvest prices and operating costs for major field crops | Public domain (17 U.S.C. § 105) |
+| USDA NASS (`cropan26.txt`, `cpvl0226.txt`, `vegean26.txt`, `ncit0526.txt`) | `USA` national and state yields and marketing-year prices (2024–2025) and cross-checks | Public domain (17 U.S.C. § 105) |
+| USDA-ARS National Soil Dynamics Laboratory Fact Sheet 04o (2014) | `USA` cover-crop seed and no-till drilling costs | Public domain (17 U.S.C. § 105) |
+| University extension budgets (`ISU` Ag Decision Maker A1-20, `NDSU` EC1654, `IDAHO` EBB series, University of Illinois `farmdoc daily`) | Operating / direct costs per acre for Iowa, North Dakota, Idaho and Illinois (`budget`) | Educational / extension publication terms; cited per row |
+| Vietnamese press reports (`Nhân Dân`, `Việt Báo`, `Báo Văn Hoá`, `Nông nghiệp và Môi trường`, `VnBusiness`, `Thanh Tra`, `Báo Lào Cai`, `Công Thương`) | Farm-gate trader prices and demonstration/grower operating costs (`press`, `derived`), converted at `VND_PER_USD = 25,600` (State Bank of Vietnam central rate on 2026-11-10) | Factual numerical citations with URL and access date |
+
+### 12.3 Row counts by country and `SourceQuality`
+
+| Country (`iso3`) | Total rows | Rows with all 3 figures (`yield`, `price`, `cost`) | Measure | `official` | `budget` | `press` | `derived` | `none` (empty) |
+|---|---:|---:|---|---:|---:|---:|---:|---:|
+| `VNM` (national) | 73 | **8** | `yield_t_ha` | 24 | 0 | 0 | 0 | 49 |
+| `VNM` (national) | 73 | **8** | `price_usd_t` | 15 | 0 | 5 | 0 | 53 |
+| `VNM` (national) | 73 | **8** | `cost_usd_ha` | 0 | 0 | 7 | 1 | 65 |
+| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `yield_t_ha` | 45 | 0 | 0 | 0 | 35 |
+| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `price_usd_t` | 39 | 0 | 0 | 0 | 41 |
+| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `cost_usd_ha` | 10 | 17 | 0 | 0 | 53 |
+| **Total** | **153** | **35** (28 national + 7 regional) | — | — | — | — | — | — |
