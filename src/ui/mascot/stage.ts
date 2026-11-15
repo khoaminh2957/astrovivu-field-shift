@@ -22,7 +22,8 @@ interface Actor {
   mixer: THREE.AnimationMixer;
   clips: THREE.AnimationClip[];
   action: THREE.AnimationAction | null;
-  eyes: { node: THREE.Object3D; rest: THREE.Vector3 }[];
+  /** Rest position and scale of each eye: the models draw the eyes with a small, uneven scale (about 0.1 by 0.13). */
+  eyes: { node: THREE.Object3D; rest: THREE.Vector3; scale: THREE.Vector3 }[];
   root: THREE.Group;
 }
 
@@ -96,7 +97,7 @@ export class MascotStage {
     this.scene.add(root);
     const eyes: Actor['eyes'] = [];
     gltf.scene.traverse((obj) => {
-      if (EYES.test(obj.name)) eyes.push({ node: obj, rest: obj.position.clone() });
+      if (EYES.test(obj.name)) eyes.push({ node: obj, rest: obj.position.clone(), scale: obj.scale.clone() });
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
@@ -134,6 +135,7 @@ export class MascotStage {
       this.actor.root.position.y = 0;
       this.actor.root.rotation.z = 0;
       this.actor.root.scale.setScalar(0.94);
+      for (const { node, scale } of this.actor.eyes) node.scale.y = scale.y;
     }
   }
 
@@ -214,10 +216,11 @@ export class MascotStage {
         this.nextBlink = c + 2 + Math.random() * 3;
       }
       const lid = c < this.blinkUntil ? 0.12 : 1;
-      for (const { node, rest } of this.actor.eyes) {
+      for (const { node, rest, scale } of this.actor.eyes) {
         node.position.x = THREE.MathUtils.damp(node.position.x, rest.x + look.x * 0.045, 7, dt);
         node.position.y = THREE.MathUtils.damp(node.position.y, rest.y - look.y * 0.025, 7, dt);
-        node.scale.y = THREE.MathUtils.damp(node.scale.y, lid, 30, dt);
+        // Relative to the eye's own height in the model: a target of 1 stretched the eyes about eight times.
+        node.scale.y = THREE.MathUtils.damp(node.scale.y, scale.y * lid, 30, dt);
       }
       // The clips animate the nodes inside the model, so the wrapper is free to move: breathe, bob, sway, turn.
       const root = this.actor.root;
