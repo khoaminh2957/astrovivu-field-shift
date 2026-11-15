@@ -10,7 +10,7 @@
 import type { KnowledgeChunk, Lang } from '@/contracts';
 import { detectCrops, resolveMention } from './aliases';
 import { detectTerms, type Intent, routeIntent, type Routed } from './intent';
-import type { KnowledgeStore } from './store';
+import type { DroppedMention, KnowledgeStore } from './store';
 import { fold, terms } from './text';
 import type { ChunkKind } from './types';
 
@@ -20,6 +20,8 @@ export interface Analysis extends Routed {
   cropIds: string[];
   termIds: string[];
   expansion: string[];
+  /** For `dropped`: the species the question names that the crop atlas does not keep. */
+  dropped?: DroppedMention[];
 }
 
 export interface Hit {
@@ -69,19 +71,25 @@ const VI_EN: [RegExp, string][] = [
   [/trong/, 'grow cultivation'],
 ];
 
+// The sheet on where a crop is grown (`where`) is held back in every intent about what a crop
+// needs or how to grow it: it is the passage for a question about countries, not for these.
 const KIND_BOOST: Record<Intent, Partial<Record<ChunkKind, number>>> = {
-  ideal: { facts: 1.8, narrative: 1.2, wiki: 1.0, glossary: 0.6, concept: 0.6 },
-  compare: { facts: 2.0, narrative: 1.1, glossary: 0.5, concept: 0.5 },
-  field: { facts: 1.6, glossary: 1.2, narrative: 1.0, concept: 0.9 },
+  ideal: { facts: 1.8, narrative: 1.2, wiki: 1.0, glossary: 0.6, concept: 0.6, where: 0.5 },
+  compare: { facts: 2.0, narrative: 1.1, glossary: 0.5, concept: 0.5, where: 0.5 },
+  field: { facts: 1.6, glossary: 1.2, narrative: 1.0, concept: 0.9, where: 0.4 },
   // A reading of the parcel is explained by the glossary entry on the reading and on its source.
-  'field-fact': { glossary: 2.0, concept: 1.3, facts: 0.5, narrative: 0.6 },
-  'score-change': { glossary: 2.0, concept: 1.2, facts: 0.8 },
-  term: { glossary: 2.2, concept: 1.5, facts: 0.4, narrative: 0.5, wiki: 0.7 },
-  rotation: { concept: 1.5, glossary: 1.5, wiki: 1.3, facts: 0.9 },
-  care: { wiki: 1.4, narrative: 1.3, facts: 1.0, glossary: 0.7 },
+  'field-fact': { glossary: 2.0, concept: 1.3, facts: 0.5, narrative: 0.6, where: 0.3 },
+  'score-change': { glossary: 2.0, concept: 1.2, facts: 0.8, where: 0.3 },
+  term: { glossary: 2.2, concept: 1.5, facts: 0.4, narrative: 0.5, wiki: 0.7, where: 0.3 },
+  rotation: { concept: 1.5, glossary: 1.5, wiki: 1.3, facts: 0.9, where: 0.4 },
+  care: { wiki: 1.4, narrative: 1.3, facts: 1.0, glossary: 0.7, where: 0.4 },
   general: {},
   'off-topic': {},
+  dropped: {},
 };
+
+/** Intents that are about the parcel or are declined: a species name in them changes nothing. */
+const NOT_ABOUT_A_SPECIES: Intent[] = ['field-fact', 'score-change', 'off-topic'];
 
 export function expandQuery(query: string, lang: Lang): string[] {
   if (lang !== 'vi' && !/[̀-ͯđĐ]/.test(query.normalize('NFD'))) return [];
@@ -92,11 +100,20 @@ export function expandQuery(query: string, lang: Lang): string[] {
 }
 
 export function analyze(store: KnowledgeStore, query: string, lang: Lang, hasContext: boolean, contextCropId?: string | null): Analysis {
-  const mentions = detectCrops(query, store.aliases);
+  // A species the crop atlas dropped can have a name that holds the name of a kept crop
+  // ("Abelmoschus manihot" and "manihot", "bush cabbage" and "cabbage"): the longer name is what
+  // was asked about, so the kept crop inside it is not linked.
+  const droppedNamed = store.findDropped(query);
+  const inside = (m: { start: number; end: number }) => droppedNamed.some((d) => d.start <= m.start && d.end >= m.end && d.end - d.start > m.end - m.start);
+  const mentions = detectCrops(query, store.aliases).filter((m) => !inside(m));
   const cropIds: string[] = [];
   for (const m of mentions) for (const id of resolveMention(m, (id) => store.isCurated(id))) if (!cropIds.includes(id)) cropIds.push(id);
   const termIds = detectTerms(query);
   const routed = routeIntent(query, { cropCount: cropIds.length, hasContext, termHit: termIds.length > 0 });
+  // No kept crop is named: the question may name a species the crop atlas dropped. It is then
+  // answered with that, not with whatever passage shares a word with the name.
+  const dropped = cropIds.length === 0 && !NOT_ABOUT_A_SPECIES.includes(routed.intent) ? droppedNamed : [];
+  if (dropped.length) return { ...routed, intent: 'dropped', query, lang, cropIds, termIds, expansion: expandQuery(query, lang), dropped };
   // A field question that names no crop is about the crop on the field.
   if ((routed.intent === 'field' || routed.intent === 'rotation' || routed.intent === 'care') && cropIds.length === 0 && contextCropId) cropIds.push(contextCropId);
   return { ...routed, query, lang, cropIds, termIds, expansion: expandQuery(query, lang) };

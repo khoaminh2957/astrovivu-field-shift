@@ -128,15 +128,17 @@ describe('with the table of the country', () => {
     expect(buildRotations(input).find((r) => r.kind === 'current')!.gaps.some((g) => g.en.startsWith('No statistic says'))).toBe(false);
   });
 
-  it('durian, a group crop in Viet Nam, stays a choice in Đắk Lắk and is marked as not known', () => {
+  it('durian, a group crop in FAOSTAT that the national statistics of Viet Nam give an area for, is a choice in Đắk Lắk and is marked common', () => {
     // No rotation of the Đắk Lắk field picks durian today (see the sequences above), so the test
     // looks where the grower can pick it: the choices for a slot of the stand.
     const vnm = countryCropsFromAtlas('VNM');
-    expect(prevalenceStatus(vnm.prevalence['durio-zibethinus'])).toBe('unknown');
+    // FAOSTAT counts durian inside a group item; the national row (data/crops/national/prevalence.csv: 178,800 ha, 1.3 % of the harvested area) gives it a level.
+    expect(vnm.prevalence['durio-zibethinus']).toMatchObject({ level: 'common', match: 'national' });
+    expect(prevalenceStatus(vnm.prevalence['durio-zibethinus'])).toBe('grown');
     const input = inputFor('daklak-coffee', vnm);
     const resilience = buildRotations(input).find((r) => r.kind === 'resilience')!;
     const durian = slotCropChoices(input, resilience, 0).find((c) => c.cropId === 'durio-zibethinus');
-    expect(durian).toMatchObject({ prevalence: 'unknown' });
+    expect(durian).toMatchObject({ prevalence: 'common' });
     expect(durian!.suitability).toBeGreaterThan(0);
   });
 
@@ -165,9 +167,15 @@ describe('the search for the most profitable sequence (docs/ECONOMICS.md, sectio
     const vnm = countryCropsFromAtlas('VNM');
     const without = profitSearchFor(inputFor('cantho-rice')).found!.noEconomics;
     const withTable = profitSearchFor(inputFor('cantho-rice', vnm)).found!.noEconomics;
-    expect([without.length, withTable.length]).toEqual([31, 20]);
+    // Six more left the list before the national yearbook was read (tomato, cucumber, eggplant, okra, ginger, cowpea):
+    // FAOSTAT has no item of theirs for Viet Nam, the yearbook counts them inside a group, so they are unknown, not absent.
+    expect([without.length, withTable.length]).toEqual([31, 26]);
     const gone = without.filter((c) => !withTable.includes(c));
-    expect(gone).toHaveLength(11);
+    expect(gone.sort()).toEqual(['cajanus-cajan', 'carthamus-tinctorius', 'cicer-arietinum', 'helianthus-annuus', 'sorghum-bicolor']);
+    for (const c of ['lycopersicon-esculentum', 'cucumis-sativus', 'solanum-melongena', 'abelmoschus-esculentus', 'zingiber-officinale', 'vigna-unguiculata']) {
+      expect(withTable, c).toContain(c);
+      expect(vnm.prevalence[c], c).toMatchObject({ level: 'unknown', match: 'national' });
+    }
     for (const c of gone) expect(prevalenceStatus(vnm.prevalence[c]), c).toBe('absent');
     // Iowa: the United States report every one of them.
     expect(profitSearchFor(inputFor('iowa-corn-soy', countryCropsFromAtlas('USA'))).found!.noEconomics).toHaveLength(13);
@@ -193,8 +201,11 @@ describe('the crop choices of a slot', () => {
   it('offer a crop the country reports none of last, and only where it suits the field', () => {
     const absent = choices.filter((c) => c.prevalence === 'absent');
     expect(absent.length).toBeGreaterThan(0);
-    // Three of the crops docs/SCORING.md, 12.4, names as unreported in Viet Nam rather than known not to be grown.
-    expect(absent.map((c) => c.cropId)).toEqual(expect.arrayContaining(['lycopersicon-esculentum', 'cucumis-sativus', 'solanum-melongena']));
+    // Sorghum and chickpea have a FAOSTAT item of their own, for which Viet Nam reports nothing.
+    expect(absent.map((c) => c.cropId)).toEqual(expect.arrayContaining(['sorghum-bicolor', 'cicer-arietinum']));
+    // Tomato, cucumber and eggplant (docs/SCORING.md, 12.4) read as absent until the national yearbook was checked:
+    // it counts them inside "vegetables", so nothing is known of them and they are offered among the others.
+    for (const id of ['lycopersicon-esculentum', 'cucumis-sativus', 'solanum-melongena']) expect(choices.find((c) => c.cropId === id), id).toMatchObject({ prevalence: 'unknown' });
     for (const c of absent) expect(c.suitability, c.cropId).toBeGreaterThanOrEqual(TRIAL_MIN_COMPATIBILITY * 100);
     const firstAbsent = choices.findIndex((c) => c.prevalence === 'absent');
     expect(choices.slice(firstAbsent).every((c) => c.prevalence === 'absent')).toBe(true);
@@ -209,13 +220,13 @@ describe('the crop choices of a slot', () => {
 
   it('a rotation the grower puts such a crop into says it is a new crop that needs a trial', () => {
     const base = buildRotations(input);
-    const res = swapRotationSeason(input, base, current, third, 'lycopersicon-esculentum')!;
+    const res = swapRotationSeason(input, base, current, third, 'sorghum-bicolor')!;
     const custom = res.rotations.find((r) => r.kind === 'custom')!;
-    expect(cropsOf(custom)).toContain('lycopersicon-esculentum');
+    expect(cropsOf(custom)).toContain('sorghum-bicolor');
     const risk = custom.risks.find((x) => x.en.startsWith('New crop, needs a trial'))!;
-    expect(risk.en).toContain('Tomato');
+    expect(risk.en).toContain('Sorghum');
     expect(risk.vi).toMatch(/^Cây mới, cần thử nghiệm/);
-    expect(risk.vi).toContain('Cà chua');
+    expect(risk.vi).toContain('Cao lương');
   });
 });
 
