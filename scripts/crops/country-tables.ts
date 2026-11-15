@@ -37,13 +37,15 @@ export function iso2ByIso3(text: string): Map<string, string> {
 
 /** The rows of one country in the form the app loads. Throws on a row the compact form cannot hold. */
 export function countryTable(iso3: string, rows: Record<string, string>[]): CountryTableFile {
-  const source = rows[0].source;
+  const source = rows.find((r) => r.match !== 'national')?.source ?? rows[0].source;
   const file: CountryTableFile = { iso3, country: rows[0].country, source, prevalence: {}, absent: [], group: { reported: [], unreported: [] } };
   for (const r of rows) {
     const level = r.level as PrevalenceLevel;
     const match = r.match as PrevalenceMatch;
     const reported = r.item_reported === 'yes';
-    if (GROWN.includes(level)) {
+    // A full record for a crop with a quantity, and for a row that names its own source (match
+    // national, with or without a figure): the two lists below can only say "FAOSTAT, nothing".
+    if (GROWN.includes(level) || match === 'national' || r.source !== source) {
       const from = num(r.year_from);
       const to = num(r.year_to);
       const record: CropPrevalence = {
@@ -98,7 +100,10 @@ export function buildCountryTables(atlasDir = ATLAS, iso2: Map<string, string> =
       withoutIso2.push(iso3);
       continue;
     }
-    countries[code] = { iso3, name: file.country, hash: createHash('sha1').update(serialise(file)).digest('hex').slice(0, 8), grown: Object.keys(file.prevalence).length };
+    // `prevalence` also holds the records that name their own source, and some of those have no
+    // quantity (level unknown): only the crops with a reported quantity count as grown.
+    const grown = Object.values(file.prevalence).filter((p) => GROWN.includes(p.level)).length;
+    countries[code] = { iso3, name: file.country, hash: createHash('sha1').update(serialise(file)).digest('hex').slice(0, 8), grown };
   }
   return { files, index: { source: files.values().next().value!.source, years: [from, to], countries }, withoutIso2 };
 }

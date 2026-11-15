@@ -1,5 +1,5 @@
 import type { I18nText, ISODate } from './common';
-import type { Iso3, SourceQuality } from './country';
+import type { Iso3, PrevalenceLevel, SourceQuality } from './country';
 import type { CropSuiteSummary, FarmerPriority, SowingWindow } from './model';
 import type { BranchId } from './telemetry';
 
@@ -184,6 +184,14 @@ export interface SlotCropChoice {
   suitability: number | null;
   startMonth: number;
   cycleMonths: number;
+  /**
+   * How much of the crop the country of the parcel grows, when the model was given the country's
+   * table (`ModelInput.country`). `absent`: the country's statistics report none, so the crop is
+   * offered as a new crop that needs a trial. `unknown`: the statistics cannot tell. Left out for
+   * fallow, for a crop the grower grows that the statistics report none of, and when there is no
+   * table.
+   */
+  prevalence?: PrevalenceLevel;
 }
 
 /**
@@ -246,6 +254,27 @@ export interface PhPlan {
   caveats: I18nText[];
 }
 
+export type SoilStatus = 'optimal' | 'tolerable' | 'outside' | 'uncertain' | 'no_data';
+
+export interface SoilPlanItem {
+  metric: string;
+  status: SoilStatus;
+  title: I18nText;
+  action: I18nText;
+  rateRange: { min: number; max: number; unit: string } | null;
+  timing: I18nText;
+  verification: I18nText;
+  evidence: EvidenceItem[];
+  caveats: I18nText[];
+  needsLocalReview: boolean;
+}
+
+export interface SoilPlan {
+  items: SoilPlanItem[];
+  summary: I18nText;
+  mostLimitingFactor: string | null;
+}
+
 export interface AdvisoryReport {
   generatedAt: ISODate;
   cropId: string | null;
@@ -257,6 +286,7 @@ export interface AdvisoryReport {
   /** The selected crop read by the CropSuite method, shown next to the sowing window as a second opinion. */
   cropSuite?: CropSuiteSummary;
   ph?: PhPlan;
+  soilPlan?: SoilPlan;
   annualPlan?: AnnualPlan;
 }
 

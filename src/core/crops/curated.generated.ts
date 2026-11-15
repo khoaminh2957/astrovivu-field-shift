@@ -2067,10 +2067,10 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -2384,10 +2384,10 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -2673,10 +2673,18 @@ export const CURATED_CROPS: CropProfile[] = [
         "source": "FAOSTAT QCL"
       },
       "USA": {
-        "level": "absent",
-        "match": "exact",
-        "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.018,
+        "rankInCountry": 59,
+        "areaHa": 17740,
+        "productionT": 12465,
+        "years": [
+          2022,
+          2022
+        ],
+        "itemReported": true,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
       }
     }
   },
@@ -4699,10 +4707,18 @@ export const CURATED_CROPS: CropProfile[] = [
     ],
     "prevalence": {
       "VNM": {
-        "level": "unknown",
-        "match": "group",
-        "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "level": "common",
+        "match": "national",
+        "sharePct": 1.324,
+        "rankInCountry": 10,
+        "areaHa": 178800,
+        "productionT": 1470000,
+        "years": [
+          2024,
+          2024
+        ],
+        "itemReported": true,
+        "source": "Báo cáo thường niên thị trường Rau quả 2025 (Bộ Nông nghiệp và Môi trường / Cục Trồng trọt và Bảo vệ thực vật)"
       },
       "USA": {
         "level": "unknown",
@@ -5116,16 +5132,31 @@ export const CURATED_CROPS: CropProfile[] = [
     ],
     "prevalence": {
       "VNM": {
-        "level": "unknown",
-        "match": "group",
+        "level": "common",
+        "match": "national",
+        "sharePct": 0.715,
+        "rankInCountry": 20,
+        "areaHa": 96500,
+        "productionT": 1094100,
+        "years": [
+          2024,
+          2024
+        ],
         "itemReported": true,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
-        "level": "unknown",
-        "match": "group",
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.001,
+        "rankInCountry": 83,
+        "areaHa": 1272,
+        "years": [
+          2022,
+          2022
+        ],
         "itemReported": true,
-        "source": "FAOSTAT QCL"
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
       }
     }
   },
@@ -5392,7 +5423,36 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Fast, thirsty and shallow-rooted: the first crop to show water stress and wind damage.",
       "vi": "Lớn nhanh, cần nhiều nước, rễ nông: là cây lộ thiếu nước và gãy đổ do gió sớm nhất."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "national",
+        "sharePct": 1.071,
+        "rankInCountry": 15,
+        "areaHa": 144600,
+        "productionT": 2997900,
+        "years": [
+          2024,
+          2024
+        ],
+        "itemReported": true,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.001,
+        "rankInCountry": 84,
+        "areaHa": 498,
+        "years": [
+          2022,
+          2022
+        ],
+        "itemReported": true,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "citrus-grandis",
@@ -5679,7 +5739,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Deep-rooted perennial legume: fixes its own nitrogen and builds soil, but uses more water than almost any field crop.",
       "vi": "Cây họ đậu lâu năm rễ sâu: tự cố định đạm và bồi dưỡng đất, nhưng tốn nước hơn hầu hết cây trồng cạn."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "major",
+        "match": "national",
+        "sharePct": 6.01,
+        "rankInCountry": 4,
+        "areaHa": 5939230,
+        "productionT": 45552470,
+        "years": [
+          2025,
+          2025
+        ],
+        "itemReported": true,
+        "source": "USDA NASS Crop Production 2025 Summary (ISSN 1057-7823)"
+      }
+    }
   },
   {
     "id": "sorghum-x-drummondii",
@@ -5799,7 +5881,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Summer annual forage that makes a lot of feed on half the water of alfalfa.",
       "vi": "Cỏ thức ăn hằng năm vụ hè, cho nhiều chất xanh với khoảng một nửa lượng nước của cỏ linh lăng."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.004,
+        "rankInCountry": 74,
+        "areaHa": 4386,
+        "productionT": 7344,
+        "years": [
+          2022,
+          2022
+        ],
+        "itemReported": true,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "crotalaria-juncea",
@@ -6089,7 +6193,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "trifolium-pratense",
@@ -6212,7 +6330,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.006,
+        "rankInCountry": 72,
+        "areaHa": 5812,
+        "productionT": 4172,
+        "years": [
+          2022,
+          2022
+        ],
+        "itemReported": true,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "trifolium-incarnatum",
@@ -6343,7 +6483,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.003,
+        "rankInCountry": 75,
+        "areaHa": 3443,
+        "productionT": 3414,
+        "years": [
+          2022,
+          2022
+        ],
+        "itemReported": true,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "raphanus-sativus",
@@ -6489,10 +6651,17 @@ export const CURATED_CROPS: CropProfile[] = [
         "source": "FAOSTAT QCL"
       },
       "USA": {
-        "level": "unknown",
-        "match": "group",
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.01,
+        "rankInCountry": 67,
+        "areaHa": 9894,
+        "years": [
+          2022,
+          2022
+        ],
         "itemReported": true,
-        "source": "FAOSTAT QCL"
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
       }
     }
   },
@@ -6616,7 +6785,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "sesbania-rostrata",
@@ -6724,7 +6907,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "arachis-pintoi",
@@ -6792,6 +6989,10 @@ export const CURATED_CROPS: CropProfile[] = [
         "opt": "high",
         "abs": "low"
       },
+      "alToxicity": {
+        "opt": "low",
+        "abs": "medium"
+      },
       "altitudeMaxM": 1400,
       "latitudeAbs": [
         18,
@@ -6853,7 +7054,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "lycopersicon-esculentum",
@@ -6988,10 +7203,10 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -7151,10 +7366,18 @@ export const CURATED_CROPS: CropProfile[] = [
         "source": "FAOSTAT QCL"
       },
       "USA": {
-        "level": "unknown",
-        "match": "group",
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.019,
+        "rankInCountry": 58,
+        "areaHa": 18413,
+        "productionT": 598810,
+        "years": [
+          2025,
+          2025
+        ],
         "itemReported": true,
-        "source": "FAOSTAT QCL"
+        "source": "USDA NASS Vegetables 2025 Summary (ISSN 0884-6413)"
       }
     }
   },
@@ -7300,10 +7523,18 @@ export const CURATED_CROPS: CropProfile[] = [
         "source": "FAOSTAT QCL"
       },
       "USA": {
-        "level": "unknown",
-        "match": "group",
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.046,
+        "rankInCountry": 42,
+        "areaHa": 45163,
+        "productionT": 1737848,
+        "years": [
+          2025,
+          2025
+        ],
         "itemReported": true,
-        "source": "FAOSTAT QCL"
+        "source": "USDA NASS Vegetables 2025 Summary (ISSN 0884-6413)"
       }
     }
   },
@@ -7436,7 +7667,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Trung tâm Khuyến nông TP. Hồ Chí Minh (Sở Nông nghiệp và Môi trường TP.HCM)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "brassica-juncea",
@@ -7570,7 +7815,28 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.004,
+        "rankInCountry": 74,
+        "areaHa": 4379,
+        "years": [
+          2022,
+          2022
+        ],
+        "itemReported": true,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "brassica-rapa-pak-choi",
@@ -7703,7 +7969,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "brassica-oleracea-var-capitata",
@@ -7996,10 +8276,10 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -8149,10 +8429,10 @@ export const CURATED_CROPS: CropProfile[] = [
     ],
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -8302,10 +8582,10 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -8453,7 +8733,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "vigna-unguiculata-ssp-sesquipedalis",
@@ -8592,7 +8886,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "cucurbita-moschata",
@@ -9026,7 +9334,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "basella-alba",
@@ -9154,7 +9476,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Văn phòng Điều phối Nông thôn mới tỉnh Hà Tĩnh (dẫn số liệu sản xuất tại tỉnh Long An)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "ocimum-basilicum",
@@ -9287,7 +9623,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Trung tâm Khuyến nông Quốc gia (Bộ Nông nghiệp và Môi trường)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "mentha-spicata-var-crispa",
@@ -9434,10 +9784,18 @@ export const CURATED_CROPS: CropProfile[] = [
         "source": "FAOSTAT QCL"
       },
       "USA": {
-        "level": "unknown",
-        "match": "group",
-        "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.005,
+        "rankInCountry": 74,
+        "areaHa": 4690,
+        "productionT": 730,
+        "years": [
+          2025,
+          2025
+        ],
+        "itemReported": true,
+        "source": "USDA NASS Crop Production 2025 Summary (ISSN 1057-7823)"
       }
     }
   },
@@ -9861,16 +10219,23 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
-        "level": "absent",
-        "match": "exact",
-        "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "level": "minor",
+        "match": "national",
+        "sharePct": 0.002,
+        "rankInCountry": 78,
+        "areaHa": 2435,
+        "years": [
+          2022,
+          2022
+        ],
+        "itemReported": true,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
       }
     }
   },
@@ -9996,7 +10361,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+      }
+    }
   },
   {
     "id": "zingiber-officinale",
@@ -10125,10 +10504,10 @@ export const CURATED_CROPS: CropProfile[] = [
     ],
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -10274,10 +10653,10 @@ export const CURATED_CROPS: CropProfile[] = [
     ],
     "prevalence": {
       "VNM": {
-        "level": "absent",
-        "match": "exact",
+        "level": "unknown",
+        "match": "national",
         "itemReported": false,
-        "source": "FAOSTAT QCL"
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
       },
       "USA": {
         "level": "minor",
@@ -10403,7 +10782,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "flags": [
       "not-in-ecocrop",
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   },
   {
     "id": "catharanthus-roseus",
@@ -10535,7 +10928,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "national",
+        "itemReported": false,
+        "source": "USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+      }
+    }
   }
 ];
 
@@ -10948,17 +11355,17 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       "region": "US",
       "yieldRegion": "United States, national average",
       "refYieldTHa": 1.547,
-      "priceUsdPerT": 842,
+      "priceUsdPerT": null,
       "costUsdPerHa": null,
       "year": 2024,
       "quality": {
         "yield": "official",
-        "price": "official",
+        "price": "none",
         "cost": "none"
       },
       "sources": [
         "yield: 1.547 t/ha (2022-2024 mean, FAOSTAT item 195 \"Cow peas, dry\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: 842 USD/t (2005, flag A, item 195 \"Cow peas, dry\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US dry cowpea producer price in FAOSTAT PP is from 2005 (842 USD/t); USDA NASS reports cowpeas only in the quinquennial Census of Agriculture",
+        "price: NOT FOUND: FAOSTAT's latest US producer price for item 195 \"Cow peas, dry\" is 842 USD/t from 2005, more than 10 years before the yield years; not used as a 2024 price. USDA NASS reports cowpeas only in the quinquennial Census of Agriculture",
         "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
       ]
     }
@@ -11181,24 +11588,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "price: $19.60/cwt; USDA NASS, Vegetables 2025 Summary (https://release.nass.usda.gov/reports/vegean26.txt)",
         "cost: NOT FOUND: no onion budget was found in the sources consulted"
       ]
-    },
-    "VN": {
-      "region": "VN",
-      "yieldRegion": "Viet Nam, national average",
-      "refYieldTHa": 3.643,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 3.643 t/ha (2022-2024 mean, FAOSTAT item 403 \"Onions and shallots, dry (excluding dehydrated)\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: NOT FOUND: FAOSTAT item 403 \"Onions and shallots, dry (excluding dehydrated)\" is shared by 4 species in the atlas (2024 item producer price 1422.5 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 4)",
-        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
-      ]
     }
   },
   "coffea-canephora": {
@@ -11218,44 +11607,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "yield: 2,969.9 kg/ha, all coffee (about 95 % robusta); FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
         "price: 86,000 VND/kg of green bean, Central Highlands, 3 Nov 2026; Báo Lào Cai (https://baolaocai.vn/gia-ca-phe-hom-nay-311-cao-nhat-86000-dongkg-ap-luc-vu-moi-gia-tang-post913400.html), read from the search result, page not opened. The FAOSTAT 2024 producer price (709 USD/t) contradicts the market and is not used",
         "cost: 60.5 million VND/ha (fertiliser 25 + other operations 35.5, all work hired; no land, no establishment) in a 3 t/ha budget for the 2021 season by Dr Trương Hồng; Công Thương 22 Dec 2022 (https://kinhte.congthuong.vn/gia-vat-tu-tang-cao-nguoi-trong-ca-phe-co-loi-khong-231902.html). Input prices have risen since"
-      ]
-    }
-  },
-  "coffea-arabica": {
-    "US": {
-      "region": "US",
-      "yieldRegion": "United States, national average",
-      "refYieldTHa": 1.209,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 1.209 t/ha (2022-2024 mean, FAOSTAT item 656 \"Coffee, green\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: NOT FOUND: FAOSTAT item 656 \"Coffee, green\" is shared by 4 Coffea species (excluded by crop_latest_prices; FAOSTAT 2024 US price is 55,997.5 USD/t green bean, while USDA NASS Noncitrus Fruits and Nuts 2025 Summary reports Hawaii coffee cherry at $2.37/lb = 5,225 USD/t in 2024)",
-        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
-      ]
-    },
-    "VN": {
-      "region": "VN",
-      "yieldRegion": "Viet Nam, national average",
-      "refYieldTHa": 2.961,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 2.961 t/ha (2022-2024 mean, FAOSTAT item 656 \"Coffee, green\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: NOT FOUND: FAOSTAT item 656 \"Coffee, green\" is shared by 4 Coffea species (excluded by crop_latest_prices) and its 2024 Viet Nam producer price (709 USD/t) contradicts the domestic market (~3,359.4 USD/t for robusta; see docs/DATABASE.md section 8)",
-        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
       ]
     }
   },
@@ -11320,24 +11671,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
     }
   },
   "persea-americana": {
-    "US": {
-      "region": "US",
-      "yieldRegion": "United States, national average",
-      "refYieldTHa": 6.889,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 6.889 t/ha (2022-2024 mean, FAOSTAT item 572 \"Avocados\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: NOT FOUND: FAOSTAT item 572 \"Avocados\" is shared by 4 species in the atlas (2024 item producer price 3020.3 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 4)",
-        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
-      ]
-    },
     "VN": {
       "region": "VN",
       "yieldRegion": "Viet Nam, national average (fruit)",
@@ -11438,24 +11771,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
     }
   },
   "citrus-grandis": {
-    "US": {
-      "region": "US",
-      "yieldRegion": "United States, national average",
-      "refYieldTHa": 24.416,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 24.416 t/ha (2022-2024 mean, FAOSTAT item 507 \"Pomelos and grapefruits\", item shared by 2 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: NOT FOUND: FAOSTAT item 507 \"Pomelos and grapefruits\" is shared by 2 species in the atlas (2024 item producer price 570.5 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 2)",
-        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
-      ]
-    },
     "VN": {
       "region": "VN",
       "yieldRegion": "Viet Nam, national average (fruit)",
@@ -11632,24 +11947,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
     }
   },
   "brassica-oleracea-var-capitata": {
-    "US": {
-      "region": "US",
-      "yieldRegion": "United States, national average",
-      "refYieldTHa": 45.893,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 45.893 t/ha (2022-2024 mean, FAOSTAT item 358 \"Cabbages\", item shared by 6 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: NOT FOUND: FAOSTAT item 358 \"Cabbages\" is shared by 6 species in the atlas (2024 item producer price 776 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 6)",
-        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
-      ]
-    },
     "VN": {
       "region": "VN",
       "yieldRegion": "Viet Nam, national average (heads)",
@@ -11694,17 +11991,17 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       "region": "US",
       "yieldRegion": "United States, national average",
       "refYieldTHa": 7.972,
-      "priceUsdPerT": 1642,
+      "priceUsdPerT": null,
       "costUsdPerHa": null,
       "year": 2024,
       "quality": {
         "yield": "official",
-        "price": "official",
+        "price": "none",
         "cost": "none"
       },
       "sources": [
         "yield: 7.972 t/ha (2022-2024 mean, FAOSTAT item 430 \"Okra\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: 1642 USD/t (1997, flag A, item 430 \"Okra\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US producer price reported in FAOSTAT PP is from 1997 (1,642 USD/t); USDA NASS Vegetables 2025 Summary does not estimate national okra price",
+        "price: NOT FOUND: FAOSTAT's latest US producer price for item 430 \"Okra\" is 1642 USD/t from 1997, more than 10 years before the yield years; not used as a 2024 price. USDA NASS Vegetables 2025 Summary does not estimate national okra price",
         "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
       ]
     }
@@ -11714,17 +12011,17 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       "region": "US",
       "yieldRegion": "United States, national average",
       "refYieldTHa": 37.606,
-      "priceUsdPerT": 610,
+      "priceUsdPerT": null,
       "costUsdPerHa": null,
       "year": 2024,
       "quality": {
         "yield": "official",
-        "price": "official",
+        "price": "none",
         "cost": "none"
       },
       "sources": [
         "yield: 37.606 t/ha (2022-2024 mean, FAOSTAT item 399 \"Eggplants (aubergines)\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: 610 USD/t (2004, flag A, item 399 \"Eggplants (aubergines)\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US eggplant producer price in FAOSTAT PP is from 2004 (610 USD/t); USDA NASS discontinued national annual eggplant price estimates",
+        "price: NOT FOUND: FAOSTAT's latest US producer price for item 399 \"Eggplants (aubergines)\" is 610 USD/t from 2004, more than 10 years before the yield years; not used as a 2024 price. USDA NASS discontinued national annual eggplant price estimates",
         "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
       ]
     }
@@ -11754,26 +12051,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       "region": "US",
       "yieldRegion": "United States, national average",
       "refYieldTHa": 32.328,
-      "priceUsdPerT": 3527,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "official",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 32.328 t/ha (2022-2024 mean, FAOSTAT item 720 \"Ginger, raw\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: 3527 USD/t (2008, flag A, item 720 \"Ginger, raw\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US raw ginger producer price in FAOSTAT PP is from 2008 (3,527 USD/t, Hawaii ginger root)",
-        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
-      ]
-    }
-  },
-  "fragaria-x-ananassa": {
-    "US": {
-      "region": "US",
-      "yieldRegion": "United States, national average",
-      "refYieldTHa": 57.575,
       "priceUsdPerT": null,
       "costUsdPerHa": null,
       "year": 2024,
@@ -11783,8 +12060,8 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "cost": "none"
       },
       "sources": [
-        "yield: 57.575 t/ha (2022-2024 mean, FAOSTAT item 544 \"Strawberries\", item shared by 2 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
-        "price: NOT FOUND: FAOSTAT item 544 \"Strawberries\" is shared by 2 species in the atlas (2024 item producer price 3152.6 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 2)",
+        "yield: 32.328 t/ha (2022-2024 mean, FAOSTAT item 720 \"Ginger, raw\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT's latest US producer price for item 720 \"Ginger, raw\" is 3527 USD/t from 2008, more than 10 years before the yield years; not used as a 2024 price",
         "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
       ]
     }

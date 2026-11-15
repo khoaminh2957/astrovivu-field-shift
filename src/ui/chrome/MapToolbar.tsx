@@ -9,7 +9,7 @@
  *                 "Hide legend / Show legend" text button.
  */
 import { type ReactNode, useEffect, useState } from 'react';
-import { Box, Compass, Expand, Focus, Gauge, Layers, LoaderCircle, LocateFixed, Minimize, Minus, Plus, Ruler, SquareDashed, X } from 'lucide-react';
+import { Box, ChevronDown, Compass, Expand, Focus, Gauge, Layers, LoaderCircle, LocateFixed, Minimize, Minus, Plus, Ruler, SlidersHorizontal, SquareDashed, X } from 'lucide-react';
 import { BRANCHES, type BranchId, pick } from '@/contracts';
 import {
   fitParcel,
@@ -34,6 +34,7 @@ import { Button, Tooltip, cn } from '@/ui/design';
 import { useSelectBranch } from '@/ui/field/MetricCards';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
 import { LayersPanel } from './LayersPanel';
+import { WeatherChip } from './Weather';
 import { useMissionUi, useNarrow } from './uiState';
 import './strings';
 
@@ -111,7 +112,7 @@ function useFullscreen(): [boolean, () => void] {
   return [on, toggle];
 }
 
-export function MapToolbar({ className }: { className?: string }) {
+export function MapToolbar({ className, workspace = false }: { className?: string; workspace?: boolean }) {
   const t = useT();
   const narrow = useNarrow();
   const view = useMapView();
@@ -120,6 +121,9 @@ export function MapToolbar({ className }: { className?: string }) {
   const setPopover = useMissionUi((s) => s.setMapPopover);
   const [fs, toggleFs] = useFullscreen();
   const [locating, setLocating] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const legendOpen = useMissionUi((s) => s.legendOpen);
+  const setLegendOpen = useMissionUi((s) => s.setLegendOpen);
 
   const measureBtn = (kind: 'distance' | 'area') => {
     if (measure.kind === kind) {
@@ -136,8 +140,8 @@ export function MapToolbar({ className }: { className?: string }) {
   };
   const layersBtn = <MapButton label={t('map.layers')} icon={<Layers />} pressed={popover === 'layers'} onClick={() => setPopover(popover === 'layers' ? null : 'layers')} />;
 
-  return (
-    <div className={cn('pointer-events-none flex gap-2', narrow ? 'items-start' : 'items-center', className)}>
+  const stacks = (
+    <div className={cn('pointer-events-none flex gap-2', workspace || narrow ? 'items-start' : 'items-center', workspace ? 'workspace-extra-tools' : className)}>
       <div className="pointer-events-auto">
         {popover === 'layers' && <LayersPanel onClose={() => setPopover(null)} />}
         {popover === 'measure' && <MeasureReadout />}
@@ -157,13 +161,16 @@ export function MapToolbar({ className }: { className?: string }) {
             </Group>
           </>
         )}
+        {!workspace && (
+          <Group>
+            <MapButton label={t('map.zoomIn')} icon={<Plus />} onClick={() => zoomBy(1)} />
+            <MapButton label={t('map.zoomOut')} icon={<Minus />} onClick={() => zoomBy(-1)} />
+          </Group>
+        )}
         <Group>
-          <MapButton label={t('map.zoomIn')} icon={<Plus />} onClick={() => zoomBy(1)} />
-          <MapButton label={t('map.zoomOut')} icon={<Minus />} onClick={() => zoomBy(-1)} />
-        </Group>
-        <Group>
-          <MapButton label={t('map.fit')} icon={<Focus />} onClick={fitParcel} />
+          {!workspace && <MapButton label={t('map.fit')} icon={<Focus />} onClick={fitParcel} />}
           {!narrow && <MapButton label={t('map.locate')} icon={<LocateFixed />} loading={locating} onClick={locate} />}
+          {workspace && <MapButton label={t(legendOpen ? 'map.legend.hide' : 'map.legend.show')} icon={<Layers />} pressed={legendOpen} onClick={() => setLegendOpen(!legendOpen)} />}
         </Group>
         {/* The compass shows the bearing and resets it. Turning is a gesture: two fingers on a touch screen, Alt + swipe on a touchpad. */}
         {!narrow && (
@@ -180,10 +187,24 @@ export function MapToolbar({ className }: { className?: string }) {
       </div>
     </div>
   );
+  if (!workspace) return stacks;
+  return (
+    <div className={className}>
+      <button className="workspace-map-button" type="button" onClick={fitParcel}><Focus size={17} aria-hidden />{t('map.fitShort')}</button>
+      <div className="workspace-zoom">
+        <button type="button" aria-label={t('map.zoomIn')} onClick={() => zoomBy(1)}><Plus size={20} aria-hidden /></button>
+        <button type="button" aria-label={t('map.zoomOut')} onClick={() => zoomBy(-1)}><Minus size={20} aria-hidden /></button>
+      </div>
+      <button className="workspace-map-button" type="button" aria-expanded={expanded} onClick={() => { if (expanded) setPopover(null); setExpanded(!expanded); }}>
+        <SlidersHorizontal size={17} aria-hidden />{t('map.tools')}
+      </button>
+      {expanded && <>{stacks}<WeatherChip className="pointer-events-none absolute top-full right-14" /></>}
+    </div>
+  );
 }
 
 /** Top-left of the map: the metric the field is coloured by (a selector) over the date of the frame shown. */
-export function MapLayerPill({ className }: { className?: string }) {
+export function MapLayerPill({ className, workspace = false }: { className?: string; workspace?: boolean }) {
   const t = useT();
   const lang = useLang();
   const paint = useParcelPaint();
@@ -194,7 +215,7 @@ export function MapLayerPill({ className }: { className?: string }) {
   const title = (b: BranchId) => pick(titles?.[b]?.title ?? BRANCH_TITLES[b], lang);
   const what = paint ? (paint.label ? pick(paint.label, lang).split(',')[0] : paint.unit || paint.key) : null;
   return (
-    <label className={cn('flex h-[41px] max-w-full min-w-0 items-center gap-2 rounded-[20px] py-1 pr-4 pl-3', DARK, className)}>
+    <label className={cn('flex h-[41px] max-w-full min-w-0 items-center gap-2 rounded-[20px] py-1 pr-4 pl-3', DARK, workspace && 'workspace-layer-control', className)}>
       <Layers size={20} strokeWidth={1.5} aria-hidden className="shrink-0" />
       <span className="flex min-w-0 flex-col">
         <span className="sr-only">{t('map.painted')}</span>
@@ -207,6 +228,7 @@ export function MapLayerPill({ className }: { className?: string }) {
         </select>
         <span className="truncate text-xs leading-4 text-ink-4">{[what, paint?.date ? fmtDate(paint.date, lang) : null].filter(Boolean).join(' · ') || '--'}</span>
       </span>
+      {workspace && <ChevronDown size={16} className="ml-auto shrink-0" aria-hidden />}
     </label>
   );
 }
@@ -235,7 +257,7 @@ function DarkStretchToggle() {
 }
 
 /** Bottom-left of the map: the legend of what the field is painted with, and the button that hides it. */
-export function MapLegend({ className }: { className?: string }) {
+export function MapLegend({ className, workspace = false }: { className?: string; workspace?: boolean }) {
   const t = useT();
   const lang = useLang();
   const paint = useParcelPaint();
@@ -252,7 +274,7 @@ export function MapLegend({ className }: { className?: string }) {
   return (
     <div className={cn('flex shrink-0 flex-col items-start gap-1', className)}>
       {open && (
-        <div className={cn('flex w-52 flex-col gap-1.5 rounded-lg px-3 py-2.5', DARK)}>
+        <div className={cn('flex w-52 flex-col gap-1.5 rounded-lg px-3 py-2.5', DARK, workspace && 'workspace-legend-card')}>
           <span className="flex items-baseline justify-between gap-2 text-xs">
             <span className="truncate font-medium">{title}</span>
             {paint.date && <span className="t-value shrink-0 font-normal text-ink-4">{fmtDate(paint.date, lang)}</span>}
@@ -268,7 +290,7 @@ export function MapLegend({ className }: { className?: string }) {
           {raster && raster.frames.length > 1 && <DarkStretchToggle />}
         </div>
       )}
-      <button
+      {!workspace && <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
@@ -276,7 +298,7 @@ export function MapLegend({ className }: { className?: string }) {
       >
         <Layers size={16} strokeWidth={1.5} aria-hidden />
         {t(open ? 'map.legend.hide' : 'map.legend.show')}
-      </button>
+      </button>}
     </div>
   );
 }

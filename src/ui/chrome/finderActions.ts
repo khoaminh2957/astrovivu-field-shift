@@ -51,10 +51,16 @@ export function openOwnField(): void {
 }
 
 /** Back to the landing: nothing open, nothing being drawn. The visitor's own field stays on offer in the search. */
-export function goHome(): void {
+export function goLanding(): void {
   const mission = useMission.getState();
+  const ui = useMissionUi.getState();
+  mission.setAskOpen(false);
   mission.cancelDraw();
-  useMissionUi.getState().setListMode('list');
+  ui.setListMode('list');
   if (mission.parcel) mission.unlockParcel();
   mission.setPhase('hero');
+  const url = new URL(window.location.href);
+  const previous = url.search;
+  for (const key of ['phase', 'sample', 'crop', 'view']) url.searchParams.delete(key);
+  if (url.search !== previous) window.history.replaceState(window.history.state, '', url);
 }

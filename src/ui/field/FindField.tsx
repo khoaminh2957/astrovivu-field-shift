@@ -89,7 +89,7 @@ function useDemoRows(): SampleParcel[] {
   return open ? [DEMO_FIELD, open] : [DEMO_FIELD];
 }
 
-function Demos({ rows, sort }: { rows: SampleParcel[]; sort: SortBy }) {
+function Demos({ rows, sort, onOpenField }: { rows: SampleParcel[]; sort: SortBy; onOpenField?: () => void }) {
   const t = useT();
   const lang = useLang();
   const lockSample = useMission((s) => s.lockSample);
@@ -111,7 +111,10 @@ function Demos({ rows, sort }: { rows: SampleParcel[]; sort: SortBy }) {
               tag={t('field.demo.tag')}
               sub={[fmtArea(p.areaHa), placeLine(p.place)].filter(Boolean).join(' · ')}
               label={t('field.demo.open', { name: p.name })}
-              onOpen={() => void lockSample(p.id)}
+              onOpen={() => {
+                if (!onOpenField || p.id !== current) void lockSample(p.id);
+                onOpenField?.();
+              }}
             />
           </li>
         ))}
@@ -274,9 +277,18 @@ export function FindField({ floating = false }: { floating?: boolean }) {
   const canSubmit = !!parseLatLon(q) || !!(chosen && chosen.label === q) || !!hits?.length;
 
   const switchWay = (v: 'address' | 'map') => {
+    const pickedAt = sel.lastPickAt;
     cancelDraw();
-    setChosen(null);
     setWay(v);
+    if (v === 'address' && pickedAt) {
+      const hit: PlaceHit = { label: sel.place?.label ?? `${fmtNum(pickedAt[1], 5)}, ${fmtNum(pickedAt[0], 5)}`, location: pickedAt, country: sel.place?.country, admin1: sel.place?.admin1 };
+      put(hit);
+      if (!sel.place) {
+        void reverseGeocode(pickedAt, lang).then((p) => p && setChosen((c) => (c && c.location === pickedAt ? { ...c, label: p.label, country: p.country, admin1: p.admin1 } : c)));
+      }
+    } else {
+      setChosen(null);
+    }
   };
   const leave = () => {
     cancelDraw();
@@ -337,7 +349,13 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       />
       {way === 'map' ? (
         <>
-          <SelectOnMapStatus control={sel} />
+          <SelectOnMapStatus
+            control={sel}
+            onAddress={() => {
+              setExpanded(true);
+              switchWay('address');
+            }}
+          />
           {draft?.closed && <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />}
         </>
       ) : (
@@ -414,7 +432,7 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       // Wide: a card on the left edge (ADD_CARD in uiState: 360 px, 16 px margins), clear of the credits under it. Narrow: a sheet in the finder's stack.
       // Between 1100 and 1362 px the centred finder box (594 px) reaches under the card's right edge, so there the card ends above the box.
       style={{ '--finder-h': `${finderH || 150}px` } as CSSProperties}
-      className="pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg min-[1100px]:max-[1362px]:max-h-[calc(100dvh-var(--finder-h)-44px)] narrow:static narrow:max-h-[45dvh] narrow:w-auto"
+      className="workspace-add-card pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg min-[1100px]:max-[1362px]:max-h-[calc(100dvh-var(--finder-h)-44px)] narrow:static narrow:max-h-[45dvh] narrow:w-auto"
     >
       {step}
     </section>
@@ -422,7 +440,7 @@ export function FindField({ floating = false }: { floating?: boolean }) {
 }
 
 /** The list panel: title, total and sort, your field, the demo field, then the two cards. */
-export function FieldList() {
+export function FieldList({ onOpenField }: { onOpenField?: () => void }) {
   const t = useT();
   const parcel = useMission((s) => s.parcel);
   const setPhase = useMission((s) => s.setPhase);
@@ -464,11 +482,15 @@ export function FieldList() {
             current={ownOpen}
             sub={[fmtArea(own.areaHa), placeLine(own.place)].filter(Boolean).join(' · ')}
             label={own.name}
-            onOpen={() => (ownOpen ? setPhase('locked') : void lockParcel(own))}
+            onOpen={() => {
+              if (ownOpen) setPhase('locked');
+              else void lockParcel(own);
+              onOpenField?.();
+            }}
           />
         </section>
       )}
-      <Demos rows={demos} sort={sort} />
+      <Demos rows={demos} sort={sort} onOpenField={onOpenField} />
       <div className="mx-3 flex min-h-56 flex-1 flex-col items-center justify-center gap-2 rounded-sm bg-surface-2 p-4 text-center">
         <SquarePlus size={24} strokeWidth={1.5} aria-hidden className="mb-2 text-ink-1" />
         <h3 className="text-md leading-[19px] font-medium text-ink-1">{t('field.add.title')}</h3>

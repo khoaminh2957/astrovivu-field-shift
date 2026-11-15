@@ -29,6 +29,7 @@ commonness_local,6
 curated_crops,73
 curated_kept,73
 curated_only_ids,amaranthus-tricolor;arachis-pintoi;basella-alba;brassica-juncea;brassica-rapa-pak-choi;catharanthus-roseus;cymbopogon-citratus;ipomoea-aquatica;medicago-sativa;momordica-charantia;mucuna-pruriens;musa-acuminata;ocimum-basilicum;sesbania-rostrata;sorghum-x-drummondii;tagetes-erecta;trifolium-incarnatum;trifolium-pratense;vicia-villosa-ssp-villosa;vigna-radiata;vigna-unguiculata-ssp-sesquipedalis
+urban_candidates,106
 faostat_crop_items,157
 faostat_items_single,128
 faostat_items_group,29
@@ -37,10 +38,15 @@ faostat_countries,198
 faostat_areas_dropped,36
 faostat_latest_year,2024
 faostat_window,2015-2024
-crop_country_rows,72666
-crop_country_rows_present,11399
-crop_country_rows_absent,21271
-crop_country_rows_unknown,39996
+crop_country_rows,72706
+crop_country_rows_present,11416
+crop_country_rows_absent,21260
+crop_country_rows_unknown,40030
+crop_country_rows_national,59
+crop_country_rows_national_with_figure,17
+crop_country_rows_national_without_figure,42
+national_rows_read,76
+national_rows_ignored,0
 item_country_rows,9358
 spam_crops,46
 spam_crops_individual,36

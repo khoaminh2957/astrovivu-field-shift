@@ -8,13 +8,27 @@ import { create } from 'zustand';
 import type { Parcel } from '@/contracts';
 
 export type MapPopover = 'layers' | 'measure' | null;
-/** `overview` is the living farm, which also holds what the rotation tab showed. */
 export type FieldTab = 'overview' | 'soil' | 'data';
+/**
+ * What the decision steps show. ② Rotation: the farm stage, the comparison of strategies, the plan
+ * of the year. ③ Dossier: how the answer was reached, on one sheet. Both live in the advisory phase.
+ */
+export type AdvisoryView = 'farm' | 'compare' | 'plan' | 'dossier';
+export const ADVISORY_VIEWS: AdvisoryView[] = ['farm', 'compare', 'plan', 'dossier'];
+
+/** A deep link may name the view (`?view=compare`); anything else opens on the farm. */
+function viewFromUrl(): AdvisoryView {
+  if (typeof window === 'undefined') return 'farm';
+  const v = new URLSearchParams(window.location.search).get('view');
+  return ADVISORY_VIEWS.includes(v as AdvisoryView) ? (v as AdvisoryView) : 'farm';
+}
 
 export interface MissionUiState {
+  advisoryView: AdvisoryView;
+  setAdvisoryView(view: AdvisoryView): void;
   /** Soil-and-practice section expanded (the older single-column summary). */
   overrideOpen: boolean;
-  /** Tab of the field panel: how the field is, what the grower knows of it, what to grow, where the numbers come from. */
+  /** Tab of the field panel: how the field is, what the grower knows of it, where the numbers come from. */
   fieldTab: FieldTab;
   setFieldTab(tab: FieldTab): void;
   /** Fields (by id) whose three opening questions the visitor closed; they stay closed for the session. */
@@ -79,6 +93,8 @@ function storeFold(folded: boolean): void {
 }
 
 export const useMissionUi = create<MissionUiState>()((set) => ({
+  advisoryView: viewFromUrl(),
+  setAdvisoryView: (advisoryView) => set({ advisoryView }),
   overrideOpen: false,
   fieldTab: 'overview',
   setFieldTab: (fieldTab) => set({ fieldTab }),

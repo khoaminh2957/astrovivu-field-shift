@@ -28,7 +28,7 @@ import { encodeCatalog } from '../src/core/crops/codec';
 import { slugify } from '../src/core/crops/text';
 import type { EconRegion, ReferenceEconomics, ReferenceTable } from '../src/core/economics/types';
 import { readEconomics, readPrevalence, toCropPrevalence } from './crops/atlas-tables';
-import { DEFAULT_REGION_ORDER, FX_DATE, FX_SOURCE, PREFER_VN, VND_PER_USD } from './crops/economics';
+import { DEFAULT_REGION_ORDER, FX_DATE, FX_SOURCE, PREFER_VN, REFERENCE_ECONOMICS, VND_PER_USD } from './crops/economics';
 import { FIELD_CROPS } from './crops/overlay-field';
 import { GARDEN_CROPS } from './crops/overlay-garden';
 import { PERENNIAL_AND_COVER_CROPS } from './crops/overlay-perennial';
@@ -209,7 +209,7 @@ export const CURATION_NOTES: Record<string, string[]> = ${JSON.stringify(curatio
   // --------------------------------------------------------------------------------- cleaning log
   fs.mkdirSync(path.dirname(OUT_LOG), { recursive: true });
   fs.writeFileSync(OUT_LOG, cleaningLog(cleaned.events, cleaned.stats, curated, curationNotes, rest.length));
-  fs.writeFileSync(OUT_CSV, curatedCsv(curated, referenceEconomics));
+  fs.writeFileSync(OUT_CSV, curatedCsv(curated, REFERENCE_ECONOMICS));
 
   const econRecordCount = Object.values(referenceEconomics).reduce((n, r) => n + Object.keys(r).length, 0);
   const kb = (f: string) => `${Math.round(fs.statSync(f).size / 1024)} kB`;

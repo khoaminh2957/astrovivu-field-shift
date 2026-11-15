@@ -141,6 +141,46 @@ export function fitZoom(ring: LngLat[], lat: number, view: Viewport, padding: Pa
   return zoomForMetresPerPixel(mpp, lat);
 }
 
+/** At a pitched view the near edge grows more than the far edge. Centre the projected outline. */
+export function centerParcelOutline(ring: LngLat[], pose: CameraPose, viewportHeight: number): LngLat {
+  if (!ring.length) return pose.center;
+  const [lng, lat] = pose.center;
+  const degrees = metresPerDegree(lat);
+  const mpp = metresPerPixel(pose.zoom, lat);
+  const bearing = pose.bearing * RAD;
+  const pitch = pose.pitch * RAD;
+  const cosB = Math.cos(bearing);
+  const sinB = Math.sin(bearing);
+  const cosP = Math.cos(pitch);
+  const sinP = Math.sin(pitch);
+  const distance = viewportHeight / (2 * Math.tan(DEFAULT_FOV * RAD / 2));
+  const pixels = ring.map(([x, y]) => {
+    const east = ((((x - lng) % 360) + 540) % 360 - 180) * degrees.lng / mpp;
+    const south = (lat - y) * degrees.lat / mpp;
+    return [east * cosB + south * sinB, -east * sinB + south * cosB];
+  });
+  let right = 0;
+  let down = 0;
+  for (let pass = 0; pass < 2; pass++) {
+    let left = Infinity, top = Infinity, farRight = -Infinity, bottom = -Infinity;
+    for (const [x, y] of pixels) {
+      const scale = distance / Math.max(distance / 4, distance - (y - down) * sinP);
+      const screenX = (x - right) * scale;
+      const screenY = (y - down) * cosP * scale;
+      left = Math.min(left, screenX);
+      farRight = Math.max(farRight, screenX);
+      top = Math.min(top, screenY);
+      bottom = Math.max(bottom, screenY);
+    }
+    right += (left + farRight) / 2;
+    down += (top + bottom) / (2 * cosP);
+  }
+  return [
+    lng + (right * cosB - down * sinB) * mpp / degrees.lng,
+    lat - (right * sinB + down * cosB) * mpp / degrees.lat,
+  ];
+}
+
 /** Great-circle angle between two points, degrees. */
 export function angularDistance(a: LngLat, b: LngLat): number {
   const dLat = (b[1] - a[1]) * RAD;

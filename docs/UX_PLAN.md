@@ -200,20 +200,22 @@ Thửa Iowa: 2.240 px. Thửa Nevada (bảy mục lời khuyên): 2.412 px, tứ
 | Hai thứ tiếng | không còn chuỗi tiếng Anh nào ở chế độ tiếng Việt |
 | Tương phản | chữ trắng trên nền xanh lá hiện 2,87:1; nâng lên mức đạt chuẩn hoặc đổi sang xanh đậm |
 
-### U11. Nông trại sống thay thẻ Tổng quan và thẻ Luân canh (bản đầu đã xong, 15/11)
+### U11. Nông trại sống ở đầu trang Luân canh (bản thứ hai, 15/11)
 
 Issue B21 (#101), tài liệu `docs/FARM.md`.
 
-- Thẻ đầu của bảng ruộng là một cảnh nông trại vẽ bằng SVG từ số liệu của ngày đang xem: trời (quang, nhiều mây, mưa, mưa lớn, nắng nóng, sương giá), cây trên luống theo giai đoạn và độ xanh, đất theo độ ẩm tầng rễ, xe thu hoạch và xe gieo theo lịch vụ.
+Bản đầu đặt nông trại vào thẻ Tổng quan của bảng ruộng và bỏ thẻ Luân canh. Chủ dự án không muốn vậy: bảng ruộng giữ nguyên bốn thẻ, nông trại thay chỗ mục "Luân canh" ở thanh bên trái. Bản thứ hai làm đúng như thế.
+
+- Mục "Luân canh" ở thanh bên đổi tên thành "Nông trại". Trang đó mở đầu bằng cảnh nông trại; phần so sánh các phương án luân canh (thẻ phương án, lịch mùa vụ, đánh đổi, bằng chứng, rủi ro) giữ nguyên ở ngay bên dưới, vì đó là phần đề bài yêu cầu.
+- Cảnh vẽ bằng SVG từ số liệu của ngày đang xem: trời (quang, nhiều mây, mưa, mưa lớn, nắng nóng, sương giá), cây trên luống theo giai đoạn và độ xanh, đất theo độ ẩm tầng rễ, xe thu hoạch và xe gieo theo lịch vụ. Nền phía sau được vẽ lại: dãy núi xa, hai lớp đồi có ruộng, cây nhiều tầng, nhà kho có bóng đổ, cối xay gió quay theo gió, hàng rào.
 - Ba mascot (Vũ trụ, Đất, Lúa) đứng ở trời, mép đất và giữa luống; mỗi con nói một câu dựng từ số liệu, có tên nguồn; luân phiên 8 giây một lượt cho tới khi người dùng chọn.
 - Đất và Lúa đề xuất các bản thử lấy từ `whatIf` và `rankCrops`: chỉnh pH, tưới, thoát nước, dời ngày gieo, đổi cây. Bản thử chạy lại điểm của cả năm trên bản sao của dữ liệu; số người dùng nhập không đổi.
-- Dưới cảnh: thanh kéo ngày (chung con trỏ với thanh dưới bản đồ), bốn số của ngày, dải thời tiết hôm nay và dự báo, cảnh báo.
-- Thẻ Luân canh bỏ khỏi thanh thẻ; phần so sánh phương án nằm ở mục "Nên trồng gì" của thẻ Nông trại. Câu tóm tắt, ảnh vệ tinh theo ngày và hai biểu đồ chuyển sang thẻ Dữ liệu.
+- Trang rộng: cảnh bên trái, mascot đang nói bên phải; bên dưới là bốn số của ngày và dải thời tiết hôm nay cùng dự báo. Thanh kéo ngày dùng chung con trỏ với thanh dưới bản đồ, và nút phát chạy được ngay trên trang này.
 - Hình mascot là hình giữ chỗ cho tới khi có hình của người phụ trách mascot (U2, U3).
 
-Đã kiểm trên trình duyệt (15/11): bốn thửa mẫu, kéo qua cả năm ở Cần Thơ (mưa, nắng nóng, đất khô, ba vụ lúa), xe thu hoạch ở Iowa đầu tháng 9, bản thử đổi cây ở Nevada (53 lên 66), bấm một ngày dự báo, màn hình 375 px không tràn ngang.
+Đã kiểm trên trình duyệt (15/11, 1440 × 900): trang Nông trại của thửa Iowa, bấm phát thì ngày tiến và ngô lớn dần; bảng ruộng có lại bốn thẻ.
 
-Còn lại: xe đi vào theo quãng đường dài hơn khi bấm phát; lời mascot cho các việc của `SoilPlan` khi #96 vào `main`; kịch bản tương tác của U4 (#40).
+Còn lại: chọn một phương án luân canh thì cảnh vẽ đúng các cây của phương án đó qua từng vụ; lời mascot cho các việc của `SoilPlan` khi #96 vào `main`; kịch bản tương tác của U4 (#40); ghép với bố cục mới của #102.
 
 ## 4. Thứ tự
 
@@ -238,3 +240,34 @@ Cuối đợt 5, cho ba người trong nhóm không làm giao diện dùng thử
 5. Hỏi trợ lý một câu về cây đang trồng.
 
 Kết quả ghi vào tài liệu này; chỗ nào hai trong ba người vấp thì sửa trước khi nộp.
+
+## 6. Bố cục ruộng và luồng Field, Rotation, Urban
+
+Kiểm tra cục bộ ngày 15/11/2026 trên trình duyệt. Vùng ngang tính từ mép bảng ruộng đến phần chừa 64 px bên phải cho cụm công cụ.
+
+| Khung | Bề rộng trước theo issue #86 | Vùng ngang sau | Kiểm tra tâm theo khung camera |
+|---|---:|---:|---|
+| 1440 × 900 | 492 px | 728 px (50,6%) | Nevada và ranh tự chọn ở Cai Lậy lệch khoảng 2 px mỗi trục hoặc ít hơn khi đã ổn định |
+| 1280 × 720 | 392 px | 640 px (50%) | Ranh mẫu Cần Thơ lệch dưới 1 px mỗi trục khi đã ổn định |
+| 426 × 690 | Tấm dưới | Không tràn ngang | Mẫu Cần Thơ mở thẳng ở giữa vùng trống, lệch dưới 2 px theo chiều dọc |
+
+- Hai lượt rà từ tọa độ Cai Lậy gồm mở ranh, đọc các thẻ, nhập pH 6,5, mở luân canh và hỏi trợ lý. Trợ lý trả lời có nguồn bằng tiếng Anh và tiếng Việt. Đã kiểm tra việc chuyển qua Urban, dùng vị trí thửa, mở hướng dẫn cây và quay lại Field. Rotation giữ tab lịch và phương án cải tạo đất sau khi đi qua Urban.
+- Chuyển trang, đổi tab, mở bảng và phản hồi nút dùng hiệu ứng ngắn. Giảm chuyển động được kiểm với `?motion=reduced`, chuyển trang có thời lượng 0. Bảng nhịp riêng của năm chuyến chuyển camera [chờ Bảo duyệt](https://github.com/quocbao271207/astrovivu-field-shift/issues/87#issuecomment-6889713952).
+- Vị trí danh sách thửa [đang chờ chốt](https://github.com/quocbao271207/astrovivu-field-shift/issues/86#issuecomment-6889713727) cùng với [nội dung từng bước](https://github.com/quocbao271207/astrovivu-field-shift/issues/84). Hai đoạn quay chính thức của #88 còn mở.
+- Đo đúng lúc camera đáp và sau 2 giây: Nevada từ nút thử mẫu và điểm ruộng trên bản đồ ở 1440 × 900 có tâm (1044, 450) đúng tâm khung, cùng zoom 15,1474. Ranh tự chọn ở 426 × 690 có tâm (185, 183) so với đích (185, 181,5), giữ nguyên tâm và zoom 16,4802. Link Nevada với giảm chuyển động ở 426 × 690 có tâm (185, 181,5) ngay khung đầu và giữ nguyên sau 2 giây.
+
+### Home và thời tiết
+
+Home hiển thị thửa đang mở, diện tích, khu vực, các số liệu thời tiết mới nhất và lối vào Thửa ruộng, Thời tiết, Luân canh, Đô thị. Chỉ nút A đưa về màn đầu. Trang Thời tiết dùng dữ liệu của thửa đang mở, gồm nhiệt cao/thấp, mưa, gió, dự báo theo ngày, lịch sử 7 ngày và rủi ro có trong nguồn. Giá trị thiếu hiển thị dấu gạch, còn số liệu cũ, đã lưu hoặc mô phỏng có nhãn.
+
+Thanh điều hướng rộng 60 px trên desktop và cao 54 px trên điện thoại. Đã thử từ thửa Nevada ở 1440 × 900 (EN) và Cần Thơ ở 426 × 690 (VI), gồm Home giữ thửa, chuyển hai tab thời tiết và A trở về màn tìm thửa ban đầu. [Năm điểm rà luồng đã gửi ở #88](https://github.com/quocbao271207/astrovivu-field-shift/issues/88#issuecomment-6890112672).
+
+### U12. Năm cải tiến từ lượt rà luồng người mới (#88, 15/11)
+
+| Mục | Vấn đề | Cách sửa đã cài | Kiểm tra (`1440 × 900` EN & `426 × 690` VI) |
+|---|---|---|---|
+| 1. Nhận ranh (`SelectOnMap.tsx`, `FindField.tsx`) | Khi đang đọc ảnh Sentinel-2 (`detecting`), người dùng không có lối tắt để tự chấm 4 góc hoặc nhập diện tích ngay tại điểm vừa bấm. | Hiện nút **Tự chấm 4 góc trên bản đồ** và **Nhập địa chỉ và diện tích** ngay trong trạng thái `detecting`; giữ tọa độ vừa bấm (`lastPickAt`) để đặt sẵn ô vuông ranh khi chuyển sang nhập diện tích. | Chuyển được bằng 1 thao tác ngay lúc đang tải và giữ nguyên điểm vừa chọn trên bản đồ. |
+| 2. Nhãn thời điểm cảnh báo ở Tổng quan (`OverviewTab.tsx`) | Khi thửa có cả cảnh báo rủi ro và danh sách biến động gần ngày xem, người đọc khó phân biệt cảnh báo đang diễn ra tại ngày xem với cảnh báo dự báo sắp tới. | Thêm nhãn ngắn **Cảnh báo tại ngày xem** / **Cảnh báo dự báo** (`field.risk.active` / `field.risk.upcoming`) và tiêu đề phụ **Điều gì đã thay đổi** (`field.changed`) tách biệt danh sách biến động. | Đọc rõ dòng nào áp dụng cho ngày đang xem và dòng nào là dự báo ở cả tiếng Anh và tiếng Việt. |
+| 3. Trả tiêu điểm khi đóng trợ lý (`src/ui/ask/index.tsx`) | Đóng trợ lý bằng `Escape` hoặc nút `X` từng làm tiêu điểm rơi về `document.body`. | Lưu phần tử kích hoạt trong `triggerRef` khi mở và trả tiêu điểm (`focus({ preventScroll: true })`) khi đóng. | Mở bằng bàn phím, đóng bằng `Escape` hoặc nút đóng, tiêu điểm quay về nút `Hỏi / Ask`. |
+| 4. Giữ lựa chọn ở trang Nông trại / Luân canh (`src/ui/chrome/index.tsx`) | Chuyển sang trang khác (như Đô thị hoặc Thời tiết) rồi quay lại làm mất phương án và thẻ đang xem của cùng thửa. | Giữ `AdvisoryPanel` đã khởi tạo theo `parcelId` (`hidden={!advisory}`) khi chuyển qua các trang trong cùng phiên của thửa. | Chọn phương án và thẻ lịch mùa vụ, sang Đô thị rồi quay lại, lựa chọn còn nguyên. |
+| 5. Dùng vị trí thửa ở trang Đô thị (`src/ui/urban/index.tsx`) | Đang mở một thửa ruộng nhưng sang trang Đô thị phải tìm lại địa điểm từ đầu. | Thêm nút **Dùng vị trí thửa ruộng** (`urban.useFieldLocation`) lấy `parcel.centroid` và giữ trạng thái trang Đô thị (`visitedUrban`) trong phiên. | Bấm 1 lần để nạp khí hậu từ vị trí thửa đang mở; đổi mức nắng, chuyển trang rồi quay lại vẫn giữ nguyên. |

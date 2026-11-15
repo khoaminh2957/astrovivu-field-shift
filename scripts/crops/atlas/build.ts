@@ -20,8 +20,10 @@ import { cleanSpecies, type AtlasSpecies } from './ecocrop';
 import { readQcl } from './faostat';
 import { SOURCES, ensureSources, md5File } from './fetch';
 import { COMMONNESS, LEVEL, WINDOW, commonnessFor, latestMean, levelFor, rankOf, type Mean } from './levels';
+import { DEFAULT_NATIONAL_FILE, nationalSourcesUsed, readNational, resolveCropCountryRow } from './national';
 import { readSpamHarvestedArea, type SpamRegion } from './spam';
 import { taxonKey } from './taxa';
+import { urbanCandidateRow } from './urban';
 import { buildXlsx, countCells, type Sheet } from './xlsx';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -437,6 +439,12 @@ async function main() {
   });
 
   // ---------------------------------------------------------------------------------------------
+  // urban_candidates.csv: one row per crop of crops.csv, in its order. A file of its own because
+  // the market database mirrors crops.csv column for column.
+  // ---------------------------------------------------------------------------------------------
+  const urbanRows: Cell[][] = kept.map((k) => urbanCandidateRow(k.id, k.s));
+
+  // ---------------------------------------------------------------------------------------------
   // item_country.csv and items.csv
   // ---------------------------------------------------------------------------------------------
   const itemCountryRows: Cell[][] = [];
@@ -494,7 +502,14 @@ async function main() {
   // ---------------------------------------------------------------------------------------------
   // crop_country.csv
   // ---------------------------------------------------------------------------------------------
+  const national = readNational(
+    DEFAULT_NATIONAL_FILE,
+    new Set(kept.map((k) => k.id)),
+    new Set(countryList.map((c) => c.iso3)),
+  );
   const cropCountryRows: Cell[][] = [];
+  /** National rows that changed nothing, because FAOSTAT reports the crop in the country: listed in the report. */
+  const nationalIgnored: string[] = [];
   interface CountryCrop {
     id: string;
     areaHa: number | null;
@@ -504,43 +519,28 @@ async function main() {
   const cropsOfCountry = new Map<string, CountryCrop[]>(countryList.map((c) => [c.iso3, []]));
   const possibleOfCountry = new Map<string, string[]>(countryList.map((c) => [c.iso3, []]));
   for (const k of kept) {
-    if (k.match === 'exact') {
-      for (const c of countryList) {
-        const q = cropIn(k.items, c.iso3);
-        if (!q) {
-          // The country reports crops to FAOSTAT and none of this crop's items is above zero there.
-          cropCountryRows.push([k.id, c.iso3, c.name, list(k.items), k.match, 'no', null, null, null, null, null, null, null, 'absent', FAOSTAT_SOURCE]);
-          continue;
-        }
-        const share = q.areaHa != null && c.totalAreaHa > 0 ? (q.areaHa / c.totalAreaHa) * 100 : null;
-        const others = [...c.itemAreas].filter(([code]) => !k.items.includes(code)).map(([, a]) => a);
-        const level = levelFor(q.areaHa, share, q.productionT);
-        cropCountryRows.push([
-          k.id,
-          c.iso3,
-          c.name,
-          list(q.codes),
-          k.match,
-          'yes',
-          q.areaHa != null ? Math.round(q.areaHa) : null,
-          q.productionT != null ? Math.round(q.productionT) : null,
-          q.yieldTHa != null ? round(q.yieldTHa, 3) : null,
-          q.yearFrom,
-          q.yearTo,
-          share != null ? round(share, 3) : null,
-          q.areaHa != null ? rankOf(q.areaHa, others) : null,
-          level,
-          FAOSTAT_SOURCE,
-        ]);
-        cropsOfCountry.get(c.iso3)!.push({ id: k.id, areaHa: q.areaHa, productionT: q.productionT, level });
+    for (const c of countryList) {
+      const resolved = resolveCropCountryRow({
+        cropId: k.id,
+        match: k.match,
+        items: k.items,
+        primary: k.primary,
+        iso3: c.iso3,
+        countryName: c.name,
+        totalAreaHa: c.totalAreaHa,
+        itemAreas: c.itemAreas,
+        faostat: k.match === 'exact' ? cropIn(k.items, c.iso3) : null,
+        groupItemReported: k.match === 'group' && k.primary != null ? produces(stats.get(k.primary)?.get(c.iso3)) : false,
+        national: national.get(`${k.id}|${c.iso3}`),
+      });
+      if (!resolved) continue;
+      cropCountryRows.push(resolved.row);
+      if (resolved.nationalIgnored) nationalIgnored.push(`${k.id} ${c.iso3} (FAOSTAT level ${resolved.level})`);
+      if (resolved.inCountryCrops) {
+        cropsOfCountry.get(c.iso3)!.push({ id: k.id, areaHa: resolved.areaHa, productionT: resolved.productionT, level: resolved.level });
       }
-    } else if (k.match === 'group' && k.primary != null) {
-      // A group item's quantities belong to the item (item_country.csv), never to one of its species:
-      // the species is `unknown` everywhere, and the row only says whether the country reports the item.
-      for (const c of countryList) {
-        const reported = produces(stats.get(k.primary)?.get(c.iso3));
-        cropCountryRows.push([k.id, c.iso3, c.name, String(k.primary), k.match, reported ? 'yes' : 'no', null, null, null, null, null, null, null, 'unknown', FAOSTAT_SOURCE]);
-        if (reported) possibleOfCountry.get(c.iso3)!.push(k.id);
+      if (resolved.inPossibleCrops) {
+        possibleOfCountry.get(c.iso3)!.push(k.id);
       }
     }
   }
@@ -681,6 +681,13 @@ async function main() {
     const f = fetched.get(s.id)!;
     return [s.id, s.title, s.publisher, s.url || s.file, s.landing, s.licence, f.accessed, s.url ? `.cache/atlas/raw/${s.file}` : s.file, f.sha256, f.bytes, rowsUsed.get(s.id) ?? ''];
   });
+  // The publications of the national rows. The build holds no copy of them (the figures were read
+  // into data/crops/national/prevalence.csv by hand), so they have no checksum and no size.
+  const nationalSources = nationalSourcesUsed(national);
+  const nationalFile = path.relative(ROOT, DEFAULT_NATIONAL_FILE).split(path.sep).join('/');
+  for (const s of nationalSources) {
+    sourceRows.push([s.id, s.title, s.publisher, s.url, s.url, s.licence, s.accessed, nationalFile, null, null, `${s.rows} row(s) of ${nationalFile}, ${s.rowsWithFigure} with a figure`]);
+  }
   const columnRows: Cell[][] = COLUMNS.map((c: ColumnDoc) => [c.table, c.column, c.en, c.vi, c.unit, c.source, c.rule]);
 
   const count = <T>(xs: readonly T[], f: (x: T) => boolean) => xs.filter(f).length;
@@ -708,6 +715,7 @@ async function main() {
     ['curated_crops', curatedRows.length],
     ['curated_kept', curatedKept.length],
     ['curated_only_ids', list(curatedKept.filter((k) => k.evidence.includes('curated-only')).map((k) => k.id))],
+    ['urban_candidates', count(urbanRows, (r) => r[cols('urban_candidates').indexOf('urban_candidate')] === 'yes')],
     ['faostat_crop_items', cropItems.length],
     ['faostat_items_single', count(cropItems, (i) => xw.itemClass.get(i.code)!.class === 'single')],
     ['faostat_items_group', count(cropItems, (i) => xw.itemClass.get(i.code)!.class === 'group')],
@@ -720,6 +728,12 @@ async function main() {
     ['crop_country_rows_present', count(cropCountryRows, (r) => r[CC.level] !== 'absent' && r[CC.level] !== 'unknown')],
     ['crop_country_rows_absent', count(cropCountryRows, (r) => r[CC.level] === 'absent')],
     ['crop_country_rows_unknown', count(cropCountryRows, (r) => r[CC.level] === 'unknown')],
+    // match = national says where the row comes from, not that it has a quantity: the two parts are counted apart.
+    ['crop_country_rows_national', count(cropCountryRows, (r) => r[CC.match] === 'national')],
+    ['crop_country_rows_national_with_figure', count(cropCountryRows, (r) => r[CC.match] === 'national' && r[CC.level] !== 'unknown')],
+    ['crop_country_rows_national_without_figure', count(cropCountryRows, (r) => r[CC.match] === 'national' && r[CC.level] === 'unknown')],
+    ['national_rows_read', national.size],
+    ['national_rows_ignored', nationalIgnored.length],
     ['item_country_rows', itemCountryRows.length],
     ['spam_crops', spamCrops.length],
     ['spam_crops_individual', count(spamCrops, (c) => c.class === 'individual')],
@@ -737,6 +751,7 @@ async function main() {
   // ---------------------------------------------------------------------------------------------
   const tables: { name: string; columns: string[]; rows: Cell[][] }[] = [
     { name: 'crops', columns: cols('crops'), rows: cropRows },
+    { name: 'urban_candidates', columns: cols('urban_candidates'), rows: urbanRows },
     { name: 'crop_country', columns: cols('crop_country'), rows: cropCountryRows },
     { name: 'item_country', columns: cols('item_country'), rows: itemCountryRows },
     { name: 'country_crops', columns: cols('country_crops'), rows: countryRows },
@@ -763,6 +778,7 @@ async function main() {
     ['Date', `Sources accessed ${accessed}. FAOSTAT years ${minYear}-${qcl.maxYear} (mean of the latest ${WINDOW.years} years with data); MapSPAM circa 2020.`],
     ['Principle', 'Every value is copied or computed from a named source by a documented rule. Nothing was typed in from memory; an unknown is an empty cell.'],
     ['Sheet crops', `${kept.length} crops kept out of ${species.length} EcoCrop species: requirements (EcoCrop), FAOSTAT item, match, MapSPAM crop, evidence, commonness.`],
+    ['Sheet urban_candidates', 'One row per crop of the sheet crops: whether the EcoCrop rule of scripts/crops/atlas/urban.ts selects it as an urban / container candidate, and the clause that matched.'],
     ['Sheet crop_country', `One row per crop and country for crops with their own FAOSTAT item (match = exact): area, production, share, rank, level; level = unknown for crops that are part of a group item. The ${count(cropCountryRows, (r) => r[levelIdx] === 'absent')} rows with level = absent are in crop_country.csv only.`],
     ['Sheet item_country', 'FAOSTAT quantities per item and country, including group items (n.e.c., several genera), whose area must not be read as one species.'],
     ['Sheet country_crops', 'One row per country: what is grown there, ordered by harvested area.'],
@@ -775,6 +791,7 @@ async function main() {
     ['level', `major: at least ${LEVEL.majorPct} % of the country's harvested area; common: at least ${LEVEL.commonPct} %; minor: any area below that; present: production reported without area; absent: FAOSTAT covers the country and reports nothing above zero; unknown: group item.`],
     ['commonness', `global: at least ${COMMONNESS.global.countries} producing countries and ${COMMONNESS.global.areaHa} ha; widespread: ${COMMONNESS.widespread.countries} and ${COMMONNESS.widespread.areaHa} ha; regional: ${COMMONNESS.regional.countries} and ${COMMONNESS.regional.areaHa} ha; local: less.`],
     ...SOURCES.map((s): Cell[] => [`Source ${s.id}`, `${s.title}. ${s.publisher}. ${s.landing}. Licence: ${s.licence}`]),
+    ...nationalSources.map((s): Cell[] => [`Source ${s.id}`, `${s.title}. ${s.publisher}. ${s.url}. Licence: ${s.licence}`]),
     ['MapSPAM notice', 'This data was provided by the International Food Policy Research Institute (IFPRI). IFPRI bears no responsibility for the analyses or interpretations of the data presented here.'],
     ['FAOSTAT citation', `FAO. ${qcl.maxYear + 1}. FAOSTAT: Crops and livestock products. Accessed on ${accessed}. https://www.fao.org/faostat/en/#data/QCL Licence: CC-BY-4.0.`],
   ];
@@ -823,6 +840,7 @@ async function main() {
     }
   };
   for (const id of ['durio-zibethinus', 'abelmoschus-manihot', 'oryza-sativa', 'zea-mays', 'glycine-max', 'coffea-canephora', 'medicago-sativa', 'ipomoea-batatas']) show(id);
+  report.push(`national rows ignored (FAOSTAT already reports the crop in the country, the row stays FAOSTAT's): ${nationalIgnored.join('; ') || 'none'}`);
   for (const t of tables) report.push(`${t.name}.csv: ${t.rows.length} rows, ${fs.statSync(path.join(OUT, `${t.name}.csv`)).size} bytes`);
   report.push(`astrovivu-crop-atlas.xlsx: ${fs.statSync(path.join(CACHE, 'astrovivu-crop-atlas.xlsx')).size} bytes`);
   report.push(`FAOSTAT areas without ISO3 (dropped): ${droppedAreas.join('; ')}`);

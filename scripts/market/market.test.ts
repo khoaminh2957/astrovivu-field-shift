@@ -114,7 +114,13 @@ describe('atlas rows', () => {
     const rice = atlas.crops.find((c) => c.crop_id === 'oryza-sativa');
     expect(rice).toMatchObject({ scientific_name: 'Oryza sativa', match: 'exact', faostat_item_code: 27, curated: true, temp_opt_min_c: 20, ph_opt_min: 5.5 });
     // No value in the atlas is an empty string: an unknown is null.
-    for (const table of [atlas.crops, atlas.items, atlas.cropCountry]) for (const row of table) for (const v of Object.values(row)) expect(v).not.toBe('');
+    // Collected first and checked once: one `expect` per cell (about a million) took more than 20 s on a busy Windows laptop.
+    const empty: string[] = [];
+    for (const [name, table] of [['crops', atlas.crops], ['items', atlas.items], ['crop_country', atlas.cropCountry]] as const)
+      table.forEach((row, i) => {
+        for (const [col, v] of Object.entries(row)) if (v === '') empty.push(`${name} row ${i + 1} ${col}`);
+      });
+    expect(empty).toEqual([]);
     const viet = atlas.cropCountry.find((r) => r.crop_id === 'oryza-sativa' && r.iso3 === 'VNM');
     expect(viet).toMatchObject({ country: 'Viet Nam', match: 'exact', item_reported: true, level: 'major' });
     expect(typeof viet?.area_ha).toBe('number');
