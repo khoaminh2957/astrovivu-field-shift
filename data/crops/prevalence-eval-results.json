@@ -1,0 +1,2308 @@
+{
+ "generatedBy": "scripts/crops/evaluate-prevalence.ts",
+ "design": {
+  "labels": "crop atlas, exact crops; grown = major or common, not grown = absent; minor and present left out",
+  "sites": "data/crops/validation/mirca-os-2015-sites.json (MIRCA-OS validation sites) and the demo fields daklak-coffee, cantho-rice",
+  "score": "assessCrop(...).bestCompatibility, at the best sowing window, rainfed and with full irrigation",
+  "countryResult": "mean ROC-AUC over the sites of the country",
+  "minPerClass": 5,
+  "bootstrap": {
+   "reps": 2000,
+   "resampling": "countries",
+   "seed": 20261115
+  }
+ },
+ "crops": {
+  "exactInAtlas": 165,
+  "scored": 158,
+  "notInCatalogue": 7
+ },
+ "sites": 155,
+ "countries": 36,
+ "summary": {
+  "current": {
+   "label": "Astrovivu-AEZ v2 as it is",
+   "rainfed": {
+    "n": 36,
+    "mean": 0.699,
+    "median": 0.693,
+    "q1": 0.619,
+    "q3": 0.788,
+    "min": 0.505,
+    "max": 0.895,
+    "above50": 1,
+    "ci95": [
+     0.665,
+     0.733
+    ]
+   },
+   "irrigated": {
+    "n": 36,
+    "mean": 0.75,
+    "median": 0.728,
+    "q1": 0.681,
+    "q3": 0.838,
+    "min": 0.593,
+    "max": 0.934,
+    "above50": 1,
+    "ci95": [
+     0.721,
+     0.778
+    ]
+   }
+  }
+ },
+ "subsets": {
+  "that are alone on their FAOSTAT item": {
+   "crops": 84,
+   "rainfed": {
+    "n": 36,
+    "mean": 0.731,
+    "median": 0.749,
+    "q1": 0.629,
+    "q3": 0.823,
+    "min": 0.529,
+    "max": 0.884,
+    "above50": 1,
+    "ci95": [
+     0.695,
+     0.765
+    ]
+   },
+   "irrigated": {
+    "n": 36,
+    "mean": 0.758,
+    "median": 0.785,
+    "q1": 0.712,
+    "q3": 0.813,
+    "min": 0.554,
+    "max": 0.913,
+    "above50": 1,
+    "ci95": [
+     0.729,
+     0.786
+    ]
+   }
+  },
+  "of the curated list": {
+   "crops": 41,
+   "rainfed": {
+    "n": 35,
+    "mean": 0.74,
+    "median": 0.745,
+    "q1": 0.663,
+    "q3": 0.829,
+    "min": 0.459,
+    "max": 0.956,
+    "above50": 0.971,
+    "ci95": [
+     0.698,
+     0.783
+    ]
+   },
+   "irrigated": {
+    "n": 35,
+    "mean": 0.786,
+    "median": 0.806,
+    "q1": 0.685,
+    "q3": 0.887,
+    "min": 0.56,
+    "max": 0.96,
+    "above50": 1,
+    "ci95": [
+     0.747,
+     0.826
+    ]
+   }
+  }
+ },
+ "perCountry": [
+  {
+   "iso3": "AGO",
+   "country": "Angola",
+   "sites": 1,
+   "grown": 14,
+   "notGrown": 109,
+   "rainfed": 0.808,
+   "irrigated": 0.717
+  },
+  {
+   "iso3": "ALB",
+   "country": "Albania",
+   "sites": 2,
+   "grown": 35,
+   "notGrown": 92,
+   "rainfed": 0.679,
+   "irrigated": 0.74
+  },
+  {
+   "iso3": "ARM",
+   "country": "Armenia",
+   "sites": 2,
+   "grown": 28,
+   "notGrown": 115,
+   "rainfed": 0.625,
+   "irrigated": 0.67
+  },
+  {
+   "iso3": "AUS",
+   "country": "Australia",
+   "sites": 1,
+   "grown": 22,
+   "notGrown": 57,
+   "rainfed": 0.734,
+   "irrigated": 0.701
+  },
+  {
+   "iso3": "AUT",
+   "country": "Austria",
+   "sites": 2,
+   "grown": 18,
+   "notGrown": 93,
+   "rainfed": 0.86,
+   "irrigated": 0.841
+  },
+  {
+   "iso3": "AZE",
+   "country": "Azerbaijan",
+   "sites": 2,
+   "grown": 25,
+   "notGrown": 81,
+   "rainfed": 0.505,
+   "irrigated": 0.593
+  },
+  {
+   "iso3": "BEL",
+   "country": "Belgium",
+   "sites": 2,
+   "grown": 27,
+   "notGrown": 107,
+   "rainfed": 0.799,
+   "irrigated": 0.838
+  },
+  {
+   "iso3": "BEN",
+   "country": "Benin",
+   "sites": 2,
+   "grown": 23,
+   "notGrown": 108,
+   "rainfed": 0.693,
+   "irrigated": 0.853
+  },
+  {
+   "iso3": "BGD",
+   "country": "Bangladesh",
+   "sites": 6,
+   "grown": 15,
+   "notGrown": 92,
+   "rainfed": 0.601,
+   "irrigated": 0.699
+  },
+  {
+   "iso3": "BRA",
+   "country": "Brazil",
+   "sites": 1,
+   "grown": 28,
+   "notGrown": 70,
+   "rainfed": 0.572,
+   "irrigated": 0.631
+  },
+  {
+   "iso3": "BTN",
+   "country": "Bhutan",
+   "sites": 3,
+   "grown": 27,
+   "notGrown": 86,
+   "rainfed": 0.589,
+   "irrigated": 0.656
+  },
+  {
+   "iso3": "CHE",
+   "country": "Switzerland",
+   "sites": 1,
+   "grown": 22,
+   "notGrown": 97,
+   "rainfed": 0.808,
+   "irrigated": 0.803
+  },
+  {
+   "iso3": "CHL",
+   "country": "Chile",
+   "sites": 2,
+   "grown": 47,
+   "notGrown": 72,
+   "rainfed": 0.652,
+   "irrigated": 0.637
+  },
+  {
+   "iso3": "CZE",
+   "country": "Czechia",
+   "sites": 1,
+   "grown": 16,
+   "notGrown": 96,
+   "rainfed": 0.726,
+   "irrigated": 0.871
+  },
+  {
+   "iso3": "DEU",
+   "country": "Germany",
+   "sites": 2,
+   "grown": 16,
+   "notGrown": 99,
+   "rainfed": 0.824,
+   "irrigated": 0.869
+  },
+  {
+   "iso3": "DNK",
+   "country": "Denmark",
+   "sites": 1,
+   "grown": 13,
+   "notGrown": 115,
+   "rainfed": 0.693,
+   "irrigated": 0.72
+  },
+  {
+   "iso3": "DZA",
+   "country": "Algeria",
+   "sites": 5,
+   "grown": 24,
+   "notGrown": 90,
+   "rainfed": 0.623,
+   "irrigated": 0.715
+  },
+  {
+   "iso3": "ESP",
+   "country": "Spain",
+   "sites": 3,
+   "grown": 25,
+   "notGrown": 50,
+   "rainfed": 0.661,
+   "irrigated": 0.736
+  },
+  {
+   "iso3": "ETH",
+   "country": "Ethiopia",
+   "sites": 10,
+   "grown": 29,
+   "notGrown": 76,
+   "rainfed": 0.643,
+   "irrigated": 0.706
+  },
+  {
+   "iso3": "FRA",
+   "country": "France",
+   "sites": 2,
+   "grown": 18,
+   "notGrown": 68,
+   "rainfed": 0.858,
+   "irrigated": 0.838
+  },
+  {
+   "iso3": "GBR",
+   "country": "United Kingdom of Great Britain and Northern Ireland",
+   "sites": 1,
+   "grown": 12,
+   "notGrown": 118,
+   "rainfed": 0.895,
+   "irrigated": 0.862
+  },
+  {
+   "iso3": "GEO",
+   "country": "Georgia",
+   "sites": 2,
+   "grown": 24,
+   "notGrown": 101,
+   "rainfed": 0.573,
+   "irrigated": 0.621
+  },
+  {
+   "iso3": "HUN",
+   "country": "Hungary",
+   "sites": 1,
+   "grown": 17,
+   "notGrown": 78,
+   "rainfed": 0.707,
+   "irrigated": 0.827
+  },
+  {
+   "iso3": "IND",
+   "country": "India",
+   "sites": 28,
+   "grown": 28,
+   "notGrown": 63,
+   "rainfed": 0.743,
+   "irrigated": 0.786
+  },
+  {
+   "iso3": "ITA",
+   "country": "Italy",
+   "sites": 3,
+   "grown": 31,
+   "notGrown": 66,
+   "rainfed": 0.657,
+   "irrigated": 0.691
+  },
+  {
+   "iso3": "JOR",
+   "country": "Jordan",
+   "sites": 2,
+   "grown": 39,
+   "notGrown": 94,
+   "rainfed": 0.535,
+   "irrigated": 0.681
+  },
+  {
+   "iso3": "KOR",
+   "country": "Republic of Korea",
+   "sites": 3,
+   "grown": 35,
+   "notGrown": 96,
+   "rainfed": 0.71,
+   "irrigated": 0.724
+  },
+  {
+   "iso3": "MEX",
+   "country": "Mexico",
+   "sites": 5,
+   "grown": 33,
+   "notGrown": 43,
+   "rainfed": 0.606,
+   "irrigated": 0.635
+  },
+  {
+   "iso3": "NGA",
+   "country": "Nigeria",
+   "sites": 10,
+   "grown": 32,
+   "notGrown": 105,
+   "rainfed": 0.719,
+   "irrigated": 0.775
+  },
+  {
+   "iso3": "NLD",
+   "country": "Netherlands (Kingdom of the)",
+   "sites": 2,
+   "grown": 25,
+   "notGrown": 108,
+   "rainfed": 0.803,
+   "irrigated": 0.857
+  },
+  {
+   "iso3": "POL",
+   "country": "Poland",
+   "sites": 2,
+   "grown": 18,
+   "notGrown": 93,
+   "rainfed": 0.784,
+   "irrigated": 0.809
+  },
+  {
+   "iso3": "RUS",
+   "country": "Russian Federation",
+   "sites": 8,
+   "grown": 17,
+   "notGrown": 85,
+   "rainfed": 0.773,
+   "irrigated": 0.876
+  },
+  {
+   "iso3": "SVK",
+   "country": "Slovakia",
+   "sites": 1,
+   "grown": 15,
+   "notGrown": 90,
+   "rainfed": 0.885,
+   "irrigated": 0.934
+  },
+  {
+   "iso3": "TUR",
+   "country": "Türkiye",
+   "sites": 6,
+   "grown": 29,
+   "notGrown": 59,
+   "rainfed": 0.603,
+   "irrigated": 0.732
+  },
+  {
+   "iso3": "USA",
+   "country": "United States of America",
+   "sites": 28,
+   "grown": 19,
+   "notGrown": 56,
+   "rainfed": 0.625,
+   "irrigated": 0.675
+  },
+  {
+   "iso3": "VNM",
+   "country": "Viet Nam",
+   "sites": 2,
+   "grown": 29,
+   "notGrown": 103,
+   "rainfed": 0.603,
+   "irrigated": 0.681
+  }
+ ],
+ "perSite": [
+  {
+   "site": "120012",
+   "iso3": "DZA",
+   "grown": 24,
+   "notGrown": 90,
+   "auc": {
+    "current": {
+     "rainfed": 0.641,
+     "irrigated": 0.726
+    }
+   }
+  },
+  {
+   "site": "120027",
+   "iso3": "DZA",
+   "grown": 24,
+   "notGrown": 90,
+   "auc": {
+    "current": {
+     "rainfed": 0.563,
+     "irrigated": 0.687
+    }
+   }
+  },
+  {
+   "site": "120035",
+   "iso3": "DZA",
+   "grown": 24,
+   "notGrown": 90,
+   "auc": {
+    "current": {
+     "rainfed": 0.588,
+     "irrigated": 0.703
+    }
+   }
+  },
+  {
+   "site": "120039",
+   "iso3": "DZA",
+   "grown": 24,
+   "notGrown": 90,
+   "auc": {
+    "current": {
+     "rainfed": 0.764,
+     "irrigated": 0.762
+    }
+   }
+  },
+  {
+   "site": "120040",
+   "iso3": "DZA",
+   "grown": 24,
+   "notGrown": 90,
+   "auc": {
+    "current": {
+     "rainfed": 0.558,
+     "irrigated": 0.699
+    }
+   }
+  },
+  {
+   "site": "1520010",
+   "iso3": "CHL",
+   "grown": 47,
+   "notGrown": 72,
+   "auc": {
+    "current": {
+     "rainfed": 0.639,
+     "irrigated": 0.649
+    }
+   }
+  },
+  {
+   "site": "1520013",
+   "iso3": "CHL",
+   "grown": 47,
+   "notGrown": 72,
+   "auc": {
+    "current": {
+     "rainfed": 0.665,
+     "irrigated": 0.625
+    }
+   }
+  },
+  {
+   "site": "2030006",
+   "iso3": "CZE",
+   "grown": 16,
+   "notGrown": 96,
+   "auc": {
+    "current": {
+     "rainfed": 0.726,
+     "irrigated": 0.871
+    }
+   }
+  },
+  {
+   "site": "2040005",
+   "iso3": "BEN",
+   "grown": 23,
+   "notGrown": 108,
+   "auc": {
+    "current": {
+     "rainfed": 0.704,
+     "irrigated": 0.851
+    }
+   }
+  },
+  {
+   "site": "2040007",
+   "iso3": "BEN",
+   "grown": 23,
+   "notGrown": 108,
+   "auc": {
+    "current": {
+     "rainfed": 0.681,
+     "irrigated": 0.855
+    }
+   }
+  },
+  {
+   "site": "2080005",
+   "iso3": "DNK",
+   "grown": 13,
+   "notGrown": 115,
+   "auc": {
+    "current": {
+     "rainfed": 0.693,
+     "irrigated": 0.72
+    }
+   }
+  },
+  {
+   "site": "2310012",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.653,
+     "irrigated": 0.699
+    }
+   }
+  },
+  {
+   "site": "2310013",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.646,
+     "irrigated": 0.705
+    }
+   }
+  },
+  {
+   "site": "2310015",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.615,
+     "irrigated": 0.701
+    }
+   }
+  },
+  {
+   "site": "2310018",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.673,
+     "irrigated": 0.739
+    }
+   }
+  },
+  {
+   "site": "2310019",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.627,
+     "irrigated": 0.699
+    }
+   }
+  },
+  {
+   "site": "2310032",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.672,
+     "irrigated": 0.689
+    }
+   }
+  },
+  {
+   "site": "2310043",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.662,
+     "irrigated": 0.737
+    }
+   }
+  },
+  {
+   "site": "2310076",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.664,
+     "irrigated": 0.691
+    }
+   }
+  },
+  {
+   "site": "2310077",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.616,
+     "irrigated": 0.679
+    }
+   }
+  },
+  {
+   "site": "2310078",
+   "iso3": "ETH",
+   "grown": 29,
+   "notGrown": 76,
+   "auc": {
+    "current": {
+     "rainfed": 0.602,
+     "irrigated": 0.718
+    }
+   }
+  },
+  {
+   "site": "240004",
+   "iso3": "AGO",
+   "grown": 14,
+   "notGrown": 109,
+   "auc": {
+    "current": {
+     "rainfed": 0.808,
+     "irrigated": 0.717
+    }
+   }
+  },
+  {
+   "site": "2500005",
+   "iso3": "FRA",
+   "grown": 18,
+   "notGrown": 68,
+   "auc": {
+    "current": {
+     "rainfed": 0.854,
+     "irrigated": 0.797
+    }
+   }
+  },
+  {
+   "site": "2500008",
+   "iso3": "FRA",
+   "grown": 18,
+   "notGrown": 68,
+   "auc": {
+    "current": {
+     "rainfed": 0.862,
+     "irrigated": 0.879
+    }
+   }
+  },
+  {
+   "site": "2680004",
+   "iso3": "GEO",
+   "grown": 24,
+   "notGrown": 101,
+   "auc": {
+    "current": {
+     "rainfed": 0.611,
+     "irrigated": 0.609
+    }
+   }
+  },
+  {
+   "site": "2680005",
+   "iso3": "GEO",
+   "grown": 24,
+   "notGrown": 101,
+   "auc": {
+    "current": {
+     "rainfed": 0.534,
+     "irrigated": 0.634
+    }
+   }
+  },
+  {
+   "site": "2760012",
+   "iso3": "DEU",
+   "grown": 16,
+   "notGrown": 99,
+   "auc": {
+    "current": {
+     "rainfed": 0.83,
+     "irrigated": 0.874
+    }
+   }
+  },
+  {
+   "site": "2760016",
+   "iso3": "DEU",
+   "grown": 16,
+   "notGrown": 99,
+   "auc": {
+    "current": {
+     "rainfed": 0.818,
+     "irrigated": 0.865
+    }
+   }
+  },
+  {
+   "site": "310051",
+   "iso3": "AZE",
+   "grown": 25,
+   "notGrown": 81,
+   "auc": {
+    "current": {
+     "rainfed": 0.494,
+     "irrigated": 0.588
+    }
+   }
+  },
+  {
+   "site": "310057",
+   "iso3": "AZE",
+   "grown": 25,
+   "notGrown": 81,
+   "auc": {
+    "current": {
+     "rainfed": 0.516,
+     "irrigated": 0.597
+    }
+   }
+  },
+  {
+   "site": "3480008",
+   "iso3": "HUN",
+   "grown": 17,
+   "notGrown": 78,
+   "auc": {
+    "current": {
+     "rainfed": 0.707,
+     "irrigated": 0.827
+    }
+   }
+  },
+  {
+   "site": "3560023",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.669,
+     "irrigated": 0.624
+    }
+   }
+  },
+  {
+   "site": "3560027",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.681,
+     "irrigated": 0.638
+    }
+   }
+  },
+  {
+   "site": "3560038",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.69,
+     "irrigated": 0.685
+    }
+   }
+  },
+  {
+   "site": "3560076",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.795,
+     "irrigated": 0.811
+    }
+   }
+  },
+  {
+   "site": "3560082",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.757,
+     "irrigated": 0.812
+    }
+   }
+  },
+  {
+   "site": "3560096",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.77,
+     "irrigated": 0.839
+    }
+   }
+  },
+  {
+   "site": "3560134",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.758,
+     "irrigated": 0.851
+    }
+   }
+  },
+  {
+   "site": "3560135",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.77,
+     "irrigated": 0.853
+    }
+   }
+  },
+  {
+   "site": "3560153",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.784,
+     "irrigated": 0.824
+    }
+   }
+  },
+  {
+   "site": "3560180",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.752,
+     "irrigated": 0.777
+    }
+   }
+  },
+  {
+   "site": "3560229",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.778,
+     "irrigated": 0.801
+    }
+   }
+  },
+  {
+   "site": "3560276",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.683,
+     "irrigated": 0.688
+    }
+   }
+  },
+  {
+   "site": "3560282",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.669,
+     "irrigated": 0.663
+    }
+   }
+  },
+  {
+   "site": "3560312",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.753,
+     "irrigated": 0.824
+    }
+   }
+  },
+  {
+   "site": "3560366",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.828,
+     "irrigated": 0.81
+    }
+   }
+  },
+  {
+   "site": "3560423",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.784,
+     "irrigated": 0.809
+    }
+   }
+  },
+  {
+   "site": "3560456",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.569,
+     "irrigated": 0.779
+    }
+   }
+  },
+  {
+   "site": "3560499",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.751,
+     "irrigated": 0.829
+    }
+   }
+  },
+  {
+   "site": "3560502",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.757,
+     "irrigated": 0.823
+    }
+   }
+  },
+  {
+   "site": "3560519",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.664,
+     "irrigated": 0.738
+    }
+   }
+  },
+  {
+   "site": "3560541",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.759,
+     "irrigated": 0.802
+    }
+   }
+  },
+  {
+   "site": "3560544",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.743,
+     "irrigated": 0.799
+    }
+   }
+  },
+  {
+   "site": "3560550",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.762,
+     "irrigated": 0.837
+    }
+   }
+  },
+  {
+   "site": "3560568",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.79,
+     "irrigated": 0.826
+    }
+   }
+  },
+  {
+   "site": "3560604",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.777,
+     "irrigated": 0.831
+    }
+   }
+  },
+  {
+   "site": "3560606",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.777,
+     "irrigated": 0.818
+    }
+   }
+  },
+  {
+   "site": "3560625",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.773,
+     "irrigated": 0.815
+    }
+   }
+  },
+  {
+   "site": "3560633",
+   "iso3": "IND",
+   "grown": 28,
+   "notGrown": 63,
+   "auc": {
+    "current": {
+     "rainfed": 0.764,
+     "irrigated": 0.807
+    }
+   }
+  },
+  {
+   "site": "360001",
+   "iso3": "AUS",
+   "grown": 22,
+   "notGrown": 57,
+   "auc": {
+    "current": {
+     "rainfed": 0.734,
+     "irrigated": 0.701
+    }
+   }
+  },
+  {
+   "site": "3800001",
+   "iso3": "ITA",
+   "grown": 31,
+   "notGrown": 66,
+   "auc": {
+    "current": {
+     "rainfed": 0.67,
+     "irrigated": 0.661
+    }
+   }
+  },
+  {
+   "site": "3800012",
+   "iso3": "ITA",
+   "grown": 31,
+   "notGrown": 66,
+   "auc": {
+    "current": {
+     "rainfed": 0.635,
+     "irrigated": 0.701
+    }
+   }
+  },
+  {
+   "site": "3800018",
+   "iso3": "ITA",
+   "grown": 31,
+   "notGrown": 66,
+   "auc": {
+    "current": {
+     "rainfed": 0.667,
+     "irrigated": 0.711
+    }
+   }
+  },
+  {
+   "site": "4000007",
+   "iso3": "JOR",
+   "grown": 39,
+   "notGrown": 94,
+   "auc": {
+    "current": {
+     "rainfed": 0.536,
+     "irrigated": 0.681
+    }
+   }
+  },
+  {
+   "site": "4000009",
+   "iso3": "JOR",
+   "grown": 39,
+   "notGrown": 94,
+   "auc": {
+    "current": {
+     "rainfed": 0.533,
+     "irrigated": 0.68
+    }
+   }
+  },
+  {
+   "site": "400002",
+   "iso3": "AUT",
+   "grown": 18,
+   "notGrown": 93,
+   "auc": {
+    "current": {
+     "rainfed": 0.853,
+     "irrigated": 0.834
+    }
+   }
+  },
+  {
+   "site": "400004",
+   "iso3": "AUT",
+   "grown": 18,
+   "notGrown": 93,
+   "auc": {
+    "current": {
+     "rainfed": 0.867,
+     "irrigated": 0.848
+    }
+   }
+  },
+  {
+   "site": "4100008",
+   "iso3": "KOR",
+   "grown": 35,
+   "notGrown": 96,
+   "auc": {
+    "current": {
+     "rainfed": 0.717,
+     "irrigated": 0.73
+    }
+   }
+  },
+  {
+   "site": "4100010",
+   "iso3": "KOR",
+   "grown": 35,
+   "notGrown": 96,
+   "auc": {
+    "current": {
+     "rainfed": 0.706,
+     "irrigated": 0.715
+    }
+   }
+  },
+  {
+   "site": "4100017",
+   "iso3": "KOR",
+   "grown": 35,
+   "notGrown": 96,
+   "auc": {
+    "current": {
+     "rainfed": 0.708,
+     "irrigated": 0.726
+    }
+   }
+  },
+  {
+   "site": "4840001",
+   "iso3": "MEX",
+   "grown": 33,
+   "notGrown": 43,
+   "auc": {
+    "current": {
+     "rainfed": 0.591,
+     "irrigated": 0.651
+    }
+   }
+  },
+  {
+   "site": "4840013",
+   "iso3": "MEX",
+   "grown": 33,
+   "notGrown": 43,
+   "auc": {
+    "current": {
+     "rainfed": 0.579,
+     "irrigated": 0.638
+    }
+   }
+  },
+  {
+   "site": "4840017",
+   "iso3": "MEX",
+   "grown": 33,
+   "notGrown": 43,
+   "auc": {
+    "current": {
+     "rainfed": 0.75,
+     "irrigated": 0.739
+    }
+   }
+  },
+  {
+   "site": "4840022",
+   "iso3": "MEX",
+   "grown": 33,
+   "notGrown": 43,
+   "auc": {
+    "current": {
+     "rainfed": 0.557,
+     "irrigated": 0.625
+    }
+   }
+  },
+  {
+   "site": "4840029",
+   "iso3": "MEX",
+   "grown": 33,
+   "notGrown": 43,
+   "auc": {
+    "current": {
+     "rainfed": 0.553,
+     "irrigated": 0.52
+    }
+   }
+  },
+  {
+   "site": "500022",
+   "iso3": "BGD",
+   "grown": 15,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.586,
+     "irrigated": 0.624
+    }
+   }
+  },
+  {
+   "site": "500034",
+   "iso3": "BGD",
+   "grown": 15,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.601,
+     "irrigated": 0.751
+    }
+   }
+  },
+  {
+   "site": "500042",
+   "iso3": "BGD",
+   "grown": 15,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.599,
+     "irrigated": 0.679
+    }
+   }
+  },
+  {
+   "site": "500043",
+   "iso3": "BGD",
+   "grown": 15,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.6,
+     "irrigated": 0.695
+    }
+   }
+  },
+  {
+   "site": "500057",
+   "iso3": "BGD",
+   "grown": 15,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.602,
+     "irrigated": 0.73
+    }
+   }
+  },
+  {
+   "site": "500059",
+   "iso3": "BGD",
+   "grown": 15,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.62,
+     "irrigated": 0.712
+    }
+   }
+  },
+  {
+   "site": "510001",
+   "iso3": "ARM",
+   "grown": 28,
+   "notGrown": 115,
+   "auc": {
+    "current": {
+     "rainfed": 0.589,
+     "irrigated": 0.625
+    }
+   }
+  },
+  {
+   "site": "510005",
+   "iso3": "ARM",
+   "grown": 28,
+   "notGrown": 115,
+   "auc": {
+    "current": {
+     "rainfed": 0.66,
+     "irrigated": 0.715
+    }
+   }
+  },
+  {
+   "site": "5280004",
+   "iso3": "NLD",
+   "grown": 25,
+   "notGrown": 108,
+   "auc": {
+    "current": {
+     "rainfed": 0.809,
+     "irrigated": 0.866
+    }
+   }
+  },
+  {
+   "site": "5280010",
+   "iso3": "NLD",
+   "grown": 25,
+   "notGrown": 108,
+   "auc": {
+    "current": {
+     "rainfed": 0.796,
+     "irrigated": 0.848
+    }
+   }
+  },
+  {
+   "site": "560005",
+   "iso3": "BEL",
+   "grown": 27,
+   "notGrown": 107,
+   "auc": {
+    "current": {
+     "rainfed": 0.807,
+     "irrigated": 0.865
+    }
+   }
+  },
+  {
+   "site": "560009",
+   "iso3": "BEL",
+   "grown": 27,
+   "notGrown": 107,
+   "auc": {
+    "current": {
+     "rainfed": 0.79,
+     "irrigated": 0.811
+    }
+   }
+  },
+  {
+   "site": "5660001",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.715,
+     "irrigated": 0.722
+    }
+   }
+  },
+  {
+   "site": "5660004",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.768,
+     "irrigated": 0.785
+    }
+   }
+  },
+  {
+   "site": "5660011",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.768,
+     "irrigated": 0.776
+    }
+   }
+  },
+  {
+   "site": "5660013",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.69,
+     "irrigated": 0.808
+    }
+   }
+  },
+  {
+   "site": "5660014",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.742,
+     "irrigated": 0.766
+    }
+   }
+  },
+  {
+   "site": "5660015",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.692,
+     "irrigated": 0.786
+    }
+   }
+  },
+  {
+   "site": "5660016",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.593,
+     "irrigated": 0.743
+    }
+   }
+  },
+  {
+   "site": "5660017",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.802,
+     "irrigated": 0.814
+    }
+   }
+  },
+  {
+   "site": "5660025",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.75,
+     "irrigated": 0.772
+    }
+   }
+  },
+  {
+   "site": "5660030",
+   "iso3": "NGA",
+   "grown": 32,
+   "notGrown": 105,
+   "auc": {
+    "current": {
+     "rainfed": 0.666,
+     "irrigated": 0.773
+    }
+   }
+  },
+  {
+   "site": "6160002",
+   "iso3": "POL",
+   "grown": 18,
+   "notGrown": 93,
+   "auc": {
+    "current": {
+     "rainfed": 0.783,
+     "irrigated": 0.811
+    }
+   }
+  },
+  {
+   "site": "6160008",
+   "iso3": "POL",
+   "grown": 18,
+   "notGrown": 93,
+   "auc": {
+    "current": {
+     "rainfed": 0.785,
+     "irrigated": 0.807
+    }
+   }
+  },
+  {
+   "site": "640007",
+   "iso3": "BTN",
+   "grown": 27,
+   "notGrown": 86,
+   "auc": {
+    "current": {
+     "rainfed": 0.637,
+     "irrigated": 0.7
+    }
+   }
+  },
+  {
+   "site": "640012",
+   "iso3": "BTN",
+   "grown": 27,
+   "notGrown": 86,
+   "auc": {
+    "current": {
+     "rainfed": 0.543,
+     "irrigated": 0.571
+    }
+   }
+  },
+  {
+   "site": "640019",
+   "iso3": "BTN",
+   "grown": 27,
+   "notGrown": 86,
+   "auc": {
+    "current": {
+     "rainfed": 0.587,
+     "irrigated": 0.697
+    }
+   }
+  },
+  {
+   "site": "6430005",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.5,
+     "irrigated": 0.8
+    }
+   }
+  },
+  {
+   "site": "6430010",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.667,
+     "irrigated": 0.844
+    }
+   }
+  },
+  {
+   "site": "6430016",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.872,
+     "irrigated": 0.881
+    }
+   }
+  },
+  {
+   "site": "6430044",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.871,
+     "irrigated": 0.883
+    }
+   }
+  },
+  {
+   "site": "6430059",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.874,
+     "irrigated": 0.914
+    }
+   }
+  },
+  {
+   "site": "6430063",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.691,
+     "irrigated": 0.887
+    }
+   }
+  },
+  {
+   "site": "6430079",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.871,
+     "irrigated": 0.918
+    }
+   }
+  },
+  {
+   "site": "6430081",
+   "iso3": "RUS",
+   "grown": 17,
+   "notGrown": 85,
+   "auc": {
+    "current": {
+     "rainfed": 0.84,
+     "irrigated": 0.883
+    }
+   }
+  },
+  {
+   "site": "7030001",
+   "iso3": "SVK",
+   "grown": 15,
+   "notGrown": 90,
+   "auc": {
+    "current": {
+     "rainfed": 0.885,
+     "irrigated": 0.934
+    }
+   }
+  },
+  {
+   "site": "7240004",
+   "iso3": "ESP",
+   "grown": 25,
+   "notGrown": 50,
+   "auc": {
+    "current": {
+     "rainfed": 0.658,
+     "irrigated": 0.746
+    }
+   }
+  },
+  {
+   "site": "7240009",
+   "iso3": "ESP",
+   "grown": 25,
+   "notGrown": 50,
+   "auc": {
+    "current": {
+     "rainfed": 0.638,
+     "irrigated": 0.742
+    }
+   }
+  },
+  {
+   "site": "7240010",
+   "iso3": "ESP",
+   "grown": 25,
+   "notGrown": 50,
+   "auc": {
+    "current": {
+     "rainfed": 0.687,
+     "irrigated": 0.721
+    }
+   }
+  },
+  {
+   "site": "7560007",
+   "iso3": "CHE",
+   "grown": 22,
+   "notGrown": 97,
+   "auc": {
+    "current": {
+     "rainfed": 0.808,
+     "irrigated": 0.803
+    }
+   }
+  },
+  {
+   "site": "760007",
+   "iso3": "BRA",
+   "grown": 28,
+   "notGrown": 70,
+   "auc": {
+    "current": {
+     "rainfed": 0.572,
+     "irrigated": 0.631
+    }
+   }
+  },
+  {
+   "site": "7920006",
+   "iso3": "TUR",
+   "grown": 29,
+   "notGrown": 59,
+   "auc": {
+    "current": {
+     "rainfed": 0.624,
+     "irrigated": 0.786
+    }
+   }
+  },
+  {
+   "site": "7920011",
+   "iso3": "TUR",
+   "grown": 29,
+   "notGrown": 59,
+   "auc": {
+    "current": {
+     "rainfed": 0.623,
+     "irrigated": 0.785
+    }
+   }
+  },
+  {
+   "site": "7920016",
+   "iso3": "TUR",
+   "grown": 29,
+   "notGrown": 59,
+   "auc": {
+    "current": {
+     "rainfed": 0.621,
+     "irrigated": 0.76
+    }
+   }
+  },
+  {
+   "site": "7920020",
+   "iso3": "TUR",
+   "grown": 29,
+   "notGrown": 59,
+   "auc": {
+    "current": {
+     "rainfed": 0.568,
+     "irrigated": 0.714
+    }
+   }
+  },
+  {
+   "site": "7920024",
+   "iso3": "TUR",
+   "grown": 29,
+   "notGrown": 59,
+   "auc": {
+    "current": {
+     "rainfed": 0.639,
+     "irrigated": 0.708
+    }
+   }
+  },
+  {
+   "site": "7920025",
+   "iso3": "TUR",
+   "grown": 29,
+   "notGrown": 59,
+   "auc": {
+    "current": {
+     "rainfed": 0.543,
+     "irrigated": 0.636
+    }
+   }
+  },
+  {
+   "site": "80007",
+   "iso3": "ALB",
+   "grown": 35,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.654,
+     "irrigated": 0.699
+    }
+   }
+  },
+  {
+   "site": "80008",
+   "iso3": "ALB",
+   "grown": 35,
+   "notGrown": 92,
+   "auc": {
+    "current": {
+     "rainfed": 0.704,
+     "irrigated": 0.782
+    }
+   }
+  },
+  {
+   "site": "8260006",
+   "iso3": "GBR",
+   "grown": 12,
+   "notGrown": 118,
+   "auc": {
+    "current": {
+     "rainfed": 0.895,
+     "irrigated": 0.862
+    }
+   }
+  },
+  {
+   "site": "8400001",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.695,
+     "irrigated": 0.712
+    }
+   }
+  },
+  {
+   "site": "8400137",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.719,
+     "irrigated": 0.756
+    }
+   }
+  },
+  {
+   "site": "8400356",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.583,
+     "irrigated": 0.627
+    }
+   }
+  },
+  {
+   "site": "8400398",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.59,
+     "irrigated": 0.633
+    }
+   }
+  },
+  {
+   "site": "8400419",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.561,
+     "irrigated": 0.601
+    }
+   }
+  },
+  {
+   "site": "8400554",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.534,
+     "irrigated": 0.674
+    }
+   }
+  },
+  {
+   "site": "8400687",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.636,
+     "irrigated": 0.67
+    }
+   }
+  },
+  {
+   "site": "8400777",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.658,
+     "irrigated": 0.685
+    }
+   }
+  },
+  {
+   "site": "8400881",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.619,
+     "irrigated": 0.651
+    }
+   }
+  },
+  {
+   "site": "8401009",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.61,
+     "irrigated": 0.622
+    }
+   }
+  },
+  {
+   "site": "8401010",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.565,
+     "irrigated": 0.588
+    }
+   }
+  },
+  {
+   "site": "8401092",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.571,
+     "irrigated": 0.58
+    }
+   }
+  },
+  {
+   "site": "8401233",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.662,
+     "irrigated": 0.691
+    }
+   }
+  },
+  {
+   "site": "8401270",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.637,
+     "irrigated": 0.684
+    }
+   }
+  },
+  {
+   "site": "8401342",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.568,
+     "irrigated": 0.677
+    }
+   }
+  },
+  {
+   "site": "8401859",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.655,
+     "irrigated": 0.677
+    }
+   }
+  },
+  {
+   "site": "8402147",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.716,
+     "irrigated": 0.745
+    }
+   }
+  },
+  {
+   "site": "8402171",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.628,
+     "irrigated": 0.644
+    }
+   }
+  },
+  {
+   "site": "8402197",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.686,
+     "irrigated": 0.702
+    }
+   }
+  },
+  {
+   "site": "8402308",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.63,
+     "irrigated": 0.66
+    }
+   }
+  },
+  {
+   "site": "8402352",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.57,
+     "irrigated": 0.622
+    }
+   }
+  },
+  {
+   "site": "8402402",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.555,
+     "irrigated": 0.677
+    }
+   }
+  },
+  {
+   "site": "8402480",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.65,
+     "irrigated": 0.656
+    }
+   }
+  },
+  {
+   "site": "8402604",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.509,
+     "irrigated": 0.705
+    }
+   }
+  },
+  {
+   "site": "8402688",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.768,
+     "irrigated": 0.856
+    }
+   }
+  },
+  {
+   "site": "8402779",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.706,
+     "irrigated": 0.832
+    }
+   }
+  },
+  {
+   "site": "8402930",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.555,
+     "irrigated": 0.581
+    }
+   }
+  },
+  {
+   "site": "8403079",
+   "iso3": "USA",
+   "grown": 19,
+   "notGrown": 56,
+   "auc": {
+    "current": {
+     "rainfed": 0.67,
+     "irrigated": 0.683
+    }
+   }
+  },
+  {
+   "site": "daklak-coffee",
+   "iso3": "VNM",
+   "grown": 29,
+   "notGrown": 103,
+   "auc": {
+    "current": {
+     "rainfed": 0.582,
+     "irrigated": 0.676
+    }
+   }
+  },
+  {
+   "site": "cantho-rice",
+   "iso3": "VNM",
+   "grown": 29,
+   "notGrown": 103,
+   "auc": {
+    "current": {
+     "rainfed": 0.625,
+     "irrigated": 0.686
+    }
+   }
+  }
+ ],
+ "runtimeSeconds": 14.5
+}
