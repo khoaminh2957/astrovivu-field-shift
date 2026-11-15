@@ -1,7 +1,7 @@
 /** Retrieval regression guard over data/rag/eval.json (see docs/RAG.md for the full table). */
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { KnowledgeStore } from '../../src/rag/store';
-import { hasTarget, loadEval, loadStore, routingErrors, runVariant, VARIANTS } from './eval';
+import { hasTarget, loadEval, loadStore, readingErrors, routingErrors, runVariant, VARIANTS } from './eval';
 
 let store: KnowledgeStore;
 const all = loadEval();
@@ -38,7 +38,7 @@ describe('retrieval eval', () => {
 });
 
 describe('questions about the field itself (scope table of docs/RAG.md)', () => {
-  const field = all.filter((q) => q.group);
+  const field = all.filter((q) => q.group && q.group !== 'regression');
 
   it('has at least four questions for every group, in both languages', () => {
     const groups = new Set(field.map((q) => q.group));
@@ -53,5 +53,28 @@ describe('questions about the field itself (scope table of docs/RAG.md)', () => 
 
   it('routes every one to the expected intent, kind of question and focus', () => {
     expect(field.flatMap((q) => routingErrors(store, q).map((e) => `${q.id}: ${e}`))).toEqual([]);
+  });
+
+  it('answers a question about a reading with that reading and no other', () => {
+    const withContent = all.filter((q) => q.facts || q.missing);
+    // Every question about a value of the soil, the terrain or a source states what its answer is made of.
+    expect(withContent.length).toBeGreaterThanOrEqual(20);
+    expect(field.filter((q) => q.ask === 'value' && ['soil', 'terrain', 'source'].includes(q.group!) && !q.facts && !q.missing).map((q) => q.id)).toEqual([]);
+    expect(withContent.flatMap((q) => readingErrors(store, q).map((e) => `${q.id}: ${e}`))).toEqual([]);
+  });
+});
+
+describe('questions that used to be answered and must stay so (review of the field-readings change)', () => {
+  const guarded = all.filter((q) => q.group === 'regression');
+
+  it('has them in both the plain and the field form, and routes each as stated', () => {
+    expect(guarded.length).toBeGreaterThanOrEqual(12);
+    expect(guarded.flatMap((q) => routingErrors(store, q).map((e) => `${q.id}: ${e}`))).toEqual([]);
+  });
+
+  it('still finds the crop of a question about garlic typed with accents', () => {
+    const garlic = guarded.filter((q) => q.crops?.includes('allium-sativum'));
+    expect(garlic.length).toBeGreaterThanOrEqual(3);
+    expect(runVariant(store, garlic, VARIANTS[VARIANTS.length - 1]).misses).toEqual([]);
   });
 });

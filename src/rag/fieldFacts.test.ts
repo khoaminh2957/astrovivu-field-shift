@@ -3,7 +3,7 @@ import type { FieldContext } from '@/contracts';
 import { thresholdEvents } from '@/data/harmonize/risk';
 import { sampleContext } from '../../scripts/rag/sample-context';
 import { FIXTURE_CONTEXT } from '../../scripts/rag/eval';
-import { riskDetail, RISK_RULE } from './fieldAnswer';
+import { horizonDays, riskDetail, RISK_RULE } from './fieldAnswer';
 import { lookupFieldFacts, monthlyNormal, parseFieldFact, readFact, riskFacts } from './fieldFacts';
 import { routeIntent } from './intent';
 
@@ -55,6 +55,19 @@ describe('a fact string read back', () => {
     expect(parseFieldFact('irrigation', 'supplemental (entered by the farmer, source well)').provenance).toBe('farmer');
   });
 
+  it('reads the app\'s own score as a score, and what it is made of', () => {
+    const f = parseFieldFact('score_now', '71/100 productivity on 2026-11-10 (condition 74, compatibility 88; score confidence 0.62)');
+    expect(f).toMatchObject({ amount: '71/100', provenance: 'score', source: null, date: '2026-11-10', score: { condition: '74', compatibility: '88', confidence: '0.62' } });
+  });
+
+  it('keeps the spread inside the parcel apart from a range of the source, and knows a series that stands in', () => {
+    const elevation = parseFieldFact('elevation_m', '308 m (SRTM GL1 30 m point elevations, 30 m pixel; lowest and highest point of the parcel: 302-314)');
+    expect(elevation).toMatchObject({ amount: '308 m', within: ['302', '314'], interval: null, source: 'SRTM GL1 30 m point elevations' });
+    const rain = parseFieldFact('rain_30d', '85.6 mm over the 30 days to 2026-11-14 (ERA5 reanalysis (ECMWF), daily aggregates, 25 km pixel, modelled; in place of CHIRPS daily rainfall (ClimateSERV dataset 0), the observed series, which ends on 2026-09-30)');
+    expect(rain).toMatchObject({ amount: '85.6 mm', provenance: 'modelled', standsInFor: { name: 'CHIRPS daily rainfall (ClimateSERV dataset 0)', ends: '2026-09-30' } });
+    expect(parseFieldFact('ph', '5.6 (SoilGrids v2.0, 250 m pixel, modelled; 5-95%: 4.9-6.3)')).toMatchObject({ interval: ['4.9', '6.3'], within: null, standsInFor: null });
+  });
+
   it('takes a reanalysis for a model even when the fact does not repeat it', () => {
     expect(parseFieldFact('climate_monthly_rain', 'Jan 8, Feb 5 mm (monthly means, ERA5, 2005-2024)')).toMatchObject({ source: 'ERA5', provenance: 'modelled', period: '2005-2024' });
     expect(parseFieldFact('elevation_m', '602 m (parcel elevation)').provenance).toBe('unknown');
@@ -79,6 +92,20 @@ describe('readings by what the question is about', () => {
     expect(readings.map((r) => r.key)).toEqual(['soc_gkg']);
     expect(missing).toEqual([]);
     expect(lookupFieldFacts(FIXTURE_CONTEXT, [], ['ndvi'], 'en').readings.map((r) => r.key)).toEqual(['ndvi']);
+  });
+
+  it('leaves a broad word and the term of a source out when something names the reading', () => {
+    const keys = (focus: Parameters<typeof lookupFieldFacts>[1], terms: string[], ctx = FIXTURE_CONTEXT) => lookupFieldFacts(ctx, focus, terms, 'en').readings.map((r) => r.key);
+    // "Soil moisture": the words soil and water are broad, the glossary term names the reading.
+    expect(keys(['water', 'soil'], ['soil-moisture'])).toEqual(['sm_root']);
+    // "Which way does my field slope": the slope, not the elevation the entry on SRTM terrain would add.
+    expect(keys(['slope'], ['srtm-terrain'])).toEqual(['slope_deg', 'relief_m']);
+    // A source alone still answers with its readings.
+    expect(keys([], ['srtm-terrain'])).toEqual(['elevation_m', 'slope_deg']);
+    // "The water in my soil" is the soil moisture and the rain, not the pH.
+    expect(keys(['water', 'soil'], [])).toEqual(['sm_root', 'rain_30d']);
+    // Only a broad word: every reading of it.
+    expect(keys(['soil'], [])).toEqual(['ph', 'texture_class', 'soc_gkg', 'drainage_class']);
   });
 
   it('names a reading the field does not have, with the reason and a way to get it', () => {
@@ -209,6 +236,39 @@ describe('routing of questions about the field itself', () => {
     expect(route('Ruộng của tôi có phù hợp không?').intent).toBe('field');
   });
 
+  it('tells a Vietnamese word from the other words that fold to the same letters', () => {
+    const focus = (q: string) => route(q).focus;
+    // "mua" (to buy) is not "mưa" (rain); "mùa mưa" and "mùa khô" (the seasons) still are about rain.
+    expect(focus('Tôi muốn mua phân bón cho ruộng tôi')).not.toContain('rain');
+    expect(focus('Mùa khô ở ruộng tôi kéo dài bao lâu?')).toContain('rain');
+    expect(focus('Lượng mưa ở ruộng tôi?')).toContain('rain');
+    // "năng suất" (yield) is not "nắng" (sun); "đám ruộng" (a plot) is not "đạm" (nitrogen).
+    expect(focus('Năng suất ruộng tôi thế nào?')).not.toContain('light');
+    expect(focus('Ruộng tôi có đủ nắng không?')).toContain('light');
+    expect(focus('Đám ruộng của tôi pH bao nhiêu?')).toEqual(['ph']);
+    // "chưa" (not yet) is not "chua" (acid); "nông dân" (farmer) is not "nóng" (hot); "khó" (hard) is not "khô" (dry).
+    expect(focus('Ruộng tôi chưa bón phân')).not.toContain('ph');
+    expect(focus('Đất ruộng tôi có chua không?')).toContain('ph');
+    expect(focus('Nông dân ở đây trồng gì?')).not.toContain('temp');
+    expect(focus('Ruộng tôi khó làm quá')).not.toContain('water');
+    // Typed without accents there is nothing to tell them apart by: the reading is assumed, as before.
+    expect(focus('luong mua o ruong toi')).toContain('rain');
+    expect(focus('ruong toi co du nang khong')).toContain('light');
+  });
+
+  it('reads how far ahead a question looks', () => {
+    expect(route('Trong 2 tuần tới có sương giá không?', { termHit: true })).toMatchObject({ intent: 'field-fact', ask: 'forecast' });
+    expect(horizonDays('trong 2 tuan toi co suong gia khong')).toBe(14);
+    expect(horizonDays('will there be frost in the next two weeks')).toBe(14);
+    expect(horizonDays('in the next 3 weeks')).toBe(21);
+    expect(horizonDays('next fortnight')).toBe(14);
+    expect(horizonDays('will there be frost in the next 30 days')).toBe(30);
+    expect(horizonDays('10 ngay toi co mua khong')).toBe(10);
+    expect(horizonDays('tuan toi co suong gia khong')).toBe(7);
+    expect(horizonDays('ngay mai co mua khong')).toBe(1);
+    expect(horizonDays('du bao co suong gia khong')).toBeNull();
+  });
+
   it('declines what it has no data for, crop or no crop', () => {
     expect(route('Gửi ảnh lá cà phê bị bệnh thì bạn chẩn đoán được không?', { cropCount: 1 })).toMatchObject({ intent: 'off-topic', outOfScope: 'photo-diagnosis' });
     expect(route('Can you identify the disease from a photo of the leaf?')).toMatchObject({ intent: 'off-topic', outOfScope: 'photo-diagnosis' });
@@ -219,5 +279,27 @@ describe('routing of questions about the field itself', () => {
     expect(route('What is the bitcoin price today?')).toMatchObject({ intent: 'off-topic', outOfScope: 'other' });
     // "số đó" (that number) folds to the same letters as "sổ đỏ" (land title): not a legal question.
     expect(route('Đất của tôi pH bao nhiêu và số đó lấy từ đâu?', { termHit: true }).intent).toBe('field-fact');
+    // More ways of asking for a dose, and a lease.
+    expect(route('Liều thuốc trừ nấm cho cà phê là bao nhiêu?', { cropCount: 1 })).toMatchObject({ intent: 'off-topic', outOfScope: 'pesticide-dose' });
+    expect(route('Liều glyphosate cho 1 ha?', { hasContext: false })).toMatchObject({ intent: 'off-topic', outOfScope: 'pesticide-dose' });
+    expect(route('How much glyphosate per hectare?', { hasContext: false })).toMatchObject({ intent: 'off-topic', outOfScope: 'pesticide-dose' });
+    expect(route('Hợp đồng thuê đất cần ghi gì?', { hasContext: false })).toMatchObject({ intent: 'off-topic', outOfScope: 'legal' });
+  });
+
+  it('does not take frost for a price, an assessment for a price, or a form of address for a photo', () => {
+    // "băng giá" and "sương giá" are frost; "đánh giá" is to assess; "gia tăng" is to increase.
+    expect(route('Tuần tới có băng giá không?')).toMatchObject({ intent: 'field-fact', ask: 'forecast', focus: ['frost'] });
+    expect(route('Đánh giá rủi ro sương giá tuần tới cho ruộng tôi', { termHit: true })).toMatchObject({ intent: 'field-fact', ask: 'forecast' });
+    expect(route('Sâu bệnh gia tăng trong tuần tới thì làm gì?').intent).not.toBe('off-topic');
+    expect(route('tuan toi co bang gia khong')).toMatchObject({ intent: 'field-fact', ask: 'forecast' });
+    expect(route('danh gia rui ro suong gia tuan toi cho ruong toi', { termHit: true }).intent).toBe('field-fact');
+    // A price that is one is still declined, with and without accents.
+    expect(route('Giá lúa tuần tới thế nào?', { cropCount: 1 })).toMatchObject({ intent: 'off-topic', outOfScope: 'price-forecast' });
+    expect(route('gia lua tuan toi the nao', { cropCount: 1 })).toMatchObject({ intent: 'off-topic', outOfScope: 'price-forecast' });
+    // "Anh ơi" opens a question; "ảnh" is a photo.
+    expect(route('Anh ơi cho hỏi bệnh đạo ôn trên lúa phòng thế nào?', { cropCount: 1 })).toMatchObject({ intent: 'care' });
+    expect(route('anh oi cho hoi benh dao on tren lua phong the nao', { cropCount: 1 }).intent).toBe('care');
+    expect(route('Nhìn ảnh này thì lúa bị bệnh gì?', { cropCount: 1 })).toMatchObject({ intent: 'off-topic', outOfScope: 'photo-diagnosis' });
+    expect(route('gui anh la bi benh thi ban chan doan duoc khong')).toMatchObject({ intent: 'off-topic', outOfScope: 'photo-diagnosis' });
   });
 });

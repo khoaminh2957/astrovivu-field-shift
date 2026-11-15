@@ -8,7 +8,7 @@
  *    spelling must match, not only the folded one;
  *  - `EXCLUDE`: common phrases whose first or last syllable is a crop name.
  */
-import { fold } from './text';
+import { fold, hasDiacritics } from './text';
 
 export interface AliasTable {
   /** Folded alias -> crop ids, most likely first. */
@@ -25,12 +25,17 @@ const EXCLUDE = [
   'chuoi thoi gian', 'ngo ngang', 'bap be', 'sang som',
   // "đạm" (nitrogen) folds to "dam", which EcoCrop lists as a name of the greater yam.
   'dam',
-  // "tôi" (I, my) typed without accents is "toi", the folded form of "tỏi" (garlic).
+];
+
+/**
+ * Excluded only in a question typed without accents: "tôi" (I, my) is then "toi", the folded form
+ * of "tỏi" (garlic). With accents the two are told apart by their spelling (`exact`), and "tỏi
+ * cần pH bao nhiêu" must keep its garlic.
+ */
+const EXCLUDE_UNACCENTED = [
   'cua toi', 'ruong toi', 'vuon toi', 'dat toi', 'ray toi', 'nha toi', 'cho toi', 'giup toi', 'toi co', 'toi nen', 'toi muon', 'toi can',
   'toi dang', 'toi se', 'toi da', 'toi trong', 'toi bon', 'toi tuoi', 'toi hoi', 'toi thay',
 ];
-
-const hasDiacritics = (s: string) => /[̀-ͯ]/.test(s.normalize('NFD')) || /[đĐ]/.test(s);
 
 export interface CropMention {
   cropIds: string[];
@@ -50,7 +55,7 @@ export function detectCrops(query: string, table: AliasTable, maxN = 4): CropMen
   const strict = hasDiacritics(query);
   const blocked = new Array(folded.length).fill(false);
   const joined = folded.join(' ');
-  for (const ex of EXCLUDE) {
+  for (const ex of strict ? EXCLUDE : [...EXCLUDE, ...EXCLUDE_UNACCENTED]) {
     let idx = joined.indexOf(ex);
     while (idx >= 0) {
       const before = joined.slice(0, idx).split(' ').filter(Boolean).length;

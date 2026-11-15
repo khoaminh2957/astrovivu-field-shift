@@ -8,7 +8,8 @@ import type { FieldContext, Lang } from '@/contracts';
 import { parseMonthly } from './fieldContext';
 import type { Focus } from './intent';
 
-export type Provenance = 'farmer' | 'observed' | 'modelled' | 'derived' | 'forecast' | 'simulated' | 'unknown';
+/** `score`: a result the app computes itself (the productivity score); neither read from a source nor measured. */
+export type Provenance = 'farmer' | 'observed' | 'modelled' | 'derived' | 'forecast' | 'simulated' | 'score' | 'unknown';
 
 export interface ParsedFact {
   key: string;
@@ -31,6 +32,12 @@ export interface ParsedFact {
   period: string | null;
   /** 5 % and 95 % bounds of the source's prediction interval. */
   interval: [string, string] | null;
+  /** Lowest and highest value inside the parcel (the elevation). Not an uncertainty. */
+  within: [string, string] | null;
+  /** The observed series this reading stands in for, and the day that series ends, when a model series was used instead. */
+  standsInFor: { name: string; ends: string | null } | null;
+  /** For the productivity score: what it is made of, as the fact prints it. */
+  score: { condition: string | null; compatibility: string | null; confidence: string | null } | null;
   staleDays: number | null;
   /** How the reading compares with its normal for the day: "9% below normal (within the normal band, normal 0.23)". */
   normal: string | null;
@@ -74,7 +81,14 @@ export function parseFieldFact(key: string, raw: string): ParsedFact {
   const value = (open < 0 ? raw : raw.slice(0, open)).trim();
   const inner = open >= 0 && close > open ? raw.slice(open + 2, close) : '';
   const num = value.match(/^-?\d+(?:\.\d+)?/);
-  const out: ParsedFact = { key, raw, value, amount: amountOf(value), number: num ? Number(num[0]) : null, source: null, pixel: null, pixelM: null, provenance: 'unknown', date: null, period: null, interval: null, staleDays: null, normal: null, replaced: null };
+  const out: ParsedFact = { key, raw, value, amount: amountOf(value), number: num ? Number(num[0]) : null, source: null, pixel: null, pixelM: null, provenance: 'unknown', date: null, period: null, interval: null, within: null, standsInFor: null, score: null, staleDays: null, normal: null, replaced: null };
+  // The score of the app: what stands in the brackets is what it is made of, not where it comes from.
+  if (key === 'score_now') {
+    out.provenance = 'score';
+    out.date = value.match(/on (\d{4}-\d{2}-\d{2})/)?.[1] ?? null;
+    out.score = { condition: inner.match(/condition (\d+(?:\.\d+)?)/)?.[1] ?? null, compatibility: inner.match(/compatibility (\d+(?:\.\d+)?)/)?.[1] ?? null, confidence: inner.match(/score confidence (\d+(?:\.\d+)?)/)?.[1] ?? null };
+    return out;
+  }
   if (!inner) return out;
   if (/^(measured|entered|reported) by the farmer/.test(inner)) {
     out.provenance = 'farmer';
@@ -84,8 +98,12 @@ export function parseFieldFact(key: string, raw: string): ParsedFact {
   const [descriptor, ...rest] = splitTop(inner, '; ');
   for (const part of rest) {
     const interval = part.match(/^5-95%: (-?\d+(?:\.\d+)?)-(-?\d+(?:\.\d+)?)$/);
+    const within = part.match(/^lowest and highest point of the parcel: (-?\d+(?:\.\d+)?)-(-?\d+(?:\.\d+)?)$/);
+    const standIn = part.match(/^in place of (.+?), the observed series(?:, which ends on (\d{4}-\d{2}-\d{2}))?$/);
     const stale = part.match(/^stale: (\d+) days old$/);
     if (interval) out.interval = [interval[1], interval[2]];
+    else if (within) out.within = [within[1], within[2]];
+    else if (standIn) out.standsInFor = { name: standIn[1], ends: standIn[2] ?? null };
     else if (stale) out.staleDays = Number(stale[1]);
     else if (/normal/.test(part)) out.normal = part;
   }
@@ -181,7 +199,7 @@ const FOCUS_FACTS: Record<Focus, string[]> = {
   depth: ['depth_cm'],
   slope: ['slope_deg', 'relief_m', 'aspect_label'],
   altitude: ['elevation_m'],
-  temp: ['t2m', 'climate_t_mean'],
+  temp: ['t2m', 't2m_min', 't2m_max', 'climate_t_mean'],
   rain: ['rain_30d', 'rain_90d', 'climate_rain_annual'],
   water: ['sm_root', 'sm_surface', 'rain_30d', 'irrigation'],
   frost: ['t2m_min', 'forecast_tmin'],
@@ -213,6 +231,14 @@ export const TERM_FACTS: Record<string, string[]> = {
   'soil-texture': ['texture_class', 'drainage_class'],
   'productivity-score': ['score_now'],
 };
+
+/**
+ * Glossary terms that name a source or a method, not one reading ("SRTM", "SoilGrids", "NASA
+ * POWER"). Their readings answer a question that names nothing more specific; beside a focus or a
+ * term that names a reading they add nothing ("which way does my field slope" is about the slope,
+ * although "slope" is also a word of the entry on SRTM terrain, which brings the elevation).
+ */
+const SOURCE_TERMS = new Set(['srtm-terrain', 'soilgrids', 'nasa-power', 'imerg-rainfall', 'crop-coefficient', 'water-balance', 'growing-degree-days', 'frost-risk']);
 
 /** Why a reading can be absent, by the first fact key of its focus. */
 const WHY_MISSING: Record<string, Text> = {
@@ -313,12 +339,19 @@ export interface FieldLookup {
 
 /**
  * The readings of the parcel that answer a question about these focuses and glossary terms. A
- * broad word beside a specific one ("is my soil salty") leaves only the specific one.
+ * broad word ("soil", "water") beside something specific leaves only the specific thing: "is my
+ * soil salty" is about salinity, and "how far can I trust the soil moisture of my field" is about
+ * the soil moisture the glossary term names, not about every soil and water reading.
  */
 export function lookupFieldFacts(ctx: FieldContext, focus: Focus[], termIds: string[], lang: Lang): FieldLookup {
   const specific = focus.filter((f) => f !== 'soil' && f !== 'water');
-  const wanted: string[][] = (specific.length ? specific : focus).map((f) => FOCUS_FACTS[f]).filter((keys) => keys.length > 0);
-  for (const t of termIds) if (TERM_FACTS[t]) wanted.push(TERM_FACTS[t]);
+  const readingTerms = termIds.filter((t) => TERM_FACTS[t] && !SOURCE_TERMS.has(t));
+  // A term for a source counts only when nothing names a reading.
+  const named = readingTerms.length || specific.length ? readingTerms : termIds.filter((t) => TERM_FACTS[t]);
+  // "The water in my soil" is the soil moisture: of the two broad words, water is the one that is meant.
+  const broad = focus.includes('water') ? focus.filter((f) => f !== 'soil') : focus;
+  const wanted: string[][] = (specific.length || named.length ? specific : broad).map((f) => FOCUS_FACTS[f]).filter((keys) => keys.length > 0);
+  for (const t of named) wanted.push(TERM_FACTS[t]);
   const readings: FieldReading[] = [];
   const missing: MissingReading[] = [];
   const seen = new Set<string>();

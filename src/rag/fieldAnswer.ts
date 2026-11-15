@@ -8,7 +8,7 @@ import type { FieldContext, KnowledgeChunk, Lang } from '@/contracts';
 import type { Citer } from './cite';
 import { bestSentences } from './cite';
 import { availableReadings, type FieldReading, lookupFieldFacts, type MissingReading, monthlyNormal, type MonthlyNormal, type ParsedFact, parseFieldFact, readFact, type RiskFact, riskFacts, type RiskKind } from './fieldFacts';
-import type { Focus } from './intent';
+import { type Focus, guard } from './intent';
 import type { Analysis } from './retrieve';
 import type { KnowledgeStore } from './store';
 import { fold, terms } from './text';
@@ -44,7 +44,7 @@ const SOURCE_GLOSSARY: [RegExp, string][] = [
 ];
 
 function glossaryFor(store: KnowledgeStore, fact: ParsedFact, lang: Lang): KnowledgeChunk | undefined {
-  const id = fact.provenance === 'farmer' ? 'ground-truth-override' : SOURCE_GLOSSARY.find(([re]) => re.test(fact.source ?? ''))?.[1];
+  const id = fact.provenance === 'farmer' ? 'ground-truth-override' : fact.provenance === 'score' ? 'productivity-score' : SOURCE_GLOSSARY.find(([re]) => re.test(fact.source ?? ''))?.[1];
   return id ? (store.chunks.get(`gloss-${lang}:${id}`) ?? store.chunks.get(`gloss-${lang}:${id}:0`)) : undefined;
 }
 
@@ -53,7 +53,7 @@ function sourceNote(store: KnowledgeStore, fact: ParsedFact, cite: Citer, lang: 
   const g = glossaryFor(store, fact, lang);
   if (!g || used.has(g.id)) return null;
   used.add(g.id);
-  const about = fact.provenance === 'farmer' ? [] : [...terms(fact.source ?? ''), ...(fact.provenance === 'forecast' ? ['forecast', 'du', 'bao'] : [])];
+  const about = fact.provenance === 'farmer' || fact.provenance === 'score' ? [] : [...terms(fact.source ?? ''), ...(fact.provenance === 'forecast' ? ['forecast', 'du', 'bao'] : [])];
   const s = bestSentences(g, about, 1)[0] ?? g.text.split(/(?<=[.!?])\s+/)[0];
   return `“${s}” ${cite.cite(g, s)}`;
 }
@@ -98,9 +98,25 @@ function trustSentence(f: ParsedFact, ctx: FieldContext, lang: Lang): string | n
       return t(`It is a forecast${f.pixel ? ` for one ${f.pixel} cell` : ''}, not an observation: it does not see cold hollows or showers at the scale of one field.`, `Đây là dự báo${f.pixel ? ` cho một ô ${f.pixel}` : ''}, không phải quan trắc: dự báo không thấy được chỗ trũng lạnh hay cơn mưa ở cỡ một thửa ruộng.`);
     case 'simulated':
       return t('This value is simulated demo data.', 'Giá trị này là dữ liệu demo mô phỏng.');
+    case 'score':
+      return t(
+        'It is a result the app computes itself for the crop of the field, from the readings of the field. It is not a measurement, and not a value read from a map or a survey.',
+        'Đây là kết quả do chính ứng dụng tính cho cây của thửa, từ các số liệu của thửa. Đây không phải số đo, cũng không phải giá trị đọc từ bản đồ hay điều tra.',
+      );
     default:
       return stale.trim() || null;
   }
+}
+
+/** What the productivity score is made of, in words: "growing condition 74, site compatibility 88; confidence of the score 0.62". */
+function scoreParts(f: ParsedFact, lang: Lang): string | null {
+  const t = tr(lang);
+  if (!f.score) return null;
+  const parts = [f.score.condition != null ? t(`growing condition ${f.score.condition}`, `điều kiện sinh trưởng ${f.score.condition}`) : null, f.score.compatibility != null ? t(`site compatibility ${f.score.compatibility}`, `mức phù hợp của khu đất ${f.score.compatibility}`) : null].filter(Boolean).join(', ');
+  const confidence = f.score.confidence != null ? t(`confidence of the score ${f.score.confidence}`, `độ tin cậy của điểm ${f.score.confidence}`) : null;
+  const all = [parts, confidence].filter(Boolean).join('; ');
+  const when = f.date ? t(`on ${f.date}`, `ngày ${f.date}`) : null;
+  return [when, all ? `(${all})` : null].filter(Boolean).join(' ') || null;
 }
 
 /** "9% below normal (within the normal band, normal 0.23)" in the language of the answer. */
@@ -110,6 +126,9 @@ function normalText(normal: string, lang: Lang): string {
     .replace(/^about normal/, 'xấp xỉ mức bình thường')
     .replace(/^(\d+)% below normal/, 'thấp hơn bình thường $1 %')
     .replace(/^(\d+)% above normal/, 'cao hơn bình thường $1 %')
+    // A difference in the unit of the reading: "4.06 °C above normal".
+    .replace(/^(\d+(?:\.\d+)?) (\S+) below normal/, 'thấp hơn bình thường $1 $2')
+    .replace(/^(\d+(?:\.\d+)?) (\S+) above normal/, 'cao hơn bình thường $1 $2')
     .replace('within the normal band', 'trong dải bình thường')
     .replace('below the 10th percentile', 'dưới phân vị 10')
     .replace('above the 90th percentile', 'trên phân vị 90')
@@ -140,14 +159,21 @@ export function readingParagraphs(store: KnowledgeStore, readings: FieldReading[
   const t = tr(lang);
   const used = new Set<string>();
   return groupBySource(readings).map((group) => {
-    const values = group.map((r, i) => (i === 0 ? `${r.label} ${t('on your field', 'của ruộng bạn')}: ${r.shown}` : `${r.label.charAt(0).toLowerCase()}${r.label.slice(1)}: ${r.shown}`)).join('; ');
-    const intervals = group.filter((r) => r.interval).map((r) => `${group.length > 1 ? `${r.label.charAt(0).toLowerCase()}${r.label.slice(1)} ` : ''}${r.interval![0]} ${t('to', 'đến')} ${r.interval![1]}`);
-    const normals = group.filter((r) => r.normal).map((r) => `${group.length > 1 ? `${r.label.charAt(0).toLowerCase()}${r.label.slice(1)} ` : ''}${normalText(r.normal!, lang)}`);
+    const lower = (r: FieldReading) => `${r.label.charAt(0).toLowerCase()}${r.label.slice(1)}`;
+    const values = group.map((r, i) => `${i === 0 ? `${r.label} ${t('on your field', 'của ruộng bạn')}` : lower(r)}: ${r.shown}${r.score && scoreParts(r, lang) ? `, ${scoreParts(r, lang)}` : ''}`).join('; ');
+    const intervals = group.filter((r) => r.interval).map((r) => `${group.length > 1 ? `${lower(r)} ` : ''}${r.interval![0]} ${t('to', 'đến')} ${r.interval![1]}`);
+    // The lowest and the highest point of the parcel: a spread inside the field, not an uncertainty of the source.
+    const unitOf = (r: FieldReading) => (r.number != null && r.amount.includes(' ') ? ` ${r.amount.slice(r.amount.indexOf(' ') + 1)}` : '');
+    const within = group.filter((r) => r.within).map((r) => t(`Inside the parcel the ${lower(r)} goes from ${r.within![0]} to ${r.within![1]}${unitOf(r)}.`, `Trong thửa, ${lower(r)} đi từ ${r.within![0]} đến ${r.within![1]}${unitOf(r)}.`));
+    const normals = group.filter((r) => r.normal).map((r) => `${group.length > 1 ? `${lower(r)} ` : ''}${normalText(r.normal!, lang)}`);
+    const standIn = group[0].standsInFor;
     return [
       `${values}.`,
       sourceSentence(group[0], lang),
       trustSentence(group[0], ctx, lang),
+      standIn ? t(`It stands in for ${standIn.name}, the observed series${standIn.ends ? `, which ends on ${standIn.ends}` : ''}.`, `Số này thay cho ${standIn.name}, chuỗi quan trắc${standIn.ends ? `, vốn dừng ở ngày ${standIn.ends}` : ''}.`) : null,
       intervals.length ? t(`The source gives a 5-95 % range of ${intervals.join('; ')}.`, `Nguồn cho khoảng 5-95 % là ${intervals.join('; ')}.`) : null,
+      ...within,
       normals.length ? t(`Against the normal for this time of year: ${normals.join('; ')}.`, `So với mức bình thường của thời điểm này trong năm: ${normals.join('; ')}.`) : null,
       sourceNote(store, group[0], cite, lang, used),
     ]
@@ -212,17 +238,34 @@ function monthParagraph(n: MonthlyNormal, lang: Lang, leastFirst: boolean): stri
   return `${lead} ${t(`All twelve months (${n.unit}): ${all}.`, `Cả mười hai tháng (${n.unit}): ${all}.`)}`;
 }
 
+/** The normal of the months a question names: "In March your field gets 22 mm of rain on average." */
+function namedMonthParagraph(n: MonthlyNormal, months: number[], lang: Lang): string {
+  const t = tr(lang);
+  const rain = n.key === 'climate_monthly_rain';
+  const said = months
+    .map((m) => n.months.find((x) => x.month === m))
+    .filter((x): x is MonthlyNormal['months'][number] => x != null)
+    .map((x) =>
+      rain
+        ? t(`In ${monthName(x.month, 'en')} your field gets ${x.text} mm of rain on average.`, `Vào ${monthName(x.month, 'vi')}, ruộng của bạn mưa trung bình ${x.text} mm.`)
+        : t(`In ${monthName(x.month, 'en')} the mean air temperature on your field is ${x.text} °C.`, `Vào ${monthName(x.month, 'vi')}, nhiệt độ không khí trung bình ở ruộng của bạn là ${x.text} °C.`),
+    );
+  const all = n.months.map((m) => `${lang === 'vi' ? `T${m.month}` : MONTH_EN[m.month - 1].slice(0, 3)} ${m.text}`).join(', ');
+  return `${said.join(' ')} ${t(`All twelve months (${n.unit}): ${all}.`, `Cả mười hai tháng (${n.unit}): ${all}.`)}`;
+}
+
 function composeMonths(store: KnowledgeStore, a: Analysis, cite: Citer, ctx: FieldContext): string[] {
   const t = tr(a.lang);
-  const q = fold(a.query);
-  const wantsRain = a.focus.some((f) => f === 'rain' || f === 'water') || /wet|dry|rain|\bmua\b|kho\b/.test(q);
-  const wantsTemp = a.focus.some((f) => f === 'temp' || f === 'frost') || /hot|cold|warm|cool|nong|lanh|ret\b|\bmat\b/.test(q);
+  const q = guard(a.query);
+  const wantsRain = a.focus.some((f) => f === 'rain' || f === 'water') || /wet|dry|rain|\bmua\b|\bkho\b/.test(q);
+  const wantsTemp = a.focus.some((f) => f === 'temp' || f === 'frost') || /hot|cold|warm|cool|\bnong\b|\blanh\b|\bret\b|\bmat\b/.test(q);
   const keys: MonthlyNormal['key'][] = wantsRain === wantsTemp ? ['climate_monthly_rain', 'climate_monthly_t'] : wantsRain ? ['climate_monthly_rain'] : ['climate_monthly_t'];
   const normals = keys.map((k) => monthlyNormal(ctx, k)).filter((n): n is MonthlyNormal => n != null);
   if (!normals.length)
     return [t('The climate history of this field has not loaded, so I have no monthly means to answer from. It needs at least three years of history; try again once the climate branch has loaded.', 'Lịch sử khí hậu của thửa ruộng này chưa tải xong nên tôi chưa có trung bình theo tháng để trả lời. Cần ít nhất ba năm số liệu; hãy hỏi lại khi nhánh khí hậu đã tải.')];
   const used = new Set<string>();
-  const paras = normals.map((n) => monthParagraph(n, a.lang, LEAST.test(q)));
+  const named = a.ask === 'month-value' && a.months.length > 0;
+  const paras = normals.map((n) => (named ? namedMonthParagraph(n, a.months, a.lang) : monthParagraph(n, a.lang, LEAST.test(q))));
   const f = normals[0].fact;
   paras.push([sourceSentence(f, a.lang), trustSentence(f, ctx, a.lang), sourceNote(store, f, cite, a.lang, used)].filter(Boolean).join(' '));
   paras.push(t('These are means over many years: a single year can differ. Next step: the rainfall and climate branches of the HUD show this year against the normal.', 'Đây là trung bình nhiều năm: từng năm có thể khác. Bước tiếp theo: nhánh mưa và khí hậu trên HUD cho thấy năm nay so với mức bình thường.'));
@@ -269,24 +312,34 @@ export function riskDetail(r: RiskFact, lang: Lang): string {
   return `"${r.detail}"`;
 }
 
-/** Which warnings a question is about; none named means all of them. */
+/**
+ * Which warnings a question is about; none named means all of them. `q` is the guarded text
+ * (`guard`): with accents "bão" is the storm and "dự báo" is not; without accents "bao" after
+ * "du" or "canh" is "du bao", "canh bao", and before "nhieu" it is "bao nhieu".
+ */
 function kindsAsked(q: string, focus: Focus[]): RiskKind[] {
   const out: RiskKind[] = [];
   if (focus.includes('frost') || /\bcold\b|\blanh\b|\bret\b/.test(q)) out.push('frost');
   if (/\bheat|\bhot\b|nang nong|\bnong\b/.test(q)) out.push('heat');
-  // "bao" alone is bão (storm); after "du" or "canh" it is "dự báo", "cảnh báo", before "nhieu" it is "bao nhiêu".
   const storm = /storm|(?<!du |canh )\bbao\b(?! nhieu)/.test(q);
-  if (storm || /heavy rain|downpour|flood|mua (lon|to)|ngap/.test(q) || (focus.includes('rain') && !/dry|kho/.test(q))) out.push('heavy-rain', 'flood');
+  if (storm || /heavy rain|downpour|flood|mua (lon|to)|ngap/.test(q) || (focus.includes('rain') && !/\bdry\b|\bkho\b/.test(q))) out.push('heavy-rain', 'flood');
   if (/drought|dry spell|\bdry\b|kho han|han han|\bhan\b|\bkho\b/.test(q)) out.push('dry-spell');
   if (storm || /\bwind|\bgio\b/.test(q)) out.push('wind');
   return [...new Set(out)];
 }
 
-/** Days ahead the question asks about; null for the whole forecast. */
-function horizonDays(q: string): number | null {
+const NUMBER_WORD: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, mot: 1, hai: 2, ba: 3, bon: 4 };
+
+/** Days ahead the question asks about; null for the whole forecast. `q` is the plainly folded question. */
+export function horizonDays(q: string): number | null {
   if (/tomorrow|ngay mai/.test(q)) return 1;
-  const n = q.match(/next (\d+) days|(\d+) ngay (toi|nua)/);
-  if (n) return Number(n[1] ?? n[2]);
+  const count = (s: string | undefined) => (s == null ? null : /^\d+$/.test(s) ? Number(s) : (NUMBER_WORD[s] ?? null));
+  // "next 2 weeks", "two weeks", "2 tuần tới", "hai tuần nữa"; a fortnight.
+  const weeks = q.match(/(?:next |coming |in |within )?(\d+|one|two|three|four) weeks?\b/) ?? q.match(/(\d+|mot|hai|ba|bon) tuan (?:toi|nua|sau)/);
+  if (weeks && count(weeks[1]) != null) return 7 * count(weeks[1])!;
+  if (/fortnight/.test(q)) return 14;
+  const days = q.match(/(?:next |coming |in |within )?(\d+) days\b/) ?? q.match(/(\d+) ngay (?:toi|nua)/);
+  if (days) return Number(days[1]);
   if (/next week|this week|coming week|tuan (toi|sau|nay)/.test(q)) return 7;
   return null;
 }
@@ -310,7 +363,11 @@ function forecastParagraphs(store: KnowledgeStore, kinds: RiskKind[], days: numb
     ];
   }
   const forecastEnd = anyForecast.period?.split(' to ')[1] ?? null;
-  const until = days != null ? addDays(ctx.date, days) : forecastEnd;
+  // The days asked about, but never beyond the last day of the forecast: no warning after that
+  // day means nothing, because there is no forecast for it.
+  const askedEnd = days != null ? addDays(ctx.date, days) : null;
+  const beyond = askedEnd != null && forecastEnd != null && askedEnd > forecastEnd;
+  const until = askedEnd == null || beyond ? forecastEnd : askedEnd;
   const events = all.filter((e) => (kinds.length === 0 || kinds.includes(e.kind)) && e.end >= ctx.date && (until == null || e.start <= until));
   const what = kinds.length ? [...new Set(kinds.filter((k) => k !== 'flood').map((k) => t(KIND_NAME[k][0], KIND_NAME[k][1])))].join(t(' or ', ' hoặc ')) : t('weather', 'thời tiết');
   const span = until ? t(`up to ${day(until, 'en')}`, `đến ${day(until, 'vi')}`) : t('in the forecast', 'trong dự báo');
@@ -325,6 +382,13 @@ function forecastParagraphs(store: KnowledgeStore, kinds: RiskKind[], days: numb
   } else {
     paras.push(t(`The forecast for your field holds no ${what} warning ${span}.`, `Dự báo cho ruộng của bạn không có cảnh báo ${what} nào ${span}.`));
   }
+  if (beyond && forecastEnd && days != null)
+    paras.push(
+      t(
+        `The forecast reaches only to ${day(forecastEnd, 'en')}, not the ${days} days you asked about: nothing can be said of the days after it.`,
+        `Dự báo chỉ tới ngày ${day(forecastEnd, 'vi')}, không đủ ${days} ngày như bạn hỏi: những ngày sau đó chưa nói được gì.`,
+      ),
+    );
   // The numbers the warnings are raised from, and the rule, so that "no warning" can be checked.
   const support: string[] = [];
   const asked = kinds.length ? kinds : (['frost', 'heat', 'heavy-rain'] as RiskKind[]);
@@ -345,8 +409,7 @@ function forecastParagraphs(store: KnowledgeStore, kinds: RiskKind[], days: numb
 
 function composeForecast(store: KnowledgeStore, a: Analysis, cite: Citer, ctx: FieldContext): string[] {
   const t = tr(a.lang);
-  const q = fold(a.query);
-  const paras = forecastParagraphs(store, kindsAsked(q, a.focus), horizonDays(q), cite, ctx, a.lang);
+  const paras = forecastParagraphs(store, kindsAsked(guard(a.query), a.focus), horizonDays(fold(a.query)), cite, ctx, a.lang);
   paras.push(t('Next step: the risk branch of the HUD shows each forecast day; check again the day before any field work that frost, heat or rain would spoil.', 'Bước tiếp theo: nhánh rủi ro trên HUD cho thấy từng ngày dự báo; hãy xem lại vào hôm trước khi làm việc đồng áng mà sương giá, nắng nóng hay mưa có thể làm hỏng.'));
   return paras;
 }
@@ -365,7 +428,7 @@ export function composeFieldFact(store: KnowledgeStore, a: Analysis, cite: Citer
     }
     return paras;
   }
-  if (a.ask === 'month-extreme') return composeMonths(store, a, cite, ctx);
+  if (a.ask === 'month-extreme' || a.ask === 'month-value') return composeMonths(store, a, cite, ctx);
   if (a.ask === 'forecast') return composeForecast(store, a, cite, ctx);
   return composeValue(store, a, cite, ctx);
 }
