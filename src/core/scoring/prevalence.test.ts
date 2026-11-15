@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { CountryCrops, CropPrevalence, FieldTelemetry, GroundTruth, ModelInput } from '@/contracts';
 import { getSampleParcel } from '@/data/samples';
-import { prevalenceStatus, rankCropLists, rankCrops, TRIAL_MIN_COMPATIBILITY } from './index';
+import { assessCrop, LATITUDE_GATE, prevalenceStatus, rankCropLists, rankCrops, TRIAL_MIN_COMPATIBILITY } from './index';
 
 /** A demo field as the app scores it. */
 function field(id: string, country?: CountryCrops): ModelInput {
@@ -126,5 +126,22 @@ describe('the cases named in the plan', () => {
     const lists = rankCropLists(field('nevada-alfalfa', { iso3: 'USA', prevalence: { 'anacardium-occidentale': fao('absent', 'exact') } }), { cropIds: ['anacardium-occidentale', 'medicago-sativa'] });
     expect(lists.main.map((r) => r.cropId)).toEqual(['medicago-sativa']);
     expect(lists.trial).toEqual([]);
+  });
+});
+
+describe('the latitude gate', () => {
+  // Pigeon pea: EcoCrop gives 30° as its latitude limit; the Iowa field lies at 42°.
+  const iowa = field('iowa-corn-soy');
+  const factorOf = (opts: Parameters<typeof assessCrop>[2]) => assessCrop(iowa, 'cajanus-cajan', opts)?.factors.find((f) => f.key === 'latitude');
+
+  it('is the one in use unless a comparison asks for another', () => {
+    expect(LATITUDE_GATE).toEqual({ toleranceDeg: 3, factor: 0.7 });
+    expect(factorOf({})?.score).toBe(0.7);
+    expect(factorOf({ latitudeGate: { toleranceDeg: 3, factor: 0.4 } })?.score).toBe(0.4);
+  });
+
+  it('can be switched off, and does not apply inside its tolerance', () => {
+    expect(factorOf({ latitudeGate: null })).toBeUndefined();
+    expect(factorOf({ latitudeGate: { toleranceDeg: 40, factor: 0.7 } })).toBeUndefined();
   });
 });

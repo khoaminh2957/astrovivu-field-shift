@@ -13,7 +13,7 @@ Nhóm Astrovivu làm trên một repo: <https://github.com/quocbao271207/astrovi
 | Khoa | `khoaminh2957` | Mô hình: độ phù hợp và tối ưu lợi nhuận; chatbot | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `src/rag/**`, `server/**`, `scripts/rag/**`, `data/rag/**`, `public/rag/**`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md`, `docs/RAG.md` |
 | Duy | `MinDuy314` | Cải tạo đất từ dữ liệu đất | `src/core/soil/**`, `docs/SOIL.md` |
 
-`.github/CODEOWNERS` ghi lại bảng này cho GitHub: pull request chạm vào thư mục nào thì người phụ trách thư mục đó được mời review.
+`.github/CODEOWNERS` ghi lại bảng này cho GitHub: pull request chạm vào thư mục nào thì người phụ trách thư mục đó được mời review. Từ ngày 15/11/2026 lời mời này là điều kiện bắt buộc: pull request chỉ gộp được khi **người phụ trách của từng thư mục bị chạm, hoặc Bảo, đã duyệt**. Bảo được ghi là người phụ trách thứ hai của mọi thư mục, vì GitHub không cho tác giả tự duyệt pull request của mình.
 
 Cần sửa ngoài thư mục của mình thì vẫn sửa được, nhưng người phụ trách phần đó phải review. Riêng `src/contracts/**` chỉ được **thêm** (trường tuỳ chọn mới, kiểu mới), không đổi tên, không xoá: ba phần còn lại đều đọc từ đó.
 
@@ -69,7 +69,7 @@ Không commit thẳng lên `main`. Mỗi việc một nhánh, xong thì mở pul
    git push -u origin data/crop-prevalence-vn
    ```
 
-4. Mở pull request vào `main` trên GitHub và điền mẫu có sẵn. Nhánh `main` được bảo vệ: GitHub chỉ cho gộp khi CI xanh và có ít nhất một người khác duyệt (người phụ trách phần bị chạm được mời tự động). Không ai đẩy thẳng, đẩy đè (force push) hay xoá `main` được; riêng chủ repo đẩy thẳng được khi cần. Gộp bằng **Squash and merge**, rồi xoá nhánh.
+4. Mở pull request vào `main` trên GitHub và điền mẫu có sẵn. Nhánh `main` được bảo vệ: GitHub chỉ cho gộp khi CI xanh và người phụ trách của mọi thư mục bị chạm (hoặc Bảo) đã duyệt; lượt duyệt của người không phụ trách thư mục đó không đủ. Không ai đẩy thẳng, đẩy đè (force push) hay xoá `main` được; riêng chủ repo đẩy thẳng được khi cần. Gộp bằng **Squash and merge**, rồi xoá nhánh.
 
 5. Nhánh sống lâu hơn một ngày thì cập nhật từ `main` trước khi làm tiếp:
 
