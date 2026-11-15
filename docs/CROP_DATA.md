@@ -371,6 +371,7 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 
 `economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
 
+## 13. Atlas coverage summary (`summary.csv`, T7 `#12` & T8 `#71`)
 ## 13. Atlas coverage summary (`summary.csv`, T7 `#12`)
 
 Every metric below is emitted into `data/crops/atlas/summary.csv` by `scripts/crops/atlas/build.ts`:
@@ -383,6 +384,7 @@ Every metric below is emitted into `data/crops/atlas/summary.csv` by `scripts/cr
 | `crops_with_name_en` | 230 | Kept crops with a sourced `name_en` (`curated`: 73, `fao-definition`: 99, `faostat-item`: 58) |
 | `crops_without_name_en` | 157 | Kept crops with an empty `name_en` |
 | `crops_with_name_vi` | 73 | Kept crops with a sourced `name_vi` (from `curated-crops.csv`; Wikidata expansion in C6 `#73`) |
+| `urban_candidates` | 106 | Kept crops with `urban_candidate = yes` (`short-cycle`: 79, `perennial-aromatic-herb`: 15, both: 12) |
 | `crop_country_rows` | 72,746 | Total `(crop_id, iso3)` rows in `crop_country.csv` |
 | `crop_country_rows_present` | 11,424 | Rows with a grown level (`major`, `common`, `minor`, `present`) |
 | `crop_country_rows_absent` | 21,260 | Rows with `level = absent` (`match = exact`, `item_reported = no`) |
@@ -405,7 +407,7 @@ Every metric below is emitted into `data/crops/atlas/summary.csv` by `scripts/cr
 
 The result has a file of its own and `crops.csv` has no `urban_` column: the market database mirrors `crops.csv` column for column (`scripts/market/atlas.ts`, `docs/DATABASE.md`), so a column added there would change the table of a migration that is already applied. Join on `crop_id`.
 
-### 13.1 Rule and variants tested
+### 14.1 Rule and variants tested
 
 A row qualifies when all three conditions hold:
 
@@ -424,7 +426,7 @@ A row qualifies when all three conditions hold:
 | `R1` (strict medicinal only) | Disqualify `medicinals & aromatic`-only rows when paired with any field category | 106 | 22 / 32 (drops `pisum-sativum`) | 116 | Excludes `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`; keeps `arachis-hypogaea` |
 | **`R` (adopted in `urban.ts`)** | `R1` + allow `climber/scrambler/scadent` on pulses (`pisum-sativum`) + require `climber` or `cycle_min_days <= 60` on staple categories | **106** (79 `short-cycle`, 15 `perennial-aromatic-herb`, 12 both) | **23 / 32** | **115** | **All 4 excluded** |
 
-### 13.2 Hand-curated urban crops not matched by the rule (9 of 32)
+### 14.2 Hand-curated urban crops not matched by the rule (9 of 32)
 
 The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts`) that the EcoCrop rule does not select remain in the urban pool through the overlay (`candidate set = rule ∪ overlay = 115 crops`):
 
@@ -440,7 +442,7 @@ The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts
 | `musa-acuminata` | Banana (Chuối) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
 | `fragaria-x-ananassa` | Strawberry (Dâu tây) | `cycle_min_days = 180` (> 120) and `category` is `fruits & nuts` without `medicinals & aromatic` |
 
-### 13.3 Limitations
+### 14.3 Limitations
 
 - **The thresholds are a choice of the project.** The 120-day limit of the short-cycle clause (`maxCycleMinDays`) and the 60-day limit for staple categories (`maxStapleVegetableCycleMinDays`) are a choice of the project, not taken from a publication.
 - **The rule selects more than a balcony can hold.** It reads only EcoCrop's life form, category, life span and shortest cycle, so `yes` also falls on crops that are not pot crops: papaya (`carica-papaya`: life form `herb`, `perennial`, `medicinals & aromatic`), vanilla (`vanilla-planifolia`: `herb, vine`, `perennial`, `medicinals & aromatic`), jojoba and myrtle (`simmondsia-chinensis`, `myrtus-communis`: `shrub`, shortest cycle 120 days), pigeon pea (`cajanus-cajan`: `shrub`, 90 days) and rapeseed (`brassica-napus`: 85 days). `yes` means the crop passes this filter, not that it is recommended: a crop may be offered to a balcony grower only when it also has container figures with a source.
