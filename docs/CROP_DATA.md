@@ -248,7 +248,7 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 - **Operating cost only.** `cost_usd_ha` is the variable (operating) cost per hectare, matching `costUsdPerHa` of `ReferenceEconomics` (`docs/ECONOMICS.md` section 1). Where a budget also prints total cost including land and overhead, the total is noted in `source` and not used.
 - **Three-part provenance.** Both `source` and `url` list the three figures in `yield | price | cost` order (`yield: ... | price: ... | cost: ...`), matching `data/crops/curated-crops.csv`. Every figure has a quality tag from `SourceQuality` (`official`, `budget`, `press`, `derived`, `none`); a quality is `none` if and only if its cell is empty, and `source` records `NOT FOUND: <reason>`.
 - **Remaining curated crops in `VNM` and `USA`.**
-  - *Yield (`yield_t_ha`)*: filled from `crop_country.csv` (2022–2024 three-year mean, `quality_yield = official`), noting in `source` when the FAOSTAT item is shared by multiple species (`coffea-arabica`, `coffea-canephora`, `allium-cepa`, `brassica-oleracea-var-capitata`, `citrus-grandis`, `fragaria-x-ananassa`, `persea-americana`).
+  - *Yield (`yield_t_ha`)*: filled from `crop_country.csv` (2022–2024 three-year mean, `quality_yield = official`) where the FAOSTAT item belongs to this crop alone. Where the item is shared by several species (`coffea-arabica`, `coffea-canephora`, `allium-cepa`, `brassica-oleracea-var-capitata`, `citrus-grandis`, `fragaria-x-ananassa`, `persea-americana`; 8 rows) the cell stays empty and `source` gives the item's yield with the reason, the same rule as for prices: the item's figure is not the species' own (robusta coffee in `USA` would otherwise carry the yield of Hawaiian arabica).
   - *Price (`price_usd_t`)*: filled from the `crop_latest_prices` view of the market database (`match = exact`, `item_shared_by_n_crops = 1`, primary item; 11 curated crops in `VNM`, 20 in `USA`), cross-checked against market and USDA NASS prices (`docs/DATABASE.md` section 8). Shared-item prices (such as FAOSTAT item 656 `Coffee, green` at 709 USD/t in `VNM` vs ~3,359.4 USD/t on the domestic robusta market, or 55,997.5 USD/t in `USA` vs $2.37/lb = 5,225 USD/t cherry in USDA NASS) and pooled `group` item prices are not assigned to single species outside the existing proxy rows (`vigna-radiata`, `mangifera-indica`, `citrus-grandis`, `brassica-oleracea-var-capitata` in `VNM`); both figures are quoted in `source`.
   - *Cost (`cost_usd_ha`)*: no cross-country extrapolation is performed; crops without an opened national or state enterprise budget remain empty (`quality_cost = none`).
 
@@ -267,10 +267,10 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 
 | Country (`iso3`) | Total rows | Rows with all 3 figures (`yield`, `price`, `cost`) | Measure | `official` | `budget` | `press` | `derived` | `none` (empty) |
 |---|---:|---:|---|---:|---:|---:|---:|---:|
-| `VNM` (national) | 73 | **8** | `yield_t_ha` | 24 | 0 | 0 | 0 | 49 |
+| `VNM` (national) | 73 | **8** | `yield_t_ha` | 22 | 0 | 0 | 0 | 51 |
 | `VNM` (national) | 73 | **8** | `price_usd_t` | 15 | 0 | 5 | 0 | 53 |
 | `VNM` (national) | 73 | **8** | `cost_usd_ha` | 0 | 0 | 7 | 1 | 65 |
-| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `yield_t_ha` | 45 | 0 | 0 | 0 | 35 |
+| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `yield_t_ha` | 39 | 0 | 0 | 0 | 41 |
 | `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `price_usd_t` | 39 | 0 | 0 | 0 | 41 |
 | `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `cost_usd_ha` | 10 | 17 | 0 | 0 | 53 |
 | **Total** | **153** | **35** (28 national + 7 regional) | — | — | — | — | — | — |
