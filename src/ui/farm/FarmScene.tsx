@@ -7,7 +7,7 @@
  * The drawing is 1600 x 900 and is cropped to the box from its lower middle (`xMidYMax slice`), so
  * the field stays in view on a tall phone and on a wide desk alike.
  */
-import type { FarmCrop, FarmScene, FieldPatches, SkyKind } from '@/core/farm';
+import { PATCH_HIGH, PATCH_LOW, type FarmCrop, type FarmScene, type FieldPatches, type SkyKind } from '@/core/farm';
 import { Birds, Chimney, CloudShadows, CanalShimmer, Dust, Grower, type GrowerWork, PaddyGlints, Pollinators, Splashes, SunRays, Yard } from './Ambient';
 import { Plant, RIPENS, Stubble, leafColours } from './plants';
 import './farm.css';
@@ -202,23 +202,28 @@ function Landscape({ kind, windy }: { kind: SkyKind; windy: boolean }) {
 
 /** Grid of the stage's plants, for `fieldPatches`. */
 export const PATCH_GRID = { rows: DEPTHS.length, cols: RIDGES_NEAR.length } as const;
-const clampK = (k: number): number => Math.max(0.7, Math.min(1.25, k));
+/**
+ * How a patch is drawn, by the zones' bands (below 0.93 of the field mean low, above 1.07 high).
+ * The ratio itself mostly stays within a tenth of the mean, too little to see on a small stage, so
+ * the bands are drawn apart on purpose: a drawing rule, written in docs/FARM.md.
+ */
+const PATCH_LOOK = { low: { size: 0.68, vigor: -0.4 }, high: { size: 1.14, vigor: 0.25 } } as const;
 
 /**
  * The plants behind the grower's row (`near` false) or in front of it. With field patches, each
- * plant stands as its patch of the field does: smaller and paler where the NDVI picture is below
- * the field mean, bigger and greener above it (the ratio is held to 0.7..1.25 for drawing).
+ * plant stands as its patch of the field does: small and yellowing in a low patch, tall and deep
+ * green in a high one, as drawn by the field's average elsewhere.
  */
 function Plants({ crop, beat, near, patches }: { crop: FarmCrop; beat: string; near: boolean; patches?: FieldPatches | null }) {
   if (crop.look === 'none') return null;
   const { fill, dark } = leafColours(crop.vigor, crop.ripeness, RIPENS[crop.look]);
   // Size and greenness per plant: every silhouette scales the same way, woody ones included.
   const at = (p: Spot) => {
-    const k = patches ? clampK(patches.ratio[p.row * patches.cols + p.col] ?? 1) : 1;
-    if (k === 1) return { size: 1, fill, dark };
-    const size = 1 + (k - 1) * 1.3;
-    const vigor = crop.vigor ?? 0.6;
-    return { size, ...leafColours(Math.max(0, Math.min(1, vigor + (k - 1) * 1.8)), crop.ripeness, RIPENS[crop.look]) };
+    const k = patches ? (patches.ratio[p.row * patches.cols + p.col] ?? 1) : 1;
+    const band = k < PATCH_LOW ? PATCH_LOOK.low : k > PATCH_HIGH ? PATCH_LOOK.high : null;
+    if (!band) return { size: 1, fill, dark };
+    const vigor = Math.max(0, Math.min(1, (crop.vigor ?? 0.6) + band.vigor));
+    return { size: band.size, ...leafColours(vigor, crop.ripeness, RIPENS[crop.look]) };
   };
   const cut = crop.harvested == null ? 0 : Math.round(crop.harvested * SPOTS.length);
   return (
