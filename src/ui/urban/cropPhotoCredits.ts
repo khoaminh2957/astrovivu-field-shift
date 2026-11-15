@@ -10,7 +10,8 @@ interface CropPhotoCredit {
 export const LOCAL_CROP_PHOTOS: Readonly<Partial<Record<string, CropPhotoCredit>>> = {
   'vigna-radiata': {
     file: 'vigna-radiata.jpg',
-    author: 'Sanjay Acharya',
+    // The licence template on Commons asks for this attribution line.
+    author: 'Sanjay ach at the English-language Wikipedia',
     source: 'https://commons.wikimedia.org/wiki/File:Bean_pod_of_Vigna_radiata_(mung_bean).jpg',
     license: 'CC BY-SA 3.0',
     licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
@@ -78,10 +79,10 @@ export const LOCAL_CROP_PHOTOS: Readonly<Partial<Record<string, CropPhotoCredit>
   },
   'helianthus-annuus': {
     file: 'helianthus-annuus.jpg',
-    author: 'Fir0002',
-    source: 'https://commons.wikimedia.org/wiki/File:Sunflower_sky_backdrop.jpg',
-    license: 'GFDL 1.2',
-    licenseUrl: 'https://www.gnu.org/licenses/old-licenses/fdl-1.2.html',
+    author: 'Alan Schmierer',
+    source: 'https://commons.wikimedia.org/wiki/File:SUNFLOWER,_COMMON_(Helianthus_annuus)_(9-10-10)_blue_haven_rd,_patagonia,_scc,_az_-01_(4978305574).jpg',
+    license: 'CC0 1.0',
+    licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
   },
   'ipomoea-batatas': {
     file: 'ipomoea-batatas.jpg',

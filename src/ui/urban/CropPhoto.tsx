@@ -98,7 +98,7 @@ export function CropPhoto({ cropId, name, size = 'sm', className }: CropPhotoPro
       {src && src !== failedSrc && (
         <img
           src={src}
-          alt={t('urban.photoAlt', { name })}
+          alt={t(local ? 'urban.photoAltCommons' : 'urban.photoAlt', { name })}
           width={box.w}
           height={box.h}
           loading="lazy"
