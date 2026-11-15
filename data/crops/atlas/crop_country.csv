@@ -190,7 +190,7 @@ abelmoschus-esculentus,USA,United States of America,430,exact,yes,1308,10430,7.9
 abelmoschus-esculentus,UZB,Uzbekistan,430,exact,no,,,,,,,,absent,FAOSTAT QCL
 abelmoschus-esculentus,VCT,Saint Vincent and the Grenadines,430,exact,no,,,,,,,,absent,FAOSTAT QCL
 abelmoschus-esculentus,VEN,Venezuela (Bolivarian Republic of),430,exact,no,,,,,,,,absent,FAOSTAT QCL
-abelmoschus-esculentus,VNM,Viet Nam,430,exact,no,,,,,,,,absent,FAOSTAT QCL
+abelmoschus-esculentus,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 abelmoschus-esculentus,VUT,Vanuatu,430,exact,no,,,,,,,,absent,FAOSTAT QCL
 abelmoschus-esculentus,WSM,Samoa,430,exact,no,,,,,,,,absent,FAOSTAT QCL
 abelmoschus-esculentus,YEM,Yemen,430,exact,yes,4990,29480,5.907,2022,2024,0.472,25,minor,FAOSTAT QCL
@@ -3552,11 +3552,11 @@ allium-fistulosum,TZA,United Republic of Tanzania,402,exact,no,,,,,,,,absent,FAO
 allium-fistulosum,UGA,Uganda,402,exact,no,,,,,,,,absent,FAOSTAT QCL
 allium-fistulosum,UKR,Ukraine,402,exact,yes,2067,25673,12.421,2022,2024,0.009,52,minor,FAOSTAT QCL
 allium-fistulosum,URY,Uruguay,402,exact,no,,,,,,,,absent,FAOSTAT QCL
-allium-fistulosum,USA,United States of America,402,exact,no,,,,,,,,absent,FAOSTAT QCL
+allium-fistulosum,USA,United States of America,,national,yes,2435,,,2022,2022,0.002,78,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 allium-fistulosum,UZB,Uzbekistan,402,exact,no,,,,,,,,absent,FAOSTAT QCL
 allium-fistulosum,VCT,Saint Vincent and the Grenadines,402,exact,no,,,,,,,,absent,FAOSTAT QCL
 allium-fistulosum,VEN,Venezuela (Bolivarian Republic of),402,exact,yes,3069,65628,21.322,2022,2024,0.176,42,minor,FAOSTAT QCL
-allium-fistulosum,VNM,Viet Nam,402,exact,no,,,,,,,,absent,FAOSTAT QCL
+allium-fistulosum,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 allium-fistulosum,VUT,Vanuatu,402,exact,yes,2,79,46.275,2022,2024,0.002,27,minor,FAOSTAT QCL
 allium-fistulosum,WSM,Samoa,402,exact,no,,,,,,,,absent,FAOSTAT QCL
 allium-fistulosum,YEM,Yemen,402,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -4355,6 +4355,8 @@ amaranthus-caudatus,YEM,Yemen,108,group,no,,,,,,,,unknown,FAOSTAT QCL
 amaranthus-caudatus,ZAF,South Africa,108,group,yes,,,,,,,,unknown,FAOSTAT QCL
 amaranthus-caudatus,ZMB,Zambia,108,group,no,,,,,,,,unknown,FAOSTAT QCL
 amaranthus-caudatus,ZWE,Zimbabwe,108,group,yes,,,,,,,,unknown,FAOSTAT QCL
+amaranthus-tricolor,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+amaranthus-tricolor,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 anacardium-occidentale,AFG,Afghanistan,217;591,exact,no,,,,,,,,absent,FAOSTAT QCL
 anacardium-occidentale,AGO,Angola,217,exact,yes,2690,2160,0.803,2022,2024,0.044,33,minor,FAOSTAT QCL
 anacardium-occidentale,ALB,Albania,217;591,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -7523,6 +7525,8 @@ arachis-hypogaea,YEM,Yemen,242,exact,yes,2024,1463,0.723,2022,2024,0.191,35,mino
 arachis-hypogaea,ZAF,South Africa,242,exact,yes,38633,51167,1.358,2022,2024,0.624,12,common,FAOSTAT QCL
 arachis-hypogaea,ZMB,Zambia,242,exact,yes,235989,171083,0.717,2022,2024,8.746,4,major,FAOSTAT QCL
 arachis-hypogaea,ZWE,Zimbabwe,242,exact,yes,172090,69249,0.403,2022,2024,6.67,3,major,FAOSTAT QCL
+arachis-pintoi,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+arachis-pintoi,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 areca-catechu,AFG,Afghanistan,226,exact,no,,,,,,,,absent,FAOSTAT QCL
 areca-catechu,AGO,Angola,226,exact,no,,,,,,,,absent,FAOSTAT QCL
 areca-catechu,ALB,Albania,226,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -11879,6 +11883,8 @@ bambusa-vulgaris,YEM,Yemen,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 bambusa-vulgaris,ZAF,South Africa,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 bambusa-vulgaris,ZMB,Zambia,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 bambusa-vulgaris,ZWE,Zimbabwe,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
+basella-alba,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+basella-alba,VNM,Viet Nam,,national,no,,,,,,,,unknown,Văn phòng Điều phối Nông thôn mới tỉnh Hà Tĩnh (dẫn số liệu sản xuất tại tỉnh Long An)
 beta-vulgaris,AFG,Afghanistan,157,exact,yes,327,6072,18.646,2022,2024,0.01,40,minor,FAOSTAT QCL
 beta-vulgaris,AGO,Angola,157,exact,no,,,,,,,,absent,FAOSTAT QCL
 beta-vulgaris,ALB,Albania,157,exact,yes,606,19821,32.819,2022,2024,0.207,42,minor,FAOSTAT QCL
@@ -13463,6 +13469,8 @@ brassica-chinensis,YEM,Yemen,358,exact,yes,579,7707,13.303,2015,2017,0.055,44,mi
 brassica-chinensis,ZAF,South Africa,358,exact,yes,3422,200142,58.488,2022,2024,0.055,45,minor,FAOSTAT QCL
 brassica-chinensis,ZMB,Zambia,358,exact,no,,,,,,,,absent,FAOSTAT QCL
 brassica-chinensis,ZWE,Zimbabwe,358,exact,yes,14802,615999,42.076,2022,2024,0.574,20,common,FAOSTAT QCL
+brassica-juncea,USA,United States of America,,national,yes,4379,,,2022,2022,0.004,74,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+brassica-juncea,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 brassica-napus,AFG,Afghanistan,270,exact,no,,,,,,,,absent,FAOSTAT QCL
 brassica-napus,AGO,Angola,270,exact,no,,,,,,,,absent,FAOSTAT QCL
 brassica-napus,ALB,Albania,270,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -15047,6 +15055,8 @@ brassica-oleracea-var-italica,YEM,Yemen,358,exact,yes,579,7707,13.303,2015,2017,
 brassica-oleracea-var-italica,ZAF,South Africa,358,exact,yes,3422,200142,58.488,2022,2024,0.055,45,minor,FAOSTAT QCL
 brassica-oleracea-var-italica,ZMB,Zambia,358,exact,no,,,,,,,,absent,FAOSTAT QCL
 brassica-oleracea-var-italica,ZWE,Zimbabwe,358,exact,yes,14802,615999,42.076,2022,2024,0.574,20,common,FAOSTAT QCL
+brassica-rapa-pak-choi,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+brassica-rapa-pak-choi,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 cajanus-cajan,AFG,Afghanistan,197,exact,no,,,,,,,,absent,FAOSTAT QCL
 cajanus-cajan,AGO,Angola,197,exact,no,,,,,,,,absent,FAOSTAT QCL
 cajanus-cajan,ALB,Albania,197,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -17412,7 +17422,7 @@ capsicum-annuum,TZA,United Republic of Tanzania,401,group,yes,,,,,,,,unknown,FAO
 capsicum-annuum,UGA,Uganda,401,group,no,,,,,,,,unknown,FAOSTAT QCL
 capsicum-annuum,UKR,Ukraine,401,group,yes,,,,,,,,unknown,FAOSTAT QCL
 capsicum-annuum,URY,Uruguay,401,group,yes,,,,,,,,unknown,FAOSTAT QCL
-capsicum-annuum,USA,United States of America,401,group,yes,,,,,,,,unknown,FAOSTAT QCL
+capsicum-annuum,USA,United States of America,,national,yes,18413,598810,32.521,2025,2025,0.019,58,minor,USDA NASS Vegetables 2025 Summary (ISSN 0884-6413)
 capsicum-annuum,UZB,Uzbekistan,401,group,yes,,,,,,,,unknown,FAOSTAT QCL
 capsicum-annuum,VCT,Saint Vincent and the Grenadines,401,group,yes,,,,,,,,unknown,FAOSTAT QCL
 capsicum-annuum,VEN,Venezuela (Bolivarian Republic of),401,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -19601,6 +19611,8 @@ castanea-sativa,YEM,Yemen,220,exact,no,,,,,,,,absent,FAOSTAT QCL
 castanea-sativa,ZAF,South Africa,220,exact,no,,,,,,,,absent,FAOSTAT QCL
 castanea-sativa,ZMB,Zambia,220,exact,no,,,,,,,,absent,FAOSTAT QCL
 castanea-sativa,ZWE,Zimbabwe,220,exact,yes,77,90,1.166,2022,2024,0.003,66,minor,FAOSTAT QCL
+catharanthus-roseus,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+catharanthus-roseus,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 ceiba-pentandra,AFG,Afghanistan,310,exact,no,,,,,,,,absent,FAOSTAT QCL
 ceiba-pentandra,AGO,Angola,310,exact,no,,,,,,,,absent,FAOSTAT QCL
 ceiba-pentandra,ALB,Albania,310,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -27118,7 +27130,7 @@ cucumis-sativus,USA,United States of America,397,exact,yes,33751,588095,17.439,2
 cucumis-sativus,UZB,Uzbekistan,397,exact,yes,30315,962542,31.829,2022,2024,0.895,16,common,FAOSTAT QCL
 cucumis-sativus,VCT,Saint Vincent and the Grenadines,397,exact,no,,,,,,,,absent,FAOSTAT QCL
 cucumis-sativus,VEN,Venezuela (Bolivarian Republic of),397,exact,yes,1068,16303,15.262,2022,2024,0.061,52,minor,FAOSTAT QCL
-cucumis-sativus,VNM,Viet Nam,397,exact,no,,,,,,,,absent,FAOSTAT QCL
+cucumis-sativus,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 cucumis-sativus,VUT,Vanuatu,397,exact,yes,300,7160,23.866,2022,2024,0.225,18,minor,FAOSTAT QCL
 cucumis-sativus,WSM,Samoa,397,exact,no,,,,,,,,absent,FAOSTAT QCL
 cucumis-sativus,YEM,Yemen,397,exact,yes,941,13903,14.78,2015,2017,0.089,41,minor,FAOSTAT QCL
@@ -29105,6 +29117,8 @@ cydonia-oblonga,YEM,Yemen,523,exact,yes,276,1515,5.486,2015,2017,0.026,50,minor,
 cydonia-oblonga,ZAF,South Africa,523,exact,yes,30,371,12.727,2022,2024,0,71,minor,FAOSTAT QCL
 cydonia-oblonga,ZMB,Zambia,523,exact,no,,,,,,,,absent,FAOSTAT QCL
 cydonia-oblonga,ZWE,Zimbabwe,523,exact,no,,,,,,,,absent,FAOSTAT QCL
+cymbopogon-citratus,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+cymbopogon-citratus,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 cynara-cardunculus,AFG,Afghanistan,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 cynara-cardunculus,AGO,Angola,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 cynara-cardunculus,ALB,Albania,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -32662,7 +32676,7 @@ durio-zibethinus,USA,United States of America,603,group,no,,,,,,,,unknown,FAOSTA
 durio-zibethinus,UZB,Uzbekistan,603,group,no,,,,,,,,unknown,FAOSTAT QCL
 durio-zibethinus,VCT,Saint Vincent and the Grenadines,603,group,no,,,,,,,,unknown,FAOSTAT QCL
 durio-zibethinus,VEN,Venezuela (Bolivarian Republic of),603,group,yes,,,,,,,,unknown,FAOSTAT QCL
-durio-zibethinus,VNM,Viet Nam,603,group,no,,,,,,,,unknown,FAOSTAT QCL
+durio-zibethinus,VNM,Viet Nam,,national,yes,178800,1470000,8.221,2024,2024,1.324,10,common,Báo cáo thường niên thị trường Rau quả 2025 (Bộ Nông nghiệp và Môi trường / Cục Trồng trọt và Bảo vệ thực vật)
 durio-zibethinus,VUT,Vanuatu,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
 durio-zibethinus,WSM,Samoa,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
 durio-zibethinus,YEM,Yemen,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -36028,7 +36042,7 @@ fragaria-x-ananassa,USA,United States of America,544,exact,yes,23512,1354730,57.
 fragaria-x-ananassa,UZB,Uzbekistan,544,exact,yes,1060,11158,11.154,2022,2024,0.031,53,minor,FAOSTAT QCL
 fragaria-x-ananassa,VCT,Saint Vincent and the Grenadines,544,exact,no,,,,,,,,absent,FAOSTAT QCL
 fragaria-x-ananassa,VEN,Venezuela (Bolivarian Republic of),544,exact,yes,1915,43565,23.017,2022,2024,0.11,43,minor,FAOSTAT QCL
-fragaria-x-ananassa,VNM,Viet Nam,544,exact,no,,,,,,,,absent,FAOSTAT QCL
+fragaria-x-ananassa,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 fragaria-x-ananassa,VUT,Vanuatu,544,exact,no,,,,,,,,absent,FAOSTAT QCL
 fragaria-x-ananassa,WSM,Samoa,544,exact,no,,,,,,,,absent,FAOSTAT QCL
 fragaria-x-ananassa,YEM,Yemen,544,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -39203,6 +39217,8 @@ humulus-lupulus,YEM,Yemen,677,exact,no,,,,,,,,absent,FAOSTAT QCL
 humulus-lupulus,ZAF,South Africa,677,exact,yes,411,472,1.148,2022,2024,0.007,67,minor,FAOSTAT QCL
 humulus-lupulus,ZMB,Zambia,677,exact,no,,,,,,,,absent,FAOSTAT QCL
 humulus-lupulus,ZWE,Zimbabwe,677,exact,no,,,,,,,,absent,FAOSTAT QCL
+ipomoea-aquatica,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+ipomoea-aquatica,VNM,Viet Nam,,national,no,,,,,,,,unknown,Trung tâm Khuyến nông TP. Hồ Chí Minh (Sở Nông nghiệp và Môi trường TP.HCM)
 ipomoea-batatas,AFG,Afghanistan,122,exact,no,,,,,,,,absent,FAOSTAT QCL
 ipomoea-batatas,AGO,Angola,122,exact,yes,196059,1998145,10.186,2022,2024,3.199,5,common,FAOSTAT QCL
 ipomoea-batatas,ALB,Albania,122,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -40182,7 +40198,7 @@ lactuca-sativa-var-capitata,TZA,United Republic of Tanzania,372,group,no,,,,,,,,
 lactuca-sativa-var-capitata,UGA,Uganda,372,group,no,,,,,,,,unknown,FAOSTAT QCL
 lactuca-sativa-var-capitata,UKR,Ukraine,372,group,yes,,,,,,,,unknown,FAOSTAT QCL
 lactuca-sativa-var-capitata,URY,Uruguay,372,group,no,,,,,,,,unknown,FAOSTAT QCL
-lactuca-sativa-var-capitata,USA,United States of America,372,group,yes,,,,,,,,unknown,FAOSTAT QCL
+lactuca-sativa-var-capitata,USA,United States of America,,national,yes,45163,1737848,38.479,2025,2025,0.046,42,minor,USDA NASS Vegetables 2025 Summary (ISSN 0884-6413)
 lactuca-sativa-var-capitata,UZB,Uzbekistan,372,group,yes,,,,,,,,unknown,FAOSTAT QCL
 lactuca-sativa-var-capitata,VCT,Saint Vincent and the Grenadines,372,group,no,,,,,,,,unknown,FAOSTAT QCL
 lactuca-sativa-var-capitata,VEN,Venezuela (Bolivarian Republic of),372,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -41572,7 +41588,7 @@ litchi-chinensis,USA,United States of America,619,group,yes,,,,,,,,unknown,FAOST
 litchi-chinensis,UZB,Uzbekistan,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
 litchi-chinensis,VCT,Saint Vincent and the Grenadines,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
 litchi-chinensis,VEN,Venezuela (Bolivarian Republic of),619,group,yes,,,,,,,,unknown,FAOSTAT QCL
-litchi-chinensis,VNM,Viet Nam,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
+litchi-chinensis,VNM,Viet Nam,,national,yes,51900,255000,4.913,2024,2024,0.384,24,minor,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 litchi-chinensis,VUT,Vanuatu,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
 litchi-chinensis,WSM,Samoa,619,group,no,,,,,,,,unknown,FAOSTAT QCL
 litchi-chinensis,YEM,Yemen,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -42760,7 +42776,7 @@ lycopersicon-esculentum,USA,United States of America,388,exact,yes,112463,110932
 lycopersicon-esculentum,UZB,Uzbekistan,388,exact,yes,65732,2233606,33.982,2022,2024,1.94,7,common,FAOSTAT QCL
 lycopersicon-esculentum,VCT,Saint Vincent and the Grenadines,388,exact,no,,,,,,,,absent,FAOSTAT QCL
 lycopersicon-esculentum,VEN,Venezuela (Bolivarian Republic of),388,exact,yes,8708,186436,21.415,2022,2024,0.499,24,minor,FAOSTAT QCL
-lycopersicon-esculentum,VNM,Viet Nam,388,exact,no,,,,,,,,absent,FAOSTAT QCL
+lycopersicon-esculentum,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 lycopersicon-esculentum,VUT,Vanuatu,388,exact,yes,50,501,10.013,2022,2024,0.038,21,minor,FAOSTAT QCL
 lycopersicon-esculentum,WSM,Samoa,388,exact,no,,,,,,,,absent,FAOSTAT QCL
 lycopersicon-esculentum,YEM,Yemen,388,exact,yes,8726,159920,18.326,2022,2024,0.825,21,common,FAOSTAT QCL
@@ -43746,11 +43762,11 @@ mangifera-indica,TZA,United Republic of Tanzania,571,group,yes,,,,,,,,unknown,FA
 mangifera-indica,UGA,Uganda,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,UKR,Ukraine,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,URY,Uruguay,571,group,no,,,,,,,,unknown,FAOSTAT QCL
-mangifera-indica,USA,United States of America,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
+mangifera-indica,USA,United States of America,,national,yes,1272,,,2022,2022,0.001,83,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 mangifera-indica,UZB,Uzbekistan,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,VCT,Saint Vincent and the Grenadines,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,VEN,Venezuela (Bolivarian Republic of),571,group,yes,,,,,,,,unknown,FAOSTAT QCL
-mangifera-indica,VNM,Viet Nam,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
+mangifera-indica,VNM,Viet Nam,,national,yes,96500,1094100,11.338,2024,2024,0.715,20,common,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 mangifera-indica,VUT,Vanuatu,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,WSM,Samoa,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,YEM,Yemen,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -44351,6 +44367,8 @@ manilkara-zapota,YEM,Yemen,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
 manilkara-zapota,ZAF,South Africa,603,group,no,,,,,,,,unknown,FAOSTAT QCL
 manilkara-zapota,ZMB,Zambia,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
 manilkara-zapota,ZWE,Zimbabwe,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
+medicago-sativa,USA,United States of America,,national,yes,5939230,45552470,7.67,2025,2025,6.01,4,major,USDA NASS Crop Production 2025 Summary (ISSN 1057-7823)
+medicago-sativa,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 mentha-arvensis-var-piperascens,AFG,Afghanistan,748,group,no,,,,,,,,unknown,FAOSTAT QCL
 mentha-arvensis-var-piperascens,AGO,Angola,748,group,no,,,,,,,,unknown,FAOSTAT QCL
 mentha-arvensis-var-piperascens,ALB,Albania,748,group,no,,,,,,,,unknown,FAOSTAT QCL
@@ -45330,7 +45348,7 @@ mentha-spicata-var-crispa,TZA,United Republic of Tanzania,748,group,no,,,,,,,,un
 mentha-spicata-var-crispa,UGA,Uganda,748,group,no,,,,,,,,unknown,FAOSTAT QCL
 mentha-spicata-var-crispa,UKR,Ukraine,748,group,no,,,,,,,,unknown,FAOSTAT QCL
 mentha-spicata-var-crispa,URY,Uruguay,748,group,no,,,,,,,,unknown,FAOSTAT QCL
-mentha-spicata-var-crispa,USA,United States of America,748,group,no,,,,,,,,unknown,FAOSTAT QCL
+mentha-spicata-var-crispa,USA,United States of America,,national,yes,4690,730,0.156,2025,2025,0.005,74,minor,USDA NASS Crop Production 2025 Summary (ISSN 1057-7823)
 mentha-spicata-var-crispa,UZB,Uzbekistan,748,group,no,,,,,,,,unknown,FAOSTAT QCL
 mentha-spicata-var-crispa,VCT,Saint Vincent and the Grenadines,748,group,no,,,,,,,,unknown,FAOSTAT QCL
 mentha-spicata-var-crispa,VEN,Venezuela (Bolivarian Republic of),748,group,no,,,,,,,,unknown,FAOSTAT QCL
@@ -45737,6 +45755,8 @@ metroxylon-sagu,YEM,Yemen,149,group,no,,,,,,,,unknown,FAOSTAT QCL
 metroxylon-sagu,ZAF,South Africa,149,group,no,,,,,,,,unknown,FAOSTAT QCL
 metroxylon-sagu,ZMB,Zambia,149,group,no,,,,,,,,unknown,FAOSTAT QCL
 metroxylon-sagu,ZWE,Zimbabwe,149,group,yes,,,,,,,,unknown,FAOSTAT QCL
+momordica-charantia,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+momordica-charantia,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 morus-alba,AFG,Afghanistan,558,group,yes,,,,,,,,unknown,FAOSTAT QCL
 morus-alba,AGO,Angola,558,group,no,,,,,,,,unknown,FAOSTAT QCL
 morus-alba,ALB,Albania,558,group,no,,,,,,,,unknown,FAOSTAT QCL
@@ -46331,6 +46351,10 @@ morus-rubra,YEM,Yemen,558,group,no,,,,,,,,unknown,FAOSTAT QCL
 morus-rubra,ZAF,South Africa,558,group,yes,,,,,,,,unknown,FAOSTAT QCL
 morus-rubra,ZMB,Zambia,558,group,no,,,,,,,,unknown,FAOSTAT QCL
 morus-rubra,ZWE,Zimbabwe,558,group,yes,,,,,,,,unknown,FAOSTAT QCL
+mucuna-pruriens,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+mucuna-pruriens,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
+musa-acuminata,USA,United States of America,,national,yes,498,,,2022,2022,0.001,84,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+musa-acuminata,VNM,Viet Nam,,national,yes,144600,2997900,20.732,2024,2024,1.071,15,common,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 musa-sapientum,AFG,Afghanistan,489;486,exact,no,,,,,,,,absent,FAOSTAT QCL
 musa-sapientum,AGO,Angola,486,exact,yes,183855,4898630,26.642,2022,2024,3,6,common,FAOSTAT QCL
 musa-sapientum,ALB,Albania,489;486,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -47519,6 +47543,8 @@ nicotiana-tabacum,YEM,Yemen,826,exact,yes,9203,32063,3.487,2022,2024,0.87,20,com
 nicotiana-tabacum,ZAF,South Africa,826,exact,yes,4039,10248,2.542,2022,2024,0.065,44,minor,FAOSTAT QCL
 nicotiana-tabacum,ZMB,Zambia,826,exact,yes,15541,25454,1.637,2022,2024,0.576,16,common,FAOSTAT QCL
 nicotiana-tabacum,ZWE,Zimbabwe,826,exact,yes,144375,204911,1.428,2022,2024,5.596,4,major,FAOSTAT QCL
+ocimum-basilicum,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+ocimum-basilicum,VNM,Viet Nam,,national,no,,,,,,,,unknown,Trung tâm Khuyến nông Quốc gia (Bộ Nông nghiệp và Môi trường)
 olea-europaea,AFG,Afghanistan,260,exact,yes,2185,7966,3.646,2022,2024,0.067,32,minor,FAOSTAT QCL
 olea-europaea,AGO,Angola,260,exact,no,,,,,,,,absent,FAOSTAT QCL
 olea-europaea,ALB,Albania,260,exact,yes,50332,140685,2.797,2022,2024,17.16,3,major,FAOSTAT QCL
@@ -55432,7 +55458,7 @@ pisum-sativum,USA,United States of America,187;417,exact,yes,418207,992133,2.035
 pisum-sativum,UZB,Uzbekistan,187;417,exact,yes,2058,8469,2.819,2022,2024,0.061,45,minor,FAOSTAT QCL
 pisum-sativum,VCT,Saint Vincent and the Grenadines,187;417,exact,no,,,,,,,,absent,FAOSTAT QCL
 pisum-sativum,VEN,Venezuela (Bolivarian Republic of),187,exact,yes,109,165,1.507,2022,2024,0.006,58,minor,FAOSTAT QCL
-pisum-sativum,VNM,Viet Nam,187;417,exact,no,,,,,,,,absent,FAOSTAT QCL
+pisum-sativum,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 pisum-sativum,VUT,Vanuatu,187;417,exact,no,,,,,,,,absent,FAOSTAT QCL
 pisum-sativum,WSM,Samoa,187;417,exact,no,,,,,,,,absent,FAOSTAT QCL
 pisum-sativum,YEM,Yemen,187,exact,yes,1769,2698,1.525,2022,2024,0.167,36,minor,FAOSTAT QCL
@@ -57804,7 +57830,7 @@ raphanus-sativus,TZA,United Republic of Tanzania,463,group,yes,,,,,,,,unknown,FA
 raphanus-sativus,UGA,Uganda,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,UKR,Ukraine,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,URY,Uruguay,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
-raphanus-sativus,USA,United States of America,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
+raphanus-sativus,USA,United States of America,,national,yes,9894,,,2022,2022,0.01,67,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 raphanus-sativus,UZB,Uzbekistan,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,VCT,Saint Vincent and the Grenadines,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,VEN,Venezuela (Bolivarian Republic of),463,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -60972,7 +60998,7 @@ sesamum-indicum,TZA,United Republic of Tanzania,289,exact,yes,279090,206278,0.73
 sesamum-indicum,UGA,Uganda,289,exact,yes,215000,139333,0.648,2022,2024,2.076,11,common,FAOSTAT QCL
 sesamum-indicum,UKR,Ukraine,289,exact,no,,,,,,,,absent,FAOSTAT QCL
 sesamum-indicum,URY,Uruguay,289,exact,no,,,,,,,,absent,FAOSTAT QCL
-sesamum-indicum,USA,United States of America,289,exact,no,,,,,,,,absent,FAOSTAT QCL
+sesamum-indicum,USA,United States of America,,national,yes,17740,12465,0.703,2022,2022,0.018,59,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 sesamum-indicum,UZB,Uzbekistan,289,exact,yes,6917,13362,1.912,2022,2024,0.204,31,minor,FAOSTAT QCL
 sesamum-indicum,VCT,Saint Vincent and the Grenadines,289,exact,no,,,,,,,,absent,FAOSTAT QCL
 sesamum-indicum,VEN,Venezuela (Bolivarian Republic of),289,exact,yes,48486,21332,0.443,2022,2024,2.776,8,common,FAOSTAT QCL
@@ -60983,6 +61009,8 @@ sesamum-indicum,YEM,Yemen,289,exact,yes,20605,20464,0.993,2022,2024,1.949,10,com
 sesamum-indicum,ZAF,South Africa,289,exact,no,,,,,,,,absent,FAOSTAT QCL
 sesamum-indicum,ZMB,Zambia,289,exact,no,,,,,,,,absent,FAOSTAT QCL
 sesamum-indicum,ZWE,Zimbabwe,289,exact,yes,23144,10502,0.455,2022,2024,0.897,17,common,FAOSTAT QCL
+sesbania-rostrata,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+sesbania-rostrata,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 setaria-italica,AFG,Afghanistan,79,group,yes,,,,,,,,unknown,FAOSTAT QCL
 setaria-italica,AGO,Angola,79,group,yes,,,,,,,,unknown,FAOSTAT QCL
 setaria-italica,ALB,Albania,79,group,no,,,,,,,,unknown,FAOSTAT QCL
@@ -61966,7 +61994,7 @@ solanum-melongena,USA,United States of America,399,exact,yes,2673,100534,37.606,
 solanum-melongena,UZB,Uzbekistan,399,exact,yes,7371,224314,30.537,2022,2024,0.218,29,minor,FAOSTAT QCL
 solanum-melongena,VCT,Saint Vincent and the Grenadines,399,exact,no,,,,,,,,absent,FAOSTAT QCL
 solanum-melongena,VEN,Venezuela (Bolivarian Republic of),399,exact,yes,1418,16433,11.584,2022,2024,0.081,47,minor,FAOSTAT QCL
-solanum-melongena,VNM,Viet Nam,399,exact,no,,,,,,,,absent,FAOSTAT QCL
+solanum-melongena,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 solanum-melongena,VUT,Vanuatu,399,exact,no,,,,,,,,absent,FAOSTAT QCL
 solanum-melongena,WSM,Samoa,399,exact,no,,,,,,,,absent,FAOSTAT QCL
 solanum-melongena,YEM,Yemen,399,exact,yes,609,4804,7.893,2015,2017,0.058,43,minor,FAOSTAT QCL
@@ -63359,6 +63387,8 @@ sorghum-bicolor-var-sweet,YEM,Yemen,83,exact,yes,341048,200000,0.586,2022,2024,3
 sorghum-bicolor-var-sweet,ZAF,South Africa,83,exact,yes,37767,98500,2.625,2022,2024,0.61,14,common,FAOSTAT QCL
 sorghum-bicolor-var-sweet,ZMB,Zambia,83,exact,yes,12911,8181,0.619,2022,2024,0.479,17,minor,FAOSTAT QCL
 sorghum-bicolor-var-sweet,ZWE,Zimbabwe,83,exact,yes,195568,80726,0.417,2022,2024,7.58,2,major,FAOSTAT QCL
+sorghum-x-drummondii,USA,United States of America,,national,yes,4386,7344,1.674,2022,2022,0.004,74,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+sorghum-x-drummondii,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 spinacia-oleracea,AFG,Afghanistan,373,exact,no,,,,,,,,absent,FAOSTAT QCL
 spinacia-oleracea,AGO,Angola,373,exact,no,,,,,,,,absent,FAOSTAT QCL
 spinacia-oleracea,ALB,Albania,373,exact,yes,1735,27116,15.621,2022,2024,0.591,24,common,FAOSTAT QCL
@@ -64151,6 +64181,8 @@ stevia-rebaudiana,YEM,Yemen,161,group,no,,,,,,,,unknown,FAOSTAT QCL
 stevia-rebaudiana,ZAF,South Africa,161,group,no,,,,,,,,unknown,FAOSTAT QCL
 stevia-rebaudiana,ZMB,Zambia,161,group,no,,,,,,,,unknown,FAOSTAT QCL
 stevia-rebaudiana,ZWE,Zimbabwe,161,group,no,,,,,,,,unknown,FAOSTAT QCL
+tagetes-erecta,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+tagetes-erecta,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 tamarindus-indica,AFG,Afghanistan,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tamarindus-indica,AGO,Angola,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tamarindus-indica,ALB,Albania,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -65141,6 +65173,10 @@ tragopogon-porrifolius,YEM,Yemen,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tragopogon-porrifolius,ZAF,South Africa,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tragopogon-porrifolius,ZMB,Zambia,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tragopogon-porrifolius,ZWE,Zimbabwe,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
+trifolium-incarnatum,USA,United States of America,,national,yes,3443,3414,0.992,2022,2022,0.003,75,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+trifolium-incarnatum,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
+trifolium-pratense,USA,United States of America,,national,yes,5812,4172,0.718,2022,2022,0.006,72,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+trifolium-pratense,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 trigonella-foenum-graecum,AFG,Afghanistan,723,group,yes,,,,,,,,unknown,FAOSTAT QCL
 trigonella-foenum-graecum,AGO,Angola,723,group,no,,,,,,,,unknown,FAOSTAT QCL
 trigonella-foenum-graecum,ALB,Albania,723,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -68111,6 +68147,8 @@ vicia-sativa-ssp-sativa,YEM,Yemen,205,exact,no,,,,,,,,absent,FAOSTAT QCL
 vicia-sativa-ssp-sativa,ZAF,South Africa,205,exact,no,,,,,,,,absent,FAOSTAT QCL
 vicia-sativa-ssp-sativa,ZMB,Zambia,205,exact,no,,,,,,,,absent,FAOSTAT QCL
 vicia-sativa-ssp-sativa,ZWE,Zimbabwe,205,exact,no,,,,,,,,absent,FAOSTAT QCL
+vicia-villosa-ssp-villosa,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
+vicia-villosa-ssp-villosa,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 vigna-aconitifolia,AFG,Afghanistan,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-aconitifolia,AGO,Angola,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-aconitifolia,ALB,Albania,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -70282,7 +70320,7 @@ vigna-unguiculata,USA,United States of America,195,exact,yes,6827,10037,1.547,20
 vigna-unguiculata,UZB,Uzbekistan,195,exact,no,,,,,,,,absent,FAOSTAT QCL
 vigna-unguiculata,VCT,Saint Vincent and the Grenadines,195,exact,no,,,,,,,,absent,FAOSTAT QCL
 vigna-unguiculata,VEN,Venezuela (Bolivarian Republic of),195,exact,no,,,,,,,,absent,FAOSTAT QCL
-vigna-unguiculata,VNM,Viet Nam,195,exact,no,,,,,,,,absent,FAOSTAT QCL
+vigna-unguiculata,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 vigna-unguiculata,VUT,Vanuatu,195,exact,no,,,,,,,,absent,FAOSTAT QCL
 vigna-unguiculata,WSM,Samoa,195,exact,no,,,,,,,,absent,FAOSTAT QCL
 vigna-unguiculata,YEM,Yemen,195,exact,yes,31871,86497,2.712,2022,2024,3.014,7,common,FAOSTAT QCL
@@ -70685,6 +70723,8 @@ vigna-unguiculata-ssp-pubescens,YEM,Yemen,176,group,yes,,,,,,,,unknown,FAOSTAT Q
 vigna-unguiculata-ssp-pubescens,ZAF,South Africa,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-unguiculata-ssp-pubescens,ZMB,Zambia,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-unguiculata-ssp-pubescens,ZWE,Zimbabwe,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
+vigna-unguiculata-ssp-sesquipedalis,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
+vigna-unguiculata-ssp-sesquipedalis,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 vigna-unguiculata-ssp-stenophylla,AFG,Afghanistan,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-unguiculata-ssp-stenophylla,AGO,Angola,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-unguiculata-ssp-stenophylla,ALB,Albania,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -72658,7 +72698,7 @@ zingiber-officinale,USA,United States of America,720,exact,yes,20,659,32.328,202
 zingiber-officinale,UZB,Uzbekistan,720,exact,no,,,,,,,,absent,FAOSTAT QCL
 zingiber-officinale,VCT,Saint Vincent and the Grenadines,720,exact,no,,,,,,,,absent,FAOSTAT QCL
 zingiber-officinale,VEN,Venezuela (Bolivarian Republic of),720,exact,no,,,,,,,,absent,FAOSTAT QCL
-zingiber-officinale,VNM,Viet Nam,720,exact,no,,,,,,,,absent,FAOSTAT QCL
+zingiber-officinale,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 zingiber-officinale,VUT,Vanuatu,720,exact,yes,7,179,25.571,2022,2024,0.005,26,minor,FAOSTAT QCL
 zingiber-officinale,WSM,Samoa,720,exact,no,,,,,,,,absent,FAOSTAT QCL
 zingiber-officinale,YEM,Yemen,720,exact,no,,,,,,,,absent,FAOSTAT QCL
