@@ -4,7 +4,7 @@
  * by date beside the satellite image, and the two charts a grower reads first: greenness and rain.
  */
 import { useMemo, type ReactNode } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, ChevronsUpDown, Maximize2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ChevronsUpDown, Maximize2, TriangleAlert } from 'lucide-react';
 import { BRANCHES, type BranchId, pick } from '@/contracts';
 import { useLang, useT } from '@/i18n';
 import { BRANCH_TITLES, findSeries, insightsNear, primarySeries, scoreAt } from '@/lib/series';
@@ -14,12 +14,10 @@ import { useMissionUi } from '@/ui/chrome/uiState';
 import { AnomalyMarker, StatusTag, cn } from '@/ui/design';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
 import { rainSum, readBranch } from '@/ui/hud/readings';
-import { FarmTab } from '@/ui/farm/FarmTab';
 import { QuickFacts } from '@/ui/override';
 import { LiveFieldCanvas } from './FieldCanvas';
 import { usePictureState, useSelectBranch } from './MetricCards';
 import { rasterFor } from './picture';
-import { RotationTab } from './RotationTab';
 import { SatelliteCanvas } from './SatelliteCanvas';
 import { TileLegend } from './ScaleLegend';
 import { AccumChart, NdviChart, s2Points } from './StatusCharts';
@@ -102,16 +100,20 @@ function KeyNumbers() {
 }
 
 /** The model's own sentence about the field, and up to two things that changed around the date shown. */
-function Summary() {
+function Summary({ workspace }: { workspace: boolean }) {
   const t = useT();
   const lang = useLang();
   const headline = useMission((s) => s.score?.summary.headline);
   const mode = useMission((s) => s.telemetry?.mode);
   const insights = useMission((s) => s.insights);
   const cursor = useMission((s) => s.timeline.cursor);
-  const near = insightsNear(insights, cursor, 21).slice(0, 2);
+  const events = useMission((s) => s.telemetry?.branches.risk.events);
+  const event = workspace ? events?.filter((item) => item.severity && item.end >= cursor && diffDays(item.start, cursor) <= 16)
+    .sort((a, b) => b.severity - a.severity || a.start.localeCompare(b.start))[0] : undefined;
+  const near = insightsNear(insights, cursor, 21).filter((item) => !(event?.start === item.t && item.branch === 'risk')).slice(0, 2);
   return (
     <section aria-label={t('field.over.summary')} className="flex flex-col gap-3">
+      {workspace && <h2 className="workspace-section-title">{t('field.over.outlook')}</h2>}
       {headline ? (
         <p className="text-md leading-6 text-ink-1">
           {pick(headline, lang)}
@@ -121,6 +123,12 @@ function Summary() {
         <span className="skeleton h-6 w-4/5" aria-hidden />
       )}
       <KeyNumbers />
+      {workspace && event && (
+        <p className="workspace-field-risk">
+          <TriangleAlert size={15} aria-hidden className="text-signal-strong" />
+          <span><strong>{pick(event.title, lang)}</strong> · {pick(event.detail, lang)} {fmtDate(event.start, lang)}</span>
+        </p>
+      )}
       {near.length > 0 && (
         <ul className="flex flex-col gap-1.5" aria-label={t('field.changed')}>
           {near.map((i, n) => (
@@ -138,7 +146,7 @@ function Summary() {
 }
 
 /** Dark pill with the date shown and steps to the previous and next real frame. */
-function DatePill() {
+function DatePill({ workspace }: { workspace: boolean }) {
   const lang = useLang();
   const t = useT();
   const cursor = useMission((s) => s.timeline.cursor);
@@ -152,7 +160,7 @@ function DatePill() {
   const go = (d?: string) => d && (setPlaying(false), setCursor(d));
   const step = 'flex size-8 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-35 disabled:hover:bg-transparent';
   return (
-    <div className="flex h-10 shrink-0 items-center gap-1 rounded-full bg-ink-1 px-1 text-white">
+    <div className={cn('flex h-10 shrink-0 items-center gap-1 rounded-full bg-ink-1 px-1 text-white', workspace && 'workspace-date')}>
       <button type="button" aria-label={t('field.frame.prev')} disabled={!prev} onClick={() => go(prev)} className={step}>
         <ChevronLeft size={16} aria-hidden />
       </button>
@@ -298,47 +306,69 @@ function StatusCharts() {
   );
 }
 
-/** The field in figures: the model's sentence, three numbers, the picture by date, the two charts. Shown on the Data tab. */
-export function OverviewData() {
+function WorkspaceImages() {
   const t = useT();
+  const lang = useLang();
+  const parcel = useMission((s) => s.parcel);
+  const branch = useMission((s) => s.focusBranch ?? 'vegetation');
+  const paint = useMission((s) => rasterFor(s.rasters, branch));
+  const cursor = useMission((s) => s.timeline.cursor);
+  const select = useSelectBranch();
+  const setTab = useMissionUi((s) => s.setFieldTab);
+  const date = paint?.frames.findLast((frame) => frame.t <= cursor)?.t;
+  const metric = pick(BRANCH_TITLES[branch], lang);
+  const sourceId = paint?.sourceId;
+  const source = useMission((s) => sourceId ? s.telemetry?.sources[sourceId] : undefined);
+  if (!parcel) return null;
   return (
-    <div className="flex flex-col gap-6">
-      <Summary />
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-lg font-medium text-ink-1">{t('field.status.satellite')}</h3>
-          <DatePill />
-        </div>
-        <div className="grid grid-cols-2 gap-2 narrow:grid-cols-1">
-          <PictureTile />
-          <SatelliteTile />
-        </div>
-        <PeriodNote />
-        <StatusCharts />
-      </section>
-    </div>
+    <>
+      {date && <p className="workspace-image-note">{paint?.unit || metric} · {fmtDate(date, lang)}</p>}
+      <div className="workspace-image-grid">
+        <button type="button" onClick={() => (select(branch), setTab('data'))} className="workspace-image-card" aria-label={t('field.pic.open', { name: metric })}>
+          <span>{metric}{paint?.unit ? ` · ${paint.unit}` : ''}</span>
+          <span className="workspace-image-frame">
+            <span className="workspace-image-map">
+              <SatelliteCanvas parcel={parcel} pad={8} thumbnail />
+              <LiveFieldCanvas branch={branch} pad={8} className="absolute inset-0" />
+            </span>
+          </span>
+        </button>
+        <figure className="workspace-image-card">
+          <figcaption>{t('field.sat.title')}</figcaption>
+          <div className="workspace-image-frame"><div className="workspace-image-map"><SatelliteCanvas parcel={parcel} pad={8} thumbnail /></div></div>
+        </figure>
+      </div>
+      <p className="workspace-image-note">
+        {source && paint && <span>{source.name} · {paint.cellM} m</span>}
+        <span>{t('field.sat.credit')}</span>
+      </p>
+    </>
   );
 }
 
-/**
- * The first tab: the living farm, the three questions that sharpen the model while they are still
- * unanswered, and what to grow. It took the place of the overview and of the rotation tab.
- */
-export function OverviewTab() {
+export function OverviewTab({ workspace = false }: { workspace?: boolean }) {
   const t = useT();
   const parcelId = useMission((s) => s.parcel?.id);
   const closed = useMissionUi((s) => (parcelId ? !!s.quickClosed[parcelId] : true));
   const closeQuick = useMissionUi((s) => s.closeQuick);
   const setTab = useMissionUi((s) => s.setFieldTab);
   return (
-    <div className="flex flex-col gap-6">
-      <FarmTab />
+    <div className={cn('flex flex-col gap-6', workspace && 'workspace-overview')}>
       {!closed && parcelId && <QuickFacts onClose={() => closeQuick(parcelId)} onMore={() => setTab('soil')} />}
-      <section className="flex flex-col gap-3 border-t border-line-1 pt-4" aria-labelledby="farm-grow">
-        <h3 id="farm-grow" className="text-lg font-medium text-ink-1">
-          {t('farm.grow')}
-        </h3>
-        <RotationTab />
+      <Summary workspace={workspace} />
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className={workspace ? 'workspace-section-title' : 'text-lg font-medium text-ink-1'}>{t('field.status.satellite')}</h2>
+          <DatePill workspace={workspace} />
+        </div>
+        {workspace ? <WorkspaceImages /> : (
+          <div className="grid grid-cols-2 gap-2 narrow:grid-cols-1">
+            <PictureTile />
+            <SatelliteTile />
+          </div>
+        )}
+        <PeriodNote />
+        <StatusCharts />
       </section>
     </div>
   );

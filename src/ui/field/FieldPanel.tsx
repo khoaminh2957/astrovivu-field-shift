@@ -20,7 +20,8 @@ import { countOverrides } from '@/ui/override';
 import { CardDetail } from './CardDetail';
 import { FieldReport } from './FieldReport';
 import { MetricGrid, useSelectBranch } from './MetricCards';
-import { ChartCard, OverviewData, OverviewTab } from './OverviewTab';
+import { ChartCard, OverviewTab } from './OverviewTab';
+import { RotationTab } from './RotationTab';
 import { SoilTab } from './SoilTab';
 import { AccumChart, gddBase, gddNote, gddSeries } from './StatusCharts';
 import './strings';
@@ -42,7 +43,7 @@ function ScoreLine() {
   );
 }
 
-function Header() {
+function Header({ workspace }: { workspace: boolean }) {
   const t = useT();
   const lang = useLang();
   const parcel = useMission((s) => s.parcel);
@@ -51,6 +52,20 @@ function Header() {
   const unlock = useMission((s) => s.unlockParcel);
   if (!parcel) return null;
   const crop = getCrop(cropId);
+  if (workspace) {
+    const place = parcel.place && ([parcel.place.admin1, parcel.place.country].filter(Boolean).join(', ') || parcel.place.label);
+    const detail = [`${fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha`, crop && cropName(crop.names, lang), place].filter(Boolean).join(' · ');
+    return (
+      <header className="workspace-field-header">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1>{parcel.name}</h1>
+          {parcel.source === 'sample' && <span className="workspace-demo">{t('field.demo.tag')}</span>}
+          {mode === 'mock' && <StatusTag status="simulated" compact />}
+        </div>
+        <p>{detail}</p>
+      </header>
+    );
+  }
   return (
     <header className="flex items-start gap-2">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -131,15 +146,14 @@ function CountryCropsNote() {
   );
 }
 
-function DataTab() {
+function DataTab({ workspace }: { workspace: boolean }) {
   const t = useT();
   const focus = useMission((s) => s.focusBranch);
   const select = useSelectBranch();
   if (focus) return <CardDetail branch={focus} onBack={() => select(null)} />;
   return (
     <div className="flex flex-col gap-6">
-      <OverviewData />
-      <MetricGrid />
+      <MetricGrid className={workspace ? 'workspace-metric-grid' : undefined} />
       <HeatChart />
       <Fold title={t('field.data.within')} note={t('field.data.withinNote')}>
         <FieldReport />
@@ -149,18 +163,20 @@ function DataTab() {
   );
 }
 
-export function FieldPanel() {
+export function FieldPanel({ workspace = false }: { workspace?: boolean }) {
   const t = useT();
   const tab = useMissionUi((s) => s.fieldTab);
   const setTab = useMissionUi((s) => s.setFieldTab);
+  const setPhase = useMission((s) => s.setPhase);
   const root = useRef<HTMLDivElement | null>(null);
   const parcelId = useMission((s) => s.parcel?.id);
   const entered = useMission((s) => countOverrides(s.groundTruth));
   const narrow = useNarrow();
   // A tab or a field opens at its top, wherever the previous one had been scrolled to.
   useEffect(() => {
-    root.current?.closest('[data-panel-scroll]')?.scrollTo({ top: 0 });
-  }, [tab, parcelId]);
+    const scroll = workspace ? root.current?.querySelector('[data-workspace-scroll]') : root.current?.closest('[data-panel-scroll]');
+    scroll?.scrollTo({ top: 0 });
+  }, [tab, parcelId, workspace]);
   const badge = (n: number, label: string) => (
     <span title={label} className="flex h-6 min-w-6 items-center justify-center rounded-xs border border-signal px-1 font-normal text-signal-strong">
       {n}
@@ -168,28 +184,36 @@ export function FieldPanel() {
     </span>
   );
   return (
-    <div ref={root} className="flex flex-col gap-5 narrow:gap-3">
-      <Header />
+    <div ref={root} className={cn('flex flex-col gap-5 narrow:gap-3', workspace && 'workspace-field-inner')}>
+      <Header workspace={workspace} />
       <Tabs<FieldTab>
+        className={workspace ? 'workspace-field-tabs' : undefined}
+        activationMode={workspace ? 'manual' : 'automatic'}
         ariaLabel={t('field.tabs')}
         value={tab}
-        onValueChange={setTab}
+        onValueChange={(next) => workspace && next === 'rotation' ? setPhase('advisory') : setTab(next)}
         tabs={[
           { value: 'overview', label: t('field.tab.overview') },
           // Four tabs must fit a phone's width without scrolling the bar: the long name shortens, the fixed count goes.
           { value: 'soil', label: t(narrow ? 'field.tab.soilShort' : 'field.tab.soil'), badge: entered > 0 ? badge(entered, t('field.tab.soilCount')) : undefined },
+          { value: 'rotation', label: t('field.tab.rotation') },
           { value: 'data', label: t('field.tab.data'), badge: narrow ? undefined : badge(BRANCHES.length, t('field.tab.dataCount')) },
         ]}
       >
-        <TabPanel value="overview" className="pt-4">
-          <OverviewTab />
-        </TabPanel>
-        <TabPanel value="soil" className="pt-6">
-          <SoilTab />
-        </TabPanel>
-        <TabPanel value="data" className="pt-6">
-          <DataTab />
-        </TabPanel>
+        <div data-workspace-scroll={workspace || undefined}>
+          <TabPanel value="overview" className="pt-6">
+            <OverviewTab workspace={workspace} />
+          </TabPanel>
+          <TabPanel value="soil" className="pt-6">
+            <SoilTab />
+          </TabPanel>
+          <TabPanel value="rotation" className="pt-6">
+            <RotationTab />
+          </TabPanel>
+          <TabPanel value="data" className="pt-6">
+            <DataTab workspace={workspace} />
+          </TabPanel>
+        </div>
       </Tabs>
     </div>
   );

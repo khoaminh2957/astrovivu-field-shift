@@ -200,20 +200,22 @@ Thửa Iowa: 2.240 px. Thửa Nevada (bảy mục lời khuyên): 2.412 px, tứ
 | Hai thứ tiếng | không còn chuỗi tiếng Anh nào ở chế độ tiếng Việt |
 | Tương phản | chữ trắng trên nền xanh lá hiện 2,87:1; nâng lên mức đạt chuẩn hoặc đổi sang xanh đậm |
 
-### U11. Nông trại sống thay thẻ Tổng quan và thẻ Luân canh (bản đầu đã xong, 15/11)
+### U11. Nông trại sống ở đầu trang Luân canh (bản thứ hai, 15/11)
 
 Issue B21 (#101), tài liệu `docs/FARM.md`.
 
-- Thẻ đầu của bảng ruộng là một cảnh nông trại vẽ bằng SVG từ số liệu của ngày đang xem: trời (quang, nhiều mây, mưa, mưa lớn, nắng nóng, sương giá), cây trên luống theo giai đoạn và độ xanh, đất theo độ ẩm tầng rễ, xe thu hoạch và xe gieo theo lịch vụ.
+Bản đầu đặt nông trại vào thẻ Tổng quan của bảng ruộng và bỏ thẻ Luân canh. Chủ dự án không muốn vậy: bảng ruộng giữ nguyên bốn thẻ, nông trại thay chỗ mục "Luân canh" ở thanh bên trái. Bản thứ hai làm đúng như thế.
+
+- Mục "Luân canh" ở thanh bên đổi tên thành "Nông trại". Trang đó mở đầu bằng cảnh nông trại; phần so sánh các phương án luân canh (thẻ phương án, lịch mùa vụ, đánh đổi, bằng chứng, rủi ro) giữ nguyên ở ngay bên dưới, vì đó là phần đề bài yêu cầu.
+- Cảnh vẽ bằng SVG từ số liệu của ngày đang xem: trời (quang, nhiều mây, mưa, mưa lớn, nắng nóng, sương giá), cây trên luống theo giai đoạn và độ xanh, đất theo độ ẩm tầng rễ, xe thu hoạch và xe gieo theo lịch vụ. Nền phía sau được vẽ lại: dãy núi xa, hai lớp đồi có ruộng, cây nhiều tầng, nhà kho có bóng đổ, cối xay gió quay theo gió, hàng rào.
 - Ba mascot (Vũ trụ, Đất, Lúa) đứng ở trời, mép đất và giữa luống; mỗi con nói một câu dựng từ số liệu, có tên nguồn; luân phiên 8 giây một lượt cho tới khi người dùng chọn.
 - Đất và Lúa đề xuất các bản thử lấy từ `whatIf` và `rankCrops`: chỉnh pH, tưới, thoát nước, dời ngày gieo, đổi cây. Bản thử chạy lại điểm của cả năm trên bản sao của dữ liệu; số người dùng nhập không đổi.
-- Dưới cảnh: thanh kéo ngày (chung con trỏ với thanh dưới bản đồ), bốn số của ngày, dải thời tiết hôm nay và dự báo, cảnh báo.
-- Thẻ Luân canh bỏ khỏi thanh thẻ; phần so sánh phương án nằm ở mục "Nên trồng gì" của thẻ Nông trại. Câu tóm tắt, ảnh vệ tinh theo ngày và hai biểu đồ chuyển sang thẻ Dữ liệu.
+- Trang rộng: cảnh bên trái, mascot đang nói bên phải; bên dưới là bốn số của ngày và dải thời tiết hôm nay cùng dự báo. Thanh kéo ngày dùng chung con trỏ với thanh dưới bản đồ, và nút phát chạy được ngay trên trang này.
 - Hình mascot là hình giữ chỗ cho tới khi có hình của người phụ trách mascot (U2, U3).
 
-Đã kiểm trên trình duyệt (15/11): bốn thửa mẫu, kéo qua cả năm ở Cần Thơ (mưa, nắng nóng, đất khô, ba vụ lúa), xe thu hoạch ở Iowa đầu tháng 9, bản thử đổi cây ở Nevada (53 lên 66), bấm một ngày dự báo, màn hình 375 px không tràn ngang.
+Đã kiểm trên trình duyệt (15/11, 1440 × 900): trang Nông trại của thửa Iowa, bấm phát thì ngày tiến và ngô lớn dần; bảng ruộng có lại bốn thẻ.
 
-Còn lại: xe đi vào theo quãng đường dài hơn khi bấm phát; lời mascot cho các việc của `SoilPlan` khi #96 vào `main`; kịch bản tương tác của U4 (#40).
+Còn lại: chọn một phương án luân canh thì cảnh vẽ đúng các cây của phương án đó qua từng vụ; lời mascot cho các việc của `SoilPlan` khi #96 vào `main`; kịch bản tương tác của U4 (#40); ghép với bố cục mới của #102.
 
 ## 4. Thứ tự
 
@@ -238,3 +240,24 @@ Cuối đợt 5, cho ba người trong nhóm không làm giao diện dùng thử
 5. Hỏi trợ lý một câu về cây đang trồng.
 
 Kết quả ghi vào tài liệu này; chỗ nào hai trong ba người vấp thì sửa trước khi nộp.
+
+## 6. Bố cục ruộng và luồng Field, Rotation, Urban
+
+Kiểm tra cục bộ ngày 15/11/2026 trên trình duyệt. Vùng ngang tính từ mép bảng ruộng đến phần chừa 64 px bên phải cho cụm công cụ.
+
+| Khung | Bề rộng trước theo issue #86 | Vùng ngang sau | Kiểm tra tâm theo khung camera |
+|---|---:|---:|---|
+| 1440 × 900 | 492 px | 728 px (50,6%) | Nevada và ranh tự chọn ở Cai Lậy lệch khoảng 2 px mỗi trục hoặc ít hơn khi đã ổn định |
+| 1280 × 720 | 392 px | 640 px (50%) | Ranh mẫu Cần Thơ lệch dưới 1 px mỗi trục khi đã ổn định |
+| 426 × 690 | Tấm dưới | Không tràn ngang | Mẫu Cần Thơ mở thẳng ở giữa vùng trống, lệch dưới 2 px theo chiều dọc |
+
+- Hai lượt rà từ tọa độ Cai Lậy gồm mở ranh, đọc các thẻ, nhập pH 6,5, mở luân canh và hỏi trợ lý. Trợ lý trả lời có nguồn bằng tiếng Anh và tiếng Việt. Đã kiểm tra việc chuyển qua Urban, dùng vị trí thửa, mở hướng dẫn cây và quay lại Field. Rotation giữ tab lịch và phương án cải tạo đất sau khi đi qua Urban.
+- Chuyển trang, đổi tab, mở bảng và phản hồi nút dùng hiệu ứng ngắn. Giảm chuyển động được kiểm với `?motion=reduced`, chuyển trang có thời lượng 0. Bảng nhịp riêng của năm chuyến chuyển camera [chờ Bảo duyệt](https://github.com/quocbao271207/astrovivu-field-shift/issues/87#issuecomment-6889713952).
+- Vị trí danh sách thửa [đang chờ chốt](https://github.com/quocbao271207/astrovivu-field-shift/issues/86#issuecomment-6889713727) cùng với [nội dung từng bước](https://github.com/quocbao271207/astrovivu-field-shift/issues/84). Hai đoạn quay chính thức của #88 còn mở.
+- Đo đúng lúc camera đáp và sau 2 giây: Nevada từ nút thử mẫu và điểm ruộng trên bản đồ ở 1440 × 900 có tâm (1044, 450) đúng tâm khung, cùng zoom 15,1474. Ranh tự chọn ở 426 × 690 có tâm (185, 183) so với đích (185, 181,5), giữ nguyên tâm và zoom 16,4802. Link Nevada với giảm chuyển động ở 426 × 690 có tâm (185, 181,5) ngay khung đầu và giữ nguyên sau 2 giây.
+
+### Home và thời tiết
+
+Home hiển thị thửa đang mở, diện tích, khu vực, các số liệu thời tiết mới nhất và lối vào Thửa ruộng, Thời tiết, Luân canh, Đô thị. Chỉ nút A đưa về màn đầu. Trang Thời tiết dùng dữ liệu của thửa đang mở, gồm nhiệt cao/thấp, mưa, gió, dự báo theo ngày, lịch sử 7 ngày và rủi ro có trong nguồn. Giá trị thiếu hiển thị dấu gạch, còn số liệu cũ, đã lưu hoặc mô phỏng có nhãn.
+
+Thanh điều hướng rộng 60 px trên desktop và cao 54 px trên điện thoại. Đã thử từ thửa Nevada ở 1440 × 900 (EN) và Cần Thơ ở 426 × 690 (VI), gồm Home giữ thửa, chuyển hai tab thời tiết và A trở về màn tìm thửa ban đầu. [Năm điểm rà luồng đã gửi ở #88](https://github.com/quocbao271207/astrovivu-field-shift/issues/88#issuecomment-6890112672).

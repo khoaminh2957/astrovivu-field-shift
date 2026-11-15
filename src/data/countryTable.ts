@@ -16,7 +16,7 @@ export interface CountryTableFile {
   country: string;
   /** Source of every record that does not name its own. */
   source: string;
-  /** Crops with a reported quantity (major, common, minor, present), as the model reads them. */
+  /** Crops with a reported quantity (major, common, minor, present), as the model reads them; also every row from a national source (match national), which is `unknown` when that source has no figure. */
   prevalence: Record<string, CropPrevalence>;
   /** Crops tied to an item of their own for which the country reports nothing above zero. */
   absent: string[];

@@ -8,10 +8,12 @@ import { create } from 'zustand';
 import type { Parcel } from '@/contracts';
 
 export type MapPopover = 'layers' | 'measure' | null;
-/** `overview` is the living farm, which also holds what the rotation tab showed. */
-export type FieldTab = 'overview' | 'soil' | 'data';
+export type FieldTab = 'overview' | 'soil' | 'rotation' | 'data';
+export type WorkspacePage = 'home' | 'weather';
 
 export interface MissionUiState {
+  workspacePage: WorkspacePage | null;
+  setWorkspacePage(page: WorkspacePage | null): void;
   /** Soil-and-practice section expanded (the older single-column summary). */
   overrideOpen: boolean;
   /** Tab of the field panel: how the field is, what the grower knows of it, what to grow, where the numbers come from. */
@@ -79,6 +81,8 @@ function storeFold(folded: boolean): void {
 }
 
 export const useMissionUi = create<MissionUiState>()((set) => ({
+  workspacePage: null,
+  setWorkspacePage: (workspacePage) => set({ workspacePage }),
   overrideOpen: false,
   fieldTab: 'overview',
   setFieldTab: (fieldTab) => set({ fieldTab }),

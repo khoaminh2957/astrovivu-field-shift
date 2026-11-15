@@ -40,7 +40,8 @@ function pendingFrom(s: ReturnType<typeof useMission.getState>): ISODate | null 
   return earliest && earliest < tel.window.today ? earliest : null;
 }
 
-function usePlayback() {
+/** Advances the cursor while `playing` is on. Mount it once per screen: the strip under the map does, and so does the farm on the rotation page. */
+export function usePlayback() {
   const playing = useMissionUi((s) => s.playing);
   const speed = useMissionUi((s) => s.speed);
   const setPlaying = useMissionUi((s) => s.setPlaying);
@@ -80,7 +81,7 @@ function usePlayback() {
 }
 
 
-export function TimelineScrubber({ className }: { className?: string }) {
+export function TimelineScrubber({ className, workspace = false }: { className?: string; workspace?: boolean }) {
   const t = useT();
   const lang = useLang();
   const narrow = useNarrow();
@@ -180,7 +181,7 @@ ${m.label}` } : m);
       <IconButton label={playing ? t('tl.pause') : t('tl.play')} icon={playing ? <Pause /> : <Play />} variant="primary" size="lg" className="rounded-full shadow-none [&_svg]:size-4 [&_svg]:fill-current" onClick={() => setPlaying(!playing)} />
       <div className="flex min-w-[5.75rem] shrink-0 flex-col">
         <span className="t-value text-base whitespace-nowrap text-ink-1">{fmtDate(cursor, lang)}</span>
-        <span className="truncate text-xs text-ink-3">{rel === 0 ? t('tl.today') : rel < 0 ? t('tl.ago', { n: -rel }) : t('tl.ahead', { n: rel })}</span>
+        <span className="truncate text-xs text-ink-3">{rel === 0 ? t(workspace ? 'tl.viewing' : 'tl.today') : rel < 0 ? t('tl.ago', { n: -rel }) : t('tl.ahead', { n: rel })}</span>
       </div>
       <div
         className="relative min-w-0 flex-1"
@@ -194,6 +195,7 @@ ${m.label}` } : m);
         <Slider
           ariaLabel={t('tl.timeline')}
           size="md"
+          fill={workspace}
           value={value}
           onValueChange={(v) => setCursor(addDays(start, Math.min(v, todayIdx)))}
           min={0}

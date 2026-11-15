@@ -111,14 +111,17 @@ const quantities = (table: string, unitOf: string) => {
   add(table, 'share_of_country_harvested_area_pct', 'Share of the country\'s harvested area (all FAOSTAT crop items).', 'Tỷ lệ trong tổng diện tích thu hoạch của quốc gia (mọi mặt hàng cây trồng FAOSTAT).', '%', FAO, 'area / sum of the areas of all crop items of the country');
   add(table, 'rank_in_country', 'Rank by harvested area among the crop items of the country (1 = largest).', 'Thứ hạng theo diện tích thu hoạch trong các mặt hàng cây trồng của quốc gia (1 = lớn nhất).', 'rank', FAO, '1 + number of other items with a larger area');
   add(table, 'level', 'major: at least 5 % of the country\'s harvested area. common: at least 0.5 %. minor: below. present: production without area. absent: FAOSTAT covers the country and reports nothing above zero. unknown: group item.', 'major: từ 5 % diện tích thu hoạch của quốc gia. common: từ 0,5 %. minor: thấp hơn. present: có sản lượng nhưng không có diện tích. absent: FAOSTAT có số liệu quốc gia nhưng không ghi nhận cây này. unknown: thuộc mặt hàng gộp nên không xác định được.', '', BUILD, 'thresholds in scripts/crops/atlas/levels.ts');
-  add(table, 'source', 'Source of the row.', 'Nguồn của dòng số liệu.', '', BUILD, 'constant');
+  // crop_country names the national statistic on a national row; its URL, access date, table and
+  // note are not repeated here (the file keeps the columns the market database mirrors).
+  if (table === 'crop_country') add(table, 'source', 'Source of the row: FAOSTAT QCL, or the national statistic of a row with match = national.', 'Nguồn của dòng số liệu: FAOSTAT QCL, hoặc thống kê quốc gia với dòng có match = national.', '', BUILD, 'constant, or the source column of data/crops/national/prevalence.csv, which also holds the URL, access date, table and note of that row');
+  else add(table, 'source', 'Source of the row.', 'Nguồn của dòng số liệu.', '', BUILD, 'constant');
 };
 const CC = 'crop_country';
 add(CC, 'crop_id', 'Crop (see crops.csv).', 'Cây trồng (xem crops.csv).', '', BUILD, 'join key');
 add(CC, 'iso3', 'ISO 3166-1 alpha-3 country code.', 'Mã quốc gia ISO 3166-1 alpha-3.', '', 'UN M49', 'FAOSTAT M49 code looked up in the UN M49 list');
 add(CC, 'country', 'Country name as FAOSTAT writes it.', 'Tên quốc gia theo FAOSTAT.', '', FAO, 'copied');
 add(CC, 'faostat_item_code', 'FAOSTAT item(s) the quantities come from, largest first, separated by ";".', 'Mã (các) mặt hàng FAOSTAT cho ra số liệu, lớn nhất đứng trước, cách nhau bằng ";".', '', FAO, 'items of the crop reported above zero in the country (all its items on an absent row; the group item on an unknown row)');
-add(CC, 'match', 'exact or group (see crops.csv).', 'exact hoặc group (xem crops.csv).', '', BUILD, 'copied from crops.csv');
+add(CC, 'match', 'exact, group or national (from national statistics; see crops.csv).', 'exact, group hoặc national (từ thống kê quốc gia; xem crops.csv).', '', BUILD, 'copied from crops.csv, or national when supplied by data/crops/national/prevalence.csv');
 add(CC, 'item_reported', 'yes when the country reports the item(s) above zero. For a group crop this is all the source says: the item is reported, the species is unknown.', 'yes nếu quốc gia có báo cáo (các) mặt hàng này với giá trị lớn hơn 0. Với cây thuộc mặt hàng gộp, đây là tất cả những gì nguồn cho biết: mặt hàng có báo cáo, còn loài thì không rõ.', '', FAO, 'area or production mean above zero');
 quantities(CC, 'the crop');
 
@@ -219,10 +222,10 @@ add(SO, 'publisher', 'Who publishes it.', 'Đơn vị công bố.', '', BUILD, '
 add(SO, 'url', 'Address the bytes were downloaded from (or the repository path).', 'Địa chỉ tải tệp (hoặc đường dẫn trong kho mã).', '', BUILD, '');
 add(SO, 'landing_page', 'Page to cite or visit.', 'Trang để trích dẫn hoặc tham khảo.', '', BUILD, '');
 add(SO, 'licence', 'Licence as read on the publisher\'s terms page.', 'Giấy phép theo trang điều khoản của đơn vị công bố.', '', BUILD, '');
-add(SO, 'accessed', 'Date of download.', 'Ngày tải về.', 'date', BUILD, 'empty for repository files');
-add(SO, 'file', 'Where the file is kept.', 'Nơi lưu tệp.', '', BUILD, '');
-add(SO, 'sha256', 'SHA-256 checksum of the file.', 'Mã kiểm tra SHA-256 của tệp.', '', BUILD, '');
-add(SO, 'bytes', 'File size.', 'Kích thước tệp.', 'bytes', BUILD, '');
+add(SO, 'accessed', 'Date of download.', 'Ngày tải về.', 'date', BUILD, 'empty for repository files; for a national source, the date it was read (data/crops/national/prevalence.csv)');
+add(SO, 'file', 'Where the file is kept.', 'Nơi lưu tệp.', '', BUILD, 'for a national source, the file its figures were read into by hand: the build keeps no copy of the publication');
+add(SO, 'sha256', 'SHA-256 checksum of the file.', 'Mã kiểm tra SHA-256 của tệp.', '', BUILD, 'empty for a national source (no copy kept)');
+add(SO, 'bytes', 'File size.', 'Kích thước tệp.', 'bytes', BUILD, 'empty for a national source (no copy kept)');
 add(SO, 'rows_used', 'What the build took from it.', 'Phần dữ liệu chương trình đã dùng.', '', BUILD, '');
 const CL = 'columns';
 add(CL, 'table', 'Table (file name without .csv).', 'Bảng (tên tệp không kèm .csv).', '', BUILD, '');
