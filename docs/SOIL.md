@@ -142,6 +142,23 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
 
+### 5.6 Compaction and root-restricting bulk density (Issue #51 / S10)
+
+- Thresholds for root growth restriction based on soil texture. Source: USDA Natural Resources Conservation Service (NRCS) Soil Quality Institute (1999), *Soil Quality Information Sheet: Bulk Density*, Table 1; Pierce, F.J., Larson, W.E., Dowdy, R.H., & Graham, W.A.P. (1983), Productivity of soils: Assessing long-term changes due to erosion, *Journal of Soil and Water Conservation* 38(1): 39-44.
+
+| Soil Texture Class | Ideal for Root Growth (g/cm³) | Affects Root Growth (g/cm³) | Restricts Root Growth (g/cm³) |
+|---|---|---|---|
+| Light (sands, loamy sands) | < 1.60 | > 1.69 | ≥ 1.80 |
+| Medium (loams, silt loams, sandy clay loams) | < 1.40 | > 1.55 | ≥ 1.65 |
+| Heavy (clay loams, clays, silty clays) | < 1.10 | > 1.40 | ≥ 1.47 |
+
+- Risk classification:
+  - `ideal`: bulk density is within the optimal growth range.
+  - `moderate`: bulk density is in the growth-affecting range (`affectsGrowth` to `restrictsRoot`); bio-tillage cover crops or subsoiling advised.
+  - `severe`: bulk density reaches or exceeds `restrictsRoot`; mechanical alleviation (deep ripping 5–10 cm below the compacted layer when dry) and permanent raised beds / controlled traffic recommended.
+  - `unknown`: bulk density or texture is missing; field testing protocol is provided.
+- Field testing protocol: wire flag test or penetrometer test (2.0 MPa / 300 psi threshold) conducted at field moisture capacity to identify depth of plow pan.
+
 ## 6. Removed from the output for lack of a source
 
 Each can come back with a publication, year, table or page, and licence.
