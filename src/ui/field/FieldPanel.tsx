@@ -57,10 +57,13 @@ function Header({ workspace }: { workspace: boolean }) {
     const detail = [`${fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha`, crop && cropName(crop.names, lang), place].filter(Boolean).join(' · ');
     return (
       <header className="workspace-field-header">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1>{parcel.name}</h1>
-          {parcel.source === 'sample' && <span className="workspace-demo">{t('field.demo.tag')}</span>}
-          {mode === 'mock' && <StatusTag status="simulated" compact />}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+            <h1>{parcel.name}</h1>
+            {parcel.source === 'sample' && <span className="workspace-demo">{t('field.demo.tag')}</span>}
+            {mode === 'mock' && <StatusTag status="simulated" compact />}
+          </div>
+          <IconButton label={t('field.close')} icon={<X />} size="lg" onClick={unlock} className="-mt-1 -mr-2 shrink-0 [&_svg]:size-5 [&_svg]:stroke-[1.5]" />
         </div>
         <p>{detail}</p>
       </header>
