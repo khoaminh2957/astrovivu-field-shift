@@ -20,14 +20,14 @@ Thư mục này lưu bảng đối chiếu thủ công kết quả dựng tự �
 - `verdict`: Kết luận đối chiếu:
   - `dung` (18 dòng): Mức tính từ thống kê quốc gia khớp với mức của atlas.
   - `sai-muc` (0 dòng): Mức tính từ thống kê quốc gia lệch mức của atlas.
-  - `sai-absent` (11 dòng): Atlas ghi `absent`, nhưng thống kê quốc gia xác nhận có trồng thương mại (9 cây ở `VNM`, 2 cây ở `USA`).
+  - `sai-absent` (2 dòng): Atlas ghi `absent`, và một nguồn thống kê quốc gia nêu diện tích lớn hơn 0 cho đúng cây đó (2 cây ở `USA`).
   - `sai-cay` (2 dòng): Diện tích mặt hàng đúng nhưng gắn lệch mã loài (`musa-sapientum` thay vì `musa-acuminata` ở `VNM`; `beta-vulgaris` thay vì `beta-vulgaris-var-saccharifera` ở `USA`).
   - `chung-hang` (4 dòng): Một mặt hàng FAOSTAT gán chung diện tích cho nhiều loài trong cùng chi (`Coffea`, `Cinnamomum`, `Triticum`, `Gossypium`).
   - `thieu` (8 dòng): Cây quan trọng ở cấp quốc gia nhưng đang ở mức `unknown` (do nằm trong hàng gộp) hoặc `curated-only` (không có mặt hàng FAOSTAT).
-  - `khong-co-nguon` (19 dòng): Không tách dòng riêng trong niên giám/báo cáo thống kê quốc gia (gồm 11 cây ôn đới/khô hạn `absent` đúng ở `VNM` và 7 cây nhiệt đới `absent` đúng ở `USA`).
+  - `khong-co-nguon` (28 dòng): Không tách dòng riêng trong niên giám/báo cáo thống kê quốc gia (gồm 11 cây ôn đới/khô hạn `absent` đúng ở `VNM`, 7 cây nhiệt đới `absent` đúng ở `USA`, và 9 cây rau, đậu, gia vị, quả ở `VNM` được cho là có trồng nhưng chưa có nguồn nào nêu diện tích riêng).
 - `source`, `url`, `accessed`, `note`: Nguồn trích dẫn, liên kết, ngày truy cập (`2026-11-15`) và thuyết minh chi tiết.
 
 ## Tóm tắt chuyển giao cho T4 (#9) và K3 (#23)
 
-1. **11 dòng `sai-absent`** và **8 dòng `thieu` (+ 2 dòng `sai-cay`)** được chuyển sang `data/crops/national/prevalence.csv` ở bước **T4 (#9)**.
+1. **2 dòng `sai-absent`**, **8 dòng `thieu` (+ 2 dòng `sai-cay`)** và **9 dòng `khong-co-nguon` của `VNM` cần tìm nguồn nêu tên cây** được chuyển sang `data/crops/national/prevalence.csv` ở bước **T4 (#9)**.
 2. Kết quả kiểm tra 4 vùng thửa mẫu (`Dak Lak`, `Can Tho city`, `Iowa`, `Nevada`) trên `region_crops.csv` (MapSPAM 2020 V2r2) được ghi chi tiết tại mục **9.1** của `docs/CROP_DATA.md`.

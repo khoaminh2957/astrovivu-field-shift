@@ -50,11 +50,33 @@ describe('atlas national cross-check table (T1 #8)', () => {
     for (const r of rows) counts[r.verdict] = (counts[r.verdict] ?? 0) + 1;
     expect(counts).toEqual({
       dung: 18,
-      'sai-absent': 11,
+      'sai-absent': 2,
       'sai-cay': 2,
       'chung-hang': 4,
       thieu: 8,
-      'khong-co-nguon': 19,
+      'khong-co-nguon': 28,
     });
+  });
+
+  it('calls the atlas wrong only where a national source gives an area', () => {
+    for (const r of rows.filter((x) => x.verdict === 'sai-absent')) expect(Number(r.national_area_ha), `${r.iso3} ${r.crop_id}`).toBeGreaterThan(0);
+  });
+
+  it('quotes the regional file as it is in docs/CROP_DATA.md section 9.1', () => {
+    const doc = readFileSync('docs/CROP_DATA.md', 'utf8');
+    const region = parseCsvObjects(readFileSync('data/crops/atlas/region_crops.csv', 'utf8'));
+    const ha = (n: string) => Number(n).toLocaleString('en-US');
+    // Can Tho city: every class the paragraph names, with its area and rank.
+    const canTho = new Map(region.filter((r) => r.admin1_code === 'VM13').map((r) => [r.spam_crop, r]));
+    for (const [code, rank] of [['rice', 1], ['rest', 2], ['vege', 3], ['rcof', 6], ['sugc', 7], ['trof', 8], ['coff', 15]] as const) {
+      const row = canTho.get(code)!;
+      expect(Number(row.rank_in_region), code).toBe(rank);
+      expect(doc, `Can Tho ${code}`).toContain('`' + ha(row.harvested_area_ha) + ' ha`');
+    }
+    // 44 states of the United States, and none of them is Nevada.
+    const states = new Set(region.filter((r) => r.iso3 === 'USA' && r.admin1).map((r) => r.admin1));
+    expect(states.size).toBe(44);
+    expect(states.has('Nevada')).toBe(false);
+    expect(doc).toContain('covers 44 US states');
   });
 });
