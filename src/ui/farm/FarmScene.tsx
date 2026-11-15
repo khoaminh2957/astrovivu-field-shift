@@ -4,7 +4,8 @@
  * no reading of its own. Parts whose value is missing are drawn in a neutral way, never guessed.
  */
 import type { KeyboardEvent, ReactElement } from 'react';
-import type { CropLook, FarmCrop, FarmLine, FarmScene, FarmVoice, SkyKind } from '@/core/farm';
+import type { CropLook, FarmCrop, FarmLine, FarmScene, FarmVoice } from '@/core/farm';
+import { Backdrop, SKY, Verges } from './Backdrop';
 import { MascotFigure } from './Mascots';
 import './farm.css';
 
@@ -32,16 +33,6 @@ interface Spot {
 const SPOTS: Spot[] = DEPTHS.flatMap((y) => RIDGES_NEAR.map((xn) => ({ x: rowX(xn, y), y, s: depthScale(y) })))
   .filter((p) => p.x > 6 && p.x < W - 6)
   .map((p, i) => ({ ...p, i }));
-
-const SKY: Record<SkyKind, { grey: number; sun: number; clouds: number; rain: number; cloudFill: string }> = {
-  clear: { grey: 0, sun: 1, clouds: 0.6, rain: 0, cloudFill: '#ffffff' },
-  cloudy: { grey: 0.38, sun: 0.3, clouds: 1, rain: 0, cloudFill: '#e6ebf0' },
-  rain: { grey: 0.6, sun: 0, clouds: 1, rain: 0.75, cloudFill: '#b9c3cf' },
-  'heavy-rain': { grey: 0.82, sun: 0, clouds: 1, rain: 1, cloudFill: '#8d99a8' },
-  hot: { grey: 0, sun: 1, clouds: 0.12, rain: 0, cloudFill: '#ffffff' },
-  frost: { grey: 0.1, sun: 0.75, clouds: 0.35, rain: 0, cloudFill: '#ffffff' },
-  unknown: { grey: 0.3, sun: 0, clouds: 0.35, rain: 0, cloudFill: '#dfe4ea' },
-};
 
 const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 /** Leaf colour from the greenness of the canopy; a neutral grey-green when there is no image. */
@@ -282,77 +273,27 @@ export function FarmSceneView({ scene, lines, speaker, onSpeak, title, names }: 
   return (
     <svg className="farm-scene" viewBox={`0 0 ${W} ${H}`} role="group" aria-label={title} data-sky={weather.kind} data-soil={soil.state ?? 'none'} data-wind={weather.windMs != null && weather.windMs >= 6 ? 'strong' : 'calm'}>
       <defs>
-        <linearGradient id="farm-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--farm-sky-top)" />
-          <stop offset="1" stopColor="var(--farm-sky-low)" />
-        </linearGradient>
         <clipPath id="farm-field">
           <polygon points={field} />
         </clipPath>
+        <linearGradient id="farm-depth" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.14" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.2" />
+        </linearGradient>
       </defs>
 
-      {/* Sky: the clear sky, and a veil for each kind of day laid over it. */}
-      <rect width={W} height={236} fill="url(#farm-sky)" />
-      <rect className="farm-fade" width={W} height={236} fill="#6f7f92" opacity={sky.grey} />
-      <rect className="farm-fade" width={W} height={236} fill="#ffb24d" opacity={weather.kind === 'hot' ? 0.3 : 0} />
-      <rect className="farm-fade" width={W} height={236} fill="#eef5ff" opacity={weather.kind === 'frost' ? 0.6 : 0} />
-
-      <g className="farm-fade" opacity={sky.sun} data-farm="sun">
-        <g className="farm-sun-rays">
-          {Array.from({ length: 12 }, (_, k) => (
-            <line key={k} x1={372} y1={58} x2={372 + 42 * Math.cos((k * Math.PI) / 6)} y2={58 + 42 * Math.sin((k * Math.PI) / 6)} stroke="#ffe08a" strokeWidth={3} strokeLinecap="round" opacity={0.75} />
-          ))}
-        </g>
-        <circle cx={372} cy={58} r={weather.kind === 'hot' ? 27 : 22} fill={weather.kind === 'hot' ? '#ffb02e' : '#ffd24a'} />
-      </g>
-
-      <g className="farm-fade" opacity={sky.clouds} fill={sky.cloudFill} data-farm="clouds">
-        {[
-          { y: 34, s: 1 },
-          { y: 62, s: 0.75 },
-          { y: 88, s: 0.6 },
-          { y: 48, s: 0.9 },
-        ].map((c, k) => (
-          <g key={k} className="farm-cloud">
-            <g transform={`translate(0 ${c.y}) scale(${c.s})`} className="farm-fade">
-              <ellipse cx={40} cy={10} rx={34} ry={13} />
-              <ellipse cx={22} cy={4} rx={18} ry={13} />
-              <ellipse cx={52} cy={0} rx={22} ry={16} />
-              <ellipse cx={72} cy={8} rx={16} ry={10} />
-            </g>
-          </g>
-        ))}
-      </g>
-
-      {/* Land behind the field. */}
-      <path d="M 0 190 Q 90 150 190 178 T 380 172 T 560 160 V 240 H 0 Z" fill="var(--farm-hill-far)" />
-      <path d="M 0 207 Q 140 184 300 202 T 560 198 V 260 H 0 Z" fill="var(--farm-hill-near)" />
-      {[
-        [58, 190, 1],
-        [208, 194, 0.85],
-        [524, 190, 1],
-        [486, 196, 0.7],
-      ].map(([x, y, s], k) => (
-        <g key={k} transform={`translate(${x} ${y}) scale(${s})`}>
-          <rect x={-2} y={-6} width={4} height={12} fill="#7a5230" />
-          <circle cx={0} cy={-16} r={13} fill="#3f9a57" />
-          <circle cx={-8} cy={-10} r={9} fill="#4dab63" />
-        </g>
-      ))}
-      <g data-farm="store">
-        <rect x={112} y={168} width={50} height={34} fill="#fff6e2" stroke="#d8c7a3" />
-        <polygon points="104,170 137,144 170,170" fill="#2f8f7a" />
-        <rect x={130} y={182} width={14} height={20} fill="#b97a45" />
-        <rect x={116} y={176} width={9} height={8} fill="#cfeaf7" stroke="#d8c7a3" />
-        <rect x={168} y={160} width={15} height={42} rx={6} fill="#dfe4ea" stroke="#b9c1cc" />
-        <path d="M 168 164 Q 175.5 152 183 164 Z" fill="#b9c1cc" />
-      </g>
+      <Backdrop kind={weather.kind} windy={weather.windMs != null && weather.windMs >= 6} />
 
       {/* The field: soil coloured by the root-zone moisture, furrows, the canal along its far edge. */}
       <polygon className="farm-fade" points={field} fill={soilFill} data-farm="soil" />
+      <polygon points={field} fill="url(#farm-depth)" />
+      <Verges />
       <g clipPath="url(#farm-field)">
         {ROWS_NEAR.map((xn, k) => (
-          <line key={k} x1={rowX(xn, FAR_Y)} y1={FAR_Y} x2={xn} y2={NEAR_Y} stroke="#000" strokeOpacity={0.16} strokeWidth={2.5} />
+          <g key={k}>
+            <line x1={rowX(xn, FAR_Y)} y1={FAR_Y} x2={xn} y2={NEAR_Y} stroke="#000" strokeOpacity={0.2} strokeWidth={5} />
+            <line x1={rowX(xn, FAR_Y) + 2} y1={FAR_Y} x2={xn + 9} y2={NEAR_Y} stroke="#fff" strokeOpacity={0.12} strokeWidth={2} />
+          </g>
         ))}
         <polygon className="farm-fade" points={field} fill="#9fd3f2" opacity={paddyWater} data-farm="paddy-water" />
         <g className="farm-fade" opacity={soil.state === 'dry' ? 0.55 : 0} stroke="#7a5230" strokeWidth={1.4} fill="none" data-farm="cracks">

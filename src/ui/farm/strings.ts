@@ -3,6 +3,7 @@ import { registerStrings } from '@/i18n';
 registerStrings(
   'farm',
   {
+    page: 'The farm',
     title: 'The farm on {d}: {sky}',
     loading: 'Drawing the farm from the field data.',
     'name.space': 'Space',
@@ -63,6 +64,7 @@ registerStrings(
     grow: 'What to grow',
   },
   {
+    page: 'Nông trại',
     title: 'Nông trại ngày {d}: {sky}',
     loading: 'Đang vẽ nông trại từ số liệu của ruộng.',
     'name.space': 'Vũ trụ',

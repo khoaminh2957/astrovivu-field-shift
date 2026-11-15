@@ -3,10 +3,10 @@
  * slot on the calendar, swap a slot to another crop (or fallow), and re-score the edited strategy
  * alongside the engine's strategies with the exact same metrics, economics and risk rules.
  */
-import type { CropProfile, I18nText, ModelInput, RotationSeason, RotationStrategy, SlotCropChoice } from '@/contracts';
+import type { CropProfile, I18nText, ModelInput, PrevalenceLevel, RotationSeason, RotationStrategy, SlotCropChoice } from '@/contracts';
 import { getCrop, listCrops } from '@/core/crops';
-import { windowMonths } from '@/core/scoring';
-import { type Candidate, type Evaluated, type Plan, evaluate, isStand, isTree, makeCtx, scoreAll } from './rotation';
+import { TRIAL_MIN_COMPATIBILITY, windowMonths } from '@/core/scoring';
+import { type Candidate, type Evaluated, type Plan, countryStatus, evaluate, isStand, isTree, makeCtx, proposable, scoreAll } from './rotation';
 import { cropText, monthsFrom, tx, wrapMonth } from './util';
 
 export interface CustomRotationSpec {
@@ -126,7 +126,21 @@ export function slotCropChoices(input: ModelInput, strategy: RotationStrategy, s
     }
   }
 
-  choices.sort((a, b) => (b.suitability ?? -1) - (a.suitability ?? -1) || a.label.en.localeCompare(b.label.en));
+  // With a country table: every choice says how much of it the country grows. A crop the country
+  // reports none of is offered only where it suits the field (the threshold of the ranking's
+  // second list), and after every other crop: it is a new crop that needs a trial.
+  if (input.country) {
+    const kept = choices.filter((c) => proposable(input, c.cropId) || (c.suitability ?? 0) >= TRIAL_MIN_COMPATIBILITY * 100);
+    choices.length = 0;
+    for (const c of kept) {
+      const status = countryStatus(input, c.cropId);
+      const level: PrevalenceLevel = status === 'unknown' ? 'unknown' : (input.country.prevalence[c.cropId]?.level ?? 'unknown');
+      // A crop the grower grows is grown here: a statistic that reports none of it is not repeated.
+      choices.push(status === 'absent' && proposable(input, c.cropId) ? c : { ...c, prevalence: level });
+    }
+  }
+  const trial = (c: SlotCropChoice) => (c.prevalence === 'absent' ? 1 : 0);
+  choices.sort((a, b) => trial(a) - trial(b) || (b.suitability ?? -1) - (a.suitability ?? -1) || a.label.en.localeCompare(b.label.en));
   if (canFallow) {
     choices.unshift({
       cropId: 'fallow',
