@@ -12,6 +12,7 @@ The rule of this module: every number, threshold and formula has a source that c
 | `buildSoilPlan(diagnosis, input, ph)` | `plan.ts` | The steps that follow from the diagnosis: measure first, correct pH, leach salts, drain | `AdvisoryReport.soilPlan` |
 | `leachingRequirement(input, measured)` | `salinity.ts` | Salinity and sodicity class, leaching requirement, gypsum requirement | The salinity item of the soil plan (leaching note); the gypsum dose is not in the report yet |
 | `aluminiumRisk(input, measured)` | `aluminium.ts` | What is known about exchangeable aluminium and the lime that neutralises a measured amount | Not in the report yet |
+| `soilSchedule(plan, rotation, today)` | `schedule.ts` | Multi-year schedule of soil amendments and annual rechecks aligned to a rotation's sowing months | Ready for rotation / advisory calendar |
 | `calculateBufferPhPlan(input)` | `buffer.ts` | A pH plan scaled by buffer capacity | **Not used.** See section 3 |
 
 Statuses of a diagnosis row: `optimal`, `tolerable`, `outside`, `uncertain` (a map estimate whose interval reaches across a limit of the crop), `no_data` (no reading: the value is `null`, nothing stands in for it), `reading_only` (a reading with no requirement in the crop catalogue: no verdict).
@@ -141,6 +142,13 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Aluminium saturation = Al / (Al + exchangeable Ca, Mg, K, Na). The CEC of a soil map is measured at pH 7 and is not the effective CEC: without the exchangeable bases the saturation is not computed, and the result asks for them.
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
+
+### 5.6 Multi-year schedule (`schedule.ts`)
+
+- `soilSchedule(plan, rotation, today)` places each requirement of `SoilPlan` on a calendar of `(year, month)` anchored to `today: ISODate` (never calling `Date.now()` or `new Date()`).
+- Split rule: when a liming dose (`metric === 'ph'`) has a maximum rate above 4.0 t/ha, it is split into two equal applications (`share = 0.5` each) across consecutive seasons/years so that the shares sum to 1 and the split ranges sum to the exact initial `rateRange`. Source: Havlin, J.L., Tisdale, S.L., Nelson, W.L., & Beaton, J.D. (2014), *Soil Fertility and Fertilizers: An Introduction to Nutrient Management* (8th ed., Pearson), Chapter 3 "Soil Acidity and Alkalinity", p. 68 (and consistent with `phPlan` in `src/core/advisory/actions.ts:140`). Each split entry also advises consulting a local extension advisor on splitting the dose.
+- Timing: for annual crops in `rotation.seasons`, the application month is placed 1 month before `startMonth` of the next planted season; for perennial crops (12-month seasons), applications are anchored to the month of `today`.
+- Every year in the rotation horizon includes at least one `recheck` entry drawn from `verification` of the open requirements.
 
 ## 6. Removed from the output for lack of a source
 
