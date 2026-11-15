@@ -1,71 +1,29 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { deflateRawSync } from 'node:zlib';
-import Papa from 'papaparse';
-import { describe, expect, it } from 'vitest';
-import { ATLAS_FILE, cleanAtlasRow, readAtlas } from './atlas';
-import { csvLine, parseCsvLine } from './csv';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
+import { parseCsvObjects } from '../crops/atlas/csv';
+import { buildZip } from '../crops/atlas/zip';
+import { AREAS_FILE } from './areas';
+import { ATLAS_DIR, columnsOf, countryCodes, cropItems, kindOf, readAtlas, readTable, TABLES, type AtlasTable } from './atlas';
 import { bareCode, faostatRows } from './faostat';
-import { assemble, monthOf, readMapping } from './load';
-import { AREAS_FILE, isResidualItem } from './match-faostat';
-import { openZipEntry, zipEntries } from './zip';
+import { assemble, atlasSources, monthOf, readAreas } from './load';
 
 // ------------------------------------------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------------------------------------------
 
-/** A ZIP archive built by hand, so the reader is tested against the format and not against itself. */
-function zipOf(files: { name: string; text: string; store?: boolean }[]): Buffer {
-  const locals: Buffer[] = [];
-  const central: Buffer[] = [];
-  let offset = 0;
-  for (const f of files) {
-    const name = Buffer.from(f.name, 'utf8');
-    const raw = Buffer.from(f.text, 'utf8');
-    const data = f.store ? raw : deflateRawSync(raw);
-    const local = Buffer.alloc(30);
-    local.writeUInt32LE(0x04034b50, 0);
-    local.writeUInt16LE(f.store ? 0 : 8, 8);
-    local.writeUInt32LE(data.length, 18);
-    local.writeUInt32LE(raw.length, 22);
-    local.writeUInt16LE(name.length, 26);
-    locals.push(local, name, data);
-    const entry = Buffer.alloc(46);
-    entry.writeUInt32LE(0x02014b50, 0);
-    entry.writeUInt16LE(f.store ? 0 : 8, 10);
-    entry.writeUInt32LE(data.length, 20);
-    entry.writeUInt32LE(raw.length, 24);
-    entry.writeUInt16LE(name.length, 28);
-    entry.writeUInt32LE(offset, 42);
-    central.push(entry, name);
-    offset += 30 + name.length + data.length;
-  }
-  const directory = Buffer.concat(central);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(files.length, 8);
-  end.writeUInt16LE(files.length, 10);
-  end.writeUInt32LE(directory.length, 12);
-  end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...locals, directory, end]);
-}
+const scratch = mkdtempSync(path.join(tmpdir(), 'astrovivu-market-'));
+afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
-async function textOf(stream: NodeJS.ReadableStream): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const c of stream) chunks.push(Buffer.from(c));
-  return Buffer.concat(chunks).toString('utf8');
-}
+const BOM = String.fromCharCode(0xfeff);
+const atlas = readAtlas();
+/** The counts the atlas build wrote about itself. */
+const summary = new Map(parseCsvObjects(readFileSync(`${ATLAS_DIR}/summary.csv`, 'utf8')).map((r) => [r.metric, r.value]));
 
 async function* rowsOf(rows: Record<string, string>[]): AsyncGenerator<Record<string, string>> {
   yield* rows;
 }
-
-const atlasSource = (): Record<string, string>[] =>
-  Papa.parse<Record<string, string>>(readFileSync(ATLAS_FILE, 'utf8').replace(/^\uFEFF/, ''), { header: true, skipEmptyLines: true }).data;
-const sourceRow = (scientificName: string): Record<string, string> => {
-  const row = atlasSource().find((r) => r.scientific_name.trim() === scientificName);
-  if (!row) throw new Error(`${scientificName} is not in ${ATLAS_FILE}`);
-  return row;
-};
 
 /** One FAOSTAT price line: annual USD price of rice (item 27) in Viet Nam (area 237) unless overridden. */
 const priceLine = (over: Record<string, string> = {}): Record<string, string> => ({
@@ -82,62 +40,37 @@ const priceLine = (over: Record<string, string> = {}): Record<string, string> =>
   ...over,
 });
 
+/** A folder holding one atlas table with the given text. */
+function atlasDirWith(table: AtlasTable, csv: string): string {
+  const dir = mkdtempSync(path.join(scratch, 'atlas-'));
+  writeFileSync(path.join(dir, TABLES[table].file), csv);
+  return dir;
+}
+
 // ------------------------------------------------------------------------------------------------
 // Reading FAOSTAT bulk files
 // ------------------------------------------------------------------------------------------------
 
-describe('zip reader', () => {
-  it('lists and inflates deflated and stored entries', async () => {
-    const big = 'line of text\n'.repeat(5000);
-    const zip = zipOf([
-      { name: 'Readme.txt', text: 'stored as is', store: true },
-      { name: 'Prices_E_All_Data_(Normalized).csv', text: big },
-    ]);
-    const entries = zipEntries(zip);
-    expect(entries.map((e) => [e.name, e.method, e.size])).toEqual([
-      ['Readme.txt', 0, 12],
-      ['Prices_E_All_Data_(Normalized).csv', 8, big.length],
-    ]);
-    expect(await textOf(openZipEntry(zip, entries[0]))).toBe('stored as is');
-    expect(await textOf(openZipEntry(zip, entries[1]))).toBe(big);
-  });
-
-  it('refuses what it cannot read instead of returning garbage', () => {
-    expect(() => zipEntries(Buffer.from('not a zip file at all, just some bytes'))).toThrow(/Not a ZIP/);
-    const zip = zipOf([{ name: 'a.csv', text: 'x' }]);
-    const [entry] = zipEntries(zip);
-    expect(() => openZipEntry(zip, { ...entry, method: 12 })).toThrow(/Unsupported ZIP compression/);
-    expect(() => openZipEntry(zip, { ...entry, offset: 3 })).toThrow(/bad local header/);
-  });
-});
-
-describe('csv line', () => {
-  it('reads quoted commas, doubled quotes and empty cells', () => {
-    expect(parseCsvLine('"237","Viet Nam","Rice, paddy",356.0,,"A"')).toEqual(['237', 'Viet Nam', 'Rice, paddy', '356.0', '', 'A']);
-    expect(parseCsvLine('"say ""hi""",x,')).toEqual(['say "hi"', 'x', '']);
-    expect(parseCsvLine('')).toEqual(['']);
-  });
-
-  it('writes what it can read back', () => {
-    const cells = ['Other vegetables, fresh n.e.c.', 'a "quoted" word', '', '12.5', 'plain'];
-    expect(parseCsvLine(csvLine(cells))).toEqual(cells);
-    expect(csvLine([1, true, null, undefined, 'x'])).toBe('1,true,,,x');
-  });
-});
-
 describe('faostat rows', () => {
-  it('keys each line by the header, without the byte-order mark', async () => {
-    const csv = '\uFEFF"Area Code","Area","Item Code","Item","Value"\n"237","Viet Nam","27","Rice","356"\n\n"231","United States of America","56","Maize (corn)","185.4"\n';
-    const zip = zipOf([
-      { name: 'Prices_E_Flags.csv', text: 'Flag,Description\n' },
-      { name: 'Prices_E_All_Data_(Normalized).csv', text: csv },
-    ]);
+  it('keys each line of the All_Data table by its header, without the byte-order mark', async () => {
+    const csv = `${BOM}"Area Code","Area","Item Code","Item","Value"\n"237","Viet Nam","27","Rice, paddy (rice milled equivalent)","356"\n\n"231","United States of America","56","Maize (corn)","185.4"\n`;
+    const zip = path.join(scratch, 'prices.zip');
+    writeFileSync(zip, buildZip([
+      { name: 'Prices_E_Flags.csv', data: Buffer.from('Flag,Description\n') },
+      { name: 'Prices_E_All_Data_(Normalized).csv', data: Buffer.from(csv) },
+    ]));
     const rows: Record<string, string>[] = [];
     for await (const r of faostatRows(zip)) rows.push(r);
     expect(rows).toEqual([
-      { 'Area Code': '237', Area: 'Viet Nam', 'Item Code': '27', Item: 'Rice', Value: '356' },
+      { 'Area Code': '237', Area: 'Viet Nam', 'Item Code': '27', Item: 'Rice, paddy (rice milled equivalent)', Value: '356' },
       { 'Area Code': '231', Area: 'United States of America', 'Item Code': '56', Item: 'Maize (corn)', Value: '185.4' },
     ]);
+  });
+
+  it('refuses an archive without the data table', async () => {
+    const zip = path.join(scratch, 'other.zip');
+    writeFileSync(zip, buildZip([{ name: 'Readme.txt', data: Buffer.from('x') }]));
+    await expect(faostatRows(zip).next()).rejects.toThrow(/without an All_Data table/);
   });
 
   it('strips the apostrophe FAOSTAT puts before codes', () => {
@@ -147,125 +80,113 @@ describe('faostat rows', () => {
 });
 
 // ------------------------------------------------------------------------------------------------
-// The atlas
+// The atlas tables
 // ------------------------------------------------------------------------------------------------
 
-describe('atlas cleaning', () => {
-  it('normalises classes, lists and climate zones', () => {
-    const { row, producingCountries } = cleanAtlasRow(sourceRow('Oryza sativa'));
-    expect(row.id).toBe('oryza-sativa');
-    expect([row.soil_depth_opt, row.soil_depth_abs, row.soil_salinity_opt]).toEqual(['medium', 'shallow', 'low']);
-    expect(row.soil_drainage_opt).toEqual(['poorly']);
-    expect(row.climate_zones).toEqual(['Aw', 'Ar', 'Cf', 'Cs', 'Cw']);
-    expect([row.lat_opt_min, row.lat_abs_max]).toEqual([null, 55]);
-    expect(row.quality_notes).toEqual([]);
-    expect(producingCountries).toContain('Viet Nam');
+describe('column types', () => {
+  it('reads the type of a column from its name', () => {
+    expect(kindOf('crops', 'temp_opt_min_c')).toBe('numeric');
+    expect(kindOf('crops', 'ph_abs_max')).toBe('numeric');
+    expect(kindOf('crops', 'world_production_t')).toBe('numeric');
+    expect(kindOf('crop_country', 'share_of_country_harvested_area_pct')).toBe('numeric');
+    expect(kindOf('crops', 'cycle_min_days')).toBe('integer');
+    expect(kindOf('crops', 'curated')).toBe('boolean');
+    expect(kindOf('crop_country', 'item_reported')).toBe('boolean');
+    // Names that end like a unit without being one, and codes that look like numbers.
+    for (const column of ['soil_depth_opt', 'habit', 'spam_crop', 'cpc_code', 'data_years', 'match']) expect(kindOf('crops', column), column).toBe('text');
   });
 
-  it('exchanges temperature and rainfall entered in each other\'s columns, and says so', () => {
-    const { row } = cleanAtlasRow(sourceRow('Eugenia stipitata'));
-    expect([row.temp_opt_min, row.temp_opt_max, row.temp_abs_min, row.temp_abs_max]).toEqual([22, 30, 18, 34]);
-    expect([row.rain_opt_min, row.rain_opt_max, row.rain_abs_min, row.rain_abs_max]).toEqual([2000, 3500, 1500, 4000]);
-    expect(row.quality_notes.join(' ')).toMatch(/temperature and rainfall columns were swapped/);
-  });
-
-  it('never keeps a latitude above 90', () => {
-    const base = sourceRow('Oryza sativa');
-    const swapped = cleanAtlasRow({ ...base, eco_latitude_abs_max: '1800', eco_altitude_abs_max: '30' }).row;
-    expect([swapped.lat_abs_max, swapped.altitude_abs_max]).toEqual([30, 1800]);
-    expect(swapped.quality_notes.join(' ')).toMatch(/latitude and altitude columns were swapped/);
-    const dropped = cleanAtlasRow({ ...base, eco_latitude_abs_max: '1800', eco_altitude_abs_max: '2500' }).row;
-    expect([dropped.lat_abs_max, dropped.altitude_abs_max]).toEqual([null, 2500]);
-    expect(dropped.quality_notes.join(' ')).toMatch(/was dropped/);
-  });
-
-  it('reads a cycle of 0 as "not given" and keeps the note', () => {
-    const { row } = cleanAtlasRow({ ...sourceRow('Oryza sativa'), cult_cycle_min: '0', cult_cycle_max: '0' });
-    expect([row.cycle_min_days, row.cycle_max_days]).toEqual([null, null]);
-    expect(row.quality_notes).toEqual(['growing cycle not given in the source (0)']);
-  });
-
-  it('flags a range it does not correct', () => {
-    const { row } = cleanAtlasRow({ ...sourceRow('Oryza sativa'), eco_soil_ph_opt_max: '9.5' });
-    expect(row.ph_opt_max).toBe(9.5);
-    expect(row.quality_notes).toEqual(['pH: the optimal range lies partly outside the absolute range in the source']);
+  it('treats one item code as a number and a list of them as text', () => {
+    expect(kindOf('crops', 'faostat_item_code')).toBe('integer');
+    expect(kindOf('items', 'faostat_item_code')).toBe('integer');
+    expect(kindOf('crop_country', 'faostat_item_code')).toBe('text');
   });
 });
 
-describe('atlas file', () => {
-  const atlas = readAtlas();
-  const rows = atlas.map((c) => c.row);
-
-  it('holds 489 crops with unique ids and names a database row accepts', () => {
-    expect(atlas).toHaveLength(489);
-    expect(new Set(rows.map((r) => r.id)).size).toBe(489);
-    expect(new Set(rows.map((r) => r.scientific_name)).size).toBe(489);
-    for (const r of rows) expect(r.id, r.name).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+describe('atlas rows', () => {
+  it('holds as many rows as the atlas build counted', () => {
+    expect(atlas.crops).toHaveLength(Number(summary.get('kept_crops')));
+    expect(atlas.items).toHaveLength(Number(summary.get('faostat_crop_items')));
+    expect(atlas.cropCountry).toHaveLength(Number(summary.get('crop_country_rows')));
   });
 
-  it('satisfies the range checks of the crops table', () => {
-    for (const r of rows) {
-      for (const t of [r.temp_opt_min, r.temp_opt_max, r.temp_abs_min, r.temp_abs_max]) if (t != null) expect(t, `${r.name} temperature`).toBeLessThan(70);
-      for (const l of [r.lat_opt_min, r.lat_opt_max, r.lat_abs_min, r.lat_abs_max]) if (l != null) expect(l, `${r.name} latitude`).toBeLessThanOrEqual(90);
-      for (const p of [r.ph_opt_min, r.ph_opt_max, r.ph_abs_min, r.ph_abs_max]) if (p != null) expect(p, `${r.name} pH`).toBeLessThanOrEqual(14);
-      for (const d of [r.cycle_min_days, r.cycle_max_days]) if (d != null) expect(d, `${r.name} cycle`).toBeGreaterThan(0);
-    }
+  it('types the values and turns an empty cell into null', () => {
+    const rice = atlas.crops.find((c) => c.crop_id === 'oryza-sativa');
+    expect(rice).toMatchObject({ scientific_name: 'Oryza sativa', match: 'exact', faostat_item_code: 27, curated: true, temp_opt_min_c: 20, ph_opt_min: 5.5 });
+    // No value in the atlas is an empty string: an unknown is null.
+    for (const table of [atlas.crops, atlas.items, atlas.cropCountry]) for (const row of table) for (const v of Object.values(row)) expect(v).not.toBe('');
+    const viet = atlas.cropCountry.find((r) => r.crop_id === 'oryza-sativa' && r.iso3 === 'VNM');
+    expect(viet).toMatchObject({ country: 'Viet Nam', match: 'exact', item_reported: true, level: 'major' });
+    expect(typeof viet?.area_ha).toBe('number');
   });
 
-  it('explains every value it changed', () => {
-    const noted = rows.filter((r) => r.quality_notes.length);
-    expect(noted.map((r) => r.id)).toEqual(expect.arrayContaining(['eugenia-stipitata', 'solanum-melongena', 'hylocereus-undatus', 'vitellaria-paradoxa']));
-    expect(rows.find((r) => r.id === 'vitellaria-paradoxa')?.cycle_max_days).toBe(240);
+  it('keeps the vocabulary the database checks', () => {
+    expect(new Set(atlas.crops.map((c) => c.match))).toEqual(new Set(['exact', 'group', 'none']));
+    expect(new Set(atlas.items.map((i) => i.item_class))).toEqual(new Set(['single', 'group']));
+    for (const row of atlas.cropCountry) expect(['major', 'common', 'minor', 'present', 'absent', 'unknown']).toContain(row.level);
+    for (const c of atlas.crops) expect(c.crop_id, String(c.scientific_name)).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+  });
+
+  it('stops at a value that does not fit its column, naming the place', () => {
+    expect(() => readTable('crops', atlasDirWith('crops', 'crop_id,cycle_min_days\nrice,90\nmaize,ninety\n'))).toThrow(/crops\.csv, row 3, cycle_min_days: "ninety" is not a whole number/);
+    expect(() => readTable('crops', atlasDirWith('crops', 'crop_id,curated\nrice,maybe\n'))).toThrow(/neither yes nor no/);
+    expect(() => readTable('crop_country', atlasDirWith('crop_country', 'crop_id,iso3,level\nrice,VNM,major\nrice,VNM,minor\n'))).toThrow(/two rows for rice \/ VNM/);
   });
 });
 
-// ------------------------------------------------------------------------------------------------
-// The link to FAOSTAT and the rows sent to the database
-// ------------------------------------------------------------------------------------------------
+describe('crop to item link', () => {
+  const links = atlas.cropItems;
 
-describe('crop to FAOSTAT item link', () => {
-  const atlas = readAtlas();
-  const mapping = readMapping();
-  const areas = Papa.parse<Record<string, string>>(readFileSync(AREAS_FILE, 'utf8'), { header: true, skipEmptyLines: true }).data;
-
-  it('links every atlas crop to one item', () => {
-    expect(mapping.map((m) => m.crop_id).sort()).toEqual(atlas.map((c) => c.row.id).sort());
-    for (const m of mapping) {
-      expect(Number.isInteger(m.item_code) && m.item_code > 0, m.crop_id).toBe(true);
-      expect(m.faostat_item, m.crop_id).not.toBe('');
-      expect(m.match_method).toBe('producing-countries');
-    }
-    expect(new Set(mapping.map((m) => m.item_code)).size).toBe(146);
+  it('has the crop\'s own item first and its other items after it', () => {
+    expect(cropItems([{ crop_id: 'zea-mays', faostat_item_code: 56, faostat_other_item_codes: '446' }, { crop_id: 'basella-alba', faostat_item_code: null, faostat_other_item_codes: null }])).toEqual([
+      { crop_id: 'zea-mays', faostat_item_code: 56, is_primary: true },
+      { crop_id: 'zea-mays', faostat_item_code: 446, is_primary: false },
+    ]);
+    expect(() => cropItems([{ crop_id: 'x', faostat_item_code: 1, faostat_other_item_codes: '2;b' }])).toThrow(/"b" in faostat_other_item_codes/);
   });
 
-  it('gives one name to one item code', () => {
-    const names = new Map<number, string>();
-    for (const m of mapping) {
-      expect(names.get(m.item_code) ?? m.faostat_item).toBe(m.faostat_item);
-      names.set(m.item_code, m.faostat_item);
-    }
+  it('links every crop the atlas matched, once as primary, and no other', () => {
+    const matched = atlas.crops.filter((c) => c.match !== 'none').map((c) => c.crop_id);
+    expect(links.filter((l) => l.is_primary).map((l) => l.crop_id).sort()).toEqual([...matched].sort());
+    for (const c of atlas.crops) expect(c.faostat_item_code == null, String(c.crop_id)).toBe(c.match === 'none');
+    expect(new Set(links.map((l) => `${l.crop_id}:${l.faostat_item_code}`)).size).toBe(links.length);
   });
 
-  it('documents the three ties', () => {
-    const tied = mapping.filter((m) => m.tie_note);
-    expect(new Set(tied.map((m) => m.item_code))).toEqual(new Set([254, 310, 328]));
+  it('points only at items of the atlas', () => {
+    const items = new Set(atlas.items.map((i) => i.faostat_item_code));
+    for (const l of links) expect(items.has(l.faostat_item_code), `${l.crop_id} -> ${l.faostat_item_code}`).toBe(true);
+  });
+});
+
+describe('countries', () => {
+  const areas = readAreas();
+  const atlasCountries = countryCodes(atlas.cropCountry);
+
+  it('gives every atlas country one FAOSTAT area, under the same name', () => {
+    const byIso = new Map(areas.filter((a) => a.iso3).map((a) => [a.iso3, a.name]));
+    expect(byIso.size).toBe(areas.filter((a) => a.iso3).length);
+    for (const [name, iso3] of atlasCountries) expect(byIso.get(iso3), iso3).toBe(name);
+    expect(byIso.size).toBe(atlasCountries.size);
   });
 
-  it('knows the FAOSTAT area of every producing country, and no regional aggregate', () => {
-    const known = new Set(areas.map((a) => a.name));
-    for (const c of atlas) for (const country of c.producingCountries) expect(known.has(country), `${c.row.name}: ${country}`).toBe(true);
+  it('leaves without an ISO code only the areas that are not atlas countries', () => {
+    // A change here means FAOSTAT or the atlas changed its list of countries: run `npm run market:areas` and look at the difference.
+    expect(areas.filter((a) => !a.iso3).map((a) => a.name).sort()).toEqual(
+      ['Belgium-Luxembourg', 'Czechoslovakia', 'Ethiopia PDR', 'French Guiana', 'Guadeloupe', 'Martinique', 'Réunion', 'Serbia and Montenegro', 'Sudan (former)', 'USSR', 'Yugoslav SFR'].sort(),
+    );
+  });
+
+  it('holds countries only: no regional aggregate, and not the sum row "China"', () => {
     expect(new Set(areas.map((a) => a.area_code)).size).toBe(areas.length);
-    for (const a of areas) expect(Number(a.area_code)).toBeLessThan(5000);
-    expect(areas.some((a) => a.area_code === '351')).toBe(false);
-  });
-
-  it('recognises pooled items by name', () => {
-    expect(isResidualItem('Other vegetables, fresh n.e.c.')).toBe(true);
-    expect(isResidualItem('Other pome fruits')).toBe(true);
-    expect(isResidualItem('Rice')).toBe(false);
-    expect(isResidualItem('Chillies and peppers, green (Capsicum spp. and Pimenta spp.)')).toBe(false);
+    for (const a of areas) expect(a.area_code, a.name).toBeLessThan(5000);
+    expect(areas.some((a) => a.area_code === 351)).toBe(false);
+    expect(areas.find((a) => a.iso3 === 'CHN')?.name).toBe('China, mainland');
   });
 });
+
+// ------------------------------------------------------------------------------------------------
+// The rows sent to the database
+// ------------------------------------------------------------------------------------------------
 
 describe('rows sent to the database', () => {
   it('reads FAOSTAT month codes', () => {
@@ -281,13 +202,14 @@ describe('rows sent to the database', () => {
         priceLine({ 'Element Code': '5539', Value: '131.2', Flag: 'I' }),
       ]),
       { monthly: false },
+      atlas,
     );
     expect(data.prices).toEqual([
-      { area_code: 237, item_code: 27, year: 2024, month: 0, lcu_per_tonne: 8900000, slc_per_tonne: 8900000, usd_per_tonne: 356, price_index: 131.2, lcu_flag: 'A', slc_flag: 'A', usd_flag: 'X', index_flag: 'I' },
+      { area_code: 237, faostat_item_code: 27, year: 2024, month: 0, lcu_per_tonne: 8900000, slc_per_tonne: 8900000, usd_per_tonne: 356, price_index: 131.2, lcu_flag: 'A', slc_flag: 'A', usd_flag: 'X', index_flag: 'I' },
     ]);
   });
 
-  it('leaves out aggregates, unlinked items, months unless asked for, and lines without a number', async () => {
+  it('leaves out aggregates, items outside the atlas, months unless asked for, and lines without a number', async () => {
     const lines = [
       priceLine(),
       priceLine({ 'Area Code': '5000', Area: 'World' }),
@@ -296,56 +218,85 @@ describe('rows sent to the database', () => {
       priceLine({ 'Months Code': '7003', Value: '349' }),
       priceLine({ Year: '2023', Value: '' }),
     ];
-    const annual = await assemble(rowsOf(lines), { monthly: false });
+    const annual = await assemble(rowsOf(lines), { monthly: false }, atlas);
     expect(annual.prices.map((p) => [p.area_code, p.year, p.month, p.usd_per_tonne])).toEqual([[237, 2024, 0, 356]]);
     expect(annual.skipped).toEqual({ aggregateAreas: 2, otherItems: 1, monthly: 1, noValue: 1 });
-    const monthly = await assemble(rowsOf(lines), { monthly: true });
+    const monthly = await assemble(rowsOf(lines), { monthly: true }, atlas);
     expect(monthly.prices.map((p) => p.month).sort()).toEqual([0, 3]);
   });
 
-  it('adds a country that reports prices but is not in the areas file', async () => {
-    const data = await assemble(rowsOf([priceLine({ 'Area Code': '4999', 'Area Code (M49)': "'999", Area: 'Newland' })]), { monthly: false });
-    expect(data.areas.find((a) => a.area_code === 4999)).toEqual({ area_code: 4999, m49_code: '999', name: 'Newland' });
+  it('keeps the prices of a country outside the area list, without an ISO code', async () => {
+    const data = await assemble(rowsOf([priceLine({ 'Area Code': '4999', 'Area Code (M49)': "'999", Area: 'Newland' })]), { monthly: false }, atlas);
+    expect(data.areas.find((a) => a.area_code === 4999)).toEqual({ area_code: 4999, m49_code: '999', name: 'Newland', iso3: null });
   });
 
   it('keeps every foreign key of the load satisfied', async () => {
-    const data = await assemble(rowsOf([priceLine()]), { monthly: false });
-    const crops = new Set(data.crops.map((c) => c.id));
-    const items = new Set(data.items.map((i) => i.item_code));
-    const areas = new Set(data.areas.map((a) => a.area_code));
-    for (const l of data.links) expect(crops.has(l.crop_id) && items.has(l.item_code), l.crop_id).toBe(true);
-    for (const cc of data.cropCountries) expect(crops.has(cc.crop_id) && areas.has(cc.area_code), `${cc.crop_id} ${cc.area_code}`).toBe(true);
-    expect(new Set(data.cropCountries.map((cc) => `${cc.crop_id}:${cc.area_code}`)).size).toBe(data.cropCountries.length);
-    expect(data.items.filter((i) => i.is_residual).length).toBe(16);
+    const data = await assemble(rowsOf([priceLine()]), { monthly: false }, atlas);
+    const crops = new Set(data.crops.map((c) => c.crop_id));
+    const items = new Set(data.items.map((i) => i.faostat_item_code));
+    const iso3 = new Set(data.areas.map((a) => a.iso3));
+    for (const c of data.crops) if (c.faostat_item_code != null) expect(items.has(c.faostat_item_code), String(c.crop_id)).toBe(true);
+    for (const l of data.cropItems) expect(crops.has(l.crop_id) && items.has(l.faostat_item_code), l.crop_id).toBe(true);
+    for (const cc of data.cropCountry) expect(crops.has(cc.crop_id) && iso3.has(String(cc.iso3)), `${cc.crop_id} ${cc.iso3}`).toBe(true);
+    for (const p of data.prices) expect(items.has(p.faostat_item_code)).toBe(true);
+  });
+
+  it('refuses an atlas whose countries the area list does not know', async () => {
+    const stranger = { ...atlas, cropCountry: [...atlas.cropCountry, { ...atlas.cropCountry[0], iso3: 'XTA', country: 'Testland' }] };
+    await expect(assemble(rowsOf([]), { monthly: false }, stranger)).rejects.toThrow(/Testland.*npm run market:areas/);
+  });
+});
+
+describe('sources', () => {
+  it('passes on what the atlas build recorded about each of its sources', () => {
+    const sources = atlasSources();
+    expect(sources).toHaveLength(parseCsvObjects(readFileSync(`${ATLAS_DIR}/sources.csv`, 'utf8')).length);
+    expect(new Set(sources.map((s) => s.code)).size).toBe(sources.length);
+    for (const s of sources) {
+      expect(s.name && s.publisher && s.url, s.code).toBeTruthy();
+      if (s.sha256) expect(s.sha256, s.code).toMatch(/^[0-9a-f]{64}$/);
+      if (s.accessed_on) expect(s.accessed_on, s.code).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+    expect(sources.find((s) => s.code === 'faostat-qcl')?.licence).toMatch(/CC BY 4\.0/);
   });
 });
 
 // ------------------------------------------------------------------------------------------------
-// The loader and the schema describe the same tables
+// The atlas files, the loader and the schema describe the same tables
 // ------------------------------------------------------------------------------------------------
 
-describe('loader and migrations agree', () => {
+describe('atlas, loader and migrations agree', () => {
   const sql = readdirSync('supabase/migrations')
     .sort()
     .map((f) => readFileSync(`supabase/migrations/${f}`, 'utf8'))
     .join('\n');
-  const columnsOf = (table: string): string[] => {
-    const body = new RegExp(`create table public\\.${table} \\(([\\s\\S]*?)\\n\\);`).exec(sql)?.[1];
+  /** Columns of the table as its last `create table` declares them: [name, type]. */
+  const declared = (table: string): [string, string][] => {
+    const all = [...sql.matchAll(new RegExp(`create table public\\.${table} \\(([\\s\\S]*?)\\n\\);`, 'g'))];
+    const body = all.at(-1)?.[1];
     if (!body) throw new Error(`create table public.${table} not found in supabase/migrations`);
     return body
       .split('\n')
-      .map((l) => /^ {2}([a-z_0-9]+) /.exec(l)?.[1])
-      .filter((c): c is string => !!c && !['primary', 'constraint', 'check', 'unique', 'foreign'].includes(c));
+      .map((l) => /^ {2}([a-z_0-9]+)\s+(text|integer|numeric|boolean|smallint)\b/.exec(l))
+      .filter((m): m is RegExpExecArray => !!m)
+      .map((m) => [m[1], m[2]]);
   };
 
-  it('crops: every field the loader sends is a column', () => {
-    const sent = Object.keys(readAtlas()[0].row).sort();
-    expect(columnsOf('crops').sort()).toEqual(sent);
+  it.each(Object.keys(TABLES) as AtlasTable[])('%s: the table has the columns of the atlas file, in its order and with the type the loader sends', (table) => {
+    const columns = columnsOf(table);
+    expect(declared(table)).toEqual(columns.map((c) => [c, kindOf(table, c)]));
   });
 
-  it('producer_prices: every field the loader sends is a column', async () => {
-    const data = await assemble(rowsOf([priceLine()]), { monthly: false });
-    expect(columnsOf('producer_prices').sort()).toEqual(Object.keys(data.prices[0]).sort());
+  it('producer_prices and crop_items: every field the loader sends is a column', async () => {
+    const data = await assemble(rowsOf([priceLine()]), { monthly: false }, atlas);
+    expect(declared('producer_prices').map(([c]) => c).sort()).toEqual(Object.keys(data.prices[0]).sort());
+    expect(declared('crop_items').map(([c]) => c).sort()).toEqual(Object.keys(data.cropItems[0]).sort());
+  });
+
+  it('areas: the area list has the columns of the table', () => {
+    const header = readFileSync(AREAS_FILE, 'utf8').split('\n')[0].split(',');
+    expect(header).toEqual(['area_code', 'm49_code', 'name', 'iso3']);
+    expect(sql).toMatch(/alter table public\.areas add column iso3 text/);
   });
 
   it('migration files are named in the order they apply', () => {

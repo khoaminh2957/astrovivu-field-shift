@@ -15,37 +15,38 @@ select is(
 );
 
 -- Fixture with ids no real row uses (see 001_schema.test.sql).
-insert into public.areas (area_code, m49_code, name) values (4991, '991', 'Testland');
-insert into public.faostat_items (item_code, name) values (99001, 'Test grain');
-insert into public.crops (id, name, scientific_name) values ('test-grain', 'Test grain', 'Testum granum');
-insert into public.crop_faostat_items (crop_id, item_code, match_method) values ('test-grain', 99001, 'producing-countries');
-insert into public.producer_prices (area_code, item_code, year, usd_per_tonne) values (4991, 99001, 2024, 356.0);
+insert into public.areas (area_code, m49_code, name, iso3) values (4991, '991', 'Testland', 'XTA');
+insert into public.items (faostat_item_code, faostat_item, item_class) values (99001, 'Test grain', 'single');
+insert into public.crops (crop_id, scientific_name, match, faostat_item_code, item_shared_by_n_crops, curated) values ('test-grain', 'Testum granum', 'exact', 99001, 1, false);
+insert into public.crop_items (crop_id, faostat_item_code, is_primary) values ('test-grain', 99001, true);
+insert into public.crop_country (crop_id, iso3, country, match, item_reported, level) values ('test-grain', 'XTA', 'Testland', 'exact', true, 'major');
+insert into public.producer_prices (area_code, faostat_item_code, year, usd_per_tonne) values (4991, 99001, 2024, 356.0);
 
 set local role anon;
-select is((select count(*)::int from public.crops where id = 'test-grain'), 1, 'anon reads crops');
-select is((select count(*)::int from public.producer_prices where item_code = 99001), 1, 'anon reads producer_prices');
+select is((select count(*)::int from public.crops where crop_id = 'test-grain'), 1, 'anon reads crops');
+select is((select count(*)::int from public.producer_prices where faostat_item_code = 99001), 1, 'anon reads producer_prices');
 select is((select count(*)::int from public.crop_latest_prices where crop_id = 'test-grain'), 1, 'anon reads through the views');
-select is((select count(*)::int from public.crop_price_series('test-grain', 4991)), 1, 'anon calls crop_price_series');
-select throws_ok($$ insert into public.crops (id, name, scientific_name) values ('test-x', 'x', 'Testum x') $$, '42501', null, 'anon cannot insert a crop');
+select is((select count(*)::int from public.crop_price_series('test-grain', 'XTA')), 1, 'anon calls crop_price_series');
+select throws_ok($$ insert into public.crops (crop_id, scientific_name, match, curated) values ('test-x', 'Testum x', 'none', false) $$, '42501', null, 'anon cannot insert a crop');
 select throws_ok($$ update public.producer_prices set usd_per_tonne = 1 $$, '42501', null, 'anon cannot change a price');
-select throws_ok($$ delete from public.crops $$, '42501', null, 'anon cannot delete crops');
+select throws_ok($$ delete from public.crop_country $$, '42501', null, 'anon cannot delete crop-country rows');
 select throws_ok($$ truncate public.producer_prices $$, '42501', null, 'anon cannot truncate prices');
 select throws_ok($$ insert into public.data_sources (code, name, publisher, url) values ('x', 'x', 'x', 'x') $$, '42501', null, 'anon cannot add a data source');
 reset role;
 
 set local role authenticated;
-select is((select count(*)::int from public.crops where id = 'test-grain'), 1, 'a signed-in user reads crops');
+select is((select count(*)::int from public.crops where crop_id = 'test-grain'), 1, 'a signed-in user reads crops');
 select throws_ok($$ insert into public.areas (area_code, m49_code, name) values (4993, '993', 'Thirdland') $$, '42501', null, 'a signed-in user cannot insert an area');
-select throws_ok($$ update public.crops set name = 'x' $$, '42501', null, 'a signed-in user cannot change a crop');
-select throws_ok($$ delete from public.producer_prices $$, '42501', null, 'a signed-in user cannot delete prices');
+select throws_ok($$ update public.crops set name_en = 'x' $$, '42501', null, 'a signed-in user cannot change a crop');
+select throws_ok($$ delete from public.items $$, '42501', null, 'a signed-in user cannot delete items');
 select throws_ok($$ truncate public.crops cascade $$, '42501', null, 'a signed-in user cannot truncate crops');
 reset role;
 
 set local role service_role;
-select lives_ok($$ insert into public.areas (area_code, m49_code, name) values (4992, '992', 'Otherland') $$, 'the service role inserts (the loader)');
+select lives_ok($$ insert into public.areas (area_code, m49_code, name, iso3) values (4992, '992', 'Otherland', 'XTB') $$, 'the service role inserts (the loader)');
 select lives_ok($$ update public.producer_prices set usd_per_tonne = 357 where area_code = 4991 $$, 'the service role updates');
 select is((select usd_per_tonne from public.producer_prices where area_code = 4991), 357::numeric, 'the update is visible');
-select lives_ok($$ delete from public.producer_prices where area_code = 4991 $$, 'the service role deletes');
+select lives_ok($$ delete from public.crops where crop_id = 'test-grain' $$, 'the service role deletes (a crop the atlas dropped)');
 reset role;
 
 select * from finish();

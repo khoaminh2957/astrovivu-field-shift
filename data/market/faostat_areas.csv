@@ -1,210 +1,210 @@
-area_code,m49_code,name
-1,051,Armenia
-2,004,Afghanistan
-3,008,Albania
-4,012,Algeria
-7,024,Angola
-8,028,Antigua and Barbuda
-9,032,Argentina
-10,036,Australia
-11,040,Austria
-12,044,Bahamas
-13,048,Bahrain
-14,052,Barbados
-15,058,Belgium-Luxembourg
-16,050,Bangladesh
-18,064,Bhutan
-19,068,Bolivia (Plurinational State of)
-20,072,Botswana
-21,076,Brazil
-23,084,Belize
-25,090,Solomon Islands
-26,096,Brunei Darussalam
-27,100,Bulgaria
-28,104,Myanmar
-29,108,Burundi
-32,120,Cameroon
-33,124,Canada
-35,132,Cabo Verde
-37,140,Central African Republic
-38,144,Sri Lanka
-39,148,Chad
-40,152,Chile
-41,156,"China, mainland"
-44,170,Colombia
-45,174,Comoros
-46,178,Congo
-47,184,Cook Islands
-48,188,Costa Rica
-49,192,Cuba
-50,196,Cyprus
-51,200,Czechoslovakia
-52,031,Azerbaijan
-53,204,Benin
-54,208,Denmark
-55,212,Dominica
-56,214,Dominican Republic
-57,112,Belarus
-58,218,Ecuador
-59,818,Egypt
-60,222,El Salvador
-61,226,Equatorial Guinea
-62,230,Ethiopia PDR
-63,233,Estonia
-64,234,Faroe Islands
-66,242,Fiji
-67,246,Finland
-68,250,France
-69,254,French Guiana
-70,258,French Polynesia
-72,262,Djibouti
-73,268,Georgia
-74,266,Gabon
-75,270,Gambia
-79,276,Germany
-80,070,Bosnia and Herzegovina
-81,288,Ghana
-83,296,Kiribati
-84,300,Greece
-86,308,Grenada
-87,312,Guadeloupe
-89,320,Guatemala
-90,324,Guinea
-91,328,Guyana
-93,332,Haiti
-95,340,Honduras
-96,344,"China, Hong Kong SAR"
-97,348,Hungary
-98,191,Croatia
-99,352,Iceland
-100,356,India
-101,360,Indonesia
-102,364,Iran (Islamic Republic of)
-103,368,Iraq
-104,372,Ireland
-105,376,Israel
-106,380,Italy
-107,384,Côte d'Ivoire
-108,398,Kazakhstan
-109,388,Jamaica
-110,392,Japan
-112,400,Jordan
-113,417,Kyrgyzstan
-114,404,Kenya
-115,116,Cambodia
-116,408,Democratic People's Republic of Korea
-117,410,Republic of Korea
-118,414,Kuwait
-119,428,Latvia
-120,418,Lao People's Democratic Republic
-121,422,Lebanon
-122,426,Lesotho
-123,430,Liberia
-124,434,Libya
-126,440,Lithuania
-127,584,Marshall Islands
-128,446,"China, Macao SAR"
-129,450,Madagascar
-130,454,Malawi
-131,458,Malaysia
-132,462,Maldives
-133,466,Mali
-134,470,Malta
-135,474,Martinique
-136,478,Mauritania
-137,480,Mauritius
-138,484,Mexico
-141,496,Mongolia
-143,504,Morocco
-144,508,Mozambique
-145,583,Micronesia (Federated States of)
-146,498,Republic of Moldova
-147,516,Namibia
-148,520,Nauru
-149,524,Nepal
-150,528,Netherlands (Kingdom of the)
-153,540,New Caledonia
-154,807,North Macedonia
-155,548,Vanuatu
-156,554,New Zealand
-157,558,Nicaragua
-158,562,Niger
-159,566,Nigeria
-160,570,Niue
-162,578,Norway
-165,586,Pakistan
-166,591,Panama
-167,203,Czechia
-168,598,Papua New Guinea
-169,600,Paraguay
-170,604,Peru
-171,608,Philippines
-173,616,Poland
-174,620,Portugal
-175,624,Guinea-Bissau
-176,626,Timor-Leste
-177,630,Puerto Rico
-178,232,Eritrea
-179,634,Qatar
-181,716,Zimbabwe
-182,638,Réunion
-183,642,Romania
-184,646,Rwanda
-185,643,Russian Federation
-186,891,Serbia and Montenegro
-188,659,Saint Kitts and Nevis
-189,662,Saint Lucia
-191,670,Saint Vincent and the Grenadines
-193,678,Sao Tome and Principe
-194,682,Saudi Arabia
-195,686,Senegal
-196,690,Seychelles
-197,694,Sierra Leone
-198,705,Slovenia
-199,703,Slovakia
-200,702,Singapore
-201,706,Somalia
-202,710,South Africa
-203,724,Spain
-206,736,Sudan (former)
-207,740,Suriname
-208,762,Tajikistan
-209,748,Eswatini
-210,752,Sweden
-211,756,Switzerland
-212,760,Syrian Arab Republic
-213,795,Turkmenistan
-214,158,"China, Taiwan Province of"
-215,834,United Republic of Tanzania
-216,764,Thailand
-217,768,Togo
-219,776,Tonga
-220,780,Trinidad and Tobago
-221,512,Oman
-222,788,Tunisia
-223,792,Türkiye
-225,784,United Arab Emirates
-226,800,Uganda
-227,798,Tuvalu
-228,810,USSR
-229,826,United Kingdom of Great Britain and Northern Ireland
-230,804,Ukraine
-231,840,United States of America
-233,854,Burkina Faso
-234,858,Uruguay
-235,860,Uzbekistan
-236,862,Venezuela (Bolivarian Republic of)
-237,704,Viet Nam
-238,231,Ethiopia
-244,882,Samoa
-248,890,Yugoslav SFR
-249,887,Yemen
-250,180,Democratic Republic of the Congo
-251,894,Zambia
-255,056,Belgium
-256,442,Luxembourg
-272,688,Serbia
-273,499,Montenegro
-276,729,Sudan
-277,728,South Sudan
-299,275,Palestine
+area_code,m49_code,name,iso3
+1,051,Armenia,ARM
+2,004,Afghanistan,AFG
+3,008,Albania,ALB
+4,012,Algeria,DZA
+7,024,Angola,AGO
+8,028,Antigua and Barbuda,ATG
+9,032,Argentina,ARG
+10,036,Australia,AUS
+11,040,Austria,AUT
+12,044,Bahamas,BHS
+13,048,Bahrain,BHR
+14,052,Barbados,BRB
+15,058,Belgium-Luxembourg,
+16,050,Bangladesh,BGD
+18,064,Bhutan,BTN
+19,068,Bolivia (Plurinational State of),BOL
+20,072,Botswana,BWA
+21,076,Brazil,BRA
+23,084,Belize,BLZ
+25,090,Solomon Islands,SLB
+26,096,Brunei Darussalam,BRN
+27,100,Bulgaria,BGR
+28,104,Myanmar,MMR
+29,108,Burundi,BDI
+32,120,Cameroon,CMR
+33,124,Canada,CAN
+35,132,Cabo Verde,CPV
+37,140,Central African Republic,CAF
+38,144,Sri Lanka,LKA
+39,148,Chad,TCD
+40,152,Chile,CHL
+41,156,"China, mainland",CHN
+44,170,Colombia,COL
+45,174,Comoros,COM
+46,178,Congo,COG
+47,184,Cook Islands,COK
+48,188,Costa Rica,CRI
+49,192,Cuba,CUB
+50,196,Cyprus,CYP
+51,200,Czechoslovakia,
+52,031,Azerbaijan,AZE
+53,204,Benin,BEN
+54,208,Denmark,DNK
+55,212,Dominica,DMA
+56,214,Dominican Republic,DOM
+57,112,Belarus,BLR
+58,218,Ecuador,ECU
+59,818,Egypt,EGY
+60,222,El Salvador,SLV
+61,226,Equatorial Guinea,GNQ
+62,230,Ethiopia PDR,
+63,233,Estonia,EST
+64,234,Faroe Islands,FRO
+66,242,Fiji,FJI
+67,246,Finland,FIN
+68,250,France,FRA
+69,254,French Guiana,
+70,258,French Polynesia,PYF
+72,262,Djibouti,DJI
+73,268,Georgia,GEO
+74,266,Gabon,GAB
+75,270,Gambia,GMB
+79,276,Germany,DEU
+80,070,Bosnia and Herzegovina,BIH
+81,288,Ghana,GHA
+83,296,Kiribati,KIR
+84,300,Greece,GRC
+86,308,Grenada,GRD
+87,312,Guadeloupe,
+89,320,Guatemala,GTM
+90,324,Guinea,GIN
+91,328,Guyana,GUY
+93,332,Haiti,HTI
+95,340,Honduras,HND
+96,344,"China, Hong Kong SAR",HKG
+97,348,Hungary,HUN
+98,191,Croatia,HRV
+99,352,Iceland,ISL
+100,356,India,IND
+101,360,Indonesia,IDN
+102,364,Iran (Islamic Republic of),IRN
+103,368,Iraq,IRQ
+104,372,Ireland,IRL
+105,376,Israel,ISR
+106,380,Italy,ITA
+107,384,Côte d'Ivoire,CIV
+108,398,Kazakhstan,KAZ
+109,388,Jamaica,JAM
+110,392,Japan,JPN
+112,400,Jordan,JOR
+113,417,Kyrgyzstan,KGZ
+114,404,Kenya,KEN
+115,116,Cambodia,KHM
+116,408,Democratic People's Republic of Korea,PRK
+117,410,Republic of Korea,KOR
+118,414,Kuwait,KWT
+119,428,Latvia,LVA
+120,418,Lao People's Democratic Republic,LAO
+121,422,Lebanon,LBN
+122,426,Lesotho,LSO
+123,430,Liberia,LBR
+124,434,Libya,LBY
+126,440,Lithuania,LTU
+127,584,Marshall Islands,MHL
+128,446,"China, Macao SAR",MAC
+129,450,Madagascar,MDG
+130,454,Malawi,MWI
+131,458,Malaysia,MYS
+132,462,Maldives,MDV
+133,466,Mali,MLI
+134,470,Malta,MLT
+135,474,Martinique,
+136,478,Mauritania,MRT
+137,480,Mauritius,MUS
+138,484,Mexico,MEX
+141,496,Mongolia,MNG
+143,504,Morocco,MAR
+144,508,Mozambique,MOZ
+145,583,Micronesia (Federated States of),FSM
+146,498,Republic of Moldova,MDA
+147,516,Namibia,NAM
+148,520,Nauru,NRU
+149,524,Nepal,NPL
+150,528,Netherlands (Kingdom of the),NLD
+153,540,New Caledonia,NCL
+154,807,North Macedonia,MKD
+155,548,Vanuatu,VUT
+156,554,New Zealand,NZL
+157,558,Nicaragua,NIC
+158,562,Niger,NER
+159,566,Nigeria,NGA
+160,570,Niue,NIU
+162,578,Norway,NOR
+165,586,Pakistan,PAK
+166,591,Panama,PAN
+167,203,Czechia,CZE
+168,598,Papua New Guinea,PNG
+169,600,Paraguay,PRY
+170,604,Peru,PER
+171,608,Philippines,PHL
+173,616,Poland,POL
+174,620,Portugal,PRT
+175,624,Guinea-Bissau,GNB
+176,626,Timor-Leste,TLS
+177,630,Puerto Rico,PRI
+178,232,Eritrea,ERI
+179,634,Qatar,QAT
+181,716,Zimbabwe,ZWE
+182,638,Réunion,
+183,642,Romania,ROU
+184,646,Rwanda,RWA
+185,643,Russian Federation,RUS
+186,891,Serbia and Montenegro,
+188,659,Saint Kitts and Nevis,KNA
+189,662,Saint Lucia,LCA
+191,670,Saint Vincent and the Grenadines,VCT
+193,678,Sao Tome and Principe,STP
+194,682,Saudi Arabia,SAU
+195,686,Senegal,SEN
+196,690,Seychelles,SYC
+197,694,Sierra Leone,SLE
+198,705,Slovenia,SVN
+199,703,Slovakia,SVK
+200,702,Singapore,SGP
+201,706,Somalia,SOM
+202,710,South Africa,ZAF
+203,724,Spain,ESP
+206,736,Sudan (former),
+207,740,Suriname,SUR
+208,762,Tajikistan,TJK
+209,748,Eswatini,SWZ
+210,752,Sweden,SWE
+211,756,Switzerland,CHE
+212,760,Syrian Arab Republic,SYR
+213,795,Turkmenistan,TKM
+214,158,"China, Taiwan Province of",TWN
+215,834,United Republic of Tanzania,TZA
+216,764,Thailand,THA
+217,768,Togo,TGO
+219,776,Tonga,TON
+220,780,Trinidad and Tobago,TTO
+221,512,Oman,OMN
+222,788,Tunisia,TUN
+223,792,Türkiye,TUR
+225,784,United Arab Emirates,ARE
+226,800,Uganda,UGA
+227,798,Tuvalu,TUV
+228,810,USSR,
+229,826,United Kingdom of Great Britain and Northern Ireland,GBR
+230,804,Ukraine,UKR
+231,840,United States of America,USA
+233,854,Burkina Faso,BFA
+234,858,Uruguay,URY
+235,860,Uzbekistan,UZB
+236,862,Venezuela (Bolivarian Republic of),VEN
+237,704,Viet Nam,VNM
+238,231,Ethiopia,ETH
+244,882,Samoa,WSM
+248,890,Yugoslav SFR,
+249,887,Yemen,YEM
+250,180,Democratic Republic of the Congo,COD
+251,894,Zambia,ZMB
+255,056,Belgium,BEL
+256,442,Luxembourg,LUX
+272,688,Serbia,SRB
+273,499,Montenegro,MNE
+276,729,Sudan,SDN
+277,728,South Sudan,SSD
+299,275,Palestine,PSE

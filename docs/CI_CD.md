@@ -86,7 +86,7 @@ Workflow **không làm gì** cho đến khi các biến dưới đây tồn tạ
    | Secret của từng environment | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API keys, khoá `service_role`; chỉ cần cho việc nạp dữ liệu |
    | Secret của từng environment | `SUPABASE_ANON_KEY` | khoá `anon`; tuỳ chọn, để chạy bước đọc thử |
 
-4. Actions → Database deploy → Run workflow, tích `load_data`: áp migration rồi nạp dữ liệu giá (489 cây, 241.376 dòng giá năm, khoảng 55 MB).
+4. Actions → Database deploy → Run workflow, tích `load_data`: áp migration rồi nạp dữ liệu (387 cây của atlas, 72.666 dòng cây theo nước, 249.700 dòng giá năm; khoảng 63 MB).
 
 Khoá `service_role` bỏ qua mọi quy tắc phân quyền của cơ sở dữ liệu: chỉ để trong secret của environment hoặc tệp `.env` trên máy, không bao giờ trong mã chạy ở trình duyệt, không dán vào pull request hay chat.
 
