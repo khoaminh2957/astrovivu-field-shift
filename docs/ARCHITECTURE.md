@@ -160,15 +160,16 @@ urban  (side mission, reachable from any state)
 
 - **Globe** reads `phase`, `parcel`, `draft`, `drawMode`, `layers`, `timeline.cursor`, `telemetry`, `focusBranch`; writes `anchor`, `draft`, and calls `lockParcel`.
 - **HUD and panels** read `telemetry`, `branchStatus`, `score`, `insights`, `advisory`, `anchor`, `timeline`; call the actions.
-- **Model tiers** are invoked only by the store (`recompute`).
+- **Model tiers** are invoked only by the store (`recompute`). One exception, read-only: the living farm (`src/ui/farm`, docs/FARM.md) runs `src/core/farm` on a copy of the model input to draw a trial; it writes nothing to the store.
 
 Sequence after a parcel is locked:
 
 1. `lockParcel(parcel)` sets `phase = 'locked'`, marks all branches `loading`, aborts any previous load.
 2. `data.loadTelemetry` reports each branch through `onProgress`; the store publishes the partial telemetry and calls `recompute()` so the HUD fills in progressively.
-3. `recompute()` runs `core/scoring` then `core/advisory` and publishes `score`, `insights`, `advisory`.
-4. `setCursor` / `play` move `timeline.cursor`; views re-read values with `sampleAt` and `scoreAt` (no recompute needed).
-5. `setCrop`, `setGroundTruth`, `setPriorities` trigger `recompute()`.
+3. Beside the telemetry, `data.loadCountryTable` fetches the crop table of the parcel's country (`public/data/crops/country/<ISO3>.json`, docs/CROP_DATA.md section 11.1) into `countryTable`. The country comes from `place.iso3`, else `place.countryCode`, else the geocoder at the parcel's centre. When the table arrives the store calls `recompute()`; a country without a table gives `status: 'missing'` and the model runs as it does without one.
+4. `recompute()` runs `core/scoring` then `core/advisory` and publishes `score`, `insights`, `advisory`. `toModelInput` adds the loaded table as `ModelInput.country`.
+5. `setCursor` / `play` move `timeline.cursor`; views re-read values with `sampleAt` and `scoreAt` (no recompute needed).
+6. `setCrop`, `setGroundTruth`, `setPriorities` trigger `recompute()`.
 
 Mount points (each folder exports the component from its `index.tsx`; `src/App.tsx` composes them):
 

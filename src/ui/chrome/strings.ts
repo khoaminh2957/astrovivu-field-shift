@@ -5,7 +5,7 @@ registerStrings(
   {
     'nav.label': 'Mission views',
     'nav.field': 'Fields',
-    'nav.advisory': 'Rotation',
+    'nav.advisory': 'Farm',
     fieldPanel: 'Field panel',
     'nav.urban': 'Urban',
     'nav.urbanLong': 'Urban grower',
@@ -23,7 +23,7 @@ registerStrings(
   {
     'nav.label': 'Các màn hình',
     'nav.field': 'Thửa ruộng',
-    'nav.advisory': 'Luân canh',
+    'nav.advisory': 'Nông trại',
     fieldPanel: 'Bảng thửa ruộng',
     'nav.urban': 'Đô thị',
     'nav.urbanLong': 'Trồng rau đô thị',

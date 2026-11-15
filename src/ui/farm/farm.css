@@ -1,0 +1,272 @@
+/*
+ * The living farm scene (docs/FARM.md). The palette is the scene's own: an illustration, drawn
+ * in daylight in both colour schemes like the satellite picture beside it.
+ */
+.farm-scene {
+  --farm-sky-top: #8fcdf5;
+  --farm-sky-low: #dff3fb;
+  --farm-hill-far: #9fd4a3;
+  --farm-hill-near: #6fbf73;
+  --farm-soil-dry: #c49a6c;
+  --farm-soil-usual: #94603c;
+  --farm-soil-wet: #63422c;
+  --farm-soil-none: #a08a78;
+  --farm-water: #5aa9e6;
+  --farm-ease: 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+/* Everything that depends on the day eases to its new state as the date moves. */
+.farm-scene .farm-fade {
+  transition:
+    opacity var(--farm-ease),
+    fill var(--farm-ease),
+    stroke var(--farm-ease);
+}
+.farm-scene .farm-move {
+  transition:
+    transform var(--farm-ease),
+    opacity var(--farm-ease);
+  transform-box: fill-box;
+}
+
+/* A machine or a plant that moves to its new place or size as the date moves. */
+.farm-scene .farm-glide {
+  transition: transform var(--farm-ease);
+}
+.farm-scene .farm-grow {
+  transition: transform var(--farm-ease);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+/* The seeder crosses the field while sowing is under way. */
+.farm-scene .farm-cross {
+  animation: farm-cross 11s linear infinite;
+}
+@keyframes farm-cross {
+  from {
+    transform: translateX(-70px);
+  }
+  to {
+    transform: translateX(640px);
+  }
+}
+
+.farm-scene .farm-cloud {
+  animation: farm-drift 46s linear infinite;
+}
+.farm-scene .farm-cloud:nth-of-type(2) {
+  animation-duration: 64s;
+  animation-delay: -22s;
+}
+.farm-scene .farm-cloud:nth-of-type(3) {
+  animation-duration: 54s;
+  animation-delay: -40s;
+}
+.farm-scene .farm-cloud:nth-of-type(4) {
+  animation-duration: 72s;
+  animation-delay: -9s;
+}
+@keyframes farm-drift {
+  from {
+    transform: translateX(-160px);
+  }
+  to {
+    transform: translateX(620px);
+  }
+}
+
+.farm-scene .farm-rain line {
+  animation: farm-fall 0.7s linear infinite;
+}
+.farm-scene .farm-rain line:nth-child(3n) {
+  animation-duration: 0.55s;
+  animation-delay: -0.2s;
+}
+.farm-scene .farm-rain line:nth-child(3n + 1) {
+  animation-duration: 0.85s;
+  animation-delay: -0.45s;
+}
+@keyframes farm-fall {
+  from {
+    transform: translate(10px, -40px);
+  }
+  to {
+    transform: translate(-22px, 110px);
+  }
+}
+
+.farm-scene .farm-sun-rays {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: farm-spin 60s linear infinite;
+}
+@keyframes farm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.farm-scene .farm-sway {
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+  animation: farm-sway 3.6s ease-in-out infinite alternate;
+}
+.farm-scene .farm-sway:nth-child(2n) {
+  animation-duration: 4.4s;
+  animation-delay: -1.3s;
+}
+.farm-scene .farm-sway:nth-child(3n) {
+  animation-duration: 3.1s;
+  animation-delay: -2.1s;
+}
+.farm-scene[data-wind='strong'] .farm-sway {
+  animation-duration: 1.4s;
+}
+@keyframes farm-sway {
+  from {
+    transform: rotate(-3deg);
+  }
+  to {
+    transform: rotate(3.5deg);
+  }
+}
+
+.farm-scene .farm-bob {
+  animation: farm-bob 3.2s ease-in-out infinite alternate;
+  transform-box: fill-box;
+}
+.farm-scene .farm-bob-slow {
+  animation: farm-bob 5s ease-in-out infinite alternate;
+  transform-box: fill-box;
+}
+@keyframes farm-bob {
+  from {
+    transform: translateY(-2px);
+  }
+  to {
+    transform: translateY(3px);
+  }
+}
+
+.farm-scene .farm-wheel {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: farm-spin 1.1s linear infinite;
+}
+.farm-scene .farm-vehicle-body {
+  animation: farm-rattle 0.36s ease-in-out infinite alternate;
+  transform-box: fill-box;
+}
+@keyframes farm-rattle {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-1.2px);
+  }
+}
+/* A machine drives in from the edge of the field when its work begins. */
+.farm-scene .farm-drive-in {
+  animation: farm-drive-in 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes farm-drive-in {
+  from {
+    transform: translateX(-320px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.farm-scene .farm-puff {
+  animation: farm-puff 1.2s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.farm-scene .farm-puff:nth-child(2) {
+  animation-delay: -0.4s;
+}
+.farm-scene .farm-puff:nth-child(3) {
+  animation-delay: -0.8s;
+}
+@keyframes farm-puff {
+  from {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0.8;
+  }
+  to {
+    transform: translate(-16px, -14px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.farm-scene .farm-twinkle {
+  animation: farm-twinkle 1.8s ease-in-out infinite alternate;
+}
+.farm-scene .farm-twinkle:nth-child(2n) {
+  animation-delay: -0.9s;
+}
+@keyframes farm-twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.farm-scene .farm-ripple {
+  animation: farm-ripple 3s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes farm-ripple {
+  from {
+    transform: scaleX(0.82);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleX(1.08);
+    opacity: 0.8;
+  }
+}
+
+.farm-scene .farm-mascot {
+  cursor: pointer;
+  outline: none;
+}
+.farm-scene .farm-mascot .farm-ring {
+  opacity: 0;
+  transition: opacity 200ms;
+}
+.farm-scene .farm-mascot:hover .farm-ring,
+.farm-scene .farm-mascot:focus-visible .farm-ring,
+.farm-scene .farm-mascot[aria-pressed='true'] .farm-ring {
+  opacity: 1;
+}
+.farm-scene .farm-talk {
+  animation: farm-talk 1s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes farm-talk {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farm-scene *,
+  .farm-scene {
+    animation: none !important;
+    transition: none !important;
+  }
+}

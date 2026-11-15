@@ -1818,7 +1818,11 @@ export function whatIf(input: ModelInput, patch?: Partial<GroundTruth>): WhatIfR
   const out: WhatIfResult[] = [];
   const tryIt = (changedFactor: string, label: I18nText, next: ModelInput) => {
     const after = seasonScore(next);
-    out.push({ label, changedFactor, before, after, delta: after - before });
+    // What the move changed, for a view that wants to run it as a trial.
+    const groundTruth: Partial<GroundTruth> = {};
+    for (const k of Object.keys(next.groundTruth) as (keyof GroundTruth)[]) if (next.groundTruth[k] !== input.groundTruth[k]) Object.assign(groundTruth, { [k]: next.groundTruth[k] });
+    const apply = { ...(next.cropId !== input.cropId ? { cropId: next.cropId } : {}), ...(Object.keys(groundTruth).length ? { groundTruth } : {}) };
+    out.push({ label, changedFactor, before, after, delta: after - before, apply });
   };
   const withGt = (g: Partial<GroundTruth>): ModelInput => ({ ...input, groundTruth: { ...input.groundTruth, ...g } });
   if (patch && Object.keys(patch).length) {

@@ -3,6 +3,7 @@
  *
  * Data flows one way:
  *   lockParcel -> data.loadTelemetry (progressive) -> recompute (scoring, insights, advisory) -> UI
+ *   lockParcel -> data.loadCountryTable (what the country grows) -> recompute
  *   setCursor / play -> every time-aware view re-reads its value at `timeline.cursor`
  *   setCrop / setGroundTruth / setPriorities -> recompute
  *
@@ -34,12 +35,14 @@ import type {
 import { BRANCHES } from '@/contracts';
 import { buildAdvisoryReport, buildInsights } from '@/core/advisory';
 import { computeScoreTimeline } from '@/core/scoring';
-import { getSampleParcel, loadFieldRasters, loadTelemetry } from '@/data';
+import { type CountryTableResult, getSampleParcel, loadCountryTable, loadFieldRasters, loadTelemetry } from '@/data';
 import { addDays, clampDate, todayISO } from '@/lib/time';
 
 /** hero -> explore -> locked (field panel + timeline) -> advisory; urban is a side mission. */
 export type Phase = 'hero' | 'explore' | 'locked' | 'advisory' | 'urban';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
+/** The crop table of the parcel's country: on its way, loaded, not available for that country, or failed to load. */
+export type CountryTableState = CountryTableResult | { status: 'idle' | 'loading' | 'error' };
 
 export interface TimelineState {
   start: ISODate;
@@ -65,6 +68,9 @@ export interface MissionState {
   /** Within-field rasters (10-30 m) of the locked parcel. They load beside the telemetry and never trigger a recompute. */
   rasters: FieldRaster[];
   rasterStatus: LoadState;
+
+  /** What the country of the locked parcel grows. It loads beside the telemetry; the model runs without it until it arrives. */
+  countryTable: CountryTableState;
 
   timeline: TimelineState;
 
@@ -138,7 +144,7 @@ function stopTimer(): void {
   }
 }
 
-export function toModelInput(s: Pick<MissionState, 'parcel' | 'telemetry' | 'cropId' | 'groundTruth' | 'priorities'>): ModelInput | null {
+export function toModelInput(s: Pick<MissionState, 'parcel' | 'telemetry' | 'cropId' | 'groundTruth' | 'priorities'> & Partial<Pick<MissionState, 'countryTable'>>): ModelInput | null {
   if (!s.parcel || !s.telemetry) return null;
   return {
     parcel: s.parcel,
@@ -147,6 +153,8 @@ export function toModelInput(s: Pick<MissionState, 'parcel' | 'telemetry' | 'cro
     groundTruth: s.groundTruth,
     priorities: s.priorities,
     today: s.telemetry.window.today,
+    // Without a table the model ranks on climate and soil alone (ModelInput.country).
+    ...(s.countryTable?.status === 'ready' ? { country: s.countryTable.country } : {}),
   };
 }
 
@@ -172,6 +180,8 @@ export const useMission = create<MissionState>()((set, get) => ({
 
   rasters: [],
   rasterStatus: 'idle',
+
+  countryTable: { status: 'idle' },
 
   timeline: { start: addDays(today, -364), end: today, cursor: today, playing: false, stepDays: 3 },
 
@@ -227,6 +237,7 @@ export const useMission = create<MissionState>()((set, get) => ({
       advisory: null,
       rasters: [],
       rasterStatus: 'loading',
+      countryTable: { status: 'loading' },
       focusBranch: null,
       timeline: { ...s.timeline, playing: false },
     }));
@@ -243,6 +254,18 @@ export const useMission = create<MissionState>()((set, get) => ({
       },
       () => {
         if (isCurrent()) set({ rasterStatus: 'error' });
+      },
+    );
+
+    // The country's crop table is a small static file: it usually arrives before the first telemetry branch.
+    void loadCountryTable(parcel, { signal: abort.signal, lang: get().lang }).then(
+      (countryTable) => {
+        if (!isCurrent()) return;
+        set({ countryTable });
+        if (countryTable.status === 'ready') get().recompute();
+      },
+      () => {
+        if (isCurrent()) set({ countryTable: { status: 'error' } });
       },
     );
 
@@ -293,6 +316,7 @@ export const useMission = create<MissionState>()((set, get) => ({
       anchor: null,
       rasters: [],
       rasterStatus: 'idle',
+      countryTable: { status: 'idle' },
       focusBranch: null,
       timeline: { ...s.timeline, playing: false },
     }));
