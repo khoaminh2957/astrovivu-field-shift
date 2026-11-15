@@ -15,6 +15,14 @@ interface ShellGeometry {
 }
 
 export function shellInsets({ width, height, narrow, locked, finding, finderH, addCard, workspaceSplit, railWidth }: ShellGeometry): ViewInsets {
+  if (locked) {
+    if (narrow) {
+      const mapHeight = Math.round(height * 0.45);
+      return { top: 52, left: 0, right: 56, bottom: height - mapHeight };
+    }
+    return { top: 96, left: Math.round(width * workspaceSplit / 100), right: 0, bottom: 96 };
+  }
+
   if (finding) {
     const side = narrow ? 0 : 64;
     const left = !narrow && addCard ? ADD_CARD.margin + ADD_CARD.width : side;
@@ -26,10 +34,6 @@ export function shellInsets({ width, height, narrow, locked, finding, finderH, a
     return { top: 52, left: 0, right: 56, bottom: height - mapHeight };
   }
 
-  if (locked) {
-    return { top: 96, left: Math.round(width * workspaceSplit / 100), right: 0, bottom: 96 };
-  }
-
   return { top: 56, left: railWidth, right: 64, bottom: 0 };
 }
 
@@ -37,7 +41,7 @@ export function shellInsets({ width, height, narrow, locked, finding, finderH, a
 export function getShellInsets({ phase, parcel }: Pick<MissionState, 'phase' | 'parcel'>): ViewInsets {
   // Rotation covers the map, but leaving it should reveal the same field framing.
   const locked = !!parcel && (phase === 'locked' || phase === 'advisory');
-  const finding = phase === 'hero' || phase === 'explore' || (phase === 'locked' && !parcel);
+  const finding = !locked && (phase === 'hero' || phase === 'explore' || !parcel);
   const { finderH, addCard } = useMissionUi.getState();
   const css = getComputedStyle(document.documentElement);
   return shellInsets({
