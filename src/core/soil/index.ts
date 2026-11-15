@@ -7,4 +7,6 @@ export * from './diagnosis';
 export * from './plan';
 export * from './aluminium';
 export * from './salinity';
+export * from './answer';
+
 export * from './organicMatter';
