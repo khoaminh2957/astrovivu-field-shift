@@ -74,8 +74,6 @@ const URBAN_CANDIDATE_WATER: Record<string, ReturnType<typeof water>> = {
   'thymus-vulgaris': water('mint', { stages: 'generic', assumed: 'Thyme uses the FAO-56 Mint row (same family Lamiaceae)' }),
 };
 
-function defaultEconomics(id: string): CropEconomics | undefined {
-  const byRegion = REFERENCE_ECONOMICS[id];
 function defaultEconomics(id: string, table: ReferenceTable): CropEconomics | undefined {
   const byRegion = table[id];
   if (!byRegion) return undefined;
@@ -139,7 +137,6 @@ function main(): void {
     if (spec.water.assumed) flags.add('water-model-assumed');
     const aliases = [...(spec.aliases ?? [])];
     if (spec.eco && spec.scientificName && spec.scientificName !== spec.eco) aliases.push(spec.eco);
-    const economics = defaultEconomics(id);
     const cycleDays = spec.cycleDays ?? base!.cycleDays;
     const urbanMerged = spec.urban
       ? mergeUrbanTraits({ id, category: spec.category, cycleDays, req }, spec.urban, urbanTable.byCrop.get(id))
@@ -283,8 +280,6 @@ export const CURATION_NOTES: Record<string, string[]> = ${JSON.stringify(curatio
   // --------------------------------------------------------------------------------- cleaning log
   fs.mkdirSync(path.dirname(OUT_LOG), { recursive: true });
   fs.writeFileSync(OUT_LOG, cleaningLog(cleaned.events, cleaned.stats, curated, urbanCandidates, urbanTable.resolutions, curationNotes, rest.length));
-  fs.writeFileSync(OUT_CSV, curatedCsv(curated));
-  fs.writeFileSync(OUT_LOG, cleaningLog(cleaned.events, cleaned.stats, curated, curationNotes, rest.length));
   fs.writeFileSync(OUT_CSV, curatedCsv(curated, REFERENCE_ECONOMICS));
 
   const econRecordCount = Object.values(referenceEconomics).reduce((n, r) => n + Object.keys(r).length, 0);
