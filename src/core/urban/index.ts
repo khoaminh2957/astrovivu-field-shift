@@ -9,6 +9,7 @@ import { listCrops } from '@/core/crops';
 import { trapezoid, windowMonths } from '@/core/scoring';
 import { SOW_FIT } from './calendar';
 import { canopyFromPot, potWater } from './water';
+import { lightClass, sunHoursByMonth } from './sun';
 
 export { MARGINAL_FIT, SOW_FIT, climateScale, nextSow, sowLevel, sowLevels, yearFrom } from './calendar';
 export type { ClimateScale, SowLevel } from './calendar';
@@ -16,6 +17,8 @@ export { ECOCROP_CREDIT, ECOCROP_TERMS_URL, cropImage, ecocropPageUrl, ecocropPh
 export type { CropImageManifest, CropImageSize } from './ecocrop';
 export { canopyFromPot, potWater } from './water';
 export type { PotWaterMonth } from './water';
+export { MID_DOY, lightClass, solarPosition, sunHours, sunHoursByMonth } from './sun';
+export type { SolarPosition, SunHoursOptions } from './sun';
 
 const LIGHT_RANK = { shade: 0, partial: 1, full: 2 } as const;
 const TAG_TIPS: Record<string, I18nText> = {
@@ -69,6 +72,12 @@ export function recommendUrbanAhead(site: UrbanSite, climate: UrbanClimate, pref
 /** `ahead` only changes the wording: the month being scored is then a future one, not "now". */
 function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], now: number, ahead: boolean): UrbanRecommendation[] {
   if (!climate.months.length) return [];
+  const monthlySun =
+    site.facingDeg != null
+      ? sunHoursByMonth(site.location[1], site.facingDeg, { horizonDeg: site.horizonDeg, overhangDeg: site.overhangDeg })
+      : null;
+  const sunHoursNow = monthlySun ? (monthlySun[now - 1] ?? 0) : null;
+  const effectiveLight = sunHoursNow != null ? lightClass(sunHoursNow) : site.light;
   const out: UrbanRecommendation[] = [];
   for (const c of listCrops()) {
     const u = c.urban;
@@ -79,7 +88,7 @@ function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], 
     const sowMonths = fits.map((f, i) => (f >= SOW_FIT ? i + 1 : 0)).filter((m) => m > 0);
     if (!sowMonths.length) continue;
     const soon = Math.max(fits[now - 1], 0.85 * fits[wrapMonth(now + 1) - 1]);
-    const gap = LIGHT_RANK[u.light] - LIGHT_RANK[site.light];
+    const gap = LIGHT_RANK[u.light] - LIGHT_RANK[effectiveLight];
     const light = gap <= 0 ? 1 : gap === 1 ? 0.5 : 0.1;
     const pref = prefs.length ? (prefs.some((p) => u.tags.includes(PREF_TAG[p])) ? 1 : 0.55) : 0.8;
     const par = climate.months.find((m) => m.month === now)?.par;
@@ -92,7 +101,22 @@ function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], 
     if (ahead && fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown from ${monthEn(now)}: that month's mean ${tNow} °C suits it.`, `Có thể gieo từ ${monthVi(now)}: nhiệt độ trung bình tháng đó ${tNow} °C phù hợp.`));
     else if (fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown now: this month's mean ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C suits it.`, `Có thể gieo ngay: nhiệt độ trung bình tháng này ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C phù hợp.`));
     else why.push(tx(`Best sown in ${sowMonths.map(monthEn).join(', ')}.`, `Nên gieo vào ${sowMonths.map(monthVi).join(', ')}.`));
-    why.push(gap <= 0 ? tx(`Your ${site.light} light is enough (needs ${u.light}).`, `Ánh sáng ${site.light === 'full' ? 'nắng đủ' : site.light === 'partial' ? 'nắng một phần' : 'râm'} của bạn là đủ.`) : tx(`Needs ${u.light} sun; expect a smaller harvest with ${site.light} light.`, `Cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'}; thiếu sáng sẽ cho thu hoạch ít hơn.`));
+    if (sunHoursNow != null) {
+      const hStr = sunHoursNow.toFixed(1).replace(/\.0$/, '');
+      why.push(
+        gap <= 0
+          ? tx(
+              `Your balcony gets about ${hStr} hours of direct sun this month under clear skies, which is enough (needs ${u.light}).`,
+              `Ban công của bạn có khoảng ${hStr} giờ nắng trực tiếp trong tháng này, khi trời quang (đủ mức ${u.light === 'full' ? 'nắng đủ' : u.light === 'partial' ? 'nắng một phần' : 'râm'}).`,
+            )
+          : tx(
+              `Your balcony gets about ${hStr} hours of direct sun this month under clear skies; needs ${u.light} sun, so expect a smaller harvest.`,
+              `Ban công của bạn có khoảng ${hStr} giờ nắng trực tiếp trong tháng này, khi trời quang; cây cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'} nên thu hoạch sẽ ít hơn.`,
+            ),
+      );
+    } else {
+      why.push(gap <= 0 ? tx(`Your ${site.light} light is enough (needs ${u.light}).`, `Ánh sáng ${site.light === 'full' ? 'nắng đủ' : site.light === 'partial' ? 'nắng một phần' : 'râm'} của bạn là đủ.`) : tx(`Needs ${u.light} sun; expect a smaller harvest with ${site.light} light.`, `Cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'}; thiếu sáng sẽ cho thu hoạch ít hơn.`));
+    }
     if (prefs.some((p) => u.tags.includes(PREF_TAG[p]))) why.push(tx('Matches what you want to grow.', 'Phù hợp với thứ bạn muốn trồng.'));
     if (u.difficulty === 1) why.push(tx('Easy for beginners.', 'Dễ trồng cho người mới.'));
     const harvestDays: [number, number] = [c.cycleDays[0], c.cycleDays[1]];
