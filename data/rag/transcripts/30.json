@@ -3,7 +3,7 @@
  "lang": "en",
  "question": "Is it legal to lease farmland to a foreign company?",
  "expect": "declined",
- "askedAt": "2026-11-15T08:09:41.443Z",
+ "askedAt": "2026-11-15T08:25:23.865Z",
  "intent": "off-topic",
  "mode": "extractive",
  "fallback": "declined by the router",
@@ -12,7 +12,7 @@
  "requests": 0,
  "inputTokens": 0,
  "outputTokens": 0,
- "ms": 2,
+ "ms": 3,
  "calls": [],
  "numberGuard": {
   "passed": true,

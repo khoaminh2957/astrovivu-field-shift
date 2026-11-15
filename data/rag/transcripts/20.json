@@ -3,7 +3,7 @@
  "lang": "en",
  "question": "What conditions does quinoa need?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:08:56.943Z",
+ "askedAt": "2026-11-15T08:24:39.760Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
@@ -11,14 +11,14 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 4492,
- "outputTokens": 1236,
- "ms": 3868,
+ "outputTokens": 617,
+ "ms": 2810,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Quinoa grows best with a mean temperature of 14-18 °C, though it tolerates 2-35 °C, and an optimal annual rainfall of 500-1000 mm [S1]. It is resilient to a killing temperature of -8 °C during early growth and rest [S1].\n\nThe crop prefers a soil pH of 5.5-8, moderate soil fertility, and well-drained soils with dry spells [S1]. It can handle heavy, medium, or light soil textures and low salinity under 4 dS/m [S1].\n\nIts growing period lasts 90-240 days [S1]. Average seed yields are about 400-900 kg/ha, with potential yields reaching 2-3 t/ha [S2].\n\nTo check if your land matches these requirements, consider getting a local soil test.",
+ "answer": "Quinoa needs specific conditions to grow well, thriving best in temperatures with a mean of 14-18 °C, though it tolerates 2-35 °C [S1]. It requires very bright to clear skies and can grow up to an altitude of 4000 m [S1]. \n\nFor moisture and soil, optimal annual rainfall is 500-1000 mm, with well-drained soil that has dry spells [S1]. It prefers a soil pH of 5.5-8, moderate soil fertility, and low salinity of under 4 dS/m, while tolerating a range of soil textures from heavy, medium, to light [S1]. \n\nThe growing period ranges from 90 to 240 days, and the plant can withstand killing temperatures down to -8 °C in early growth or during rest [S1]. Average seed yield is about 400-900 kg/ha, but yields can reach up to 2-3 t/ha [S2]. \n\nWould you like to know which ecotypes of quinoa are suited to specific elevations or climates?",
  "citations": [
   {
    "n": 1,

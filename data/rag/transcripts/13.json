@@ -3,7 +3,7 @@
  "lang": "vi",
  "question": "Aibika trồng thế nào?",
  "expect": "router",
- "askedAt": "2026-11-15T08:08:32.853Z",
+ "askedAt": "2026-11-15T08:24:15.651Z",
  "intent": "dropped",
  "mode": "extractive",
  "fallback": "answered by the router: species not in the atlas",
@@ -12,12 +12,12 @@
  "requests": 0,
  "inputTokens": 0,
  "outputTokens": 0,
- "ms": 8,
+ "ms": 3,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Abelmoschus manihot (\"aibika\") không có trong dữ liệu cây trồng của Astrovivu. FAO EcoCrop có mô tả loài này, nhưng không mặt hàng cây trồng nào của FAOSTAT gọi tên nó, theo tên khoa học hay tên thường gọi, nên atlas cây trồng không tìm thấy bằng chứng loài này được trồng thành cây trồng và không giữ lại.\n\nVì vậy tôi không có yêu cầu sinh thái, nước trồng hay giá của loài này, và sẽ không trả lời thay bằng một cây trông giống. Nếu nơi bạn có trồng, hãy hỏi trạm khuyến nông địa phương; hãy nêu một cây khác và tôi sẽ trả lời cho cây đó.",
+ "answer": "Abelmoschus manihot (\"aibika\") không có trong dữ liệu cây trồng của Astrovivu. FAO EcoCrop có mô tả loài này, nhưng không mặt hàng thống kê nào của FAOSTAT nêu tên nó, theo tên khoa học hay tên thường gọi, nên atlas cây trồng không có số liệu về loài này và không giữ lại. Điều đó không nói lên loài này có được trồng hay không.\n\nVì vậy tôi không có yêu cầu sinh thái, nước trồng hay giá của loài này, và sẽ không trả lời thay bằng một cây trông giống. Nếu nơi bạn có trồng, hãy hỏi trạm khuyến nông địa phương; hãy nêu một cây khác và tôi sẽ trả lời cho cây đó.",
  "citations": []
 }

@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "Trồng sầu riêng ở thửa này được không?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:08:07.990Z",
+ "askedAt": "2026-11-15T08:23:50.329Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18697,
- "outputTokens": 1042,
- "ms": 5188,
+ "inputTokens": 18734,
+ "outputTokens": 1570,
+ "ms": 5602,
  "calls": [
   {
    "cite": "S7",
@@ -176,14 +176,14 @@
     ]
    },
    "isError": false,
-   "ms": 11
+   "ms": 8
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Trồng sầu riêng (Durio zibethinus) ở thửa ruộng này đạt mức độ thích hợp 86/100 dựa trên các điều kiện đất và khí hậu [S1]. Độ cao của thửa ruộng là 713 m, nằm trong giới hạn chịu được dưới 800 m của cây sầu riêng [S2].\n\nYếu tố hạn chế chính là thành phần cơ giới đất nặng (đất sét), trong khi cây chuộng đất trung bình hoặc nhẹ [S1]. Nhiệt độ trung bình tại thửa là 21.3 °C, hơi thấp hơn mức tối ưu từ 22 đến 40 °C [S2], [S1]. Trong khi đó, lượng nước (1500 mm) và pH đất (5.7) đều nằm trong khoảng thích hợp [S2], [S1].\n\nBạn có muốn kiểm tra thêm khả năng thoát nước thực tế của tầng đất nặng tại thửa ruộng này trước khi quyết định trồng không?",
+ "answer": "Thửa đất ở Đắk Lắk có thể trồng sầu riêng (Durio zibethinus) với mức độ thích hợp đạt 86/100 điểm và phù hợp trong 19 trên 19 năm được phân tích [S1]. Yếu tố giới hạn chính là thành phần cơ giới đất nặng (heavy), trong khi điều kiện lý tưởng là trung bình hoặc nhẹ, đạt 70 điểm [S1].\n\nCác điều kiện khí hậu và đất đai khác khá thuận lợi: nhiệt độ trong vụ đạt 21.3 °C (lý tưởng 22-40 °C, đạt 93 điểm), lượng nước trong vụ là 1500 mm (lý tưởng 1500-2500 mm, đạt 100 điểm), pH đất là 5.7 (lý tưởng 5-6.5, đạt 100 điểm) và độ dốc 7.7 ° (lý tưởng từ 9 ° trở xuống, đạt 100 điểm) [S1]. Tuy nhiên, dữ liệu về khả năng thoát nước, độ sâu tầng đất và độ mặn hiện chưa có [S1].\n\nBạn hãy kiểm tra thực tế khả năng thoát nước và độ sâu tầng đất tại thửa ruộng trước khi quyết định trồng.",
  "citations": [
   {
    "n": 1,
@@ -191,13 +191,6 @@
    "title": "Mức phù hợp của Sầu riêng (Durio zibethinus) với thửa ruộng",
    "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
    "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
-  },
-  {
-   "n": 2,
-   "chunkId": "eco:durio-zibethinus:facts-vi",
-   "title": "Sầu riêng (Durio zibethinus): yêu cầu sinh thái",
-   "source": "FAO EcoCrop",
-   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
   }
  ]
 }

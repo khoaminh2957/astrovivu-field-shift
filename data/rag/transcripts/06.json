@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "Tôi nên luân canh thế nào trên thửa này?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:07:54.962Z",
+ "askedAt": "2026-11-15T08:23:38.000Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 21760,
- "outputTokens": 1458,
- "ms": 6322,
+ "inputTokens": 21793,
+ "outputTokens": 1534,
+ "ms": 6386,
  "calls": [
   {
    "cite": "S7",
@@ -377,21 +377,21 @@
     ]
    },
    "isError": false,
-   "ms": 31
+   "ms": 37
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Vì cà phê vối là cây lâu năm, phương án giữ nguyên độc canh (cách làm hiện tại) có sự phù hợp là 100/100 theo dữ liệu khí hậu với lượng mưa trung bình năm 1516 mm (ERA5 reanalysis (ECMWF), 25 km pixel, 2006-2025), nhưng việc canh tác độc canh có thể khiến đất nghèo đi theo thời gian [S1][S2]. \n\nBạn có thể cân nhắc ba hướng điều chỉnh dựa trên nhu cầu của mình. Thứ nhất là luân canh cải tạo đất bằng cách trồng thêm lạc dại che phủ giữa hàng trên khoảng 25 % diện tích, giúp nâng chỉ số sức khỏe đất lên 70 và bổ sung khoảng 23 kg N/ha mỗi năm [S2]. Thứ hai là luân canh tiết kiệm nước, chuyển đổi khoảng 30 % diện tích sang đậu cô ve ngắn ngày trong mùa mưa để giảm bớt nhu cầu tưới nước [S2]. Thứ ba là luân canh chống chịu rủi ro, kết hợp cà phê với đậu cô ve và lạc dại che phủ nhằm đa dạng hóa thu nhập và cắt vòng sâu bệnh [S2].\n\nCác phương án xen canh đều có điểm rủi ro thấp hơn (13 so với 25 của độc canh), nhưng cần kiểm tra kỹ thị trường và nguồn hạt giống tại địa phương [S2]. Hãy hỏi cán bộ khuyến nông địa phương về khoảng cách trồng xen và thời điểm gieo vụ phù hợp nhất cho thửa ruộng của bạn [S2].",
+ "answer": "Vì cà phê vối là cây lâu năm [S1], việc luân canh không thực hiện theo vụ hằng năm mà thông qua việc trồng cây che phủ giữa các hàng hoặc trồng xen. Dưới đây là bốn phương án canh tác cho thửa ruộng của bạn dựa trên điều kiện hiện tại [S2].\n\n- Cách làm hiện tại: Duy trì chuyên canh cà phê vối trên toàn bộ 1.98 ha. Phương án này mang lại hệ thống quen thuộc, không đòi hỏi kỹ năng mới, cây phù hợp tốt với điều kiện địa phương và đất được che phủ quanh năm [S2]. Thông tin còn thiếu gồm phân tích đất thực tế và số liệu kinh tế của riêng bạn [S2]. Rủi ro là cần khuyến nông địa phương xác nhận lịch bón phân và thời vụ [S2].\n\n- Luân canh cải tạo đất: Giữ nguyên cà phê vối và trồng cây họ đậu che phủ (như lạc dại) giữa các hàng trên khoảng 25% diện tích. Phương án này giúp tăng chỉ số sức khỏe đất, bổ sung khoảng 23 kg N/ha mỗi năm và cắt vòng sâu bệnh tốt hơn [S2]. Thông tin còn thiếu là chưa có số liệu kinh tế cho lạc dại và sự thích hợp của giống tại địa phương [S2]. Rủi ro là cây che phủ có thể cạnh tranh rễ hoặc ánh sáng nếu không được quản lý đúng thời điểm [S2].\n\n- Luân canh tiết kiệm nước: Chuyển đổi khoảng 30% diện tích sang trồng đậu cô ve ngắn ngày trong mùa mưa từ tháng 5 đến tháng 7 để giảm nhu cầu tưới nước tổng thể. Phương án này giúp giảm lượng nước sử dụng hằng năm và tăng cường cắt vòng sâu bệnh [S2]. Thông tin còn thiếu là thị trường tiêu thụ và nguồn giống đậu cô ve tại địa phương [S2]. Rủi ro là việc trồng xen làm thay đổi độ che bóng và đòi hỏi quản lý lao động phù hợp [S2].\n\n- Luân canh chống chịu rủi ro: Kết hợp cà phê vối (60%), đậu cô ve (20%) và lạc dại che phủ giữa hàng (25%) để đa dạng hóa nguồn thu và giảm thiểu rủi ro khi giá cả hoặc thời tiết bất lợi [S2]. Phương án này mang lại chỉ số sức khỏe đất cao nhất và cắt vòng sâu bệnh tốt nhất, nhưng có biên lợi nhuận thấp hơn do diện tích cà phê giảm [S2]. Thông tin còn thiếu và rủi ro tương tự như các phương án trên [S2].\n\nBạn có muốn hỏi cơ quan khuyến nông địa phương về khả năng cung cấp hạt giống lạc dại để làm cây che phủ giữa các hàng cà phê không?",
  "citations": [
   {
    "n": 1,
-   "chunkId": "wiki-vi:crop-rotation:01",
-   "title": "Luân canh: Tổng quan",
-   "source": "Wikipedia (vi): Luân canh",
-   "license": "CC BY-SA 4.0"
+   "chunkId": "eco:coffea-canephora:facts-vi",
+   "title": "Cà phê vối (Coffea canephora): yêu cầu sinh thái",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
   },
   {
    "n": 2,

@@ -4,7 +4,7 @@
  "field": "iowa-corn-soy",
  "question": "Tuần tới có sương giá không?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:08:27.118Z",
+ "askedAt": "2026-11-15T08:24:11.475Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
@@ -12,14 +12,14 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 8986,
- "outputTokens": 1850,
- "ms": 4227,
+ "outputTokens": 953,
+ "ms": 2668,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Có, dự báo có nguy cơ sương giá trong tuần tới tại khu vực của bạn (dự báo thời tiết 16 ngày, Open-Meteo, ô lưới 11 km, từ 2026-11-14 đến 2026-11-28). Nhiệt độ không khí thấp nhất dự báo giảm xuống -2,5 °C trong giai đoạn từ 2026-11-14 đến 2026-11-16 và có thể xuống tới -13,1 °C vào ngày 2026-11-24.\n\nSương giá hình thành khi bề mặt nguội xuống 0 °C hoặc thấp hơn, thường vào đêm quang mây, lặng gió [S1]. Mô cây có thể bị hại ngay cả khi không khí ở 2 m vẫn hơi trên 0 °C vì lá toả nhiệt và lạnh hơn không khí [S1].\n\nBước tiếp theo: Theo dõi sát các bản tin dự báo thời tiết địa phương để có biện pháp phòng ngừa phù hợp cho cây trồng.",
+ "answer": "Có nguy cơ sương giá trong thời gian tới. Dự báo thời tiết (16 ngày Open-Meteo, ô thời tiết 11 km, dự báo) cho thấy nhiệt độ thấp nhất có thể giảm xuống -2,5 °C từ ngày 14-11-2026 đến 16-11-2026 ở mức độ 2/3, và xuống tới -13,1 °C từ ngày 22-11-2026 đến 28-11-2026 ở mức độ 3/3.\n\nSương giá hình thành khi bề mặt nguội xuống 0 °C hoặc thấp hơn, thường vào những đêm quang mây và lặng gió [S1]. Mô cây có thể bị hại ngay cả khi không khí ở độ cao 2 m vẫn ở mức hơi trên 0 °C, do lá toả nhiệt và lạnh hơn không khí [S1].\n\nTheo dõi sát các bản tin dự báo thời tiết tiếp theo và kiểm tra thực tế trên thửa ruộng.",
  "citations": [
   {
    "n": 1,

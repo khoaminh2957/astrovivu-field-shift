@@ -4,22 +4,66 @@
  "field": "nevada-alfalfa",
  "question": "Should I lime this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:09:25.359Z",
+ "askedAt": "2026-11-15T08:25:08.201Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
- "requests": 1,
- "inputTokens": 8826,
- "outputTokens": 584,
- "ms": 3024,
- "calls": [],
+ "requests": 2,
+ "inputTokens": 18300,
+ "outputTokens": 544,
+ "ms": 3640,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "soilPlan",
+   "input": {},
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "field": "Diamond Valley alfalfa pivot",
+    "rows": [
+     {
+      "current": 8.8,
+      "target": 7.9,
+      "amendment": "sulfur",
+      "rateTHa": null,
+      "basis": "Alfalfa grows best at pH 6.5-8.2. No rate is given: it cannot be estimated responsibly without a lab test.",
+      "caveats": [
+       "Indicative only: confirm with a laboratory soil test (pH and buffer pH) before buying any amendment.",
+       "The current pH is a map estimate (SSURGO soil survey (dominant component of the map unit)), not a measurement on this field.",
+       "At pH 8.8 the soil is probably calcareous (free lime): lowering pH is slow and rarely economic. Prefer tolerant crops and acidifying fertilisers; a carbonate test is needed."
+      ]
+     }
+    ],
+    "rowCount": 1,
+    "sources": [
+     {
+      "name": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14",
+      "licence": "MIT (project code); the readings keep the licences of their sources",
+      "year": "2026"
+     },
+     {
+      "name": "FAO EcoCrop database, 2,568 species",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "data/ecocrop/README.md"
+     }
+    ],
+    "caveats": [
+     "This is the pH part only: organic matter, nutrients, salinity and compaction are not planned for yet."
+    ]
+   },
+   "isError": false,
+   "ms": 4
+  }
+ ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Soil pH is 8.8 (SSURGO soil survey), which is strongly alkaline. Because agricultural lime raises soil pH [S1], liming this field is not appropriate and would make the soil even more alkaline. \n\nTo manage high soil pH, consult your local agricultural extension office and obtain a targeted soil test to see if acidifying amendments are recommended for your alfalfa crop.",
+ "answer": "No, you should not lime this field. Liming raises soil pH [S1], but your field already has an alkaline soil pH of 8.8 (SSURGO soil survey (dominant component of the map unit)), which exceeds the ideal range of 6.5 to 8.2 for alfalfa (medicago-sativa) and is noted as the limiting factor for productivity. \n\nInstead of lime, which would further increase the pH, the soil plan suggests sulfur if any amendment is considered [S2]. However, at a pH of 8.8 the soil is likely calcareous with free lime, meaning lowering the pH is slow and rarely economic; it is usually better to prefer tolerant crops or acidifying fertilisers after confirming with a laboratory carbonate and buffer pH test [S2].\n\nThe current pH value of 8.8 is a map estimate from the SSURGO soil survey rather than a direct measurement on your parcel [S2]. \n\nNext step: Take a ground soil sample for a laboratory test to confirm the exact pH and buffer pH before applying any soil amendments [S2].",
  "citations": [
   {
    "n": 1,
@@ -27,6 +71,13 @@
    "title": "Soil pH and acidity",
    "source": "Astrovivu glossary",
    "license": "CC BY 4.0 (Astrovivu team)"
+  },
+  {
+   "n": 2,
+   "chunkId": "table:soil-plan:nevada-alfalfa",
+   "title": "pH plan for the field",
+   "source": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
   }
  ]
 }

@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "Đất của tôi có cần bón vôi không?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:08:02.816Z",
+ "askedAt": "2026-11-15T08:23:45.919Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 17422,
- "outputTokens": 416,
- "ms": 3645,
+ "inputTokens": 17402,
+ "outputTokens": 326,
+ "ms": 2882,
  "calls": [
   {
    "cite": "S7",
@@ -62,34 +62,27 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "pH hiện tại của đất là 5,7 (ước tính từ bản đồ SoilGrids 2.0 ở độ sâu 0-30 cm, độ phân giải 250 m, ngày 14-11-2026). Giá trị này nằm trong khoảng pH tối ưu từ 5 đến 6,3 mà cây cà phê vối (coffea-canephora) ưa thích. Do đó, kế hoạch pH hiện không đề xuất bón vôi [S1].\n\nTuy nhiên, giá trị pH này là ước tính mô hình cho khu vực xung quanh chứ không phải kết quả đo trực tiếp trên thửa ruộng của bạn [S2][S1]. Vôi nông nghiệp (nếu cần thiết trong tương lai) nâng pH chậm trong nhiều tháng, và lượng bón thực tế phụ thuộc vào thành phần cơ giới, khả năng đệm của đất [S3][S4].\n\nBước tiếp theo tốt nhất là lấy mẫu đất trên thửa ruộng để xét nghiệm độ pH thực tế tại phòng thí nghiệm trước khi quyết định mua vôi hoặc chất cải tạo [S1].",
+ "answer": "pH hiện tại của đất là 5,7 (ước tính từ SoilGrids 2.0 (0-30 cm), 250 m pixel) [S1], nằm trong khoảng pH tối ưu 5-6,3 mà cà phê vối ưa thích, do đó kế hoạch đề xuất hiện tại là chưa cần bón vôi [S2].\n\nLưu ý rằng giá trị pH này là ước tính mô hình cho khu vực 250 m chứ không phải đo trực tiếp trên thửa ruộng, và pH có thể thay đổi tùy khu vực trong vườn [S1]. \n\nNên lấy mẫu đất gửi phòng thí nghiệm để kiểm tra pH thực tế và độ pH đệm trước khi quyết định mua vôi [S3][S2].",
  "citations": [
   {
    "n": 1,
-   "chunkId": "table:soil-plan:daklak-coffee",
-   "title": "Kế hoạch pH cho thửa ruộng",
-   "source": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
-   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
-  },
-  {
-   "n": 2,
    "chunkId": "gloss-vi:soilgrids",
    "title": "Đặc tính đất SoilGrids",
    "source": "Thuật ngữ Astrovivu",
    "license": "CC BY 4.0 (Astrovivu team)"
   },
   {
+   "n": 2,
+   "chunkId": "table:soil-plan:daklak-coffee",
+   "title": "Kế hoạch pH cho thửa ruộng",
+   "source": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  },
+  {
    "n": 3,
    "chunkId": "gloss-vi:soil-ph",
    "title": "pH đất và độ chua",
    "source": "Thuật ngữ Astrovivu",
-   "license": "CC BY 4.0 (Astrovivu team)"
-  },
-  {
-   "n": 4,
-   "chunkId": "gloss-en:soil-ph",
-   "title": "Soil pH and acidity",
-   "source": "Astrovivu glossary",
    "license": "CC BY 4.0 (Astrovivu team)"
   }
  ]

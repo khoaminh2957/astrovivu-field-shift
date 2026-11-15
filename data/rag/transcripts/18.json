@@ -3,16 +3,16 @@
  "lang": "en",
  "question": "What does Iowa grow most?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:08:45.317Z",
+ "askedAt": "2026-11-15T08:24:30.599Z",
  "intent": "term",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 10135,
- "outputTokens": 396,
- "ms": 3376,
+ "inputTokens": 10105,
+ "outputTokens": 196,
+ "ms": 2497,
  "calls": [
   {
    "cite": "S7",
@@ -185,7 +185,7 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "Maize is grown most in Iowa, covering 4,601,295 hectares (54.56% of the harvested area) according to MapSPAM estimates for 2020 [S1]. \n\nSoybean is the second most grown crop in the state, with 3,786,696 hectares (44.90%) [S1]. Other crops like cereals, wheat, and vegetables account for a very small fraction of the remaining harvested area [S1].",
+ "answer": "Maize and soybean are by far the most widely grown crops in Iowa, according to MapSPAM 2020 estimates [S1]. \n\nMaize covers 4,601,295 hectares, representing 54.56% of the harvested area [S1].\n\nSoybean covers 3,786,696 hectares, representing 44.9% of the harvested area [S1].\n\nOther crops such as cereals, wheat, vegetables, and fruit occupy less than 1% of the harvested area combined [S1].",
  "citations": [
   {
    "n": 1,

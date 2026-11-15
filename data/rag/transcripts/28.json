@@ -3,16 +3,16 @@
  "lang": "en",
  "question": "How much durian does Thailand grow?",
  "expect": "no-data",
- "askedAt": "2026-11-15T08:09:35.421Z",
+ "askedAt": "2026-11-15T08:25:18.812Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 9368,
- "outputTokens": 275,
- "ms": 3016,
+ "inputTokens": 9377,
+ "outputTokens": 242,
+ "ms": 2041,
  "calls": [
   {
    "name": "whereGrown",
@@ -27,13 +27,21 @@
     "crop": "Durian (Durio zibethinus)"
    },
    "isError": false,
-   "ms": 2
+   "ms": 0
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "FAOSTAT counts durian inside the item Other tropical fruits, n.e.c., with 30 other crops of the atlas: there is no figure for it alone, in any country.",
- "citations": []
+ "answer": "FAOSTAT counts durian inside the item Other tropical fruits, n.e.c., with 30 other crops of the atlas: there is no figure for it alone, in any country [S1].",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "eco:durio-zibethinus:facts",
+   "title": "Durian (Durio zibethinus): ecological requirements",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  }
+ ]
 }

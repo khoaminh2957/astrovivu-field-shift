@@ -3,32 +3,25 @@
  "lang": "vi",
  "question": "Việt Nam trồng bao nhiêu lúa, và những nước nào trồng lúa nhiều nhất?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:07:26.565Z",
+ "askedAt": "2026-11-15T08:23:12.683Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
- "inputTokens": 4340,
- "outputTokens": 1699,
- "ms": 4882,
+ "inputTokens": 4393,
+ "outputTokens": 1262,
+ "ms": 4036,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Việt Nam có diện tích thu hoạch lúa đạt 7.089.041 ha, đứng thứ 6 trên thế giới, với sản lượng hằng năm của cả nước đạt 33-34 triệu tấn thóc [S1][S2]. \n\nCác nước có diện tích thu hoạch lúa lớn nhất thế giới lần lượt là Ấn Độ (48.106.122 ha), Trung Quốc đại lục (29.135.333 ha), Bangladesh (11.562.454 ha), Thái Lan (11.209.677 ha) và Indonesia (10.237.504 ha) [S2]. Trên toàn thế giới, có 116 nước báo cáo sản xuất với tổng diện tích thu hoạch là 168.793.303 ha tính trung bình từ năm 2021 đến năm 2024 [S2].\n\nBạn có muốn tìm hiểu thêm về các yêu cầu sinh thái của cây lúa hoặc các vùng trồng lúa chính ở Việt Nam không?",
+ "answer": "Việt Nam có diện tích thu hoạch lúa trung bình giai đoạn 2022-2024 là 7.089.041 ha, xếp thứ 6 trên thế giới [S1].\n\nCác quốc gia có diện tích thu hoạch lúa lớn nhất (trung bình 2022-2024) gồm có:\n\n- Ấn Độ: 48.106.122 ha [S1]\n- Trung Quốc đại lục: 29.135.333 ha [S1]\n- Bangladesh: 11.562.454 ha [S1]\n- Thái Lan: 11.209.677 ha [S1]\n- Indonesia: 10.237.504 ha [S1]\n\nSố liệu này dựa trên cơ sở dữ liệu FAOSTAT (QCL) qua atlas cây trồng của Astrovivu [S1].",
  "citations": [
   {
    "n": 1,
-   "chunkId": "wiki-vi:rice:05",
-   "title": "Gạo: Sản xuất / Sản xuất lúa gạo ở Việt Nam",
-   "source": "Wikipedia (vi): Gạo",
-   "license": "CC BY-SA 4.0"
-  },
-  {
-   "n": 2,
    "chunkId": "eco:oryza-sativa:where-vi",
    "title": "Lúa (Oryza sativa): trồng ở đâu",
    "source": "FAOSTAT crops and livestock products (QCL), via the Astrovivu crop atlas",

@@ -4,16 +4,16 @@
  "field": "cantho-rice",
  "question": "Giá lúa tham chiếu và lãi một vụ ở ruộng tôi khoảng bao nhiêu?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:08:14.709Z",
+ "askedAt": "2026-11-15T08:23:57.460Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18733,
- "outputTokens": 439,
- "ms": 3458,
+ "inputTokens": 18734,
+ "outputTokens": 522,
+ "ms": 3415,
  "calls": [
   {
    "cite": "S7",
@@ -79,14 +79,14 @@
     ]
    },
    "isError": false,
-   "ms": 17
+   "ms": 21
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Dựa trên số liệu tham chiếu kinh tế vùng (Việt Nam, trung bình quốc gia), giá lúa tham chiếu và kết quả tài chính ước tính cho diện tích 1.35 ha của ruộng lúa Mekong Delta paddy như sau [S1]:\n\n- Giá lúa tham chiếu là 228.5 USD/tấn (tương đương giá thu mua lúa tươi tại An Giang khoảng 5.700-6.000 đồng/kg) [S1].\n- Doanh thu ước tính cho một vụ là 1.897 USD trên toàn bộ diện tích dựa trên năng suất tham chiếu 6.15 tấn/ha và tỉ lệ kỳ vọng 100% [S1].\n- Chi phí ước tính là 1.170 USD [S1].\n- Lãi gộp ước tính khoảng 727 USD cho một vụ (khoảng 639-727 USD tùy theo biến động năng suất), tương đương biên lợi nhuận 38,3% [S1].\n\nĐây là các giá trị tham chiếu từ cơ sở dữ liệu kinh tế của Astrovivu dựa trên số liệu FAOSTAT và báo chí địa phương tại An Giang, không phải số liệu ghi chép thực tế của riêng bạn và không phải dự báo [S1].\n\nBạn có muốn điều chỉnh lại các con số này bằng chi phí và giá bán thực tế của gia đình trong vụ vừa qua không?",
+ "answer": "Giá lúa tham chiếu là 228,5 USD mỗi tấn, dựa trên giá thu mua lúa tại ruộng ở An Giang vào tháng 4 năm 2026 [S1]. Chi phí và doanh thu này dựa trên các giá trị tham chiếu khu vực, không phải số liệu thực tế của riêng bạn hay dự báo tương lai [S1].\n\nTrên diện tích 1,35 ha của ruộng, doanh thu ước tính một vụ là 1.897 USD, chi phí khoảng 1.170 USD, mang lại mức lãi khoảng 727 USD (dao động từ 639 đến 727 USD tùy theo năm) [S1]. Năng suất tham chiếu áp dụng là 6,15 tấn mỗi hécta theo mức trung bình toàn quốc của Việt Nam [S1].\n\nBạn có muốn đối chiếu các khoản chi phí thực tế tại hộ của mình để có con số chính xác hơn không?",
  "citations": [
   {
    "n": 1,

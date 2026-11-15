@@ -4,22 +4,22 @@
  "field": "nevada-alfalfa",
  "question": "Can I grow rice on this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:09:17.040Z",
+ "askedAt": "2026-11-15T08:24:59.443Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 19486,
- "outputTokens": 694,
- "ms": 3787,
+ "inputTokens": 19554,
+ "outputTokens": 1029,
+ "ms": 4578,
  "calls": [
   {
    "cite": "S7",
    "name": "fieldSuitability",
    "input": {
-    "crop": "rice"
+    "crop": "Oryza sativa"
    },
    "output": {
     "cite": "S7",
@@ -174,21 +174,35 @@
     ]
    },
    "isError": false,
-   "ms": 5
+   "ms": 7
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Growing rice on this field is severely limited, with a suitability score of 13 out of 100. The primary limiting factors are the soil pH and drainage conditions. \n\nRice prefers acidic to neutral soils with an optimal pH of 5.5 to 7 [S1], whereas the SSURGO soil survey records an alkaline soil pH of 8.8. Furthermore, rice thrives in poorly drained conditions where fields remain saturated for more than half the year [S1], while the field's soil is well drained. \n\nWhile temperature (18.7 °C in the growing window) and texture (light, sandy loam) are tolerated, the high pH and well-drained soil make conventional rice production impractical here without major soil and water management interventions.",
+ "answer": "Growing rice on this field has a low suitability score of 13 out of 100 [S1]. The field has severe limitations for rice production, primarily due to soil pH and drainage conditions [S1]. \n\nThe soil pH is 8.8 (SSURGO soil survey), which is well above the optimal range of 5.5 to 7 for rice [S2][S1]. Additionally, the field is classified as well drained (SSURGO soil survey), whereas rice is optimal in poorly drained soils that remain saturated for more than half the year [S2][S1]. \n\nWater availability is another major challenge. Rice requires an optimal annual rainfall or water supply of 1500 to 2000 mm [S2][S1], but the mean annual rainfall at this location is 288 mm (ERA5 reanalysis (ECMWF), daily aggregates, 25 km pixel, modelled, 2006-2025). While irrigation can supply the water deficit, the high pH and well-drained sandy loam soil (SSURGO soil survey) make this field poorly suited for flooded rice cultivation [S3].\n\nHave a soil test performed to confirm the exact local pH and nutrient status before considering major soil amendments.",
  "citations": [
   {
    "n": 1,
+   "chunkId": "table:field-suitability:nevada-alfalfa:oryza-sativa",
+   "title": "How Rice (Oryza sativa) suits the field",
+   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  },
+  {
+   "n": 2,
    "chunkId": "eco:oryza-sativa:facts",
    "title": "Rice (Oryza sativa): ecological requirements",
    "source": "FAO EcoCrop",
    "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  },
+  {
+   "n": 3,
+   "chunkId": "wiki-en:rice:04",
+   "title": "Rice: Agronomy / Growing",
+   "source": "Wikipedia (en): Rice",
+   "license": "CC BY-SA 4.0"
   }
  ]
 }

@@ -223,18 +223,18 @@ At its own default Flash-Lite answered the rotation question without calling `ro
 | Answered by the router without the model | 5: four declined (price forecast, pesticide product and dose, photo diagnosis, legal), one about a dropped species |
 | Generated answers given | 25 of 25 |
 | Number check | 25 of 25 answers held only numbers of their sources |
-| Function calls | 16, none failed; 41 requests to the model; three calls returned "no data" (durian in two countries: counted inside a group item; quinoa: no reference price) and the answer said so |
-| Tokens | 304,007 in, 19,767 out |
-| Time per answer | median 3.8 s, longest 6.3 s |
+| Function calls | 18, none failed; 43 requests to the model; three calls returned "no data" (durian, asked about for Viet Nam and for Thailand: counted inside a group item; quinoa: no reference price) and the answer said so |
+| Tokens | 318,594 in, 18,423 out |
+| Time per answer | median 3.4 s, longest 6.4 s |
 
-This is the fourth run of the same 30 questions; the code changed between runs as the runs showed what was wrong. In the three before it the number check dropped two, one and one answers: a harvested area with two digits transposed (671,148 ha for 667,148), a sum of two shares the model made ("over 99 %", twice), and a score turned into a percentage (which is why scores now go out of 100). The first run also showed two questions the router did not decline ("Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "Is it legal to lease farmland to a foreign company?"); the model declined both by itself, the rules were then widened, and both questions are in the eval set.
+This is the fifth run of the same 30 questions; the code changed between runs as the runs showed what was wrong, and the last run followed the corrections to the sheets on where a crop is grown. In the fourth, as in this one, every answer passed. In the first three the number check dropped two, one and one answers: a harvested area with two digits transposed (671,148 ha for 667,148), a sum of two shares the model made ("over 99 %", twice), and a score turned into a percentage (which is why scores now go out of 100). The first run also showed two questions the router did not decline ("Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "Is it legal to lease farmland to a foreign company?"); the model declined both by itself, the rules were then widened, and both questions are in the eval set.
 
-What the transcripts show that no check catches:
+What the runs show that no check catches (the first two are in the recorded transcripts, the last two were seen in earlier runs):
 
-- **A citation of the wrong source.** The model sometimes cites a passage for what it took from a function result, so the list of sources names EcoCrop where the number came from the suitability score.
-- **A caveat left out.** "Robusta coffee is reported by 79 countries": the figure is that of the FAOSTAT item "Coffee, green", shared by four coffee crops. The recorded answer goes on to say so; an earlier one did not.
-- **A looser reading of the days asked about.** "Is there frost next week?" was answered with a warning of the week after as well. The rule-based answer keeps to the days asked about.
-- **The key of a fact echoed** (`factor_salinity`) in an answer about a reading the field does not have.
+- **A caveat left out.** The figures for coffee are those of the FAOSTAT item "Coffee, green", which four coffee crops share, and the function result says so. The recorded answer (16) gives them as coffee's without saying the item is shared; an earlier one gave them as robusta's.
+- **A looser reading of the days asked about.** "Is there frost next week?" (12) is answered with the warning of the week after as well, each with its dates. The rule-based answer keeps to the days asked about.
+- **A citation of the wrong source.** In an earlier run the model cited the EcoCrop sheet for figures it had taken from the suitability score, so the list of sources named EcoCrop where the number came from the model's score.
+- **A wrong function, or none.** At the model's own thinking level (see the trial above), not at the level the run used.
 
 In the browser (headless Chrome, the assistant panel, the Đắk Lắk and Cần Thơ demo fields, with `npm run server` and `npm run dev`): a question about a table ("Tỉnh Đắk Lắk của Việt Nam trồng cây gì nhiều nhất?") is answered with the label "Tạo sinh", a list, and one source, the MapSPAM table. A question about the field reaches the four field lookups only once the panel sends the field: `src/ui/ask/index.tsx` does not yet, and was not changed here (it is the interface owner's). With `field: toModelInput(useMission.getState())` added to its call of `ask` for the test and removed again, "Tôi nên luân canh thế nào trên thửa này?" on the Cần Thơ field was answered from `rotationOptions`, with the planner's margins.
 

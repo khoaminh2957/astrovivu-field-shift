@@ -3,16 +3,16 @@
  "lang": "vi",
  "question": "Tỉnh Đắk Lắk trồng cây gì nhiều nhất?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:07:38.995Z",
+ "askedAt": "2026-11-15T08:23:23.458Z",
  "intent": "general",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 9654,
- "outputTokens": 584,
- "ms": 3615,
+ "inputTokens": 9652,
+ "outputTokens": 283,
+ "ms": 2577,
  "calls": [
   {
    "cite": "S7",
@@ -192,14 +192,14 @@
     ]
    },
    "isError": false,
-   "ms": 3
+   "ms": 2
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Theo ước tính phân bổ diện tích thu hoạch của MapSPAM cho năm 2020 (lưới ô, 2020) [S1], các cây trồng nhiều nhất tại tỉnh Đắk Lắk gồm:\n\n- Lúa (Rice): 100.041 ha, chiếm 25,88% diện tích thu hoạch [S1].\n- Ngô (Maize): 85.873 ha, chiếm 22,22% diện tích thu hoạch [S1].\n- Cao su (Rubber): 60.017 ha, chiếm 15,53% diện tích thu hoạch [S1].\n- Sắn (Cassava): 39.571 ha, chiếm 10,24% diện tích thu hoạch [S1].\n- Cà phê vối (Robust Coffee): 23.871 ha, chiếm 6,18% diện tích thu hoạch [S1].\n\nLưu ý rằng đây là các ước tính mô hình phân bổ diện tích thu hoạch cấp tỉnh, không phải số điều tra trực tiếp và chỉ bao gồm các cây hoặc nhóm cây nhất định [S1].\n\nBạn có muốn tìm hiểu chi tiết về yêu cầu sinh trưởng của một trong các loại cây này không?",
+ "answer": "Theo dữ liệu ước tính diện tích thu hoạch của MapSPAM 2020 cho tỉnh Đắk Lắk, cây được trồng nhiều nhất là lúa với diện tích 100.041 ha (chiếm 25,88% tổng diện tích thu hoạch) [S1]. Đứng ở các vị trí tiếp theo là ngô với 85.873 ha (22,22%) và cao su với 60.017 ha (15,53%) [S1]. \n\nLưu ý rằng đây là ước tính từ mô hình phân bổ không gian cho năm 2020 chứ không phải số liệu điều tra trực tiếp của tỉnh, và bộ dữ liệu chỉ bao gồm 46 loại cây và nhóm cây [S1].",
  "citations": [
   {
    "n": 1,

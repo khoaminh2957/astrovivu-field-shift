@@ -4,21 +4,23 @@
  "field": "iowa-corn-soy",
  "question": "What is the reference price and margin for maize here?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:09:13.534Z",
+ "askedAt": "2026-11-15T08:24:54.195Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18833,
- "outputTokens": 244,
- "ms": 1978,
+ "inputTokens": 18897,
+ "outputTokens": 596,
+ "ms": 3723,
  "calls": [
   {
    "cite": "S7",
    "name": "priceAndMargin",
-   "input": {},
+   "input": {
+    "crop": "maize"
+   },
    "output": {
     "cite": "S7",
     "ok": true,
@@ -86,7 +88,7 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "The reference yield for maize in Iowa (grain) is 13.18 t/ha with a reference farm-gate price of 161.4 USD/t, based on official USDA NASS figures and Iowa State University Extension estimates [S1].\n\nFor your 29.25 ha parcel, the estimated revenue is 62,222 USD with total costs of 34,954 USD, yielding an estimated margin of 27,268 USD (or a margin of 43.8%), based on reference values rather than your own specific costs and prices [S1].\n\nCheck your local input costs and contract prices with your extension office to confirm these figures for your operation.",
+ "answer": "For maize on this parcel, the reference economics are based on USDA NASS and Iowa State University Extension figures for the Iowa (grain) region [S1]. The reference yield is 13.18 t/ha, with a farm-gate price of 161.4 USD/t [S1]. \n\nThe estimated total cost is 1195 USD/ha, leading to a reference margin of 27268 USD for the 29.25 ha parcel, or a margin percentage of 43.8% [S1]. These are reference values rather than the grower's own figures and do not constitute a forecast [S1].",
  "citations": [
   {
    "n": 1,

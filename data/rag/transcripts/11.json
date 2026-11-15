@@ -4,7 +4,7 @@
  "field": "cantho-rice",
  "question": "Tháng nào mưa nhiều nhất ở ruộng tôi?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:08:23.580Z",
+ "askedAt": "2026-11-15T08:24:07.002Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
@@ -12,13 +12,13 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 8635,
- "outputTokens": 680,
- "ms": 2006,
+ "outputTokens": 1015,
+ "ms": 2938,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Theo dữ liệu tái phân tích ERA5 (ECMWF, tổng hợp hàng ngày, điểm ảnh 25 km, mô hình hóa, 2006-2025), tháng mưa nhiều nhất ở khu vực ruộng của bạn là tháng 10 với lượng mưa trung bình là 312 mm. \n\nCác tháng tiếp theo có lượng mưa lớn là tháng 9 (295 mm) và tháng 7 (222 mm).\n\nBạn có muốn xem phân bổ lượng mưa chi tiết cho tất cả các tháng trong năm không?",
+ "answer": "Tháng 10 là tháng mưa nhiều nhất tại khu vực ruộng của bạn, với lượng mưa trung bình là 312 mm (tái phân tích ERA5 (ECMWF), điểm ảnh 25 km, mô hình hóa, 2006-2025). Do điểm ảnh này lớn hơn nhiều so với thửa ruộng của bạn, con số này phản ánh xu thế thời tiết của cả vùng xung quanh.\n\nMùa mưa tại đây kéo dài từ tháng 5 đến tháng 11, trong đó tháng 9 (295 mm) và tháng 10 là hai tháng có lượng mưa cao nhất trong năm, trong khi các tháng mùa khô từ tháng 1 đến tháng 3 có lượng mưa rất thấp (dưới 41 mm mỗi tháng).\n\nBạn có thể lắp một thùng đo mưa tại vườn để ghi lại lượng mưa thực tế chính xác ngay tại thửa ruộng của mình.",
  "citations": []
 }
