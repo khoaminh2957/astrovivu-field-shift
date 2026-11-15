@@ -18,7 +18,7 @@ export interface RequestOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
   retries?: number;
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'DELETE';
   headers?: Record<string, string>;
   body?: string;
 }

@@ -15,7 +15,7 @@ on:
         type: boolean
         default: false
       monthly:
-        description: Include monthly prices (about 293,000 more rows)
+        description: Include monthly prices (about 301,000 more rows)
         type: boolean
         default: false
 

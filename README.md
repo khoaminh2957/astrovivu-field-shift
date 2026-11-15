@@ -255,8 +255,8 @@ Scripts (`package.json`):
 | `npm run crops:build` | Rebuilds the crop catalogue from `data/ecocrop/` into `src/core/crops/curated.generated.ts` and `public/data/crops/` |
 | `npm run rag:build` | Rebuilds the knowledge index in `public/rag/` from local snapshots (`-- --fetch` downloads missing Wikipedia pages) |
 | `npm run server` | Starts the optional API server on port 8787 (proxied at `/api`): generative answers and token-protected NASA sources |
-| `npm run db:start`, `db:test`, `db:load`, `db:stop` | Local Supabase (needs Docker) with the market database: crop atlas, FAOSTAT items and producer prices. Schema, sources and limits: `docs/DATABASE.md` |
-| `npm run market:match` | Rebuilds the crop-to-FAOSTAT-item link in `data/market/` from FAOSTAT's production file |
+| `npm run db:start`, `db:test`, `db:load`, `db:stop` | Local Supabase (needs Docker) with the market database: the crop atlas (`data/crops/atlas/`) and FAOSTAT producer prices per crop and country. Schema, sources and limits: `docs/DATABASE.md` |
+| `npm run market:areas` | Rebuilds `data/market/faostat_areas.csv`, FAOSTAT's country codes with the ISO codes of the crop atlas, from FAOSTAT's production file |
 
 ## Demo deep links
 

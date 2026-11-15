@@ -1,198 +1,122 @@
 /**
- * The crop atlas (`data/market/atlas.csv`): 489 crops with the EcoCrop requirements the team
- * selected and, per crop, the countries FAOSTAT reports as producers. This module turns the file
- * into typed rows for the database. Every change it makes to a source value is written to the
- * row's `quality_notes`; nothing is corrected silently.
+ * The crop atlas (data/crops/atlas/, built by scripts/crops/atlas/build.ts, described in
+ * docs/CROP_DATA.md and column by column in data/crops/atlas/columns.csv) as rows for the
+ * database. Three of its tables are mirrored column for column: crops, items and crop_country.
+ *
+ * Nothing is cleaned or corrected here. The atlas build did that and wrote what it dropped to
+ * `crops.ecocrop_cleaning`. This module gives each column the type its name declares, turns an
+ * empty cell into null, and derives the crop-to-item link from two columns of `crops`.
  */
 import { readFileSync } from 'node:fs';
-import Papa from 'papaparse';
-import { slugify } from '@/core/crops';
+import { parseCsv } from '../crops/atlas/csv';
 
-export const ATLAS_FILE = 'data/market/atlas.csv';
+export const ATLAS_DIR = 'data/crops/atlas';
 
-export interface CropRow {
-  id: string;
-  name: string;
-  scientific_name: string;
-  plant_attributes: string[];
-  soil_depth_opt: string | null;
-  soil_depth_abs: string | null;
-  temp_opt_min: number | null;
-  temp_opt_max: number | null;
-  temp_abs_min: number | null;
-  temp_abs_max: number | null;
-  soil_texture_opt: string[];
-  soil_texture_abs: string[];
-  rain_opt_min: number | null;
-  rain_opt_max: number | null;
-  rain_abs_min: number | null;
-  rain_abs_max: number | null;
-  soil_fertility_opt: string | null;
-  soil_fertility_abs: string | null;
-  lat_opt_min: number | null;
-  lat_opt_max: number | null;
-  lat_abs_min: number | null;
-  lat_abs_max: number | null;
-  altitude_abs_max: number | null;
-  soil_salinity_opt: string | null;
-  soil_salinity_abs: string | null;
-  ph_opt_min: number | null;
-  ph_opt_max: number | null;
-  ph_abs_min: number | null;
-  ph_abs_max: number | null;
-  soil_drainage_opt: string[];
-  soil_drainage_abs: string[];
-  light_opt_min: string | null;
-  light_opt_max: string | null;
-  light_abs_min: string | null;
-  light_abs_max: string | null;
-  climate_zones: string[];
-  cycle_min_days: number | null;
-  cycle_max_days: number | null;
-  quality_notes: string[];
+/** The mirrored tables: their file and the columns that identify a row. */
+export const TABLES = {
+  crops: { file: 'crops.csv', key: ['crop_id'] },
+  items: { file: 'items.csv', key: ['faostat_item_code'] },
+  crop_country: { file: 'crop_country.csv', key: ['crop_id', 'iso3'] },
+} as const;
+export type AtlasTable = keyof typeof TABLES;
+
+export type Kind = 'text' | 'integer' | 'numeric' | 'boolean';
+export type Value = string | number | boolean | null;
+export type Row = Record<string, Value>;
+
+const INTEGER = new Set(['ecocrop_id', 'cycle_min_days', 'cycle_max_days', 'item_shared_by_n_crops', 'n_crops', 'n_countries_producing', 'year_from', 'year_to', 'rank_in_country']);
+/** Written "yes" or "no" in the atlas. */
+const BOOLEAN = new Set(['curated', 'item_reported']);
+/** A column whose name ends in a unit holds a quantity: temp_opt_min_c, area_ha, world_production_t. */
+const QUANTITY = /^(ph_.+|.+_(c|mm|deg|m|ha|t|pct))$/;
+
+/** The type of a column, from its name. `supabase/migrations` declares the same types; a test compares the two. */
+export function kindOf(table: AtlasTable, column: string): Kind {
+  // One item code is a number; crop_country lists the items its quantities come from ("56;446").
+  if (column === 'faostat_item_code') return table === 'crop_country' ? 'text' : 'integer';
+  if (INTEGER.has(column)) return 'integer';
+  if (BOOLEAN.has(column)) return 'boolean';
+  return QUANTITY.test(column) ? 'numeric' : 'text';
 }
 
-export interface AtlasCrop {
-  row: CropRow;
-  /** FAOSTAT area names, as written in the atlas. */
-  producingCountries: string[];
+function convert(kind: Kind, raw: string, where: () => string): Value {
+  if (raw === '') return null;
+  if (kind === 'text') return raw;
+  if (kind === 'boolean') {
+    if (raw === 'yes') return true;
+    if (raw === 'no') return false;
+    throw new Error(`${where()}: "${raw}" is neither yes nor no`);
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n) || (kind === 'integer' && !Number.isInteger(n))) throw new Error(`${where()}: "${raw}" is not ${kind === 'integer' ? 'a whole number' : 'a number'}`);
+  return n;
 }
 
-/**
- * Values that cannot be read as they stand. Keyed by crop id; each entry says what was read
- * instead and on what ground.
- */
-const SOURCE_FIXES: Record<string, { column: string; value: string; note: string }> = {
-  'vitellaria-paradoxa': {
-    column: 'cult_cycle_max',
-    value: '240',
-    note: 'cycle maximum "2,4" read as 240 days: the atlas row for the same tree under its older name (Butyrospermum paradoxum ssp. parkii) has 180-240',
-  },
-};
+/** Column names of a table, in file order. */
+export function columnsOf(table: AtlasTable, dir = ATLAS_DIR): string[] {
+  const text = readFileSync(`${dir}/${TABLES[table].file}`, 'utf8');
+  const end = text.indexOf('\n');
+  return parseCsv(end < 0 ? text : text.slice(0, end))[0] ?? [];
+}
 
-const blank = (v: string | undefined): boolean => v == null || v.trim() === '' || v.trim() === '-';
-const num = (v: string | undefined): number | null => {
-  if (blank(v)) return null;
-  const n = Number(v!.trim());
-  return Number.isFinite(n) ? n : null;
-};
-/** "shallow (20-50 cm)" -> "shallow"; "high (>10 dS/m))" -> "high". */
-const klass = (v: string | undefined): string | null => (blank(v) ? null : v!.trim().replace(/\s*\(.*$/, '').replace(/\s+/g, '-'));
-/** Lists are comma-separated, and some items carry a comma-free note in brackets. */
-const list = (v: string | undefined): string[] => (blank(v) ? [] : v!.split(/,\s*(?=[a-z])/).map((x) => x.trim()).filter(Boolean));
-const light = (v: string | undefined): string | null => (blank(v) ? null : v!.trim());
-
-const ordered = (absMin: number | null, optMin: number | null, optMax: number | null, absMax: number | null): boolean =>
-  [absMin, optMin, optMax, absMax].filter((x): x is number => x != null).every((x, i, a) => i === 0 || a[i - 1] <= x);
-
-export function cleanAtlasRow(src: Record<string, string>): AtlasCrop {
-  const id = slugify(src.scientific_name);
-  const notes: string[] = [];
-  const r = { ...src };
-  const fix = SOURCE_FIXES[id];
-  if (fix) {
-    r[fix.column] = fix.value;
-    notes.push(fix.note);
+/** Every row of a table, typed. Stops at the first value that does not fit the type of its column. */
+export function readTable(table: AtlasTable, dir = ATLAS_DIR): Row[] {
+  const file = `${dir}/${TABLES[table].file}`;
+  const [header, ...body] = parseCsv(readFileSync(file, 'utf8'));
+  if (!header) throw new Error(`${file} is empty`);
+  const kinds = header.map((column) => kindOf(table, column));
+  const rows = body.map((cells, r) => {
+    const row: Row = {};
+    for (let i = 0; i < header.length; i++) row[header[i]] = convert(kinds[i], cells[i] ?? '', () => `${file}, row ${r + 2}, ${header[i]}`);
+    return row;
+  });
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const id = TABLES[table].key.map((k) => row[k]).join(' / ');
+    if (seen.has(id)) throw new Error(`${file}: two rows for ${id}`);
+    seen.add(id);
   }
+  return rows;
+}
 
-  let temp = [num(r.eco_temperat_requir_opt_min), num(r.eco_temperat_requir_opt_max), num(r.eco_temperat_requir_abs_min), num(r.eco_temperat_requir_abs_max)];
-  let rain = [num(r.eco_rainfall_annual_opt_min), num(r.eco_rainfall_annual_opt_max), num(r.eco_rainfall_annual_abs_min), num(r.eco_rainfall_annual_abs_max)];
-  // No crop grows at 100 °C: the two blocks were entered in each other's columns.
-  if (temp.every((t) => t != null && t > 100) && rain.every((x) => x != null && x < 100)) {
-    [temp, rain] = [rain, temp];
-    notes.push('temperature and rainfall columns were swapped in the source and have been exchanged');
-  }
+export interface CropItem {
+  crop_id: string;
+  faostat_item_code: number;
+  /** The item the atlas attaches the crop to; false for its other items (green corn beside maize grain). */
+  is_primary: boolean;
+}
 
-  const lat = [num(r.eco_latitude_opt_min), num(r.eco_latitude_opt_max), num(r.eco_latitude_abs_min), num(r.eco_latitude_abs_max)];
-  let altitude = num(r.eco_altitude_abs_max);
-  // A "latitude" above 90 is an altitude typed into the wrong column (the same rule as scripts/crops/parse.ts).
-  const stray = lat.filter((x): x is number => x != null && x > 90);
-  if (stray.length) {
-    const strayAltitude = Math.max(...stray);
-    for (let i = 0; i < lat.length; i++) if (lat[i] != null && lat[i]! > 90) lat[i] = null;
-    if (altitude != null && altitude <= 90) {
-      // The altitude column then holds the latitude limit.
-      lat[3] = altitude;
-      altitude = strayAltitude;
-      notes.push('latitude and altitude columns were swapped in the source and have been exchanged');
-    } else {
-      notes.push('a latitude above 90 in the source (an altitude in the wrong column) was dropped');
+/** One row per crop and FAOSTAT item, from `faostat_item_code` and `faostat_other_item_codes`. A crop with `match = none` has none. */
+export function cropItems(crops: Row[]): CropItem[] {
+  const out: CropItem[] = [];
+  for (const crop of crops) {
+    if (crop.faostat_item_code == null) continue;
+    const crop_id = String(crop.crop_id);
+    out.push({ crop_id, faostat_item_code: Number(crop.faostat_item_code), is_primary: true });
+    for (const code of String(crop.faostat_other_item_codes ?? '').split(';').filter(Boolean)) {
+      const n = Number(code);
+      if (!Number.isInteger(n)) throw new Error(`${crop_id}: "${code}" in faostat_other_item_codes is not an item code`);
+      out.push({ crop_id, faostat_item_code: n, is_primary: false });
     }
   }
-
-  let cycleMin = num(r.cult_cycle_min);
-  let cycleMax = num(r.cult_cycle_max);
-  if (cycleMin === 0 || cycleMax === 0) {
-    // EcoCrop writes 0 where it has no cycle length.
-    if (cycleMin === 0) cycleMin = null;
-    if (cycleMax === 0) cycleMax = null;
-    notes.push('growing cycle not given in the source (0)');
-  }
-
-  const ph = [num(r.eco_soil_ph_opt_min), num(r.eco_soil_ph_opt_max), num(r.eco_soil_ph_abs_min), num(r.eco_soil_ph_abs_max)];
-  // Kept as published; the note tells a reader not to trust the bounds blindly.
-  if (!ordered(temp[2], temp[0], temp[1], temp[3])) notes.push('temperature: the optimal range lies partly outside the absolute range in the source');
-  if (!ordered(rain[2], rain[0], rain[1], rain[3])) notes.push('rainfall: the optimal range lies partly outside the absolute range in the source');
-  if (!ordered(ph[2], ph[0], ph[1], ph[3])) notes.push('pH: the optimal range lies partly outside the absolute range in the source');
-
-  const zones = list(r.clim_climate_zone).map((z) => /\(([A-Za-z]+)\)/.exec(z)?.[1] ?? z);
-  const row: CropRow = {
-    id,
-    name: r.name.trim(),
-    scientific_name: r.scientific_name.trim(),
-    plant_attributes: list(r.desc_plant_attributes),
-    soil_depth_opt: klass(r.eco_soil_depth_opt),
-    soil_depth_abs: klass(r.eco_soil_depth_abs),
-    temp_opt_min: temp[0],
-    temp_opt_max: temp[1],
-    temp_abs_min: temp[2],
-    temp_abs_max: temp[3],
-    soil_texture_opt: list(r.eco_soil_texture_opt),
-    soil_texture_abs: list(r.eco_soil_texture_abs),
-    rain_opt_min: rain[0],
-    rain_opt_max: rain[1],
-    rain_abs_min: rain[2],
-    rain_abs_max: rain[3],
-    soil_fertility_opt: klass(r.eco_soil_fertility_opt),
-    soil_fertility_abs: klass(r.eco_soil_fertility_abs),
-    lat_opt_min: lat[0],
-    lat_opt_max: lat[1],
-    lat_abs_min: lat[2],
-    lat_abs_max: lat[3],
-    altitude_abs_max: altitude,
-    soil_salinity_opt: klass(r.eco_soil_salinity_opt),
-    soil_salinity_abs: klass(r.eco_soil_salinity_abs),
-    ph_opt_min: ph[0],
-    ph_opt_max: ph[1],
-    ph_abs_min: ph[2],
-    ph_abs_max: ph[3],
-    soil_drainage_opt: list(r.eco_soil_drainage_opt).map((d) => d.replace(/\s*\(.*$/, '')),
-    soil_drainage_abs: list(r.eco_soil_drainage_abs).map((d) => d.replace(/\s*\(.*$/, '')),
-    light_opt_min: light(r.eco_light_intensity_opt_min),
-    light_opt_max: light(r.eco_light_intensity_opt_max),
-    light_abs_min: light(r.eco_light_intensity_abs_min),
-    light_abs_max: light(r.eco_light_intensity_abs_max),
-    climate_zones: zones,
-    cycle_min_days: cycleMin,
-    cycle_max_days: cycleMax,
-    quality_notes: notes,
-  };
-  const producingCountries = (r.faostat_cac_nuoc_san_xuat ?? '')
-    .split(';')
-    .map((c) => c.trim())
-    .filter(Boolean);
-  return { row, producingCountries };
+  return out;
 }
 
-export function readAtlas(file = ATLAS_FILE): AtlasCrop[] {
-  const text = readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
-  const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true });
-  if (parsed.errors.length) throw new Error(`${file}: ${parsed.errors[0].message} (row ${parsed.errors[0].row})`);
-  const crops = parsed.data.map(cleanAtlasRow);
-  const ids = new Set<string>();
-  for (const c of crops) {
-    if (ids.has(c.row.id)) throw new Error(`${file}: two crops share the id ${c.row.id}`);
-    ids.add(c.row.id);
-  }
-  return crops;
+/** ISO 3166-1 alpha-3 code of every atlas country, by the name FAOSTAT gives it. */
+export function countryCodes(cropCountry: Row[]): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const row of cropCountry) out.set(String(row.country), String(row.iso3));
+  return out;
+}
+
+export interface Atlas {
+  crops: Row[];
+  items: Row[];
+  cropCountry: Row[];
+  cropItems: CropItem[];
+}
+
+export function readAtlas(dir = ATLAS_DIR): Atlas {
+  const crops = readTable('crops', dir);
+  return { crops, items: readTable('items', dir), cropCountry: readTable('crop_country', dir), cropItems: cropItems(crops) };
 }
