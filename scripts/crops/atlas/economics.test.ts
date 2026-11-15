@@ -36,7 +36,11 @@ describe('data/crops/atlas/economics.csv', () => {
     const rawCurated = readFileSync(CURATED_FILE, 'utf8');
     const econSection = rawCurated.slice(rawCurated.indexOf('\nid,region,yield_t_ha,') + 1);
     const refRows = parseCsvObjects(econSection);
-    expect(refRows).toHaveLength(49);
+    expect(refRows.length).toBeGreaterThanOrEqual(49);
+    const completeRefRows = refRows.filter(
+      (r) => r.yield_t_ha !== '' && r.price_usd_t !== '' && r.cost_usd_ha !== '',
+    );
+    expect(completeRefRows).toHaveLength(35);
 
     for (const ref of refRows) {
       const iso3 = ref.region.startsWith('US') ? 'USA' : 'VNM';

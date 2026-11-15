@@ -157,7 +157,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Staple of flooded lowlands. Needs standing water or about 1,000 mm in the season; poorly drained soil is an advantage.",
       "vi": "Cây lương thực của vùng trũng ngập nước. Cần giữ nước mặt ruộng hoặc khoảng 1.000 mm mưa trong vụ; đất thoát nước kém lại là lợi thế."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "major",
+        "match": "exact",
+        "sharePct": 52.493,
+        "rankInCountry": 1,
+        "areaHa": 7089041,
+        "productionT": 43202957,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 1.077,
+        "rankInCountry": 6,
+        "areaHa": 1064067,
+        "productionT": 9078877,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "zea-mays",
@@ -294,7 +324,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "High-yielding summer cereal. Sensitive to drought at flowering; a heavy nitrogen user that follows a legume well.",
       "vi": "Cây ngũ cốc vụ hè năng suất cao. Mẫn cảm với hạn lúc trổ cờ, phun râu; cần nhiều đạm nên trồng sau cây họ đậu là hợp."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "major",
+        "match": "exact",
+        "sharePct": 6.486,
+        "rankInCountry": 3,
+        "areaHa": 875899,
+        "productionT": 4420915,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "major",
+        "match": "exact",
+        "sharePct": 34.011,
+        "rankInCountry": 2,
+        "areaHa": 33613081,
+        "productionT": 373999542,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "triticum-aestivum",
@@ -429,7 +489,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Cool-season cereal of temperate and subtropical winters. Not a crop of the warm, humid tropics below about 1,500 m.",
       "vi": "Ngũ cốc ưa mát của vùng ôn đới và mùa đông cận nhiệt. Không hợp vùng nhiệt đới nóng ẩm dưới khoảng 1.500 m."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "major",
+        "match": "exact",
+        "sharePct": 15.182,
+        "rankInCountry": 3,
+        "areaHa": 15004017,
+        "productionT": 49287260,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "sorghum-bicolor",
@@ -564,7 +646,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Drought-hardy summer cereal that keeps yielding where maize fails; deep fibrous roots and plenty of residue.",
       "vi": "Ngũ cốc vụ hè chịu hạn, vẫn cho thu hoạch ở nơi ngô thất bát; rễ chùm ăn sâu, để lại nhiều tàn dư."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 2.223,
+        "rankInCountry": 5,
+        "areaHa": 2197467,
+        "productionT": 7191747,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "hordeum-vulgare",
@@ -697,7 +801,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "The most salt- and drought-tolerant small grain; a short season makes it a useful break in dry, cool regions.",
       "vi": "Loại ngũ cốc hạt nhỏ chịu mặn, chịu hạn tốt nhất; vụ ngắn nên hợp làm cây xen vụ ở vùng khô, mát."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.936,
+        "rankInCountry": 8,
+        "areaHa": 924713,
+        "productionT": 3649000,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "avena-sativa",
@@ -831,7 +957,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Cool-season small grain and nurse crop; breaks the maize-soybean pest cycle and suppresses weeds.",
       "vi": "Ngũ cốc ưa mát, hay dùng làm cây che phủ gieo kèm; cắt vòng sâu bệnh của ngô - đậu nành và át cỏ dại."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.354,
+        "rankInCountry": 18,
+        "areaHa": 350330,
+        "productionT": 883027,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "secale-cereale",
@@ -970,7 +1118,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.146,
+        "rankInCountry": 26,
+        "areaHa": 144207,
+        "productionT": 317997,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "fagopyrum-esculentum",
@@ -1116,7 +1286,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.082,
+        "rankInCountry": 31,
+        "areaHa": 81396,
+        "productionT": 86071,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "glycine-max",
@@ -1256,7 +1448,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Nitrogen-fixing oil and protein crop; the classic partner of maize. Leaves little residue, so the soil needs cover afterwards.",
       "vi": "Cây lấy dầu và đạm, tự cố định đạm; bạn luân canh kinh điển của ngô. Để lại ít tàn dư nên sau vụ cần che phủ đất."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.224,
+        "rankInCountry": 27,
+        "areaHa": 30237,
+        "productionT": 48792,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "major",
+        "match": "exact",
+        "sharePct": 34.737,
+        "rankInCountry": 1,
+        "areaHa": 34330527,
+        "productionT": 116109930,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "arachis-hypogaea",
@@ -1390,7 +1612,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Legume that pegs its pods into loose, well-drained soil; fixes nitrogen and tolerates acid soils if calcium is supplied.",
       "vi": "Cây họ đậu đâm tia xuống đất tơi, thoát nước tốt; cố định đạm và chịu được đất chua nếu được bón canxi."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 1.132,
+        "rankInCountry": 13,
+        "areaHa": 152837,
+        "productionT": 401805,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.641,
+        "rankInCountry": 9,
+        "areaHa": 633530,
+        "productionT": 2701500,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "vigna-radiata",
@@ -1514,7 +1766,21 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Ten-week pulse that fits between two main crops, fixes nitrogen and needs little water.",
       "vi": "Cây đậu ngắn ngày chừng mười tuần, chen được giữa hai vụ chính, cố định đạm và cần ít nước."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "phaseolus-vulgaris",
@@ -1663,7 +1929,21 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Mild-season pulse; yields drop fast above 30 °C and in waterlogged soil.",
       "vi": "Cây đậu ưa khí hậu ôn hoà; năng suất giảm nhanh khi trên 30 °C và khi đất úng nước."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "vigna-unguiculata",
@@ -1784,7 +2064,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Heat- and drought-tolerant pulse of poor sandy soils; doubles as a summer cover crop and green manure.",
       "vi": "Cây đậu chịu nóng, chịu hạn trên đất cát nghèo; vừa lấy hạt vừa làm cây che phủ, phân xanh vụ hè."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.007,
+        "rankInCountry": 68,
+        "areaHa": 6827,
+        "productionT": 10037,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "cicer-arietinum",
@@ -1911,7 +2213,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.163,
+        "rankInCountry": 24,
+        "areaHa": 160647,
+        "productionT": 211340,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "pisum-sativum",
@@ -2057,7 +2381,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Cool-season pulse for early spring; fixes nitrogen ahead of a summer crop.",
       "vi": "Cây đậu ưa mát gieo đầu xuân; cố định đạm cho vụ hè theo sau."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.423,
+        "rankInCountry": 14,
+        "areaHa": 418207,
+        "productionT": 992133,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "cajanus-cajan",
@@ -2179,7 +2525,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "sesamum-indicum",
@@ -2296,7 +2656,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Three-month oilseed for warm, fairly dry seasons; one of the least thirsty cash crops but intolerant of waterlogging.",
       "vi": "Cây lấy dầu ba tháng cho mùa ấm, hơi khô; thuộc nhóm cây hàng hoá ít cần nước nhất nhưng không chịu úng."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.187,
+        "rankInCountry": 28,
+        "areaHa": 25274,
+        "productionT": 21620,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "helianthus-annuus",
@@ -2439,7 +2821,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Deep-rooted oilseed that reaches water other crops leave behind; leave three to four years between sunflower crops.",
       "vi": "Cây lấy dầu rễ sâu, hút được nước mà cây khác bỏ lại; nên cách ba, bốn năm mới trồng lại hướng dương."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.484,
+        "rankInCountry": 12,
+        "areaHa": 478763,
+        "productionT": 939217,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "brassica-napus",
@@ -2572,7 +2976,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.987,
+        "rankInCountry": 7,
+        "areaHa": 975183,
+        "productionT": 1947097,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "carthamus-tinctorius",
@@ -2692,7 +3118,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Dryland oilseed whose taproot goes below two metres; an option where irrigation water has to be cut.",
       "vi": "Cây lấy dầu vùng khô, rễ cọc ăn sâu hơn hai mét; là lựa chọn khi phải cắt giảm nước tưới."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.05,
+        "rankInCountry": 40,
+        "areaHa": 49577,
+        "productionT": 63747,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "manihot-esculenta",
@@ -2811,7 +3259,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Starchy root that yields on poor, acid soils, but mines potassium and leaves slopes bare to erosion in its first months.",
       "vi": "Cây lấy củ cho năng suất cả trên đất chua, nghèo, nhưng hút kiệt kali và để đất dốc trống trải, dễ xói mòn trong mấy tháng đầu."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 3.845,
+        "rankInCountry": 6,
+        "areaHa": 519296,
+        "productionT": 10533331,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "ipomoea-batatas",
@@ -2917,7 +3387,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Vine that covers the soil within weeks and yields on light, modest soils; leaves and tubers are both eaten.",
       "vi": "Dây bò phủ kín đất sau vài tuần, cho củ cả trên đất nhẹ, kém màu; ăn được cả lá lẫn củ."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.608,
+        "rankInCountry": 21,
+        "areaHa": 82109,
+        "productionT": 954575,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.057,
+        "rankInCountry": 37,
+        "areaHa": 55915,
+        "productionT": 1171811,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "solanum-tuberosum",
@@ -3050,7 +3550,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Cool-season tuber with shallow roots: high value, but needs steady moisture and a three- to four-year gap between crops.",
       "vi": "Cây lấy củ ưa mát, rễ nông: giá trị cao nhưng cần ẩm đều và phải cách ba, bốn năm mới trồng lại."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.15,
+        "rankInCountry": 30,
+        "areaHa": 20285,
+        "productionT": 342791,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.383,
+        "rankInCountry": 14,
+        "areaHa": 378223,
+        "productionT": 19096937,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "saccharum-officinarum",
@@ -3147,7 +3677,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Year-round cane that needs heat and 1,500 mm or more of water; huge biomass if the trash is left on the field.",
       "vi": "Cây mía đứng quanh năm, cần nóng và từ 1.500 mm nước trở lên; sinh khối rất lớn nếu để lại lá trên ruộng."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 1.281,
+        "rankInCountry": 11,
+        "areaHa": 173030,
+        "productionT": 11592168,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.381,
+        "rankInCountry": 15,
+        "areaHa": 376267,
+        "productionT": 30986710,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "allium-cepa",
@@ -3270,7 +3830,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Shallow-rooted bulb crop; high value per hectare, needs frequent light irrigation and a dry finish.",
       "vi": "Cây lấy củ rễ nông; giá trị cao trên mỗi hecta, cần tưới nhẹ nhiều lần và khô ráo lúc cuối vụ."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.747,
+        "rankInCountry": 19,
+        "areaHa": 100918,
+        "productionT": 367651,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.055,
+        "rankInCountry": 38,
+        "areaHa": 54498,
+        "productionT": 3337950,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "coffea-canephora",
@@ -3400,7 +3990,37 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 4.94,
+        "rankInCountry": 5,
+        "areaHa": 667148,
+        "productionT": 1975354,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.003,
+        "rankInCountry": 75,
+        "areaHa": 2954,
+        "productionT": 3566,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "coffea-arabica",
@@ -3515,7 +4135,37 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 4.94,
+        "rankInCountry": 5,
+        "areaHa": 667148,
+        "productionT": 1975354,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.003,
+        "rankInCountry": 75,
+        "areaHa": 2954,
+        "productionT": 3566,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "piper-nigrum",
@@ -3632,7 +4282,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.761,
+        "rankInCountry": 18,
+        "areaHa": 102798,
+        "productionT": 263946,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "hevea-brasiliensis",
@@ -3746,7 +4418,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "major",
+        "match": "exact",
+        "sharePct": 5.394,
+        "rankInCountry": 4,
+        "areaHa": 728509,
+        "productionT": 1311971,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "anacardium-occidentale",
@@ -3866,7 +4560,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 2.124,
+        "rankInCountry": 7,
+        "areaHa": 286817,
+        "productionT": 327549,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "durio-zibethinus",
@@ -3980,7 +4696,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "persea-americana",
@@ -4090,7 +4820,37 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.123,
+        "rankInCountry": 31,
+        "areaHa": 16670,
+        "productionT": 197214,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.021,
+        "rankInCountry": 54,
+        "areaHa": 21168,
+        "productionT": 145987,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "camellia-sinensis",
@@ -4212,7 +4972,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.833,
+        "rankInCountry": 17,
+        "areaHa": 112472,
+        "productionT": 1132108,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "mangifera-indica",
@@ -4331,7 +5113,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "cocos-nucifera",
@@ -4446,7 +5242,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 1.313,
+        "rankInCountry": 10,
+        "areaHa": 177318,
+        "productionT": 2112013,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "musa-acuminata",
@@ -4695,7 +5513,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Citrus of raised beds in the delta; salt above 2 dS/m and a high water table are its limits.",
       "vi": "Cây có múi trồng trên líp ở đồng bằng; độ mặn trên 2 dS/m và mực nước ngầm cao là giới hạn của nó."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "common",
+        "match": "exact",
+        "sharePct": 0.661,
+        "rankInCountry": 20,
+        "areaHa": 89242,
+        "productionT": 1189648,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.013,
+        "rankInCountry": 63,
+        "areaHa": 13261,
+        "productionT": 322050,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "medicago-sativa",
@@ -5084,7 +5932,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "vicia-villosa-ssp-villosa",
@@ -5618,7 +6480,21 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Thick taproot drills through compacted layers and winter-kills, leaving channels for the next crop.",
       "vi": "Rễ cọc to xuyên qua tầng đất nén chặt rồi tàn khi rét, để lại rãnh thông cho vụ sau."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "mucuna-pruriens",
@@ -6109,7 +6985,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Needs 18-25 °C days and cool nights to set fruit; in the lowland tropics grow it in the cool, dry season.",
       "vi": "Cần ngày 18-25 °C và đêm mát để đậu quả; ở vùng thấp nhiệt đới nên trồng vào mùa khô mát."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.114,
+        "rankInCountry": 30,
+        "areaHa": 112463,
+        "productionT": 11093232,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "capsicum-annuum",
@@ -6244,7 +7142,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "lactuca-sativa-var-capitata",
@@ -6379,7 +7291,21 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Cool-season leaf crop that bolts above about 25 °C; in hot cities grow it in partial shade and the cooler months.",
       "vi": "Rau ăn lá ưa mát, dễ trổ ngồng khi trên khoảng 25 °C; ở đô thị nóng nên trồng nơi có bóng một phần và vào tháng mát."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "ipomoea-aquatica",
@@ -6902,7 +7828,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Cool-season head crop (optimum about 17 °C); keep brassicas three years apart to avoid clubroot.",
       "vi": "Rau cuốn ưa mát (tối ưu khoảng 17 °C); nên cách ba năm giữa các vụ cải để tránh bệnh sưng rễ."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.285,
+        "rankInCountry": 26,
+        "areaHa": 38498,
+        "productionT": 1168248,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.021,
+        "rankInCountry": 56,
+        "areaHa": 20626,
+        "productionT": 946935,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "cucumis-sativus",
@@ -7037,7 +7993,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Quick climber for a trellis; thirsty, and prone to mildew in humid weather.",
       "vi": "Dây leo lớn nhanh, cần giàn; tốn nước và dễ bị phấn trắng, sương mai khi trời ẩm."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.034,
+        "rankInCountry": 46,
+        "areaHa": 33751,
+        "productionT": 588095,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "abelmoschus-esculentus",
@@ -7168,7 +8146,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.001,
+        "rankInCountry": 82,
+        "areaHa": 1308,
+        "productionT": 10430,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "solanum-melongena",
@@ -7299,7 +8299,29 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "The most heat-tolerant of the tomato family; bears for months in a large pot.",
       "vi": "Chịu nóng tốt nhất trong họ cà; trồng chậu lớn cho quả nhiều tháng liền."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.003,
+        "rankInCountry": 76,
+        "areaHa": 2673,
+        "productionT": 100534,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "momordica-charantia",
@@ -7694,7 +8716,21 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Sprawling vine that shades the soil; fruit stores for months without refrigeration.",
       "vi": "Dây bò che kín mặt đất; quả để được nhiều tháng không cần tủ lạnh."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "citrullus-lanatus",
@@ -7823,7 +8859,37 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Dry-season cash crop on light soil after rice; needs warmth, sun and a dry finish.",
       "vi": "Cây hàng hoá mùa khô trên đất nhẹ sau vụ lúa; cần ấm, nắng và khô ráo lúc cuối vụ."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.363,
+        "rankInCountry": 24,
+        "areaHa": 49058,
+        "productionT": 1240943,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.043,
+        "rankInCountry": 43,
+        "areaHa": 42047,
+        "productionT": 1654736,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "amaranthus-tricolor",
@@ -8359,7 +9425,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "coriandrum-sativum",
@@ -8493,7 +9573,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "perilla-frutescens",
@@ -8615,7 +9709,21 @@ export const CURATED_CROPS: CropProfile[] = [
     "flags": [
       "quad-repaired",
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "unknown",
+        "match": "group",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "allium-fistulosum",
@@ -8750,7 +9858,21 @@ export const CURATED_CROPS: CropProfile[] = [
       "en": "Regrows from its own white base in a glass of water or a small pot; the simplest crop to start with.",
       "vi": "Mọc lại từ chính gốc trắng trong cốc nước hoặc chậu nhỏ; là cây dễ nhất để bắt đầu."
     },
-    "curated": true
+    "curated": true,
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "cymbopogon-citratus",
@@ -9000,7 +10122,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0,
+        "rankInCountry": 89,
+        "areaHa": 20,
+        "productionT": 659,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "fragaria-x-ananassa",
@@ -9127,7 +10271,29 @@ export const CURATED_CROPS: CropProfile[] = [
     "curated": true,
     "flags": [
       "water-model-assumed"
-    ]
+    ],
+    "prevalence": {
+      "VNM": {
+        "level": "absent",
+        "match": "exact",
+        "itemReported": false,
+        "source": "FAOSTAT QCL"
+      },
+      "USA": {
+        "level": "minor",
+        "match": "exact",
+        "sharePct": 0.024,
+        "rankInCountry": 51,
+        "areaHa": 23512,
+        "productionT": 1354730,
+        "years": [
+          2022,
+          2024
+        ],
+        "itemReported": true,
+        "source": "FAOSTAT QCL"
+      }
+    }
   },
   {
     "id": "tagetes-erecta",
@@ -9376,24 +10542,6 @@ export const CURATED_CROPS: CropProfile[] = [
 /** Yield, price and operating cost by region, with the quality of each source. */
 export const REFERENCE_ECONOMICS: ReferenceTable = {
   "oryza-sativa": {
-    "VN": {
-      "region": "VN",
-      "yieldRegion": "Viet Nam, national average (paddy)",
-      "refYieldTHa": 6.15,
-      "priceUsdPerT": 228.5,
-      "costUsdPerHa": 867,
-      "year": 2026,
-      "quality": {
-        "yield": "official",
-        "price": "press",
-        "cost": "press"
-      },
-      "sources": [
-        "yield: 6,151.7 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
-        "price: paddy bought by traders at 5,700-6,000 VND/kg (midpoint used), An Giang, April 2026; Nhân Dân 22 Apr 2026 (https://nhandan.vn/lien-ket-ben-vung-cung-nha-nong-vuot-kho-post957604.html). FAOSTAT 2024: 356 USD/t",
-        "cost: 22.2 million VND/ha in eight demonstration models, winter-spring 2025-26, An Giang (same article; scope of the cost not stated; conventional practice is given as more than 3.2 million VND/ha higher)"
-      ]
-    },
     "US": {
       "region": "US",
       "yieldRegion": "United States, national average (rough rice)",
@@ -9411,27 +10559,27 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "price: $13.21/cwt at harvest; USDA ERS, Commodity Costs and Returns, 2025, per planted acre (https://www.ers.usda.gov/data-products/commodity-costs-and-returns/)",
         "cost: operating costs $792.12/acre (total costs listed $1,343.42/acre); USDA ERS, Commodity Costs and Returns, 2025, per planted acre (https://www.ers.usda.gov/data-products/commodity-costs-and-returns/)"
       ]
-    }
-  },
-  "zea-mays": {
+    },
     "VN": {
       "region": "VN",
-      "yieldRegion": "Viet Nam, national average (dry grain)",
-      "refYieldTHa": 5.11,
-      "priceUsdPerT": 260.1,
-      "costUsdPerHa": 1053,
+      "yieldRegion": "Viet Nam, national average (paddy)",
+      "refYieldTHa": 6.15,
+      "priceUsdPerT": 228.5,
+      "costUsdPerHa": 867,
       "year": 2026,
       "quality": {
         "yield": "official",
-        "price": "official",
+        "price": "press",
         "cost": "press"
       },
       "sources": [
-        "yield: 5,106.6 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
-        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
-        "cost: 26.96 million VND/ha (seed, fertiliser, pesticides, land preparation, sowing, care labour) in a 5 ha demonstration of hybrid maize at 6.54 t/ha, Gia Lai, main season 2026; Việt Báo 30 Oct 2026 (https://vietbao.vn/index%2Ephp/print-613755.html)"
+        "yield: 6,151.7 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: paddy bought by traders at 5,700-6,000 VND/kg (midpoint used), An Giang, April 2026; Nhân Dân 22 Apr 2026 (https://nhandan.vn/lien-ket-ben-vung-cung-nha-nong-vuot-kho-post957604.html). FAOSTAT 2024: 356 USD/t",
+        "cost: 22.2 million VND/ha in eight demonstration models, winter-spring 2025-26, An Giang (same article; scope of the cost not stated; conventional practice is given as more than 3.2 million VND/ha higher)"
       ]
-    },
+    }
+  },
+  "zea-mays": {
     "US": {
       "region": "US",
       "yieldRegion": "United States, national average (grain)",
@@ -9466,6 +10614,24 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "yield: 210.0 bu/acre, Iowa 2025; USDA NASS, Crop Production 2025 Summary (https://release.nass.usda.gov/reports/cropan26.txt)",
         "price: $4.10/bu; USDA NASS, Crop Values 2025 Summary, marketing-year price (https://release.nass.usda.gov/reports/cpvl0226.txt)",
         "cost: variable costs $483.60/acre for corn following soybeans at 211 bu/acre (total incl. land and labour $911.98/acre); Iowa State University Extension, Ag Decision Maker A1-20, Estimated Costs of Crop Production in Iowa 2026 (https://www.extension.iastate.edu/agdm/crops/pdf/a1-20.pdf)"
+      ]
+    },
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average (dry grain)",
+      "refYieldTHa": 5.11,
+      "priceUsdPerT": 260.1,
+      "costUsdPerHa": 1053,
+      "year": 2026,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "press"
+      },
+      "sources": [
+        "yield: 5,106.6 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
+        "cost: 26.96 million VND/ha (seed, fertiliser, pesticides, land preparation, sowing, care labour) in a 5 ha demonstration of hybrid maize at 6.54 t/ha, Gia Lai, main season 2026; Việt Báo 30 Oct 2026 (https://vietbao.vn/index%2Ephp/print-613755.html)"
       ]
     }
   },
@@ -9585,25 +10751,65 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
-  "glycine-max": {
-    "VN": {
-      "region": "VN",
-      "yieldRegion": "Viet Nam, national average (dry grain)",
-      "refYieldTHa": 1.63,
-      "priceUsdPerT": 927.9,
-      "costUsdPerHa": 737,
-      "year": 2026,
+  "secale-cereale": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "not harvested (cover crop)",
+      "refYieldTHa": 0,
+      "priceUsdPerT": 0,
+      "costUsdPerHa": 151.5,
+      "year": 2014,
       "quality": {
         "yield": "official",
         "price": "official",
-        "cost": "derived"
+        "cost": "budget"
       },
       "sources": [
-        "yield: 1,626.9 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
-        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
-        "cost: DERIVED, not a published per-hectare figure: 70 % of the maize cost above, from the statement that soybean inputs and care cost about 30 % less than maize (Báo Văn Hoá 21 Apr 2026, https://baovanhoa.vn/kinh-te/lien-ket-trong-dau-nanh-mo-loi-nong-nghiep-hang-hoa-o-quang-ngai-221172.html)"
+        "yield: cover crop: nothing is sold",
+        "price: cover crop: nothing is sold",
+        "cost: $61.31/acre; cereal rye, 90 lb/acre at $0.57/lb; USDA-ARS National Soil Dynamics Laboratory, Fact Sheet 04o \"Cover Crop Costs\", October 2014: seed at the listed rate plus no-till drilling at $9.71/acre (https://www.mssoy.org/sites/default/files/documents/usda-costs-2014.pdf)"
       ]
     },
+    "US-HEARTLAND": {
+      "region": "US-HEARTLAND",
+      "yieldRegion": "not harvested (cover crop)",
+      "refYieldTHa": 0,
+      "priceUsdPerT": 0,
+      "costUsdPerHa": 70.2,
+      "year": 2018,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "budget"
+      },
+      "sources": [
+        "yield: cover crop: nothing is sold",
+        "price: cover crop: nothing is sold",
+        "cost: $28.40/acre; cereal rye, 60 lb/acre at $0.25/lb plus drilling $13.40/acre, central Illinois; farmdoc daily 28 Jun 2018 (https://farmdocdaily.illinois.edu/2018/06/understanding-budget-implications-of-cover-crops.html)"
+      ]
+    }
+  },
+  "fagopyrum-esculentum": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "not harvested (cover crop)",
+      "refYieldTHa": 0,
+      "priceUsdPerT": 0,
+      "costUsdPerHa": 159.9,
+      "year": 2014,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "budget"
+      },
+      "sources": [
+        "yield: cover crop: nothing is sold",
+        "price: cover crop: nothing is sold",
+        "cost: $64.71/acre; buckwheat, 55 lb/acre at $1.00/lb; USDA-ARS National Soil Dynamics Laboratory, Fact Sheet 04o \"Cover Crop Costs\", October 2014: seed at the listed rate plus no-till drilling at $9.71/acre (https://www.mssoy.org/sites/default/files/documents/usda-costs-2014.pdf)"
+      ]
+    }
+  },
+  "glycine-max": {
     "US": {
       "region": "US",
       "yieldRegion": "United States, national average (grain)",
@@ -9639,27 +10845,27 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "price: $10.20/bu; USDA NASS, Crop Values 2025 Summary, marketing-year price (https://release.nass.usda.gov/reports/cpvl0226.txt)",
         "cost: variable costs $290.21/acre for herbicide-tolerant soybeans following corn at 61 bu/acre (total incl. land and labour $679.11/acre); Iowa State University Extension, Ag Decision Maker A1-20, Estimated Costs of Crop Production in Iowa 2026 (https://www.extension.iastate.edu/agdm/crops/pdf/a1-20.pdf)"
       ]
-    }
-  },
-  "arachis-hypogaea": {
+    },
     "VN": {
       "region": "VN",
-      "yieldRegion": "Viet Nam, national average (in shell)",
-      "refYieldTHa": 2.68,
-      "priceUsdPerT": 1226.7,
-      "costUsdPerHa": 2402,
-      "year": 2024,
+      "yieldRegion": "Viet Nam, national average (dry grain)",
+      "refYieldTHa": 1.63,
+      "priceUsdPerT": 927.9,
+      "costUsdPerHa": 737,
+      "year": 2026,
       "quality": {
         "yield": "official",
         "price": "official",
-        "cost": "press"
+        "cost": "derived"
       },
       "sources": [
-        "yield: 2,682.3 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "yield: 1,626.9 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
         "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
-        "cost: about 61.5 million VND/ha on the conventional plot of an extension trial (63 million with water-saving irrigation), Bình Định, autumn 2023, not itemised; Nông nghiệp và Môi trường 30 Oct 2023 (https://nongnghiepmoitruong.vn/tuoi-tiet-kiem-giai-khat-cho-dau-phong-d365622.html)"
+        "cost: DERIVED, not a published per-hectare figure: 70 % of the maize cost above, from the statement that soybean inputs and care cost about 30 % less than maize (Báo Văn Hoá 21 Apr 2026, https://baovanhoa.vn/kinh-te/lien-ket-trong-dau-nanh-mo-loi-nong-nghiep-hang-hoa-o-quang-ngai-221172.html)"
       ]
-    },
+    }
+  },
+  "arachis-hypogaea": {
     "US": {
       "region": "US",
       "yieldRegion": "United States, national average (in shell)",
@@ -9676,6 +10882,24 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "yield: 4,231 lb/acre; USDA ERS, Commodity Costs and Returns, 2025, per planted acre (https://www.ers.usda.gov/data-products/commodity-costs-and-returns/)",
         "price: $0.24/lb at harvest; USDA ERS, Commodity Costs and Returns, 2025, per planted acre (https://www.ers.usda.gov/data-products/commodity-costs-and-returns/)",
         "cost: operating costs $642.64/acre (total costs listed $1,178.08/acre); USDA ERS, Commodity Costs and Returns, 2025, per planted acre (https://www.ers.usda.gov/data-products/commodity-costs-and-returns/)"
+      ]
+    },
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average (in shell)",
+      "refYieldTHa": 2.68,
+      "priceUsdPerT": 1226.7,
+      "costUsdPerHa": 2402,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "press"
+      },
+      "sources": [
+        "yield: 2,682.3 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
+        "cost: about 61.5 million VND/ha on the conventional plot of an extension trial (63 million with water-saving irrigation), Bình Định, autumn 2023, not itemised; Nông nghiệp và Môi trường 30 Oct 2023 (https://nongnghiepmoitruong.vn/tuoi-tiet-kiem-giai-khat-cho-dau-phong-d365622.html)"
       ]
     }
   },
@@ -9716,6 +10940,26 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "yield: 2,012 lb/acre; USDA NASS, Crop Production 2025 Summary (https://release.nass.usda.gov/reports/cropan26.txt)",
         "price: $30.20/cwt; USDA NASS, Crop Values 2025 Summary, marketing-year price (https://release.nass.usda.gov/reports/cpvl0226.txt)",
         "cost: direct costs $283.67/acre at 1,580 lb/acre (total listed costs $403.48/acre); NDSU Extension, Projected 2026 Crop Budgets, North Central North Dakota, EC1654, direct costs (https://www.ndsu.edu/agriculture/sites/default/files/2026-02/ec1654.pdf)"
+      ]
+    }
+  },
+  "vigna-unguiculata": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 1.547,
+      "priceUsdPerT": 842,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 1.547 t/ha (2022-2024 mean, FAOSTAT item 195 \"Cow peas, dry\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 842 USD/t (2005, flag A, item 195 \"Cow peas, dry\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US dry cowpea producer price in FAOSTAT PP is from 2005 (842 USD/t); USDA NASS reports cowpeas only in the quinquennial Census of Agriculture",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
       ]
     }
   },
@@ -9819,6 +11063,26 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
+  "carthamus-tinctorius": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 1.287,
+      "priceUsdPerT": 535.7,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 1.287 t/ha (2022-2024 mean, FAOSTAT item 280 \"Safflower seed\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 535.7 USD/t (2024, flag A, item 280 \"Safflower seed\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Cross-checked against USDA NASS Crop Values 2025 Summary marketing-year safflower prices (~$24.00-$26.50/cwt = 529-584 USD/t)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    }
+  },
   "manihot-esculenta": {
     "VN": {
       "region": "VN",
@@ -9917,25 +11181,23 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
         "price: $19.60/cwt; USDA NASS, Vegetables 2025 Summary (https://release.nass.usda.gov/reports/vegean26.txt)",
         "cost: NOT FOUND: no onion budget was found in the sources consulted"
       ]
-    }
-  },
-  "citrullus-lanatus": {
+    },
     "VN": {
       "region": "VN",
-      "yieldRegion": "Viet Nam, national average (fruit)",
-      "refYieldTHa": 25.66,
-      "priceUsdPerT": 327.1,
-      "costUsdPerHa": 6055,
+      "yieldRegion": "Viet Nam, national average",
+      "refYieldTHa": 3.643,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
       "year": 2024,
       "quality": {
         "yield": "official",
-        "price": "official",
-        "cost": "press"
+        "price": "none",
+        "cost": "none"
       },
       "sources": [
-        "yield: 25,663.2 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
-        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
-        "cost: 150-160 million VND/ha including land rent (midpoint used), Gia Lai; VnBusiness 24 Nov 2024 (https://vnbusiness.vn/bat-ngo-dua-hau-giam-gia-hon-mot-nua-nhieu-nha-vuon-vut-bo-vi-qua-re.html)"
+        "yield: 3.643 t/ha (2022-2024 mean, FAOSTAT item 403 \"Onions and shallots, dry (excluding dehydrated)\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT item 403 \"Onions and shallots, dry (excluding dehydrated)\" is shared by 4 species in the atlas (2024 item producer price 1422.5 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 4)",
+        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
       ]
     }
   },
@@ -9959,6 +11221,44 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
+  "coffea-arabica": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 1.209,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 1.209 t/ha (2022-2024 mean, FAOSTAT item 656 \"Coffee, green\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT item 656 \"Coffee, green\" is shared by 4 Coffea species (excluded by crop_latest_prices; FAOSTAT 2024 US price is 55,997.5 USD/t green bean, while USDA NASS Noncitrus Fruits and Nuts 2025 Summary reports Hawaii coffee cherry at $2.37/lb = 5,225 USD/t in 2024)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    },
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average",
+      "refYieldTHa": 2.961,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 2.961 t/ha (2022-2024 mean, FAOSTAT item 656 \"Coffee, green\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT item 656 \"Coffee, green\" is shared by 4 Coffea species (excluded by crop_latest_prices) and its 2024 Viet Nam producer price (709 USD/t) contradicts the domestic market (~3,359.4 USD/t for robusta; see docs/DATABASE.md section 8)",
+        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
+      ]
+    }
+  },
   "piper-nigrum": {
     "VN": {
       "region": "VN",
@@ -9979,6 +11279,26 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
+  "hevea-brasiliensis": {
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average",
+      "refYieldTHa": 1.801,
+      "priceUsdPerT": 1125.4,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 1.801 t/ha (2022-2024 mean, FAOSTAT item 836 \"Natural rubber in primary forms\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 1125.4 USD/t (2024, flag A, item 836 \"Natural rubber in primary forms\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Cross-checked against Viet Nam farm-gate natural rubber latex/coagulum prices (~28,000-30,000 VND/kg dry rubber content = 1,094-1,172 USD/t at 25,600 VND/USD)",
+        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
+      ]
+    }
+  },
   "anacardium-occidentale": {
     "VN": {
       "region": "VN",
@@ -9995,6 +11315,44 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       "sources": [
         "yield: 1,079.0 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
         "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
+        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
+      ]
+    }
+  },
+  "persea-americana": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 6.889,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 6.889 t/ha (2022-2024 mean, FAOSTAT item 572 \"Avocados\", item shared by 4 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT item 572 \"Avocados\" is shared by 4 species in the atlas (2024 item producer price 3020.3 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 4)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    },
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average (fruit)",
+      "refYieldTHa": 11.45,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 11,446.6 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: NOT FOUND: no Vietnamese farm-gate price was found",
         "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
       ]
     }
@@ -10039,6 +11397,26 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
+  "cocos-nucifera": {
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average (nuts in shell)",
+      "refYieldTHa": 12.56,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 12,562.2 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: NOT FOUND: no Vietnamese farm-gate price was found",
+        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
+      ]
+    }
+  },
   "musa-acuminata": {
     "VN": {
       "region": "VN",
@@ -10060,6 +11438,24 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
     }
   },
   "citrus-grandis": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 24.416,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 24.416 t/ha (2022-2024 mean, FAOSTAT item 507 \"Pomelos and grapefruits\", item shared by 2 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT item 507 \"Pomelos and grapefruits\" is shared by 2 species in the atlas (2024 item producer price 570.5 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 2)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    },
     "VN": {
       "region": "VN",
       "yieldRegion": "Viet Nam, national average (fruit)",
@@ -10075,66 +11471,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       "sources": [
         "yield: 13,528.9 kg/ha, item \"Pomelos and grapefruits\"; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
         "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
-        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
-      ]
-    }
-  },
-  "brassica-oleracea-var-capitata": {
-    "VN": {
-      "region": "VN",
-      "yieldRegion": "Viet Nam, national average (heads)",
-      "refYieldTHa": 30.46,
-      "priceUsdPerT": 400.8,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "official",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 30,464.8 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
-        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
-        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
-      ]
-    }
-  },
-  "persea-americana": {
-    "VN": {
-      "region": "VN",
-      "yieldRegion": "Viet Nam, national average (fruit)",
-      "refYieldTHa": 11.45,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 11,446.6 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
-        "price: NOT FOUND: no Vietnamese farm-gate price was found",
-        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
-      ]
-    }
-  },
-  "cocos-nucifera": {
-    "VN": {
-      "region": "VN",
-      "yieldRegion": "Viet Nam, national average (nuts in shell)",
-      "refYieldTHa": 12.56,
-      "priceUsdPerT": null,
-      "costUsdPerHa": null,
-      "year": 2024,
-      "quality": {
-        "yield": "official",
-        "price": "none",
-        "cost": "none"
-      },
-      "sources": [
-        "yield: 12,562.2 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
-        "price: NOT FOUND: no Vietnamese farm-gate price was found",
         "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
       ]
     }
@@ -10195,13 +11531,13 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
-  "secale-cereale": {
+  "crotalaria-juncea": {
     "US": {
       "region": "US",
       "yieldRegion": "not harvested (cover crop)",
       "refYieldTHa": 0,
       "priceUsdPerT": 0,
-      "costUsdPerHa": 151.5,
+      "costUsdPerHa": 215.3,
       "year": 2014,
       "quality": {
         "yield": "official",
@@ -10211,25 +11547,7 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       "sources": [
         "yield: cover crop: nothing is sold",
         "price: cover crop: nothing is sold",
-        "cost: $61.31/acre; cereal rye, 90 lb/acre at $0.57/lb; USDA-ARS National Soil Dynamics Laboratory, Fact Sheet 04o \"Cover Crop Costs\", October 2014: seed at the listed rate plus no-till drilling at $9.71/acre (https://www.mssoy.org/sites/default/files/documents/usda-costs-2014.pdf)"
-      ]
-    },
-    "US-HEARTLAND": {
-      "region": "US-HEARTLAND",
-      "yieldRegion": "not harvested (cover crop)",
-      "refYieldTHa": 0,
-      "priceUsdPerT": 0,
-      "costUsdPerHa": 70.2,
-      "year": 2018,
-      "quality": {
-        "yield": "official",
-        "price": "official",
-        "cost": "budget"
-      },
-      "sources": [
-        "yield: cover crop: nothing is sold",
-        "price: cover crop: nothing is sold",
-        "cost: $28.40/acre; cereal rye, 60 lb/acre at $0.25/lb plus drilling $13.40/acre, central Illinois; farmdoc daily 28 Jun 2018 (https://farmdocdaily.illinois.edu/2018/06/understanding-budget-implications-of-cover-crops.html)"
+        "cost: $87.11/acre; sunn hemp, 30 lb/acre at $2.58/lb; USDA-ARS National Soil Dynamics Laboratory, Fact Sheet 04o \"Cover Crop Costs\", October 2014: seed at the listed rate plus no-till drilling at $9.71/acre (https://www.mssoy.org/sites/default/files/documents/usda-costs-2014.pdf)"
       ]
     }
   },
@@ -10273,26 +11591,6 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
-  "fagopyrum-esculentum": {
-    "US": {
-      "region": "US",
-      "yieldRegion": "not harvested (cover crop)",
-      "refYieldTHa": 0,
-      "priceUsdPerT": 0,
-      "costUsdPerHa": 159.9,
-      "year": 2014,
-      "quality": {
-        "yield": "official",
-        "price": "official",
-        "cost": "budget"
-      },
-      "sources": [
-        "yield: cover crop: nothing is sold",
-        "price: cover crop: nothing is sold",
-        "cost: $64.71/acre; buckwheat, 55 lb/acre at $1.00/lb; USDA-ARS National Soil Dynamics Laboratory, Fact Sheet 04o \"Cover Crop Costs\", October 2014: seed at the listed rate plus no-till drilling at $9.71/acre (https://www.mssoy.org/sites/default/files/documents/usda-costs-2014.pdf)"
-      ]
-    }
-  },
   "raphanus-sativus": {
     "US": {
       "region": "US",
@@ -10313,23 +11611,181 @@ export const REFERENCE_ECONOMICS: ReferenceTable = {
       ]
     }
   },
-  "crotalaria-juncea": {
+  "lycopersicon-esculentum": {
     "US": {
       "region": "US",
-      "yieldRegion": "not harvested (cover crop)",
-      "refYieldTHa": 0,
-      "priceUsdPerT": 0,
-      "costUsdPerHa": 215.3,
-      "year": 2014,
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 98.555,
+      "priceUsdPerT": 1243.4,
+      "costUsdPerHa": null,
+      "year": 2024,
       "quality": {
         "yield": "official",
         "price": "official",
-        "cost": "budget"
+        "cost": "none"
       },
       "sources": [
-        "yield: cover crop: nothing is sold",
-        "price: cover crop: nothing is sold",
-        "cost: $87.11/acre; sunn hemp, 30 lb/acre at $2.58/lb; USDA-ARS National Soil Dynamics Laboratory, Fact Sheet 04o \"Cover Crop Costs\", October 2014: seed at the listed rate plus no-till drilling at $9.71/acre (https://www.mssoy.org/sites/default/files/documents/usda-costs-2014.pdf)"
+        "yield: 98.555 t/ha (2022-2024 mean, FAOSTAT item 388 \"Tomatoes\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 1243.4 USD/t (2024, flag A, item 388 \"Tomatoes\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Matches USDA NASS Vegetables 2025 Summary 2024 US fresh-market tomato price ($56.30/cwt = 1,241.2 USD/t; 2025 fresh-market $54.30/cwt = 1,197.1 USD/t, whereas all-utilization mean including California processing tomatoes at $116/ton is $8.52/cwt = 187.8 USD/t in 2024, https://release.nass.usda.gov/reports/vegean26.txt)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    }
+  },
+  "brassica-oleracea-var-capitata": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 45.893,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 45.893 t/ha (2022-2024 mean, FAOSTAT item 358 \"Cabbages\", item shared by 6 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT item 358 \"Cabbages\" is shared by 6 species in the atlas (2024 item producer price 776 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 6)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    },
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average (heads)",
+      "refYieldTHa": 30.46,
+      "priceUsdPerT": 400.8,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 30,464.8 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
+        "cost: NOT FOUND: no Vietnamese production cost per hectare was found in an opened source"
+      ]
+    }
+  },
+  "cucumis-sativus": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 17.439,
+      "priceUsdPerT": 848.8,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 17.439 t/ha (2022-2024 mean, FAOSTAT item 397 \"Cucumbers and gherkins\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 848.8 USD/t (2024, flag A, item 397 \"Cucumbers and gherkins\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). FAOSTAT reports fresh-market cucumber price ($38.50/cwt = 848.8 USD/t); USDA NASS Vegetables 2025 Summary all-utilization (fresh + processing) mean is $20.60/cwt = 454.2 USD/t in 2024 and $18.20/cwt = 401.2 USD/t in 2025 (https://release.nass.usda.gov/reports/vegean26.txt)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    }
+  },
+  "abelmoschus-esculentus": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 7.972,
+      "priceUsdPerT": 1642,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 7.972 t/ha (2022-2024 mean, FAOSTAT item 430 \"Okra\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 1642 USD/t (1997, flag A, item 430 \"Okra\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US producer price reported in FAOSTAT PP is from 1997 (1,642 USD/t); USDA NASS Vegetables 2025 Summary does not estimate national okra price",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    }
+  },
+  "solanum-melongena": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 37.606,
+      "priceUsdPerT": 610,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 37.606 t/ha (2022-2024 mean, FAOSTAT item 399 \"Eggplants (aubergines)\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 610 USD/t (2004, flag A, item 399 \"Eggplants (aubergines)\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US eggplant producer price in FAOSTAT PP is from 2004 (610 USD/t); USDA NASS discontinued national annual eggplant price estimates",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    }
+  },
+  "citrullus-lanatus": {
+    "VN": {
+      "region": "VN",
+      "yieldRegion": "Viet Nam, national average (fruit)",
+      "refYieldTHa": 25.66,
+      "priceUsdPerT": 327.1,
+      "costUsdPerHa": 6055,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "press"
+      },
+      "sources": [
+        "yield: 25,663.2 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: FAOSTAT, Producer prices in USD/tonne, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Prices_E_Asia.zip)",
+        "cost: 150-160 million VND/ha including land rent (midpoint used), Gia Lai; VnBusiness 24 Nov 2024 (https://vnbusiness.vn/bat-ngo-dua-hau-giam-gia-hon-mot-nua-nhieu-nha-vuon-vut-bo-vi-qua-re.html)"
+      ]
+    }
+  },
+  "zingiber-officinale": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 32.328,
+      "priceUsdPerT": 3527,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 32.328 t/ha (2022-2024 mean, FAOSTAT item 720 \"Ginger, raw\"); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: 3527 USD/t (2008, flag A, item 720 \"Ginger, raw\"); FAOSTAT Producer Prices via crop_latest_prices (https://bulks-faostat.fao.org/production/Prices_E_All_Data_(Normalized).zip). Latest annual US raw ginger producer price in FAOSTAT PP is from 2008 (3,527 USD/t, Hawaii ginger root)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
+      ]
+    }
+  },
+  "fragaria-x-ananassa": {
+    "US": {
+      "region": "US",
+      "yieldRegion": "United States, national average",
+      "refYieldTHa": 57.575,
+      "priceUsdPerT": null,
+      "costUsdPerHa": null,
+      "year": 2024,
+      "quality": {
+        "yield": "official",
+        "price": "none",
+        "cost": "none"
+      },
+      "sources": [
+        "yield: 57.575 t/ha (2022-2024 mean, FAOSTAT item 544 \"Strawberries\", item shared by 2 species in the atlas); FAOSTAT QCL (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip)",
+        "price: NOT FOUND: FAOSTAT item 544 \"Strawberries\" is shared by 2 species in the atlas (2024 item producer price 3152.6 USD/t is excluded by crop_latest_prices because item_shared_by_n_crops = 2)",
+        "cost: NOT FOUND: no US operating cost budget per hectare was found in the USDA ERS, Iowa State, NDSU or University of Idaho series consulted"
       ]
     }
   }

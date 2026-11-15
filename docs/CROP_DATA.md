@@ -204,12 +204,15 @@ Top items by harvested area as the data gives them (mean 2022 to 2024):
 ## 11. Rebuild
 
 ```
-npx tsx scripts/crops/atlas/build.ts            # downloads what .cache/atlas/raw lacks (about 145 MB), then builds: 35 s
-npx tsx scripts/crops/atlas/build.ts --offline  # from the cache only
-npx vitest run scripts/crops/atlas
+npm run crops:build                             # 1. regenerates curated.generated.ts and curated-crops.csv
+npx tsx scripts/crops/atlas/build.ts --offline  # 2. rebuilds data/crops/atlas/*.csv from .cache/atlas/raw and national/prevalence.csv
+npm run crops:build                             # 3. attaches VNM/USA prevalence + economics from atlas into curated.generated.ts and writes public/data/crops/prevalence.json
+npx vitest run scripts/crops/atlas scripts/crops/atlas-tables.test.ts
 ```
 
-Downloads are sequential, each with a timeout and at most 3 retries with backoff; `.cache/atlas/raw/manifest.json` records URL, date, size and SHA-256. To refresh a source, delete its file from the cache. No package was installed: the zip reader, the xlsx writer and the CSV code are in the folder.
+Note the three-step order when curated crop metadata changes: `scripts/crops/atlas/ecocrop.ts` reads `CURATED_CROPS` from `src/core/crops/curated.generated.ts`, while `scripts/build-crop-catalog.ts` (`scripts/crops/atlas-tables.ts`) reads `data/crops/atlas/crop_country.csv` and `data/crops/atlas/economics.csv` back into `src/core/crops/curated.generated.ts` (`prevalence` for `VNM` and `USA` on the 73 curated crops, plus `REFERENCE_ECONOMICS`) and writes `public/data/crops/prevalence.json` for all 387 atlas crops (loaded on demand via `loadPrevalence()` in `src/core/crops/index.ts`).
+
+To download any missing raw archives into `.cache/atlas/raw` (about 145 MB, 35 s), run `npx tsx scripts/crops/atlas/build.ts` without `--offline`. Downloads are sequential, each with a timeout and at most 3 retries with backoff; `.cache/atlas/raw/manifest.json` records URL, date, size and SHA-256. To refresh a source, delete its file from the cache. No package was installed: the zip reader, the xlsx writer and the CSV code are in the folder.
 
 | Module | Role |
 |---|---|
