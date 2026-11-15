@@ -1,5 +1,6 @@
 export * from './types';
 export * from './reference';
+export * from './mass';
 export * from './buffer';
 export * from './diagnosis';
 export * from './plan';
