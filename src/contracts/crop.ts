@@ -1,4 +1,5 @@
 import type { I18nText, Quad } from './common';
+import type { CropPrevalence, Iso3 } from './country';
 
 export type TextureClass = 'heavy' | 'medium' | 'light' | 'organic';
 export type DrainageClass = 'poor' | 'well' | 'excessive';
@@ -78,12 +79,22 @@ export interface CropRotationTraits {
   coverValue: 'low' | 'medium' | 'high';
 }
 
+export type UrbanHarvestType = 'cut-and-come-again' | 'once' | 'repeated-fruit';
+
 export interface CropUrbanTraits {
   suitable: boolean;
   light: 'full' | 'partial' | 'shade';
   container: boolean;
   difficulty: 1 | 2 | 3;
   tags: string[];
+  potDepthCm?: number;
+  potVolumeL?: number;
+  spacingCm?: number;
+  sunHoursMin?: number;
+  firstHarvestDays?: [ number, number ];
+  harvestType?: UrbanHarvestType;
+  needsTrellis?: boolean;
+  sources?: string[];
 }
 
 export interface CropProfile {
@@ -99,6 +110,8 @@ export interface CropProfile {
   cycleDays: [min: number, max: number];
   water?: CropWaterModel;
   economics?: CropEconomics;
+  /** Prevalence by country (ISO 3166-1 alpha-3), from the crop atlas (crop_country.csv). */
+  prevalence?: Record<Iso3, CropPrevalence>;
   rotation?: CropRotationTraits;
   urban?: CropUrbanTraits;
   summary?: I18nText;

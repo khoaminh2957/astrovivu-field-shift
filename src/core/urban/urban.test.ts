@@ -1,8 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import type { UrbanClimate, UrbanClimateMonth } from '@/contracts';
-import { getCrop } from '@/core/crops';
+import { getCrop, listUrbanCrops } from '@/core/crops';
 import { jpegSize } from '../../../scripts/crops/crop-images';
-import { climateScale, cropImage, ecocropPageUrl, ecocropPhotoUrl, nextSow, recommendUrban, recommendUrbanAhead, sowLevel, sowLevels, yearFrom, type CropImageManifest } from './index';
+import {
+  FAMILIARITY_FACTOR,
+  climateScale,
+  cropImage,
+  ecocropPageUrl,
+  ecocropPhotoUrl,
+  familiarityFactor,
+  nextSow,
+  recommendUrban,
+  recommendUrbanAhead,
+  selectFamiliarity,
+  sowLevel,
+  sowLevels,
+  yearFrom,
+  type CropImageManifest,
+  type UrbanFamiliarity,
+} from './index';
 
 const month = (m: number, tMean: number, rainMm: number, par: number | null = null): UrbanClimateMonth => ({ month: m, tMean, tMin: tMean - 4, tMax: tMean + 5, rainMm, par, rh: null });
 
@@ -88,6 +104,132 @@ describe('recommendUrbanAhead', () => {
   it('returns null when no month of the year has a pick', () => {
     const frozen: UrbanClimate = { ...TEMPERATE, months: TEMPERATE.months.map((m) => ({ ...m, tMean: -20, tMin: -25, tMax: -15 })) };
     expect(recommendUrbanAhead(site, frozen, ['vegetables'], 11)).toBeNull();
+  });
+});
+
+describe('local familiarity (D3)', () => {
+  const site = {
+    location: TROPICAL.location,
+    light: 'full',
+    space: 'rooftop',
+    place: { label: 'Ho Chi Minh City', countryCode: 'VN', admin1: 'Ho Chi Minh City' },
+  } as const;
+
+  it('keeps order and scores identical when familiarity is omitted', () => {
+    const without = recommendUrban(site, TROPICAL, ['vegetables', 'herbs'], 11);
+    const withNull = recommendUrban(site, TROPICAL, ['vegetables', 'herbs'], 11, () => null);
+    expect(withNull.map((r) => [r.cropId, r.score])).toEqual(without.map((r) => [r.cropId, r.score]));
+  });
+
+  it('gives unknown, absent and shared=true crops the exact same score as missing data', () => {
+    expect(familiarityFactor(null)).toBe(1);
+    expect(familiarityFactor(undefined)).toBe(1);
+    expect(familiarityFactor({ level: 'unknown', scope: 'country', shared: false, source: 'GSO 2024' })).toBe(1);
+    expect(familiarityFactor({ level: 'absent', scope: 'country', shared: false, source: 'FAOSTAT QCL 2022–2024' })).toBe(1);
+    expect(familiarityFactor({ level: 'major', scope: 'country', shared: true, source: 'FAOSTAT item 358' })).toBe(1);
+    expect(familiarityFactor({ level: 'common', scope: 'country', shared: false, source: 'GSO 2024' })).toBe(FAMILIARITY_FACTOR.common);
+
+    const base = recommendUrban(site, TROPICAL, [], 11);
+    const neutral = recommendUrban(site, TROPICAL, [], 11, (id) => {
+      if (id === 'ipomoea-aquatica') return { level: 'unknown', scope: 'country', shared: false, source: 'GSO 2024' };
+      if (id === 'basella-alba') return { level: 'absent', scope: 'country', shared: false, source: 'FAOSTAT QCL 2022–2024' };
+      if (id === 'brassica-oleracea-var-acephala') return { level: 'major', scope: 'country', shared: true, source: 'FAOSTAT item 358' };
+      return null;
+    });
+    expect(neutral.map((r) => [r.cropId, r.score, r.why.length])).toEqual(base.map((r) => [r.cropId, r.score, r.why.length]));
+  });
+
+  it('ranks ipomoea-aquatica, basella-alba and ocimum-basilicum above brassica-oleracea-var-acephala in Ho Chi Minh City and adds bilingual why lines with country and source', () => {
+    const vnFamiliarity = (cropId: string): UrbanFamiliarity | null => {
+      if (cropId === 'ipomoea-aquatica' || cropId === 'basella-alba' || cropId === 'ocimum-basilicum') {
+        return {
+          level: 'common',
+          scope: 'country',
+          shared: false,
+          source: 'FAVRI / GSO Niên giám Thống kê 2024 (CC BY 4.0)',
+        };
+      }
+      if (cropId === 'brassica-oleracea-var-acephala') {
+        // FAOSTAT item 358 "Cabbages" is shared by 6 crops -> shared = true -> neutral
+        return {
+          level: 'minor',
+          scope: 'country',
+          shared: true,
+          source: 'FAOSTAT QCL 2022–2024 (item 358 shared by 6 crops)',
+        };
+      }
+      return { level: 'unknown', scope: 'country', shared: false, source: 'data/crops/national/prevalence.csv' };
+    };
+
+    const picks = recommendUrban(site, TROPICAL, [], 11, vnFamiliarity);
+    const ids = picks.map((p) => p.cropId);
+    expect(ids.slice(0, 3)).toEqual(['ipomoea-aquatica', 'basella-alba', 'ocimum-basilicum']);
+    expect(ids.indexOf('brassica-oleracea-var-acephala')).toBe(-1);
+
+    for (const id of ['ipomoea-aquatica', 'basella-alba', 'ocimum-basilicum']) {
+      const rec = picks.find((p) => p.cropId === id)!;
+      expect(rec.score).toBeGreaterThan(80);
+      const famWhy = rec.why.find((w) => w.en.includes('Vietnam') && w.vi.includes('Việt Nam'));
+      expect(famWhy).toBeDefined();
+      expect(famWhy!.en).toContain('FAVRI / GSO Niên giám Thống kê 2024');
+      expect(famWhy!.vi).toContain('Trồng phổ biến ở Việt Nam');
+      expect(famWhy!.vi).toContain('FAVRI / GSO Niên giám Thống kê 2024');
+    }
+
+    // Even in a milder tropical highland climate (21 °C) where kale (brassica-oleracea-var-acephala) can be sown year-round,
+    // the 3 familiar Vietnamese crops outrank kale because item 358 is shared=true.
+    const mild: UrbanClimate = {
+      location: TROPICAL.location,
+      months: Array.from({ length: 12 }, (_, i) => month(i + 1, 24, 100, 8)),
+      sourceIds: ['test'],
+    };
+    const mildPicks = recommendUrban(site, mild, [], 11, vnFamiliarity);
+    const mildIds = mildPicks.map((p) => p.cropId);
+    for (const vnCrop of ['ipomoea-aquatica', 'basella-alba', 'ocimum-basilicum']) {
+      expect(mildIds.indexOf(vnCrop)).toBeGreaterThanOrEqual(0);
+      const kaleIdx = mildIds.indexOf('brassica-oleracea-var-acephala');
+      if (kaleIdx !== -1) {
+        expect(mildIds.indexOf(vnCrop)).toBeLessThan(kaleIdx);
+      }
+    }
+    expect(listUrbanCrops().some((c) => c.id === 'brassica-oleracea-var-acephala')).toBe(true);
+  });
+
+  it('uses region level only when MapSPAM class is individual and region name matches exactly', () => {
+    const country: UrbanFamiliarity = {
+      level: 'minor',
+      scope: 'country',
+      shared: false,
+      source: 'FAOSTAT QCL 2022–2024',
+    };
+    expect(
+      selectFamiliarity(
+        country,
+        { admin1Name: 'Ho Chi Minh City', spamGroup: 'individual', level: 'common', source: 'MapSPAM 2020 V2r2' },
+        'Ho Chi Minh City',
+      ),
+    ).toEqual({
+      level: 'common',
+      scope: 'region',
+      shared: false,
+      source: 'MapSPAM 2020 V2r2',
+    });
+    // Group class ('vege') falls back to country level
+    expect(
+      selectFamiliarity(
+        country,
+        { admin1Name: 'Ho Chi Minh City', spamGroup: 'group', level: 'major', source: 'MapSPAM 2020 V2r2' },
+        'Ho Chi Minh City',
+      ),
+    ).toBe(country);
+    // Mismatched region name falls back to country level
+    expect(
+      selectFamiliarity(
+        country,
+        { admin1Name: 'Dak Lak', spamGroup: 'individual', level: 'major', source: 'MapSPAM 2020 V2r2' },
+        'Ho Chi Minh City',
+      ),
+    ).toBe(country);
   });
 });
 
