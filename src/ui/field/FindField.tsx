@@ -21,6 +21,7 @@ import { draftToParcel, isLockable, squareDraft } from '@/globe';
 import { useLang, useT } from '@/i18n';
 import { useMission } from '@/state/mission';
 import { Button, Field, IconButton, Input, Popover, Segmented, cn } from '@/ui/design';
+import { openAssistant } from '@/ui/ask/chatStore';
 import { parseLatLon } from '@/ui/chrome/searchModel';
 import { useMissionUi } from '@/ui/chrome/uiState';
 import { fmtNum } from '@/ui/hud/format';
@@ -284,7 +285,11 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       const hit: PlaceHit = { label: sel.place?.label ?? `${fmtNum(pickedAt[1], 5)}, ${fmtNum(pickedAt[0], 5)}`, location: pickedAt, country: sel.place?.country, admin1: sel.place?.admin1 };
       put(hit);
       if (!sel.place) {
-        void reverseGeocode(pickedAt, lang).then((p) => p && setChosen((c) => (c && c.location === pickedAt ? { ...c, label: p.label, country: p.country, admin1: p.admin1 } : c)));
+        void reverseGeocode(pickedAt, lang).then((p) => {
+          if (!p) return;
+          setChosen((c) => (c && c.location === pickedAt ? { ...c, label: p.label, country: p.country, admin1: p.admin1 } : c));
+          setQ((prev) => (prev === hit.label ? p.label : prev));
+        });
       }
     } else {
       setChosen(null);
@@ -445,7 +450,6 @@ export function FieldList({ onOpenField }: { onOpenField?: () => void }) {
   const parcel = useMission((s) => s.parcel);
   const setPhase = useMission((s) => s.setPhase);
   const lockParcel = useMission((s) => s.lockParcel);
-  const setAskOpen = useMission((s) => s.setAskOpen);
   const setListMode = useMissionUi((s) => s.setListMode);
   const setAddWay = useMissionUi((s) => s.setAddWay);
   const own = useMissionUi((s) => s.ownField);
@@ -532,7 +536,7 @@ export function FieldList({ onOpenField }: { onOpenField?: () => void }) {
         <MessageCircleQuestion size={24} strokeWidth={1.5} aria-hidden className="mb-1 text-ink-1" />
         <h3 className="text-md leading-[21px] font-medium text-ink-1">{t('field.askCard.title')}</h3>
         <p className="text-xs leading-4 text-ink-3">{t('field.askCard.body')}</p>
-        <Button variant="secondary" className="mt-1.5 border-signal text-signal-strong narrow:h-11 narrow:px-4 narrow:text-base" onClick={() => setAskOpen(true)}>
+        <Button variant="secondary" className="mt-1.5 border-signal text-signal-strong narrow:h-11 narrow:px-4 narrow:text-base" onClick={() => openAssistant()}>
           {t('field.askCard.button')}
         </Button>
       </div>

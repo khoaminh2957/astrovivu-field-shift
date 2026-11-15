@@ -812,32 +812,32 @@
   transform: translateY(-4px) scale(1.06);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .farm-scene *,
-  .farm-scene,
-  .farm-dots i,
-  .farm-bubble,
-  .farm-pop,
-  .farm-hold,
-  .farm-figure *,
-  .farm-daylight,
-  .farm-daylight::before,
-  .farm-mascot-enter,
-  .farm-hover-stand,
-  .farm-hover-fly,
-  .farm-ground-shadow,
-  .farm-lift {
-    animation: none !important;
-    transition: none !important;
-  }
-  .farm-scene {
-    transform: none !important;
-  }
-  /* What only reads as motion (dust, splash rings) is not drawn at all. */
-  .farm-scene .farm-motion-only {
-    display: none;
-  }
+/* Motion follows the app setting (data-reduced-motion on .app-root): the system's unless the visitor turned motion on or off. */
+.app-root[data-reduced-motion] .farm-scene *,
+.app-root[data-reduced-motion] .farm-scene,
+.app-root[data-reduced-motion] .farm-dots i,
+.app-root[data-reduced-motion] .farm-bubble,
+.app-root[data-reduced-motion] .farm-pop,
+.app-root[data-reduced-motion] .farm-hold,
+.app-root[data-reduced-motion] .farm-figure *,
+.app-root[data-reduced-motion] .farm-daylight,
+.app-root[data-reduced-motion] .farm-daylight::before,
+.app-root[data-reduced-motion] .farm-mascot-enter,
+.app-root[data-reduced-motion] .farm-hover-stand,
+.app-root[data-reduced-motion] .farm-hover-fly,
+.app-root[data-reduced-motion] .farm-ground-shadow,
+.app-root[data-reduced-motion] .farm-lift {
+  animation: none !important;
+  transition: none !important;
 }
+.app-root[data-reduced-motion] .farm-scene {
+  transform: none !important;
+}
+/* What only reads as motion (dust, splash rings) is not drawn at all. */
+.app-root[data-reduced-motion] .farm-scene .farm-motion-only {
+  display: none;
+}
+
 
 /* The dossier prints alone, on white. */
 @media print {

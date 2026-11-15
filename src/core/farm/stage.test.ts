@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { FieldTelemetry, ModelInput } from '@/contracts';
+import type { FieldRaster, FieldTelemetry, ModelInput } from '@/contracts';
 import { buildAdvisoryReport } from '@/core/advisory';
 import { getCrop } from '@/core/crops';
 import { computeScoreTimeline } from '@/core/scoring';
 import { getSampleParcel } from '@/data/samples';
 import { addDays, diffDays } from '@/lib/time';
-import { HARVEST_DAYS, bareRun, cropLook, farmNotes, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodDay, periodScore, periodSky, periodWeather, runOn, seasonMonths, seasonRuns, weatherAt } from './index';
+import { CROWN, HARVEST_DAYS, MAX_BARE_MONTHS, MAX_TRADE_OFF, MIN_GROWTH_GAIN, PATCH_MAX_AGE_DAYS, bareRun, farmOptions, fieldPatches, cropLook, farmNotes, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodDay, periodLand, periodScore, periodSky, periodWeather, runOn, seasonMonths, seasonRuns, weatherAt } from './index';
 
 function demo(id: string): ModelInput {
   const parcel = getSampleParcel(id)!;
@@ -203,5 +203,102 @@ describe('the short notes of the three characters', () => {
     });
     expect(withPlan.soil.alert).toBe(true);
     expect(withPlan.soil.points.some((p) => p.vi.includes('Nâng pH bằng vôi'))).toBe(true);
+  });
+});
+
+describe('the land month by month', () => {
+  it('lets a herbaceous perennial die back while dormant and grow again: alfalfa in Nevada', () => {
+    const alfalfa = demo('nevada-alfalfa');
+    const score = computeScoreTimeline(alfalfa);
+    const land = farmPeriods(alfalfa.telemetry.window, 'month').map((p) => ({ id: p.id, ...periodLand(alfalfa, score, p) }));
+    const growth = land.map((l) => l.growth);
+    // Dormant from November to May: its crown only; full height from mid-season.
+    expect(Math.min(...growth)).toBe(CROWN);
+    expect(Math.max(...growth)).toBe(1);
+    expect(land.every((l) => !l.bare && l.look === 'grass')).toBe(true);
+    // It rises from the crown to full height without stepping down on the way.
+    const start = growth.findIndex((g) => g > CROWN);
+    const top = growth.indexOf(1);
+    expect(start).toBeGreaterThan(-1);
+    for (let i = start; i <= top; i++) expect(growth[i]).toBeGreaterThanOrEqual(growth[i - 1]);
+  });
+
+  it('keeps a woody perennial at full height: coffee in Dak Lak', () => {
+    const coffee = demo('daklak-coffee');
+    const score = computeScoreTimeline(coffee);
+    for (const p of farmPeriods(coffee.telemetry.window, 'month')) expect(periodLand(coffee, score, p).growth).toBe(1);
+  });
+
+  it('shows bare ground, sowing, growth and the harvest of the maize field, and the three rice harvests', () => {
+    const maize = demo('iowa-corn-soy');
+    const ms = computeScoreTimeline(maize);
+    const land = farmPeriods(maize.telemetry.window, 'month').map((p) => periodLand(maize, ms, p));
+    expect(land.some((l) => l.bare)).toBe(true);
+    expect(land.filter((l) => l.harvested != null)).toHaveLength(1);
+    const grown = land.filter((l) => !l.bare).map((l) => l.growth);
+    expect(Math.min(...grown)).toBeLessThan(1);
+    for (const l of land) if (l.bare) expect(l).toMatchObject({ cropId: null, look: 'none' });
+    const rice = demo('cantho-rice');
+    const rs = computeScoreTimeline(rice);
+    expect(farmPeriods(rice.telemetry.window, 'month').filter((p) => periodLand(rice, rs, p).harvested != null)).toHaveLength(3);
+  });
+});
+
+describe('patches of the field from its NDVI picture', () => {
+  const rasterOf = (id: string): FieldRaster => (JSON.parse(readFileSync(`public/data/samples/${id}.rasters.json`, 'utf8')) as FieldRaster[]).find((r) => r.key === 'ndvi')!;
+
+  it('shows the weak and strong parts of a field that has them, as ratios to its mean', () => {
+    const coffee = demo('daklak-coffee');
+    const p = fieldPatches(rasterOf('daklak-coffee'), coffee.parcel, coffee.telemetry.window.today, 8, 20)!;
+    expect(p.ratio).toHaveLength(160);
+    expect(p.shares.low).toBeGreaterThan(0.1);
+    expect(p.shares.high).toBeGreaterThan(0);
+    expect(p.shares.low + p.shares.medium + p.shares.high).toBeCloseTo(1);
+    expect(p.date <= coffee.telemetry.window.today).toBe(true);
+  });
+
+  it('keeps an even field even, and says nothing from a picture too old to describe the day', () => {
+    const rice = demo('cantho-rice');
+    const even = fieldPatches(rasterOf('cantho-rice'), rice.parcel, rice.telemetry.window.today, 8, 20)!;
+    expect(even.shares.medium).toBe(1);
+    const r = rasterOf('cantho-rice');
+    const lastDay = r.frames.at(-1)!.t;
+    expect(fieldPatches(r, rice.parcel, addDays(lastDay, PATCH_MAX_AGE_DAYS + 1), 8, 20)).toBeNull();
+    expect(fieldPatches(undefined, rice.parcel, lastDay, 8, 20)).toBeNull();
+  });
+});
+
+describe('what the characters propose', () => {
+  it('gives every sample field something to try, each different, and says which are trade-offs', () => {
+    for (const id of ['cantho-rice', 'daklak-coffee', 'iowa-corn-soy', 'nevada-alfalfa']) {
+      const input = demo(id);
+      const score = computeScoreTimeline(input);
+      const opts = farmOptions(input, score);
+      expect(opts.length, id).toBeGreaterThan(0);
+      const keys = opts.map((o) => (o.kind === 'crop' ? `crop:${o.change.cropId}` : JSON.stringify(o.change)));
+      expect(new Set(keys).size, id).toBe(keys.length);
+      for (const o of opts) {
+        // Nothing that changes neither figure; a gain never lowers the outcome or leaves the ground barer.
+        expect(o.delta !== 0 || o.growthDelta !== 0, `${id} ${o.id}`).toBe(true);
+        if (!o.tradeOff) {
+          expect(o.delta >= 0 && o.monthsAfter >= o.monthsBefore - MAX_BARE_MONTHS, `${id} ${o.id}`).toBe(true);
+          expect(o.delta > 0 || o.growthDelta >= MIN_GROWTH_GAIN, `${id} ${o.id}`).toBe(true);
+        }
+        if (o.delta < 0) expect(o.tradeOff).toBe(true);
+        expect(o.delta, `${id} ${o.id}`).toBeGreaterThanOrEqual(-MAX_TRADE_OFF);
+      }
+    }
+  });
+
+  it('puts the real gain first where there is one: lime on the Nevada field', () => {
+    const input = demo('nevada-alfalfa');
+    const opts = farmOptions(input, computeScoreTimeline(input));
+    expect(opts[0]).toMatchObject({ kind: 'ph', tradeOff: false });
+    expect(opts[0].after).toBeGreaterThan(opts[0].before);
+  });
+
+  it('calls a switch that leaves the paddy bare most of the year a trade-off, whatever its growth score', () => {
+    const input = demo('cantho-rice');
+    for (const o of farmOptions(input, computeScoreTimeline(input)).filter((x) => x.monthsAfter < x.monthsBefore - MAX_BARE_MONTHS)) expect(o.tradeOff).toBe(true);
   });
 });

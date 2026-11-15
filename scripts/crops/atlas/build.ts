@@ -693,6 +693,9 @@ async function main() {
   const count = <T>(xs: readonly T[], f: (x: T) => boolean) => xs.filter(f).length;
   const allMatches = species.map((s) => xw.species.get(s.ecocropId)!);
   const curatedKept = kept.filter((k) => k.curated);
+  const economicsPath = path.join(OUT, 'economics.csv');
+  const economicsObjs = fs.existsSync(economicsPath) ? parseCsvObjects(fs.readFileSync(economicsPath, 'utf8')) : [];
+  const econCountries = [...new Set(economicsObjs.map((r) => r.iso3).filter(Boolean))].sort();
   const summary: [string, Cell][] = [
     ['ecocrop_species', species.length],
     ['kept_crops', kept.length],
@@ -715,6 +718,12 @@ async function main() {
     ['curated_crops', curatedRows.length],
     ['curated_kept', curatedKept.length],
     ['curated_only_ids', list(curatedKept.filter((k) => k.evidence.includes('curated-only')).map((k) => k.id))],
+    ['crops_with_name_en', count(kept, (k) => names.get(k.id)![0].length > 0)],
+    ['crops_without_name_en', count(kept, (k) => names.get(k.id)![0].length === 0)],
+    ['name_en_source_curated', count(kept, (k) => names.get(k.id)![1] === 'curated')],
+    ['name_en_source_fao_definition', count(kept, (k) => names.get(k.id)![1] === 'fao-definition')],
+    ['name_en_source_faostat_item', count(kept, (k) => names.get(k.id)![1] === 'faostat-item')],
+    ['crops_with_name_vi', count(kept, (k) => (k.curated?.name_vi ?? '').length > 0)],
     ['urban_candidates', count(urbanRows, (r) => r[cols('urban_candidates').indexOf('urban_candidate')] === 'yes')],
     ['faostat_crop_items', cropItems.length],
     ['faostat_items_single', count(cropItems, (i) => xw.itemClass.get(i.code)!.class === 'single')],
@@ -732,6 +741,8 @@ async function main() {
     ['crop_country_rows_national', count(cropCountryRows, (r) => r[CC.match] === 'national')],
     ['crop_country_rows_national_with_figure', count(cropCountryRows, (r) => r[CC.match] === 'national' && r[CC.level] !== 'unknown')],
     ['crop_country_rows_national_without_figure', count(cropCountryRows, (r) => r[CC.match] === 'national' && r[CC.level] === 'unknown')],
+    ['crop_country_exact_with_level', count(cropCountryRows, (r) => r[CC.match] === 'exact' && r[CC.level] !== 'unknown')],
+    ['crop_country_exact_grown', count(cropCountryRows, (r) => r[CC.match] === 'exact' && r[CC.level] !== 'absent' && r[CC.level] !== 'unknown')],
     ['national_rows_read', national.size],
     ['national_rows_ignored', nationalIgnored.length],
     ['item_country_rows', itemCountryRows.length],
@@ -744,6 +755,16 @@ async function main() {
     ['region_crops_rows', regionRows.length],
     ['spam_world_harvested_area_ha', Math.round(sum(spamCountries.map((r) => sum([...r.area]))))],
     ['faostat_world_harvested_area_ha', Math.round(sum(countryList.map((c) => c.totalAreaHa)))],
+    ['economics_rows', economicsObjs.length],
+    ['economics_countries', econCountries.length],
+    ['economics_country_list', list(econCountries)],
+    ['economics_with_yield', count(economicsObjs, (r) => (r.yield_t_ha ?? '').trim() !== '')],
+    ['economics_with_price', count(economicsObjs, (r) => (r.price_usd_t ?? '').trim() !== '')],
+    ['economics_with_cost', count(economicsObjs, (r) => (r.cost_usd_ha ?? '').trim() !== '')],
+    ['economics_complete', count(economicsObjs, (r) => (r.yield_t_ha ?? '').trim() !== '' && (r.price_usd_t ?? '').trim() !== '' && (r.cost_usd_ha ?? '').trim() !== '')],
+    ...['official', 'budget', 'press', 'derived', 'none'].map((q): [string, Cell] => [`economics_yield_${q}`, count(economicsObjs, (r) => r.quality_yield === q)]),
+    ...['official', 'budget', 'press', 'derived', 'none'].map((q): [string, Cell] => [`economics_price_${q}`, count(economicsObjs, (r) => r.quality_price === q)]),
+    ...['official', 'budget', 'press', 'derived', 'none'].map((q): [string, Cell] => [`economics_cost_${q}`, count(economicsObjs, (r) => r.quality_cost === q)]),
   ];
 
   // ---------------------------------------------------------------------------------------------

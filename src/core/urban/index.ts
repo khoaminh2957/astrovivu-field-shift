@@ -2,17 +2,21 @@
  * Urban Grower Companion: match balcony/rooftop conditions and preferences to the curated crops
  * marked suitable for urban growing. Rules in docs/ADVISORY.md §6.
  */
-import type { CropProfile, I18nText, UrbanClimate, UrbanPreference, UrbanRecommendation, UrbanSite } from '@/contracts';
+import type { I18nText, UrbanClimate, UrbanPreference, UrbanRecommendation, UrbanSite } from '@/contracts';
 import { tx } from '@/contracts';
 import { monthEn, monthVi, monthsFrom, wrapMonth } from '@/core/advisory/util';
 import { listUrbanCrops } from '@/core/crops';
 import { trapezoid, windowMonths } from '@/core/scoring';
+import { listCrops } from '@/core/crops';
 import { SOW_FIT } from './calendar';
+import { COLD_MARGIN_C, HEAT_MARGIN_C, KILL_MARGIN_C, PHOTOPERIOD_MIN, climateLimitingReason, photoperiodClass, windowFit, type ClimateLimitingFactor, type WindowFitDetail } from './climateFit';
 import { canopyFromPot, potWater } from './water';
 import { lightClass, sunHoursByMonth } from './sun';
 
 export { MARGINAL_FIT, SOW_FIT, climateScale, nextSow, sowLevel, sowLevels, yearFrom } from './calendar';
 export type { ClimateScale, SowLevel } from './calendar';
+export { COLD_MARGIN_C, HEAT_MARGIN_C, KILL_MARGIN_C, PHOTOPERIOD_MIN, climateLimitingReason, photoperiodClass, windowFit };
+export type { ClimateLimitingFactor, WindowFitDetail };
 export { ECOCROP_CREDIT, ECOCROP_TERMS_URL, cropImage, ecocropPageUrl, ecocropPhotoUrl } from './ecocrop';
 export type { CropImageManifest, CropImageSize } from './ecocrop';
 export { canopyFromPot, potWater } from './water';
@@ -33,19 +37,6 @@ const TAG_TIPS: Record<string, I18nText> = {
   fruit: tx('Feed regularly once flowering starts; fruit needs nutrients.', 'Bón phân đều khi bắt đầu ra hoa; cây cần dinh dưỡng để nuôi quả.'),
 };
 const PREF_TAG: Record<UrbanPreference, string> = { vegetables: 'vegetables', herbs: 'herbs', flowers: 'flowers', 'shade-easy': 'shade-easy', fruit: 'fruit' };
-
-function windowFit(c: CropProfile, climate: UrbanClimate, start: number): number {
-  const n = windowMonths(c);
-  const ms = monthsFrom(start, Math.min(n, 6)).map((m) => climate.months.find((x) => x.month === m)).filter((x) => x != null);
-  if (!ms.length) return 0;
-  // Pots are watered by hand, so only temperature limits the season; frost kills tender crops.
-  let f = 1;
-  for (const m of ms) {
-    f = Math.min(f, trapezoid(m!.tMean, c.req.tempC));
-    if (c.req.killTempC != null && m!.tMin <= c.req.killTempC) f = Math.min(f, 0.1);
-  }
-  return f;
-}
 
 export function recommendUrban(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], month?: number): UrbanRecommendation[] {
   return rank(site, climate, prefs, month ?? 1, false);
@@ -84,7 +75,8 @@ function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], 
     if (!u?.suitable) continue;
     if ((site.space === 'windowsill' || site.space === 'balcony') && !u.container) continue;
     if (site.space === 'windowsill' && (u.tags.includes('climber') || u.difficulty === 3 || c.category === 'fruit')) continue;
-    const fits = Array.from({ length: 12 }, (_, i) => windowFit(c, climate, i + 1));
+    const details = Array.from({ length: 12 }, (_, i) => windowFit(c, climate, i + 1));
+    const fits = details.map((d) => d.fit);
     const sowMonths = fits.map((f, i) => (f >= SOW_FIT ? i + 1 : 0)).filter((m) => m > 0);
     if (!sowMonths.length) continue;
     const soon = Math.max(fits[now - 1], 0.85 * fits[wrapMonth(now + 1) - 1]);
@@ -100,7 +92,11 @@ function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], 
     const tNow = Math.round(climate.months[now - 1]?.tMean ?? 0);
     if (ahead && fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown from ${monthEn(now)}: that month's mean ${tNow} °C suits it.`, `Có thể gieo từ ${monthVi(now)}: nhiệt độ trung bình tháng đó ${tNow} °C phù hợp.`));
     else if (fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown now: this month's mean ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C suits it.`, `Có thể gieo ngay: nhiệt độ trung bình tháng này ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C phù hợp.`));
-    else why.push(tx(`Best sown in ${sowMonths.map(monthEn).join(', ')}.`, `Nên gieo vào ${sowMonths.map(monthVi).join(', ')}.`));
+    else {
+      why.push(tx(`Best sown in ${sowMonths.map(monthEn).join(', ')}.`, `Nên gieo vào ${sowMonths.map(monthVi).join(', ')}.`));
+      const limitWhy = climateLimitingReason(details[now - 1]);
+      if (limitWhy) why.push(limitWhy);
+    }
     if (sunHoursNow != null) {
       const hStr = sunHoursNow.toFixed(1).replace(/\.0$/, '');
       why.push(

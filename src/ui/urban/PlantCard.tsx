@@ -37,8 +37,8 @@ export function PlantCard({ rec, month, rank, onOpen }: { rec: UrbanRecommendati
             </span>
           )}
           <span className="flex min-w-0 flex-col">
-            <span className={cn('leading-snug font-medium text-ink-1', top ? 'text-md' : 'text-base')}>{name}</span>
-            {sci && <span className="truncate text-xs text-ink-3 italic">{sci}</span>}
+            <span className="workspace-card-title">{name}</span>
+            {sci && <span className="workspace-caption truncate italic">{sci}</span>}
           </span>
           <span className="flex items-center gap-2">
             <ScoreRing score={rec.score} size={top ? 40 : 36} />
@@ -52,7 +52,7 @@ export function PlantCard({ rec, month, rank, onOpen }: { rec: UrbanRecommendati
           </span>
         </span>
       </span>
-      {top && rec.why[0] && <span className="line-clamp-2 text-sm text-ink-1">{pick(rec.why[0], lang)}</span>}
+      {top && rec.why[0] && <span className="workspace-copy line-clamp-2">{pick(rec.why[0], lang)}</span>}
       <span className="flex flex-col gap-1.5">
         <IconLine icon={<Droplets />} label={t('urban.care.water')} clamp>
           {pick(rec.care.water, lang)}

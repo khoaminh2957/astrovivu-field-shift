@@ -4355,6 +4355,8 @@ amaranthus-caudatus,YEM,Yemen,108,group,no,,,,,,,,unknown,FAOSTAT QCL
 amaranthus-caudatus,ZAF,South Africa,108,group,yes,,,,,,,,unknown,FAOSTAT QCL
 amaranthus-caudatus,ZMB,Zambia,108,group,no,,,,,,,,unknown,FAOSTAT QCL
 amaranthus-caudatus,ZWE,Zimbabwe,108,group,yes,,,,,,,,unknown,FAOSTAT QCL
+amaranthus-tricolor,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+amaranthus-tricolor,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 amaranthus-tricolor,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 amaranthus-tricolor,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 anacardium-occidentale,AFG,Afghanistan,217;591,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -7525,6 +7527,8 @@ arachis-hypogaea,YEM,Yemen,242,exact,yes,2024,1463,0.723,2022,2024,0.191,35,mino
 arachis-hypogaea,ZAF,South Africa,242,exact,yes,38633,51167,1.358,2022,2024,0.624,12,common,FAOSTAT QCL
 arachis-hypogaea,ZMB,Zambia,242,exact,yes,235989,171083,0.717,2022,2024,8.746,4,major,FAOSTAT QCL
 arachis-hypogaea,ZWE,Zimbabwe,242,exact,yes,172090,69249,0.403,2022,2024,6.67,3,major,FAOSTAT QCL
+arachis-pintoi,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+arachis-pintoi,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 arachis-pintoi,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 arachis-pintoi,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 areca-catechu,AFG,Afghanistan,226,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -11883,6 +11887,8 @@ bambusa-vulgaris,YEM,Yemen,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 bambusa-vulgaris,ZAF,South Africa,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 bambusa-vulgaris,ZMB,Zambia,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 bambusa-vulgaris,ZWE,Zimbabwe,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
+basella-alba,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+basella-alba,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 basella-alba,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 basella-alba,VNM,Viet Nam,,national,no,,,,,,,,unknown,Văn phòng Điều phối Nông thôn mới tỉnh Hà Tĩnh (dẫn số liệu sản xuất tại tỉnh Long An)
 beta-vulgaris,AFG,Afghanistan,157,exact,yes,327,6072,18.646,2022,2024,0.01,40,minor,FAOSTAT QCL
@@ -13469,6 +13475,8 @@ brassica-chinensis,YEM,Yemen,358,exact,yes,579,7707,13.303,2015,2017,0.055,44,mi
 brassica-chinensis,ZAF,South Africa,358,exact,yes,3422,200142,58.488,2022,2024,0.055,45,minor,FAOSTAT QCL
 brassica-chinensis,ZMB,Zambia,358,exact,no,,,,,,,,absent,FAOSTAT QCL
 brassica-chinensis,ZWE,Zimbabwe,358,exact,yes,14802,615999,42.076,2022,2024,0.574,20,common,FAOSTAT QCL
+brassica-juncea,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+brassica-juncea,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 brassica-juncea,USA,United States of America,,national,yes,4379,,,2022,2022,0.004,74,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 brassica-juncea,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 brassica-napus,AFG,Afghanistan,270,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -15055,6 +15063,8 @@ brassica-oleracea-var-italica,YEM,Yemen,358,exact,yes,579,7707,13.303,2015,2017,
 brassica-oleracea-var-italica,ZAF,South Africa,358,exact,yes,3422,200142,58.488,2022,2024,0.055,45,minor,FAOSTAT QCL
 brassica-oleracea-var-italica,ZMB,Zambia,358,exact,no,,,,,,,,absent,FAOSTAT QCL
 brassica-oleracea-var-italica,ZWE,Zimbabwe,358,exact,yes,14802,615999,42.076,2022,2024,0.574,20,common,FAOSTAT QCL
+brassica-rapa-pak-choi,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+brassica-rapa-pak-choi,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 brassica-rapa-pak-choi,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 brassica-rapa-pak-choi,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 cajanus-cajan,AFG,Afghanistan,197,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -19611,6 +19621,8 @@ castanea-sativa,YEM,Yemen,220,exact,no,,,,,,,,absent,FAOSTAT QCL
 castanea-sativa,ZAF,South Africa,220,exact,no,,,,,,,,absent,FAOSTAT QCL
 castanea-sativa,ZMB,Zambia,220,exact,no,,,,,,,,absent,FAOSTAT QCL
 castanea-sativa,ZWE,Zimbabwe,220,exact,yes,77,90,1.166,2022,2024,0.003,66,minor,FAOSTAT QCL
+catharanthus-roseus,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+catharanthus-roseus,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 catharanthus-roseus,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 catharanthus-roseus,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 ceiba-pentandra,AFG,Afghanistan,310,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -26028,7 +26040,7 @@ coriandrum-sativum,HRV,Croatia,711,group,no,,,,,,,,unknown,FAOSTAT QCL
 coriandrum-sativum,HTI,Haiti,711,group,no,,,,,,,,unknown,FAOSTAT QCL
 coriandrum-sativum,HUN,Hungary,711,group,yes,,,,,,,,unknown,FAOSTAT QCL
 coriandrum-sativum,IDN,Indonesia,711,group,no,,,,,,,,unknown,FAOSTAT QCL
-coriandrum-sativum,IND,India,711,group,yes,,,,,,,,unknown,FAOSTAT QCL
+coriandrum-sativum,IND,India,,national,yes,639000,847000,1.326,2022,2022,0.305,32,minor,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 coriandrum-sativum,IRL,Ireland,711,group,no,,,,,,,,unknown,FAOSTAT QCL
 coriandrum-sativum,IRN,Iran (Islamic Republic of),711,group,yes,,,,,,,,unknown,FAOSTAT QCL
 coriandrum-sativum,IRQ,Iraq,711,group,no,,,,,,,,unknown,FAOSTAT QCL
@@ -29117,6 +29129,8 @@ cydonia-oblonga,YEM,Yemen,523,exact,yes,276,1515,5.486,2015,2017,0.026,50,minor,
 cydonia-oblonga,ZAF,South Africa,523,exact,yes,30,371,12.727,2022,2024,0,71,minor,FAOSTAT QCL
 cydonia-oblonga,ZMB,Zambia,523,exact,no,,,,,,,,absent,FAOSTAT QCL
 cydonia-oblonga,ZWE,Zimbabwe,523,exact,no,,,,,,,,absent,FAOSTAT QCL
+cymbopogon-citratus,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+cymbopogon-citratus,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 cymbopogon-citratus,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 cymbopogon-citratus,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 cynara-cardunculus,AFG,Afghanistan,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -39217,6 +39231,8 @@ humulus-lupulus,YEM,Yemen,677,exact,no,,,,,,,,absent,FAOSTAT QCL
 humulus-lupulus,ZAF,South Africa,677,exact,yes,411,472,1.148,2022,2024,0.007,67,minor,FAOSTAT QCL
 humulus-lupulus,ZMB,Zambia,677,exact,no,,,,,,,,absent,FAOSTAT QCL
 humulus-lupulus,ZWE,Zimbabwe,677,exact,no,,,,,,,,absent,FAOSTAT QCL
+ipomoea-aquatica,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+ipomoea-aquatica,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 ipomoea-aquatica,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 ipomoea-aquatica,VNM,Viet Nam,,national,no,,,,,,,,unknown,Trung tâm Khuyến nông TP. Hồ Chí Minh (Sở Nông nghiệp và Môi trường TP.HCM)
 ipomoea-batatas,AFG,Afghanistan,122,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -43597,7 +43613,7 @@ mangifera-indica,BIH,Bosnia and Herzegovina,571,group,no,,,,,,,,unknown,FAOSTAT 
 mangifera-indica,BLR,Belarus,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,BLZ,Belize,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,BOL,Bolivia (Plurinational State of),571,group,yes,,,,,,,,unknown,FAOSTAT QCL
-mangifera-indica,BRA,Brazil,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
+mangifera-indica,BRA,Brazil,,national,yes,73967,1546295,20.905,2022,2022,0.077,33,minor,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
 mangifera-indica,BRB,Barbados,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,BRN,Brunei Darussalam,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,BTN,Bhutan,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -43654,7 +43670,7 @@ mangifera-indica,HRV,Croatia,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,HTI,Haiti,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,HUN,Hungary,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,IDN,Indonesia,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
-mangifera-indica,IND,India,571,group,yes,,,,,,,,unknown,FAOSTAT QCL
+mangifera-indica,IND,India,,national,yes,2350000,20772000,8.839,2022,2022,1.121,15,common,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 mangifera-indica,IRL,Ireland,571,group,no,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,IRN,Iran (Islamic Republic of),571,group,yes,,,,,,,,unknown,FAOSTAT QCL
 mangifera-indica,IRQ,Iraq,571,group,no,,,,,,,,unknown,FAOSTAT QCL
@@ -44367,6 +44383,8 @@ manilkara-zapota,YEM,Yemen,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
 manilkara-zapota,ZAF,South Africa,603,group,no,,,,,,,,unknown,FAOSTAT QCL
 manilkara-zapota,ZMB,Zambia,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
 manilkara-zapota,ZWE,Zimbabwe,603,group,yes,,,,,,,,unknown,FAOSTAT QCL
+medicago-sativa,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+medicago-sativa,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 medicago-sativa,USA,United States of America,,national,yes,5939230,45552470,7.67,2025,2025,6.01,4,major,USDA NASS Crop Production 2025 Summary (ISSN 1057-7823)
 medicago-sativa,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 mentha-arvensis-var-piperascens,AFG,Afghanistan,748,group,no,,,,,,,,unknown,FAOSTAT QCL
@@ -45755,6 +45773,8 @@ metroxylon-sagu,YEM,Yemen,149,group,no,,,,,,,,unknown,FAOSTAT QCL
 metroxylon-sagu,ZAF,South Africa,149,group,no,,,,,,,,unknown,FAOSTAT QCL
 metroxylon-sagu,ZMB,Zambia,149,group,no,,,,,,,,unknown,FAOSTAT QCL
 metroxylon-sagu,ZWE,Zimbabwe,149,group,yes,,,,,,,,unknown,FAOSTAT QCL
+momordica-charantia,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+momordica-charantia,IND,India,,national,yes,107000,1330000,12.43,2022,2022,0.051,66,minor,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 momordica-charantia,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 momordica-charantia,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 morus-alba,AFG,Afghanistan,558,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -46351,8 +46371,12 @@ morus-rubra,YEM,Yemen,558,group,no,,,,,,,,unknown,FAOSTAT QCL
 morus-rubra,ZAF,South Africa,558,group,yes,,,,,,,,unknown,FAOSTAT QCL
 morus-rubra,ZMB,Zambia,558,group,no,,,,,,,,unknown,FAOSTAT QCL
 morus-rubra,ZWE,Zimbabwe,558,group,yes,,,,,,,,unknown,FAOSTAT QCL
+mucuna-pruriens,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+mucuna-pruriens,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 mucuna-pruriens,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 mucuna-pruriens,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
+musa-acuminata,BRA,Brazil,,national,yes,457915,6854222,14.968,2022,2022,0.478,16,minor,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+musa-acuminata,IND,India,,national,yes,963000,34528000,35.855,2022,2022,0.459,25,minor,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 musa-acuminata,USA,United States of America,,national,yes,498,,,2022,2022,0.001,84,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 musa-acuminata,VNM,Viet Nam,,national,yes,144600,2997900,20.732,2024,2024,1.071,15,common,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 musa-sapientum,AFG,Afghanistan,489;486,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -47543,6 +47567,8 @@ nicotiana-tabacum,YEM,Yemen,826,exact,yes,9203,32063,3.487,2022,2024,0.87,20,com
 nicotiana-tabacum,ZAF,South Africa,826,exact,yes,4039,10248,2.542,2022,2024,0.065,44,minor,FAOSTAT QCL
 nicotiana-tabacum,ZMB,Zambia,826,exact,yes,15541,25454,1.637,2022,2024,0.576,16,common,FAOSTAT QCL
 nicotiana-tabacum,ZWE,Zimbabwe,826,exact,yes,144375,204911,1.428,2022,2024,5.596,4,major,FAOSTAT QCL
+ocimum-basilicum,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+ocimum-basilicum,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 ocimum-basilicum,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 ocimum-basilicum,VNM,Viet Nam,,national,no,,,,,,,,unknown,Trung tâm Khuyến nông Quốc gia (Bộ Nông nghiệp và Môi trường)
 olea-europaea,AFG,Afghanistan,260,exact,yes,2185,7966,3.646,2022,2024,0.067,32,minor,FAOSTAT QCL
@@ -57722,7 +57748,7 @@ raphanus-sativus,HRV,Croatia,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,HTI,Haiti,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,HUN,Hungary,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,IDN,Indonesia,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
-raphanus-sativus,IND,India,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
+raphanus-sativus,IND,India,,national,yes,209000,3351000,16.033,2022,2022,0.1,52,minor,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 raphanus-sativus,IRL,Ireland,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,IRN,Iran (Islamic Republic of),463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 raphanus-sativus,IRQ,Iraq,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -61009,6 +61035,8 @@ sesamum-indicum,YEM,Yemen,289,exact,yes,20605,20464,0.993,2022,2024,1.949,10,com
 sesamum-indicum,ZAF,South Africa,289,exact,no,,,,,,,,absent,FAOSTAT QCL
 sesamum-indicum,ZMB,Zambia,289,exact,no,,,,,,,,absent,FAOSTAT QCL
 sesamum-indicum,ZWE,Zimbabwe,289,exact,yes,23144,10502,0.455,2022,2024,0.897,17,common,FAOSTAT QCL
+sesbania-rostrata,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+sesbania-rostrata,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 sesbania-rostrata,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 sesbania-rostrata,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 setaria-italica,AFG,Afghanistan,79,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -63387,6 +63415,8 @@ sorghum-bicolor-var-sweet,YEM,Yemen,83,exact,yes,341048,200000,0.586,2022,2024,3
 sorghum-bicolor-var-sweet,ZAF,South Africa,83,exact,yes,37767,98500,2.625,2022,2024,0.61,14,common,FAOSTAT QCL
 sorghum-bicolor-var-sweet,ZMB,Zambia,83,exact,yes,12911,8181,0.619,2022,2024,0.479,17,minor,FAOSTAT QCL
 sorghum-bicolor-var-sweet,ZWE,Zimbabwe,83,exact,yes,195568,80726,0.417,2022,2024,7.58,2,major,FAOSTAT QCL
+sorghum-x-drummondii,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+sorghum-x-drummondii,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 sorghum-x-drummondii,USA,United States of America,,national,yes,4386,7344,1.674,2022,2022,0.004,74,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 sorghum-x-drummondii,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 spinacia-oleracea,AFG,Afghanistan,373,exact,no,,,,,,,,absent,FAOSTAT QCL
@@ -64181,6 +64211,8 @@ stevia-rebaudiana,YEM,Yemen,161,group,no,,,,,,,,unknown,FAOSTAT QCL
 stevia-rebaudiana,ZAF,South Africa,161,group,no,,,,,,,,unknown,FAOSTAT QCL
 stevia-rebaudiana,ZMB,Zambia,161,group,no,,,,,,,,unknown,FAOSTAT QCL
 stevia-rebaudiana,ZWE,Zimbabwe,161,group,no,,,,,,,,unknown,FAOSTAT QCL
+tagetes-erecta,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+tagetes-erecta,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 tagetes-erecta,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 tagetes-erecta,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 tamarindus-indica,AFG,Afghanistan,619,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -65173,8 +65205,12 @@ tragopogon-porrifolius,YEM,Yemen,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tragopogon-porrifolius,ZAF,South Africa,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tragopogon-porrifolius,ZMB,Zambia,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
 tragopogon-porrifolius,ZWE,Zimbabwe,463,group,yes,,,,,,,,unknown,FAOSTAT QCL
+trifolium-incarnatum,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+trifolium-incarnatum,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 trifolium-incarnatum,USA,United States of America,,national,yes,3443,3414,0.992,2022,2022,0.003,75,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 trifolium-incarnatum,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
+trifolium-pratense,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+trifolium-pratense,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 trifolium-pratense,USA,United States of America,,national,yes,5812,4172,0.718,2022,2022,0.006,72,minor,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 trifolium-pratense,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 trigonella-foenum-graecum,AFG,Afghanistan,723,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -68147,6 +68183,8 @@ vicia-sativa-ssp-sativa,YEM,Yemen,205,exact,no,,,,,,,,absent,FAOSTAT QCL
 vicia-sativa-ssp-sativa,ZAF,South Africa,205,exact,no,,,,,,,,absent,FAOSTAT QCL
 vicia-sativa-ssp-sativa,ZMB,Zambia,205,exact,no,,,,,,,,absent,FAOSTAT QCL
 vicia-sativa-ssp-sativa,ZWE,Zimbabwe,205,exact,no,,,,,,,,absent,FAOSTAT QCL
+vicia-villosa-ssp-villosa,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+vicia-villosa-ssp-villosa,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 vicia-villosa-ssp-villosa,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)"
 vicia-villosa-ssp-villosa,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 vigna-aconitifolia,AFG,Afghanistan,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -69416,7 +69454,7 @@ vigna-radiata,HRV,Croatia,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-radiata,HTI,Haiti,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-radiata,HUN,Hungary,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-radiata,IDN,Indonesia,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
-vigna-radiata,IND,India,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
+vigna-radiata,IND,India,,national,yes,5540000,3170000,0.572,2022,2022,2.642,11,common,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 vigna-radiata,IRL,Ireland,176,group,no,,,,,,,,unknown,FAOSTAT QCL
 vigna-radiata,IRN,Iran (Islamic Republic of),176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-radiata,IRQ,Iraq,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
@@ -70723,6 +70761,8 @@ vigna-unguiculata-ssp-pubescens,YEM,Yemen,176,group,yes,,,,,,,,unknown,FAOSTAT Q
 vigna-unguiculata-ssp-pubescens,ZAF,South Africa,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-unguiculata-ssp-pubescens,ZMB,Zambia,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
 vigna-unguiculata-ssp-pubescens,ZWE,Zimbabwe,176,group,yes,,,,,,,,unknown,FAOSTAT QCL
+vigna-unguiculata-ssp-sesquipedalis,BRA,Brazil,,national,no,,,,,,,,unknown,"IBGE, Produção Agrícola Municipal (PAM) 2022 (SIDRA Tabela 5457)"
+vigna-unguiculata-ssp-sesquipedalis,IND,India,,national,no,,,,,,,,unknown,"Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India), Horticultural & Agricultural Statistics at a Glance 2022"
 vigna-unguiculata-ssp-sesquipedalis,USA,United States of America,,national,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)"
 vigna-unguiculata-ssp-sesquipedalis,VNM,Viet Nam,,national,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê)
 vigna-unguiculata-ssp-stenophylla,AFG,Afghanistan,176,group,yes,,,,,,,,unknown,FAOSTAT QCL

@@ -32,8 +32,16 @@ export class MascotStage {
   private readonly camera = new THREE.PerspectiveCamera(35, 1, 0.1, 80);
   private readonly canvas: HTMLCanvasElement;
   private readonly observer: ResizeObserver | null;
-  private readonly reduced: boolean;
+  private reduced: boolean;
   private actor: Actor | null = null;
+  /** Life between clips: breathing, a bob, a sway, blinks and a wandering gaze. Phase differs per character. */
+  private readonly phase: number;
+  private clock = 0;
+  private nextBlink = 2 + Math.random() * 3;
+  private blinkUntil = 0;
+  private nextWander = 1.5 + Math.random() * 2;
+  private wander = { x: 0, y: 0 };
+  private pointerAt = 0;
   private gaze = { x: 0, y: 0 };
   /** A point the character is told to look at; it wins over the pointer while set. */
   private aim: { x: number; y: number } | null = null;
@@ -46,8 +54,11 @@ export class MascotStage {
     private readonly element: HTMLElement,
     private readonly id: MascotId,
     private readonly assetBase: string,
+    reduced?: boolean,
   ) {
-    this.reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // The app's own motion setting wins (it follows the system unless the visitor turned motion on or off).
+    this.reduced = reduced ?? (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.phase = { Rice: 0, Seed: 2.1, Satellite: 4.2 }[id];
     this.canvas = document.createElement('canvas');
     this.canvas.setAttribute('aria-hidden', 'true');
     this.canvas.style.cssText = 'display:block;width:100%;height:100%';
@@ -113,6 +124,17 @@ export class MascotStage {
   /** Where the eyes look, -1..1 on each axis. */
   setGaze(x: number, y: number): void {
     this.gaze = { x: THREE.MathUtils.clamp(x || 0, -1, 1), y: THREE.MathUtils.clamp(y || 0, -1, 1) };
+    this.pointerAt = this.clock;
+  }
+
+  /** Motion on or off, from the app's setting; off leaves the character at rest. */
+  setReduced(reduced: boolean): void {
+    this.reduced = reduced;
+    if (reduced && this.actor) {
+      this.actor.root.position.y = 0;
+      this.actor.root.rotation.z = 0;
+      this.actor.root.scale.setScalar(0.94);
+    }
   }
 
   /**
@@ -176,14 +198,36 @@ export class MascotStage {
     this.lastTime = now;
     if (document.hidden || !this.actor) return;
     if (!this.reduced) {
+      this.clock += dt;
+      const c = this.clock;
       this.actor.mixer.update(dt);
-      const look = this.aim ?? this.gaze;
+      // With nobody pointing and nothing to aim at, the eyes wander to a new spot every few seconds.
+      if (c >= this.nextWander) {
+        this.nextWander = c + 1.8 + Math.random() * 2.6;
+        this.wander = Math.random() < 0.3 ? { x: 0, y: 0 } : { x: Math.random() * 1.6 - 0.8, y: Math.random() * 0.8 - 0.4 };
+      }
+      const idlePointer = c - this.pointerAt > 2.5;
+      const look = this.aim ?? (idlePointer ? this.wander : this.gaze);
+      // A blink: the eyes close for a tenth of a second every 2 to 5 seconds.
+      if (c >= this.nextBlink) {
+        this.blinkUntil = c + 0.11;
+        this.nextBlink = c + 2 + Math.random() * 3;
+      }
+      const lid = c < this.blinkUntil ? 0.12 : 1;
       for (const { node, rest } of this.actor.eyes) {
         node.position.x = THREE.MathUtils.damp(node.position.x, rest.x + look.x * 0.045, 7, dt);
         node.position.y = THREE.MathUtils.damp(node.position.y, rest.y - look.y * 0.025, 7, dt);
+        node.scale.y = THREE.MathUtils.damp(node.scale.y, lid, 30, dt);
       }
-      // The clips animate the nodes inside the model, so the wrapper is free to turn: a slow half-turn at most.
-      this.actor.root.rotation.y = THREE.MathUtils.damp(this.actor.root.rotation.y, this.aim ? this.aim.x * 0.55 : 0, 3.5, dt);
+      // The clips animate the nodes inside the model, so the wrapper is free to move: breathe, bob, sway, turn.
+      const root = this.actor.root;
+      const t = c + this.phase;
+      root.position.y = Math.sin(t * 2.4) * 0.035;
+      root.rotation.z = Math.sin(t * 1.3) * 0.035;
+      const breath = 1 + Math.sin(t * 1.9) * 0.012;
+      root.scale.set(0.94 / Math.sqrt(breath), 0.94 * breath, 0.94 / Math.sqrt(breath));
+      const turn = this.aim ? this.aim.x * 0.55 : look.x * 0.18;
+      root.rotation.y = THREE.MathUtils.damp(root.rotation.y, turn, 3.5, dt);
     }
     this.renderer.render(this.scene, this.camera);
   };

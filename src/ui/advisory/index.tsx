@@ -14,6 +14,7 @@ import { type CustomRotationSpec, annualPlan, evaluateCustomRotation, slotCropCh
 import { getCrop } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
+import { openAssistant } from '@/ui/ask/chatStore';
 import { type AdvisoryView, useMissionUi } from '@/ui/chrome/uiState';
 import { Dossier } from '@/ui/farm/Dossier';
 import { FarmView } from '@/ui/farm/FarmView';
@@ -49,7 +50,6 @@ export function AdvisoryPanel() {
   const countryTable = useMission((s) => s.countryTable);
   const today = useMission((s) => s.telemetry?.window.today ?? s.timeline.end);
   const setPhase = useMission((s) => s.setPhase);
-  const setAskOpen = useMission((s) => s.setAskOpen);
   const [currency, setCurrency] = useState<CurrencyCode>(groundTruth.currency ?? (lang === 'vi' ? 'VND' : 'USD'));
   const page = useMissionUi((s) => s.advisoryView);
   const setPage = useMissionUi((s) => s.setAdvisoryView);
@@ -71,14 +71,15 @@ export function AdvisoryPanel() {
 
   return (
     <main aria-labelledby="adv-title" className="rotation-workspace" data-rotation-page={parcel && !loading ? page : undefined}>
-        <header className="rotation-inner rotation-header">
-          {parcel && (
-            <button type="button" className="rotation-back" onClick={() => (dossier ? setPage('compare') : setPhase('locked'))}>
-              <ArrowLeft size={16} aria-hidden />{t(dossier ? 'advisory.workspace.backRotation' : 'advisory.workspace.back')}
+        {/* Compare and Plan sit under the rotation tabs, which already say where the grower is: no title block there. */}
+        <header className={cn('rotation-inner rotation-header', !dossier && parcel && 'rotation-header-compact')}>
+          {parcel && dossier && (
+            <button type="button" className="rotation-back" onClick={() => setPage('compare')}>
+              <ArrowLeft size={16} aria-hidden />{t('advisory.workspace.backRotation')}
             </button>
           )}
           <div className="rotation-header-row">
-            <div>
+            <div className={cn(!dossier && parcel && 'sr-only')}>
               <h1 id="adv-title">
                 <span className="rotation-step-num" aria-hidden>{dossier ? 3 : 2}</span>
                 {t(dossier ? 'advisory.workspace.dossierTitle' : 'advisory.title')}
@@ -87,7 +88,7 @@ export function AdvisoryPanel() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
             <CurrencySwitch value={currency} onChange={setCurrency} />
-              <button className="rotation-action" type="button" onClick={() => setAskOpen(true)}>
+              <button className="rotation-action" type="button" onClick={() => openAssistant()}>
                 <MessageCircleQuestion size={17} aria-hidden />{t('advisory.workspace.ask')}
               </button>
               {fixture && <FixtureTag />}
@@ -109,7 +110,7 @@ export function AdvisoryPanel() {
         ) : loading ? (
           <LoadingLayout />
         ) : (
-          <Tabs<AdvisoryView> className="rotation-tabs" value={page} onValueChange={setPage} ariaLabel={t('advisory.title')} tabs={PAGES.map((value) => ({ value, label: t(`advisory.workspace.${value}`) }))}>
+          <Tabs<AdvisoryView> className="workspace-tabs rotation-tabs" value={page} onValueChange={setPage} ariaLabel={t('advisory.title')} tabs={PAGES.map((value) => ({ value, label: t(`advisory.workspace.${value}`) }))}>
             <Body
               key={parcel.id}
               report={report}

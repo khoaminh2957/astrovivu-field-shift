@@ -187,7 +187,7 @@ export function CardDetail({ branch: id, onBack, backLabel }: { branch: BranchId
           </Button>
         )}
         <BranchIcon branch={id} colored size={18} className="ml-auto" />
-        <h2 className="truncate text-lg font-medium text-ink-1">{title}</h2>
+        <h2 className="workspace-section-title truncate">{title}</h2>
       </header>
 
       <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-tile">

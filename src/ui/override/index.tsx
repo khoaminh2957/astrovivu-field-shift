@@ -56,10 +56,10 @@ function Group({ title, note, children, aside, footer }: { title: string; note?:
     <section aria-labelledby={id} className="flex flex-col gap-3 border-t border-line-1 pt-4 first:border-t-0 first:pt-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 id={id} className="t-heading">
+          <h3 id={id} className="workspace-section-title">
             {title}
           </h3>
-          {note != null && <p className="t-caption">{note}</p>}
+          {note != null && <p className="workspace-copy">{note}</p>}
         </div>
         {aside}
       </div>
@@ -243,8 +243,8 @@ export function Ledger() {
   return (
     <section className="flex flex-col gap-2 border-t border-line-1 pt-4">
       <div>
-        <h3 className="t-heading">{t('gt.ledger')}</h3>
-        <p className="t-caption">{t('gt.ledgerNote')}</p>
+        <h3 className="workspace-section-title">{t('gt.ledger')}</h3>
+        <p className="workspace-copy">{t('gt.ledgerNote')}</p>
       </div>
       {calibration.length === 0 ? (
         <p className="t-caption text-ink-2">{n === 0 ? t('gt.ledgerEmpty') : t('gt.ledgerPending')}</p>
