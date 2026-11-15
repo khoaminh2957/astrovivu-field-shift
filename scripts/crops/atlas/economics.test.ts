@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ECONOMICS_COLUMNS } from './columns';
 import { parseCsv, parseCsvObjects } from './csv';
-import { EXTRACT_COLUMNS, EXTRACT_FILE, faostatPriceCells, PRICE_ELEMENT, SOURCE_FILE } from './prices-extract';
+import { EXTRACT_COLUMNS, EXTRACT_FILE, faostatPriceCells, MAX_PRICE_AGE_YEARS, PRICE_ELEMENT, SOURCE_FILE } from './prices-extract';
 
 const ECON_FILE = 'data/crops/atlas/economics.csv';
 const TEMPLATE_FILE = 'data/crops/atlas/economics_template.csv';
@@ -126,11 +126,18 @@ describe(`FAOSTAT producer prices behind economics.csv (${EXTRACT_FILE})`, () =>
     }
   });
 
-  it('25 prices cite FAOSTAT producer prices: 12 via crop_latest_prices (2 VNM, 10 USA) and 13 VNM reference records', () => {
-    expect(cells).toHaveLength(25);
+  it('21 prices cite and use FAOSTAT producer prices (8 via crop_latest_prices, 13 VNM reference records); 4 older ones are quoted only', () => {
+    const used = cells.filter((c) => c.used);
+    expect(used).toHaveLength(21);
     const viaView = rows.filter((r) => r.price_usd_t !== '' && /price: [^|]*crop_latest_prices/.test(r.source));
     expect(viaView.filter((r) => r.iso3 === 'VNM')).toHaveLength(2);
-    expect(viaView.filter((r) => r.iso3 === 'USA')).toHaveLength(10);
+    expect(viaView.filter((r) => r.iso3 === 'USA')).toHaveLength(6);
+    expect(cells.filter((c) => !c.used).map((c) => `${c.cropId} ${c.iso3} ${c.year}`).sort()).toEqual([
+      'abelmoschus-esculentus USA 1997',
+      'solanum-melongena USA 2004',
+      'vigna-unguiculata USA 2005',
+      'zingiber-officinale USA 2008',
+    ]);
   });
 
   it('every price that cites FAOSTAT producer prices equals the extract row of the same crop, country, item and year', () => {
@@ -143,11 +150,28 @@ describe(`FAOSTAT producer prices behind economics.csv (${EXTRACT_FILE})`, () =>
     }
   });
 
-  it('every extract row is used by one of those prices', () => {
+  it('every extract row is referenced by a filled price or by a NOT FOUND text quoting its value and year', () => {
     expect(extract).toHaveLength(cells.length);
     for (const e of extract) {
-      const used = cells.filter((c) => c.cropId === e.crop_id && c.iso3 === e.iso3 && c.year === e.year);
-      expect(used, `${e.crop_id} ${e.iso3} ${e.year}: unused extract row`).toHaveLength(1);
+      const label = `${e.crop_id} ${e.iso3} ${e.year}`;
+      const row = rows.find((r) => r.crop_id === e.crop_id && r.iso3 === e.iso3 && r.region === '');
+      expect(row, `${label}: no national row in economics.csv`).toBeDefined();
+      const price = row!.source.split(' | ').find((p) => p.startsWith('price:')) ?? '';
+      if (row!.price_usd_t !== '') {
+        expect(Number(row!.price_usd_t), `${label}: filled price`).toBe(Number(e.value));
+      } else {
+        expect(price, `${label}: NOT FOUND text`).toMatch(/^price: NOT FOUND: /);
+        expect(price, `${label}: quoted figure`).toContain(`item ${e.item_code} "${e.item}" is ${Number(e.value)} USD/t from ${e.year}`);
+      }
+    }
+  });
+
+  it(`no filled FAOSTAT price is more than ${MAX_PRICE_AGE_YEARS} years older than its row's year`, () => {
+    for (const c of cells.filter((x) => x.used)) {
+      const row = rows.find((r) => r.crop_id === c.cropId && r.iso3 === c.iso3 && r.region === '');
+      expect(row, `${c.cropId} ${c.iso3}: no national row`).toBeDefined();
+      const age = Number(row!.year) - Number(c.year);
+      expect(age, `${c.cropId} ${c.iso3}: price ${c.year}, row ${row!.year}`).toBeLessThanOrEqual(MAX_PRICE_AGE_YEARS);
     }
   });
 });

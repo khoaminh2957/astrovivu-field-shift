@@ -1,7 +1,7 @@
 /**
  * Rebuilds data/crops/review/prices-from-faostat.csv: for every price in economics.csv whose source
- * cites FAOSTAT Producer Prices, the FAOSTAT row it was copied from (country, item, year, element
- * 5532 "Producer Price (USD/tonne)", annual value). The extract lets economics.test.ts check those
+ * cites FAOSTAT Producer Prices, used or quoted in a NOT FOUND text, the FAOSTAT row it was copied
+ * from (country, item, year, element 5532 "Producer Price (USD/tonne)", annual value). The extract lets economics.test.ts check those
  * prices in CI without the 11 MB bulk file, and lets a reviewer see each figure next to its source
  * row. The market database view `crop_latest_prices` reads the same bulk file, but its hosted copy
  * is empty, so the extract is taken from the file itself.
@@ -43,8 +43,17 @@ export interface FaostatPriceCell {
   itemCode: string;
   /** Year of the price as the source text states it; economics.csv's `year` column is the row's year, which can differ. */
   year: string;
+  /** The figure: the cell's `price_usd_t` when used, the value quoted in the NOT FOUND text when not. */
   price: string;
+  /** False when the price was left out (cell empty, NOT FOUND) and is only quoted in `source`. */
+  used: boolean;
 }
+
+/** A FAOSTAT price is not used when its year is more than this many years before the row's `year` (a project choice, docs/CROP_DATA.md section 12). */
+export const MAX_PRICE_AGE_YEARS = 10;
+
+/** NOT FOUND text of a FAOSTAT price left out under MAX_PRICE_AGE_YEARS: item, value, year. */
+const NOT_USED = /^price: NOT FOUND: FAOSTAT's latest [A-Za-z ]+ producer price for item (\d+) "[^"]+" is ([\d.]+) USD\/t from (\d{4}), more than \d+ years before/;
 
 /** The `price: ...` part of a `yield | price | cost` source text. */
 export const priceSource = (source: string): string => source.split(' | ').find((p) => p.startsWith('price:')) ?? '';
@@ -56,19 +65,28 @@ function priceYear(priceText: string): string | null {
   return (priceText.match(/\((\d{4}), flag /) ?? priceText.match(/Producer prices in USD\/tonne, [A-Za-z ]+ (\d{4})/))?.[1] ?? null;
 }
 
-/** Every filled price cell of economics.csv whose source cites FAOSTAT producer prices, with the item and year it names. */
+/**
+ * Every price cell of economics.csv whose source cites FAOSTAT producer prices, with the item and
+ * year it names: filled cells, and empty cells whose NOT FOUND text quotes a FAOSTAT price left out
+ * for its age.
+ */
 export function faostatPriceCells(econRows: readonly Record<string, string>[], cropRows: readonly Record<string, string>[]): FaostatPriceCell[] {
   const itemOf = new Map(cropRows.map((c) => [c.crop_id, c.faostat_item_code]));
   const cells: FaostatPriceCell[] = [];
   for (const r of econRows) {
     const text = priceSource(r.source);
+    const notUsed = r.price_usd_t === '' ? text.match(NOT_USED) : null;
+    if (notUsed) {
+      cells.push({ cropId: r.crop_id, iso3: r.iso3, itemCode: notUsed[1], year: notUsed[3], price: notUsed[2], used: false });
+      continue;
+    }
     if (r.price_usd_t === '' || !citesFaostatPrices(text)) continue;
     const label = `${r.crop_id} ${r.iso3}${r.region ? ` ${r.region}` : ''}`;
     const itemCode = text.match(/item (\d+) "/)?.[1] || itemOf.get(r.crop_id) || ITEM_OF_UNLINKED_CROP[r.crop_id];
     if (!itemCode) throw new Error(`${label}: no FAOSTAT item code in the source text or in crops.csv`);
     const year = priceYear(text);
     if (!year) throw new Error(`${label}: the price source names no year`);
-    cells.push({ cropId: r.crop_id, iso3: r.iso3, itemCode, year, price: r.price_usd_t });
+    cells.push({ cropId: r.crop_id, iso3: r.iso3, itemCode, year, price: r.price_usd_t, used: true });
   }
   return cells;
 }
@@ -107,7 +125,7 @@ async function main(): Promise<void> {
   fs.writeFileSync(target, toCsv(EXTRACT_COLUMNS, out));
   const mismatched = cells.filter((c) => Number(found.get(`${M49[c.iso3]}:${c.itemCode}:${c.year}`)!.Value) !== Number(c.price));
   console.log(`${EXTRACT_FILE}: ${out.length} rows from ${path.relative(ROOT, zip)} (${accessed})`);
-  for (const c of mismatched) console.log(`  differs from economics.csv: ${c.cropId} ${c.iso3} ${c.year} csv ${c.price}`);
+  for (const c of mismatched) console.log(`  differs from economics.csv: ${c.cropId} ${c.iso3} ${c.year} csv ${c.price}${c.used ? '' : ' (quoted, not used)'}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();
