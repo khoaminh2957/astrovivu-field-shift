@@ -5,6 +5,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import Papa from 'papaparse';
 import { describe, expect, it } from 'vitest';
 import type { CropFacts, RagBundle } from '../../src/rag/types';
 import { chunkKind } from '../../src/rag/types';
@@ -20,6 +21,11 @@ const full = bundle('full');
 const chunks = [...core.chunks, ...full.chunks];
 const crops = new Map([...core.crops, ...full.crops].map((c) => [c.id, c]));
 const atlas = readAtlasCrops();
+// The atlas itself, for the numbers and years a sheet is checked against.
+type Row = Record<string, string>;
+const csv = (name: string): Row[] => Papa.parse<Row>(fs.readFileSync(path.join(ROOT, 'data/crops/atlas', name), 'utf8').replace(/^\uFEFF/, ''), { header: true, skipEmptyLines: true }).data;
+const cropCountry = csv('crop_country.csv');
+const cropsCsv = csv('crops.csv');
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/rag/manifest.json'), 'utf8')) as {
   sources: Record<string, { documents: number; chunks: number }>;
   chunks: { core: number; total: number };
@@ -103,14 +109,15 @@ describe('the sheet on where a crop is grown', () => {
     expect(rice.prevalence).toMatchObject({ match: 'exact', countries: 116, worldAreaHa: Number(riceRow.world_area_ha), years: riceRow.data_years, faostatItem: 'Rice', sharedBy: 3 });
     expect(rice.prevalence!.top!.map((c) => c.iso3)).toEqual(['IND', 'CHN', 'BGD', 'THA', 'IDN']);
     // Viet Nam is the sixth: named beside the five largest because it is one of the app's two home countries.
-    expect(rice.prevalence!.also).toEqual(expect.arrayContaining([{ iso3: 'VNM', name: 'Viet Nam', areaHa: 7_089_041, level: 'major', rank: 6 }]));
+    const vnmRow = cropCountry.find((r) => r.crop_id === 'oryza-sativa' && r.iso3 === 'VNM')!;
+    expect(rice.prevalence!.also).toEqual(expect.arrayContaining([{ iso3: 'VNM', name: 'Viet Nam', areaHa: 7_089_041, level: 'major', rank: 6, years: `${vnmRow.year_from}-${vnmRow.year_to}` }]));
     const en = chunks.find((c) => c.id === 'eco:oryza-sativa:where')!.text;
     expect(en).toContain('116 countries report production to FAOSTAT');
-    expect(en).toContain('Viet Nam: 7,089,041 ha, the 6th largest.');
+    expect(en).toContain(`Viet Nam: 7,089,041 ha, mean of ${vnmRow.year_from}-${vnmRow.year_to}, the 6th largest.`);
     expect(en).toContain('These are the figures of the FAOSTAT item Rice, which the atlas ties to 3 crops');
     const vi = chunks.find((c) => c.id === 'eco:oryza-sativa:where-vi')!.text;
     expect(vi).toContain('116 nước báo cáo sản xuất với FAOSTAT');
-    expect(vi).toContain('Việt Nam: 7.089.041 ha, lớn thứ 6.');
+    expect(vi).toContain(`Việt Nam: 7.089.041 ha, trung bình ${vnmRow.year_from}-${vnmRow.year_to}, lớn thứ 6.`);
     // The passage is what the renderer gives for the facts in the bundle.
     expect(en).toBe(renderWhere(rice, 'en'));
     expect(vi).toBe(renderWhere(rice, 'vi'));
@@ -131,11 +138,69 @@ describe('the sheet on where a crop is grown', () => {
     const marigold = crops.get('tagetes-erecta')!;
     expect(marigold.ecocropId).toBeUndefined();
     expect(marigold.prevalence).toEqual({ match: 'none' });
-    expect(whereLines(marigold, 'en')).toEqual(["FAOSTAT's crop statistics have no item for Marigold (Tagetes erecta), so there are no figures by country."]);
-    expect(whereLines(marigold, 'vi')).toEqual(['Thống kê cây trồng của FAOSTAT không có mặt hàng nào cho Cúc vạn thọ (Tagetes erecta), nên không có số liệu theo nước.']);
+    expect(whereLines(marigold, 'en')).toEqual(['The crop atlas ties no FAOSTAT item to Marigold (Tagetes erecta), so it has no figures by country for it.']);
+    expect(whereLines(marigold, 'vi')).toEqual(['Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với Cúc vạn thọ (Tagetes erecta), nên không có số liệu theo nước cho cây này.']);
     const sheet = chunks.find((c) => c.id === 'eco:tagetes-erecta:facts')!;
     expect(sheet.text).toContain('FAO EcoCrop has no record of this crop');
-    expect(sheet.source.name).toBe('Astrovivu crop atlas');
+    // The atlas is a document of the repository: named, with no link a reader could not open.
+    expect(sheet.source).toMatchObject({ name: 'Astrovivu crop atlas (docs/CROP_DATA.md)', url: '' });
+  });
+
+  it('says of a crop without an item what the atlas did, not what FAOSTAT has (review of #107, point 3)', () => {
+    // Banana: the atlas ties no item to Musa acuminata (and "Plantains and cooking bananas" to Musa
+    // sapientum). That FAOSTAT has no item for bananas does not follow, and is not so.
+    const banana = crops.get('musa-acuminata')!;
+    expect(banana.prevalence).toEqual({ match: 'none' });
+    expect(cropsCsv.find((r) => r.crop_id === 'musa-acuminata')).toMatchObject({ match: 'none', faostat_item: '' });
+    expect(cropsCsv.find((r) => r.crop_id === 'musa-sapientum')!.faostat_item).toBe('Plantains and cooking bananas');
+    expect(atlas.filter((x) => x.match === 'none')).toHaveLength(20);
+    for (const a of atlas.filter((x) => x.match === 'none')) {
+      for (const lang of ['en', 'vi'] as const) {
+        const text = renderWhere(crops.get(a.cropId)!, lang);
+        expect(text, a.cropId).not.toMatch(/FAOSTAT's crop statistics have no item|FAOSTAT không có mặt hàng/);
+        expect(text, a.cropId).toMatch(lang === 'en' ? /^The crop atlas ties no FAOSTAT item to / : /^Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với /);
+      }
+    }
+  });
+
+  it('gives each country the years its own figure is the mean of (review of #107, point 4)', () => {
+    const years = (cropId: string, iso3: string) => {
+      const r = cropCountry.find((x) => x.crop_id === cropId && x.iso3 === iso3)!;
+      return r.year_from === r.year_to ? r.year_from : `${r.year_from}-${r.year_to}`;
+    };
+    for (const a of atlas.filter((x) => x.match === 'exact')) {
+      const w = crops.get(a.cropId)!.prevalence!;
+      for (const c of [...(w.top ?? []), ...(w.also ?? [])]) expect(c.years, `${a.cropId} ${c.iso3}`).toBe(years(a.cropId, c.iso3));
+      const text = renderWhere(crops.get(a.cropId)!, 'en');
+      // The covering span is said to be that, never the years of one figure.
+      if (w.years) expect(text, a.cropId).toContain(`(each country's mean of its latest three years with data, within ${w.years})`);
+      expect(text, a.cropId).not.toMatch(/ha harvested in the world \(mean of/);
+      // Every country named has its years: once for all when they are the same, else one by one.
+      const top = w.top ?? [];
+      if (top.length && top.every((c) => c.years === top[0].years)) expect(text, a.cropId).toContain(`Largest harvested areas (means of ${top[0].years}): `);
+      else for (const c of top) expect(text, a.cropId).toContain(`${groupDigits(c.areaHa, 'en')} ha, mean of ${c.years}`);
+      for (const c of w.also ?? []) expect(text, a.cropId).toContain(`${groupDigits(c.areaHa, 'en')} ha, mean of ${c.years}, the `);
+    }
+    // Rice: the world figure covers 2021-2024, Viet Nam's is of 2022-2024.
+    expect(rice.prevalence!.years).toBe('2021-2024');
+    expect(years('oryza-sativa', 'VNM')).toBe('2022-2024');
+    // A crop whose largest growers do not share their years names them one by one.
+    const mixed = atlas.find((x) => x.match === 'exact' && new Set((crops.get(x.cropId)!.prevalence!.top ?? []).map((c) => c.years)).size > 1);
+    expect(mixed, 'no crop has largest growers with different years').toBeDefined();
+  });
+
+  it('names the FAOSTAT item on every sheet with figures, shared or not (review of #107, point 5)', () => {
+    const exact = atlas.filter((x) => x.match === 'exact');
+    expect(exact.length).toBe(165);
+    for (const a of exact) {
+      const w = crops.get(a.cropId)!.prevalence!;
+      expect(w.faostatItem, a.cropId).toBe(a.row.faostat_item);
+      const shared = Number(a.row.item_shared_by_n_crops) > 1;
+      expect(renderWhere(crops.get(a.cropId)!, 'en'), a.cropId).toContain(shared ? `These are the figures of the FAOSTAT item ${w.faostatItem}, which the atlas ties to ${w.sharedBy} crops; they are not for one crop alone.` : `These are the figures of the FAOSTAT item ${w.faostatItem}.`);
+      expect(renderWhere(crops.get(a.cropId)!, 'vi'), a.cropId).toContain(`Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}`);
+    }
+    // Carrot: the area is that of "Carrots and turnips", and the sheet says so.
+    expect(renderWhere(crops.get('daucus-carota')!, 'en')).toContain('These are the figures of the FAOSTAT item Carrots and turnips.');
   });
 
   it('every number of every sheet is a number of the atlas', () => {
@@ -144,7 +209,7 @@ describe('the sheet on where a crop is grown', () => {
       expect(crops.get(a.cropId)!.prevalence, a.cropId).toEqual(w);
       const allowed = new Set<string>();
       for (const v of [w.countries, w.worldAreaHa, w.sharedBy, w.sharedBy != null ? w.sharedBy - 1 : undefined]) if (v != null) allowed.add(String(v));
-      for (const c of [...(w.top ?? []), ...(w.also ?? [])]) [c.areaHa, c.rank].forEach((v) => allowed.add(String(v)));
+      for (const c of [...(w.top ?? []), ...(w.also ?? [])]) [c.areaHa, c.rank, ...(c.years ?? '').split('-').filter(Boolean)].forEach((v) => allowed.add(String(v)));
       for (const y of (w.years ?? '').split('-')) if (y) allowed.add(y);
       // The digits of the names (crop, item, country) are not figures.
       const text = renderWhere(crops.get(a.cropId)!, 'en').replace(a.sci, '').replace(w.faostatItem ?? '\u0000', '');
