@@ -20,6 +20,7 @@ import { cleanSpecies, type AtlasSpecies } from './ecocrop';
 import { readQcl } from './faostat';
 import { SOURCES, ensureSources, md5File } from './fetch';
 import { COMMONNESS, LEVEL, WINDOW, commonnessFor, latestMean, levelFor, rankOf, type Mean } from './levels';
+import { DEFAULT_NATIONAL_FILE, readNational, resolveCropCountryRow } from './national';
 import { readSpamHarvestedArea, type SpamRegion } from './spam';
 import { taxonKey } from './taxa';
 import { buildXlsx, countCells, type Sheet } from './xlsx';
@@ -494,6 +495,11 @@ async function main() {
   // ---------------------------------------------------------------------------------------------
   // crop_country.csv
   // ---------------------------------------------------------------------------------------------
+  const national = readNational(
+    DEFAULT_NATIONAL_FILE,
+    new Set(kept.map((k) => k.id)),
+    new Set(countryList.map((c) => c.iso3)),
+  );
   const cropCountryRows: Cell[][] = [];
   interface CountryCrop {
     id: string;
@@ -504,43 +510,27 @@ async function main() {
   const cropsOfCountry = new Map<string, CountryCrop[]>(countryList.map((c) => [c.iso3, []]));
   const possibleOfCountry = new Map<string, string[]>(countryList.map((c) => [c.iso3, []]));
   for (const k of kept) {
-    if (k.match === 'exact') {
-      for (const c of countryList) {
-        const q = cropIn(k.items, c.iso3);
-        if (!q) {
-          // The country reports crops to FAOSTAT and none of this crop's items is above zero there.
-          cropCountryRows.push([k.id, c.iso3, c.name, list(k.items), k.match, 'no', null, null, null, null, null, null, null, 'absent', FAOSTAT_SOURCE]);
-          continue;
-        }
-        const share = q.areaHa != null && c.totalAreaHa > 0 ? (q.areaHa / c.totalAreaHa) * 100 : null;
-        const others = [...c.itemAreas].filter(([code]) => !k.items.includes(code)).map(([, a]) => a);
-        const level = levelFor(q.areaHa, share, q.productionT);
-        cropCountryRows.push([
-          k.id,
-          c.iso3,
-          c.name,
-          list(q.codes),
-          k.match,
-          'yes',
-          q.areaHa != null ? Math.round(q.areaHa) : null,
-          q.productionT != null ? Math.round(q.productionT) : null,
-          q.yieldTHa != null ? round(q.yieldTHa, 3) : null,
-          q.yearFrom,
-          q.yearTo,
-          share != null ? round(share, 3) : null,
-          q.areaHa != null ? rankOf(q.areaHa, others) : null,
-          level,
-          FAOSTAT_SOURCE,
-        ]);
-        cropsOfCountry.get(c.iso3)!.push({ id: k.id, areaHa: q.areaHa, productionT: q.productionT, level });
+    for (const c of countryList) {
+      const resolved = resolveCropCountryRow({
+        cropId: k.id,
+        match: k.match,
+        items: k.items,
+        primary: k.primary,
+        iso3: c.iso3,
+        countryName: c.name,
+        totalAreaHa: c.totalAreaHa,
+        itemAreas: c.itemAreas,
+        faostat: k.match === 'exact' ? cropIn(k.items, c.iso3) : null,
+        groupItemReported: k.match === 'group' && k.primary != null ? produces(stats.get(k.primary)?.get(c.iso3)) : false,
+        national: national.get(`${k.id}|${c.iso3}`),
+      });
+      if (!resolved) continue;
+      cropCountryRows.push(resolved.row);
+      if (resolved.inCountryCrops) {
+        cropsOfCountry.get(c.iso3)!.push({ id: k.id, areaHa: resolved.areaHa, productionT: resolved.productionT, level: resolved.level });
       }
-    } else if (k.match === 'group' && k.primary != null) {
-      // A group item's quantities belong to the item (item_country.csv), never to one of its species:
-      // the species is `unknown` everywhere, and the row only says whether the country reports the item.
-      for (const c of countryList) {
-        const reported = produces(stats.get(k.primary)?.get(c.iso3));
-        cropCountryRows.push([k.id, c.iso3, c.name, String(k.primary), k.match, reported ? 'yes' : 'no', null, null, null, null, null, null, null, 'unknown', FAOSTAT_SOURCE]);
-        if (reported) possibleOfCountry.get(c.iso3)!.push(k.id);
+      if (resolved.inPossibleCrops) {
+        possibleOfCountry.get(c.iso3)!.push(k.id);
       }
     }
   }
@@ -720,6 +710,7 @@ async function main() {
     ['crop_country_rows_present', count(cropCountryRows, (r) => r[CC.level] !== 'absent' && r[CC.level] !== 'unknown')],
     ['crop_country_rows_absent', count(cropCountryRows, (r) => r[CC.level] === 'absent')],
     ['crop_country_rows_unknown', count(cropCountryRows, (r) => r[CC.level] === 'unknown')],
+    ['crop_country_rows_national', count(cropCountryRows, (r) => r[CC.match] === 'national')],
     ['item_country_rows', itemCountryRows.length],
     ['spam_crops', spamCrops.length],
     ['spam_crops_individual', count(spamCrops, (c) => c.class === 'individual')],
