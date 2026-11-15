@@ -4,7 +4,8 @@
  *   the bottom centre is the whole interface; on the map the tools join it on the right edge.
  *   A field open, wide screens (1100 px and up): the rail and the field panel sit on the left.
  *   The rail is the path a grower walks: (1) the field as it is, (2) the rotation (the farm stage,
- *   the comparison, the plan), (3) the dossier. Urban and Ask stand apart under a rule.
+ *   the comparison, the plan), (3) the dossier. Urban and Ask stand apart under a rule: they are
+ *   tools with a page of their own, open with or without a field.
  *   The map fills the right, with its tools, legend and timeline inside it.
  *   A field open, narrow screens: the map keeps the top of the screen, one scrolling sheet holds
  *   the field panel, the timeline is pinned above a tab bar.
@@ -22,6 +23,7 @@ import { useLang, useT } from '@/i18n';
 import { pointInPolygon } from '@/lib/geo';
 import { type Phase, useMission } from '@/state/mission';
 import { AdvisoryPanel } from '@/ui/advisory';
+import { AskPage } from '@/ui/ask';
 import { Button, Dialog, StatusTag, Tooltip, cn } from '@/ui/design';
 import { FieldPanel } from '@/ui/field/FieldPanel';
 import { FieldList, FindField } from '@/ui/field/FindField';
@@ -49,27 +51,21 @@ const NAV: { id: NavId; icon: ReactNode; key: string; step?: number; rule?: bool
 export function useNav() {
   const phase = useMission((s) => s.phase);
   const hasParcel = useMission((s) => !!s.parcel);
-  const askOpen = useMission((s) => s.askOpen);
   const setPhase = useMission((s) => s.setPhase);
-  const setAskOpen = useMission((s) => s.setAskOpen);
   const view = useMissionUi((s) => s.advisoryView);
   const setView = useMissionUi((s) => s.setAdvisoryView);
   const active = (id: NavId): boolean =>
-    id === 'ask'
-      ? askOpen
-      : id === 'field'
-        ? phase === 'explore' || phase === 'locked'
-        : id === 'advisory'
-          ? phase === 'advisory' && view !== 'dossier'
-          : id === 'dossier'
-            ? phase === 'advisory' && view === 'dossier'
-            : phase === id;
-  const selected = askOpen ? NAV.find((item) => item.id === 'ask') : NAV.find((item) => active(item.id));
+    id === 'field'
+      ? phase === 'explore' || phase === 'locked'
+      : id === 'advisory'
+        ? phase === 'advisory' && view !== 'dossier'
+        : id === 'dossier'
+          ? phase === 'advisory' && view === 'dossier'
+          : phase === id;
+  const selected = NAV.find((item) => active(item.id));
   const disabled = (id: NavId): boolean => (id === 'advisory' || id === 'dossier') && !hasParcel;
   const go = (id: NavId) => {
     if (disabled(id)) return;
-    if (id === 'ask') return setAskOpen(!askOpen);
-    if (askOpen) setAskOpen(false);
     if (id === 'field') return setPhase(hasParcel ? 'locked' : 'explore');
     if (id === 'dossier') {
       setView('dossier');
@@ -204,8 +200,7 @@ function Rail() {
             <Tooltip content={disabled(n.id) ? `${t(`chrome.${n.key}`)}: ${t('chrome.nav.needField')}` : t(`chrome.${n.key}Long`)} side="right" delay={150}>
               <button
                 type="button"
-                aria-current={n.id !== 'ask' && active(n.id) ? 'page' : undefined}
-                aria-pressed={n.id === 'ask' ? active(n.id) : undefined}
+                aria-current={active(n.id) ? 'page' : undefined}
                 aria-disabled={disabled(n.id) || undefined}
                 aria-label={n.step ? t('chrome.nav.stepLabel', { n: n.step, name: t(`chrome.${n.key}`) }) : t(`chrome.${n.key}`)}
                 data-nav-item
@@ -243,8 +238,7 @@ function TabBar() {
         <button
           key={n.id}
           type="button"
-          aria-current={n.id !== 'ask' && active(n.id) ? 'page' : undefined}
-          aria-pressed={n.id === 'ask' ? active(n.id) : undefined}
+          aria-current={active(n.id) ? 'page' : undefined}
           aria-disabled={disabled(n.id) || undefined}
           data-nav-item
           data-nav-selected={selected?.id === n.id || undefined}
@@ -302,7 +296,6 @@ function MapCredits({ className }: { className?: string }) {
 
 function WideField() {
   const t = useT();
-  const askOpen = useMission((s) => s.askOpen);
   const listMode = useMissionUi((s) => s.listMode);
   const setListMode = useMissionUi((s) => s.setListMode);
   const parcelId = useMission((s) => s.parcel?.id);
@@ -315,7 +308,7 @@ function WideField() {
 
   return (
     <>
-      <aside aria-label={t('chrome.fieldPanel')} className="workspace-field-panel" data-assistant={askOpen || undefined}>
+      <aside aria-label={t('chrome.fieldPanel')} className="workspace-field-panel">
         <div className="workspace-back">
           <button type="button" onClick={listOpen ? closeList : () => setListOpen(true)} aria-expanded={listOpen}>
             <ArrowLeft size={16} aria-hidden />{t(listOpen ? 'chrome.backToField' : 'chrome.nav.field')}
@@ -367,7 +360,6 @@ function ExploreMap({ narrow }: { narrow: boolean }) {
 /** A field is open on a narrow screen. */
 function NarrowField() {
   const t = useT();
-  const askOpen = useMission((s) => s.askOpen);
   const full = useMissionUi((s) => s.sheetFull);
   const setFull = useMissionUi((s) => s.setSheetFull);
   return (
@@ -383,11 +375,9 @@ function NarrowField() {
       </div>
       <section
         data-panel-scroll
-        hidden={askOpen}
         aria-label={t('chrome.metrics')}
         className={cn(
           'workspace-mobile-field workspace-theme absolute inset-x-0 bottom-[calc(var(--tabbar-h)+var(--strip-h))] z-(--z-panel) flex flex-col overflow-x-hidden overflow-y-auto rounded-t-lg px-4 pt-0 pb-6 shadow-lg transition-[top] duration-(--dur-base)',
-          askOpen && 'hidden',
           full ? 'top-14' : 'top-(--map-h)',
         )}
       >
@@ -415,7 +405,7 @@ function useReportInsets(narrow: boolean, phase: Phase, hasParcel: boolean, cove
   const addCard = useMissionUi((s) => s.addCard);
   useLayoutEffect(() => {
     // Keep the field framing while a full-page workspace covers the map.
-    if (covered || phase === 'advisory' || phase === 'urban') return;
+    if (covered || phase === 'advisory' || phase === 'urban' || phase === 'ask') return;
     const report = () => {
       const mission = useMission.getState();
       mission.setInsets(getShellInsets(mission));
@@ -470,13 +460,14 @@ export function Shell() {
   }, [phase, parcelId]);
   const advisory = phase === 'advisory';
   const urban = phase === 'urban';
+  const assistant = phase === 'ask';
   return (
     <>
       {finding && <Finder />}
       {finding && !hero && <ExploreMap narrow={narrow} />}
       {!finding && (narrow ? <TabBar /> : <Rail />)}
       {locked && (narrow ? <NarrowField /> : <WideField />)}
-      {(advisory || urban) && narrow && (
+      {(advisory || urban || assistant) && narrow && (
         <div className="workspace-theme workspace-mobile-top absolute inset-x-0 top-0 z-(--z-chrome) flex h-12 items-center justify-between border-b border-line-1 px-3">
           <Mark />
           <LangSwitch />
@@ -490,6 +481,12 @@ export function Shell() {
       {(urban || visitedUrban) && (
         <div className="workspace-page-shell" hidden={!urban}>
           <UrbanCompanion active={urban} />
+        </div>
+      )}
+      {/* The conversation lives in its own store, so the page can unmount when the visitor leaves it. */}
+      {assistant && (
+        <div className="workspace-page-shell">
+          <AskPage />
         </div>
       )}
     </>

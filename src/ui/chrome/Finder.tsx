@@ -10,6 +10,7 @@ import { Check, MessageCircleQuestion, MousePointer2, Sprout } from 'lucide-reac
 import type { Lang } from '@/contracts';
 import { useLang, useT } from '@/i18n';
 import { useMission } from '@/state/mission';
+import { openAssistant } from '@/ui/ask/chatStore';
 import { Segmented, cn } from '@/ui/design';
 import { FindField } from '@/ui/field/FindField';
 import { openDemoField, setSelectOnMap } from './finderActions';
@@ -73,8 +74,6 @@ export function Finder() {
   const t = useT();
   const hero = useMission((s) => s.phase === 'hero');
   const setPhase = useMission((s) => s.setPhase);
-  const setAskOpen = useMission((s) => s.setAskOpen);
-  const askOpen = useMission((s) => s.askOpen);
   const adding = useMissionUi((s) => s.listMode === 'add');
   const picking = useMissionUi((s) => s.listMode === 'add' && s.addWay === 'map');
   const setFinderH = useMissionUi((s) => s.setFinderH);
@@ -124,7 +123,7 @@ export function Finder() {
                 <Pill large={false} label={t('chrome.nav.urbanLong')} icon={<Sprout aria-hidden />} onClick={() => setPhase('urban')}>
                   {t('chrome.nav.urban')}
                 </Pill>
-                <Pill large={false} pressed={askOpen} icon={<MessageCircleQuestion aria-hidden />} onClick={() => setAskOpen(!askOpen)}>
+                <Pill large={false} icon={<MessageCircleQuestion aria-hidden />} onClick={() => openAssistant()}>
                   {t('chrome.nav.ask')}
                 </Pill>
                 <LangSegmented className="pointer-events-auto" />

@@ -4,17 +4,17 @@
  * bubble, and the short note it gives when pressed.
  */
 import type { ReactNode } from 'react';
-import { ChevronDown, CircleAlert, FileText, Pause, Play, Sprout, Undo2, X } from 'lucide-react';
+import { ChevronDown, CircleAlert, FileText, Pause, Play, Sparkles, Sprout, Undo2, X } from 'lucide-react';
 import { type Lang, type RotationStrategy, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
-import { type FarmNote, type FarmOption, type FarmPeriod, type FarmStep, type FarmTrial, type FarmVoice, cropLook, seasonOutcome } from '@/core/farm';
+import { type FarmNote, type FarmOption, type FarmPeriod, type FarmStep, type FarmTrial, type FarmVoice, type PeriodLand, cropLook, seasonOutcome } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
 import { cropNameOnly, monthLong, monthShort } from '@/ui/advisory/format';
 import { StrategyCards } from '@/ui/advisory/StrategyCards';
 import { Button, IconButton, Segmented, cn } from '@/ui/design';
 import { Mascot, type MascotClip, type MascotId } from '@/ui/mascot';
 import { MascotFigure } from './Mascots';
-import { PlantIcon } from './plants';
+import { FieldChip, PlantIcon } from './plants';
 
 export const MASCOT_OF: Record<FarmVoice, MascotId> = { space: 'Satellite', soil: 'Seed', rice: 'Rice' };
 
@@ -40,9 +40,11 @@ export interface TimeBarProps {
   onPlay: () => void;
   onPick: (idx: number | null) => void;
   trailing?: ReactNode;
+  /** What stands on the field in each period, in the order of `periods`: drawn under each step. */
+  land?: (PeriodLand & { name: string | null })[];
 }
 
-export function TimeBar({ periods, idx, step, playing, holdMs, onStep, onPlay, onPick, trailing }: TimeBarProps) {
+export function TimeBar({ periods, idx, step, playing, holdMs, onStep, onPlay, onPick, trailing, land }: TimeBarProps) {
   const t = useT();
   const lang = useLang();
   return (
@@ -64,15 +66,23 @@ export function TimeBar({ periods, idx, step, playing, holdMs, onStep, onPlay, o
           const on = idx === i;
           const done = idx == null || i < idx;
           const newYear = i > 0 && p.to.slice(0, 4) !== periods[i - 1].to.slice(0, 4);
+          const l = land?.[i];
+          const what = !l ? null : l.bare ? t('farm.land.bare') : l.harvested != null ? t('farm.land.harvest', { crop: l.name ?? '' }) : l.name;
           return (
             <li key={p.id} className={cn('flex min-w-9 flex-1', newYear && 'ml-1 border-l border-line-2 pl-1')}>
               <button
                 type="button"
                 aria-current={on ? 'step' : undefined}
-                aria-label={periodLabel(p, lang, true)}
+                aria-label={[periodLabel(p, lang, true), what].filter(Boolean).join(': ')}
+                title={what ?? undefined}
                 onClick={() => onPick(i)}
                 className={cn('group flex w-full flex-col items-center gap-1 rounded-sm px-1 pt-1.5 pb-1 text-xs transition-colors', on ? 'bg-surface-0 font-semibold text-ink-1 shadow-sm' : 'text-ink-2 hover:bg-surface-2')}
               >
+                {l && (
+                  <span className={cn('farm-land flex h-[30px] items-end justify-center', l.bare && 'opacity-70')} data-farm-land={l.bare ? 'bare' : l.harvested != null ? 'harvest' : 'crop'}>
+                    <FieldChip look={l.look} growth={l.growth} ripeness={l.ripeness} cut={l.harvested != null && l.harvested >= 0.5} />
+                  </span>
+                )}
                 <span className="whitespace-nowrap">{periodLabel(p, lang)}</span>
                 <span className="relative h-1 w-full overflow-hidden rounded-full bg-line-2">
                   {on ? (
@@ -193,10 +203,12 @@ export interface MascotSpotProps {
   look?: { x: number; y: number } | null;
   /** Order of the entrance, so the three come on one after the other. */
   order?: number;
+  /** Motion off: the character stays at rest. */
+  reduced?: boolean;
   className?: string;
 }
 
-export function MascotSpot({ who, note, open, onToggle, clip, beat, look = null, order = 0, className }: MascotSpotProps) {
+export function MascotSpot({ who, note, open, onToggle, clip, beat, look = null, order = 0, reduced, className }: MascotSpotProps) {
   const t = useT();
   const lang = useLang();
   const flying = who === 'space';
@@ -232,7 +244,7 @@ export function MascotSpot({ who, note, open, onToggle, clip, beat, look = null,
           {!flying && <span aria-hidden className="farm-ground-shadow" />}
           <span className={cn('block', flying ? 'farm-hover-fly' : 'farm-hover-stand')}>
             <span className="farm-lift block">
-              <Mascot who={MASCOT_OF[who]} clip={clip} beat={beat} look={look} className="h-[8.5rem] w-28 md:h-[11.5rem] md:w-[9.25rem]" fallback={<MascotFigure who={who} mood={note.mood} />} />
+              <Mascot who={MASCOT_OF[who]} clip={clip} beat={beat} look={look} reduced={reduced} className="h-[8.5rem] w-28 md:h-[11.5rem] md:w-[9.25rem]" fallback={<MascotFigure who={who} mood={note.mood} />} />
             </span>
           </span>
         </span>
@@ -317,9 +329,7 @@ export function NoteCard({ who, note, options, optionsLoading, trial, baseOutcom
                 {options.slice(0, 2).map((o) => (
                   <Button key={o.id} size="sm" variant="secondary" onClick={() => onTrial(o.id)} data-farm-option={o.kind}>
                     {pick(o.label, lang)}
-                    <span className="t-value ml-1.5 text-signal-strong" title={t('farm.gainLabel', { n: o.delta })}>
-                      +{o.delta}
-                    </span>
+                    <OptionFigure o={o} />
                   </Button>
                 ))}
               </div>
@@ -338,11 +348,39 @@ export function NoteCard({ who, note, options, optionsLoading, trial, baseOutcom
 }
 
 /** The two ways down from the stage: the analysis under it, and the dossier at the end. */
-export function StageLinks({ onDossier }: { onDossier: () => void }) {
+/** What an option does to the field, in one short figure: a gain in green, a trade-off in a neutral tag with its cost. */
+export function OptionFigure({ o, full = false }: { o: FarmOption; full?: boolean }) {
+  const t = useT();
+  const title = [
+    t('farm.option.season', { a: o.before, b: o.after }),
+    t('farm.option.growth', { a: o.growthBefore, b: o.growthAfter }),
+    o.monthsAfter !== o.monthsBefore ? t('farm.option.months', { a: o.monthsBefore, b: o.monthsAfter }) : null,
+  ].filter(Boolean).join(' · ');
+  if (o.tradeOff) {
+    return (
+      <span className="ml-1.5 inline-flex items-center gap-1 text-xs text-ink-2" title={title} data-farm-tradeoff>
+        <span className="rounded-xs bg-surface-2 px-1 py-px font-medium">{t('farm.option.tradeOff')}</span>
+        <span className="t-value">{full ? title : o.monthsAfter < o.monthsBefore - 2 ? t('farm.option.monthsShort', { b: o.monthsAfter }) : `${o.before} → ${o.after}`}</span>
+      </span>
+    );
+  }
+  return (
+    <span className="t-value ml-1.5 text-signal-strong" title={title}>
+      {o.delta > 0 ? `+${o.delta}` : t('farm.option.growthShort', { n: o.growthDelta })}
+    </span>
+  );
+}
+
+export function StageLinks({ onDossier, reduced, onMotion }: { onDossier: () => void; reduced?: boolean; onMotion?: () => void }) {
   const t = useT();
   return (
+    <>
+    {onMotion && (
+      <IconButton label={t(reduced ? 'farm.motion.on' : 'farm.motion.off')} icon={<Sparkles />} pressed={!reduced} size="sm" variant="secondary" className="shrink-0" onClick={onMotion} data-farm-motion />
+    )}
     <Button size="sm" variant="secondary" icon={<FileText />} className="shrink-0" onClick={onDossier} data-farm-dossier-open>
       <span className="narrow:sr-only">{t('farm.dossier.open')}</span>
     </Button>
+    </>
   );
 }

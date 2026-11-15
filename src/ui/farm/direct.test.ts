@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type StoryFrame, idleDelay, nextIdle, storyReactions } from './direct';
+import { type StoryFrame, VOICES, idleDelay, nextIdle, stepBeat, storyReactions } from './direct';
 
 const calm = { mood: 'calm', alert: false } as const;
 const base: StoryFrame = { sky: 'clear', harvesting: false, sowing: false, soil: 'usual', notes: { space: calm, soil: calm, rice: calm } };
@@ -47,7 +47,20 @@ describe('idle routine', () => {
   });
 
   it('waits between 3.5 and 8 seconds', () => {
-    expect(idleDelay(() => 0)).toBe(3500);
-    expect(idleDelay(() => 1)).toBe(8000);
+    expect(idleDelay(() => 0)).toBe(1800);
+    expect(idleDelay(() => 1)).toBe(4200);
+  });
+});
+
+describe('a step with no change of part', () => {
+  it('still moves one character, turn about, pointing at the field', () => {
+    const seen = [0, 1, 2, 3].map((k) => stepBeat([], k));
+    for (const r of seen) expect(r).toHaveLength(1);
+    expect(seen.map((r) => r[0].who)).toEqual([...VOICES, VOICES[0]]);
+    expect(seen.every((r) => r[0].toField)).toBe(true);
+  });
+  it('leaves the story reactions alone when there are some', () => {
+    const rs = [{ who: 'rice' as const, clip: 'Celebrate' as const, toField: false }];
+    expect(stepBeat(rs, 5)).toBe(rs);
   });
 });

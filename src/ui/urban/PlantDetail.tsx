@@ -10,7 +10,8 @@ import { pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { ecocropPageUrl, sowLevels, yearFrom } from '@/core/urban';
 import { useLang, useT } from '@/i18n';
-import { useMission } from '@/state/mission';
+import { openAssistant } from '@/ui/ask/chatStore';
+import '@/ui/ask/strings';
 import { useNarrow } from '@/ui/chrome/uiState';
 import { Button, Sheet, Tag, cn } from '@/ui/design';
 import { fmtNum, monthLong } from '@/ui/advisory/format';
@@ -25,7 +26,6 @@ export function PlantDetail({ rec, month, onClose }: { rec: UrbanRecommendation 
   const lang = useLang();
   const narrow = useNarrow();
   const images = useCropImages();
-  const setAskOpen = useMission((s) => s.setAskOpen);
   if (!rec) return null;
   const name = pick(rec.name, lang);
   const crop = getCrop(rec.cropId);
@@ -36,7 +36,7 @@ export function PlantDetail({ rec, month, onClose }: { rec: UrbanRecommendation 
   const askAssistant = () => {
     onClose();
     // After the sheet has handed focus back, so the assistant's input keeps it.
-    window.setTimeout(() => setAskOpen(true), 0);
+    window.setTimeout(() => openAssistant(t('ask.prefill.grow', { name })), 0);
   };
 
   return (

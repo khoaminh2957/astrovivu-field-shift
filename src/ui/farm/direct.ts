@@ -29,9 +29,9 @@ export const POINT_TO_FIELD: Record<FarmVoice, MascotClip> = { space: 'PointLeft
 
 /** What each character does now and then while nobody is reading a note. */
 export const IDLE_CLIPS: Record<FarmVoice, MascotClip[]> = {
-  space: ['Scan', 'Wave', 'Spin', 'Scan'],
-  soil: ['LeafWiggle', 'Wave', 'Think', 'Jump'],
-  rice: ['LeafWiggle', 'Wave', 'Spin', 'LeafWiggle'],
+  space: ['Scan', 'Wave', 'Spin', 'Scan', 'Point', 'Talk'],
+  soil: ['LeafWiggle', 'Wave', 'Think', 'Jump', 'Talk', 'Point'],
+  rice: ['LeafWiggle', 'Wave', 'Spin', 'LeafWiggle', 'Jump', 'Talk'],
 };
 
 export function frameOf(scene: FarmScene, notes: Record<FarmVoice, FarmNote>): StoryFrame {
@@ -89,5 +89,15 @@ export function nextIdle(rand: Rand, busyUntil: Record<FarmVoice, number>, last:
   return { who, clip: clips[Math.floor(rand() * clips.length) % clips.length] };
 }
 
-/** Wait before the next idle beat: 3.5 to 8 s, so the three never move in step. */
-export const idleDelay = (rand: Rand): number => 3500 + Math.round(rand() * 4500);
+/** Wait before the next idle beat: 1.8 to 4.2 s, so the stage stays alive and the three never move in step. */
+export const idleDelay = (rand: Rand): number => 1800 + Math.round(rand() * 2400);
+
+/**
+ * A step of the time bar where nobody's part changed still gets an answer: one character, turn
+ * about by step, points at the field and looks at it, so every month visibly moves the stage.
+ */
+export function stepBeat(reactions: Reaction[], step: number): Reaction[] {
+  if (reactions.length) return reactions;
+  const who = VOICES[((step % VOICES.length) + VOICES.length) % VOICES.length];
+  return [{ who, clip: POINT_TO_FIELD[who], toField: true }];
+}

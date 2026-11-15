@@ -11,10 +11,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronsDown, FlaskConical, MapPin } from 'lucide-react';
 import { type AdvisoryReport, type RotationStrategy, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
-import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
+import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, fieldPatches, periodLand, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
-import { Button, Dialog, cn, usePrefersReducedMotion } from '@/ui/design';
+import { Button, Dialog, cn } from '@/ui/design';
+import { setMotion, useGlobeStatus } from '@/globe';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
 import { DeepSheet } from './DeepSheet';
 import { VOICES, frameOf } from './direct';
@@ -24,7 +25,7 @@ const cropLabel = (id: string, lang: string): string => {
   const c = getCrop(id);
   return c ? (lang === 'vi' && c.names.vi ? c.names.vi : c.names.en) : id;
 };
-import { FarmSceneView, sunOf } from './FarmScene';
+import { FarmSceneView, PATCH_GRID, sunOf } from './FarmScene';
 import { MascotSpot, NoteCard, RotationPicker, StageLinks, TimeBar, periodLabel } from './StageParts';
 import { useStageDirector } from './useStageDirector';
 import { useFarmYear } from './year';
@@ -56,7 +57,8 @@ export interface FarmStageProps {
 export function FarmView({ rotations, current, bestId, selected, onSelect, report, onAnalysis, onDossier }: FarmStageProps) {
   const t = useT();
   const lang = useLang();
-  const reduced = usePrefersReducedMotion();
+  // The app's motion setting: the system's unless the visitor turned motion on or off (here or on the map).
+  const reduced = useGlobeStatus((s) => s.reducedMotion);
   const parcel = useMission((s) => s.parcel);
   const telemetry = useMission((s) => s.telemetry);
   const cropId = useMission((s) => s.cropId);
@@ -155,6 +157,19 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   // The soil plan of the report is for the field's own crop: it is not quoted over a simulated one.
   const notes = useMemo(() => (shown && view ? farmNotes(shown.input, view.scene, { summary: view.summary, report: simulated ? null : report }) : null), [shown, view, simulated, report]);
   const year = useFarmYear(shown?.input ?? null, shown?.score ?? null);
+  // The NDVI picture is of the crop that grew there: it is not laid over a trial or a simulated strategy.
+  const ndvi = useMission((s) => s.rasters.find((r) => r.key === 'ndvi'));
+  const patches = useMemo(() => (parcel && view && !trial && !simulated ? fieldPatches(ndvi, parcel, view.scene.t, PATCH_GRID.rows, PATCH_GRID.cols) : null), [parcel, view, trial, simulated, ndvi]);
+  // What stands on the field each month or quarter, with the same crop source as the stage (trial, strategy or current).
+  const land = useMemo(() => {
+    if (!input || !score) return undefined;
+    return periods.map((p) => {
+      const src = trial ? { input: trial.input, score: trial.score } : runs ? (runOn(runs, p.to) ?? bare ?? { input, score }) : { input, score };
+      const l = periodLand(src.input, src.score, p);
+      const c = getCrop(l.cropId);
+      return { ...l, name: c ? (lang === 'vi' && c.names.vi ? c.names.vi : c.names.en) : null };
+    });
+  }, [input, score, periods, trial, runs, bare, lang]);
   const frame = useMemo(() => (view && notes ? frameOf(view.scene, notes) : null), [view, notes]);
   const { beats, looks, act } = useStageDirector({ root: stageRef, open, frame, reduced });
 
@@ -189,7 +204,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
 
   return (
     <section ref={stageRef} aria-label={t('farm.page')} className="relative h-full min-h-[560px] w-full overflow-hidden bg-[#74a57b]" data-farm-stage data-farm-when={period?.id ?? 'today'}>
-      <FarmSceneView scene={scene} beat={`${period?.id ?? 'today'}|${shown.input.cropId ?? 'none'}|${trialId ?? ''}`} title={t('farm.title', { d: when, sky: t(`farm.sky.${w.kind}`) })} className="absolute inset-0 h-full w-full" />
+      <FarmSceneView scene={scene} patches={patches} beat={`${period?.id ?? 'today'}|${shown.input.cropId ?? 'none'}|${trialId ?? ''}`} title={t('farm.title', { d: when, sky: t(`farm.sky.${w.kind}`) })} className="absolute inset-0 h-full w-full" />
       {/* Daylight breathing over the land, as strong as the sun shows in the sky drawn. Decoration only. */}
       <div aria-hidden className="farm-daylight pointer-events-none absolute inset-0" style={{ '--farm-sun': sunOf(w.kind) } as React.CSSProperties} />
       {/* A little shade under the plates at the top and the bar at the bottom, so the drawing never fights them. */}
@@ -263,7 +278,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
       )}
 
       {VOICES.map((who, k) => (
-        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} className={cn('z-10', SPOT[who].at)} />
+        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} reduced={reduced} className={cn('z-10', SPOT[who].at)} />
       ))}
       {open && (
         <NoteCard
@@ -283,7 +298,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
       )}
 
       <div className="absolute inset-x-3 bottom-3 z-30 flex flex-col gap-2 md:inset-x-4 md:bottom-4">
-        <TimeBar periods={periods} idx={idx} step={step} playing={playing} holdMs={reduced ? 0 : HOLD_MS[step]} onStep={(s) => { setPlaying(false); setIdx(null); setStep(s); }} onPlay={play} onPick={pickStep} trailing={<StageLinks onDossier={onDossier} />} />
+        <TimeBar periods={periods} land={land} idx={idx} step={step} playing={playing} holdMs={reduced ? 0 : HOLD_MS[step]} onStep={(s) => { setPlaying(false); setIdx(null); setStep(s); }} onPlay={play} onPick={pickStep} trailing={<StageLinks onDossier={onDossier} reduced={reduced} onMotion={() => setMotion(reduced ? 'full' : 'reduced')} />} />
         <button type="button" onClick={onAnalysis} className="mx-auto flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-medium text-white [text-shadow:0_1px_3px_rgb(8_20_14/0.7)] hover:bg-white/15" data-farm-analysis>
           <ChevronsDown size={14} aria-hidden />
           {t('farm.analysis')}

@@ -4,14 +4,13 @@
  * they cover through `setInsets`, so the camera frames the parcel in the free part.
  *
  * Wide (1100 px and up): rail and field panel on the left, map with tools and a timeline on the
- * right. Advisory and Urban take everything right of the rail.
+ * right. Advisory, Urban and the assistant (Ask) take everything right of the rail.
  * Narrow: map in the top 45 %, a scrolling sheet under it, timeline pinned above a tab bar.
  * `#/styleguide` and `#/globe-lab` are isolated benches for the design system and the map.
  */
 import { useEffect, useState } from 'react';
 import { GlobeCanvas, GlobeLab, useGlobeStatus } from '@/globe';
 import { useMission } from '@/state/mission';
-import { AskPanel } from '@/ui/ask';
 import { Shell } from '@/ui/chrome';
 import { getShellInsets } from '@/ui/chrome/shellInsets';
 import { StyleGuide } from '@/ui/design/StyleGuide';
@@ -41,7 +40,6 @@ export default function App() {
       <GlobeCanvas readViewInsets={getShellInsets} />
       <HeroOverlay />
       <Shell />
-      <AskPanel />
     </div>
   );
 }
