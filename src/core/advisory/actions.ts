@@ -5,7 +5,6 @@
 import type { Advisory, AnnualPlan, CropProfile, EvidenceItem, I18nText, IrrigationEvent, IrrigationPlan, ModelInput, MonthPlan, PhPlan, RotationStrategy, ScoreTimeline, TextureClass, WhatIfResult } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { whatIf, windowMonths } from '@/core/scoring';
-import { calculateBufferPhPlan } from '@/core/soil';
 import { addDays, diffDays } from '@/lib/time';
 import { baselineAt, branchConf, climateNormals, cropText, dailyArray, doyOf, findFact, findSeries, factNum, monthEn, monthVi, monthsFrom, r0, r1, sourceName, tx, wrapMonth } from './util';
 
@@ -124,7 +123,33 @@ const TEX_VI: Record<TextureClass, string> = { light: 'nhẹ', medium: 'thịt t
 const DRAIN_VI: Record<string, string> = { poor: 'kém', well: 'tốt', excessive: 'quá nhanh' };
 
 export function phPlan(input: ModelInput): PhPlan | undefined {
-  return calculateBufferPhPlan(input);
+  const c = getCrop(input.cropId);
+  const t = input.telemetry;
+  const measured = input.groundTruth.ph;
+  const current = measured ?? factNum(t, 'ph');
+  if (!c || current == null || c.flags?.includes('ph-missing')) return undefined;
+  const [, lo, hi] = c.req.ph;
+  const tex = texture(input);
+  const soilSrc = sourceName(t, t.branches.soil?.sources[0]);
+  const caveats: I18nText[] = [tx('Indicative only: confirm with a laboratory soil test (pH and buffer pH) before buying any amendment.', 'Chỉ mang tính tham khảo: cần phân tích đất (pH và pH đệm) tại phòng thí nghiệm trước khi mua chất cải tạo.')];
+  if (measured == null) caveats.push(tx(`The current pH is a map estimate (${soilSrc}), not a measurement on this field.`, `pH hiện tại là ước tính từ bản đồ (${soilSrc}), không phải đo trên thửa ruộng này.`));
+  if (current < lo) {
+    const target = r1(Math.min(hi, lo + 0.3));
+    const per = LIME[tex];
+    const delta = Math.min(1.5, target - current);
+    caveats.push(tx('Apply lime 1-3 months before sowing and work it into the soil; split rates above 4 t/ha over two seasons.', 'Bón vôi 1-3 tháng trước khi gieo và trộn vào đất; chia làm hai vụ nếu trên 4 t/ha.'));
+    return { current, target, amendment: 'lime', rateTHa: per ? [r1(per[0] * delta), r1(per[1] * delta)] : null, basis: tx(`${c.names.en} grows best at pH ${lo}-${hi}. Rate range for a ${tex} soil from typical extension liming tables (t CaCO3 equivalent per ha per pH unit, top ~20 cm).`, `${c.names.vi ?? c.names.en} phát triển tốt nhất ở pH ${lo}-${hi}. Khoảng liều cho đất ${TEX_VI[tex]} theo bảng bón vôi khuyến nông thông dụng (t CaCO3 tương đương/ha cho mỗi đơn vị pH, lớp đất ~20 cm).`), caveats };
+  }
+  if (current > hi) {
+    const target = r1(Math.max(lo, hi - 0.3));
+    // Calcareous soils buffer acid: sulfur rates are unpredictable and rarely economic.
+    const calcareous = current >= 7.5;
+    const per = calcareous ? null : SULFUR[tex];
+    const delta = Math.min(1, current - target);
+    if (calcareous) caveats.push(tx(`At pH ${current} the soil is probably calcareous (free lime): lowering pH is slow and rarely economic. Prefer tolerant crops and acidifying fertilisers; a carbonate test is needed.`, `Ở pH ${current} đất có thể chứa vôi tự do: hạ pH chậm và hiếm khi kinh tế. Ưu tiên cây chịu được và phân có tính axit; cần kiểm tra cacbonat.`));
+    return { current, target, amendment: 'sulfur', rateTHa: per ? [r1(per[0] * delta), r1(per[1] * delta)] : null, basis: tx(`${c.names.en} grows best at pH ${lo}-${hi}. ${per ? `Elemental sulfur range for a ${tex} soil from typical extension tables (t S per ha per pH unit).` : 'No rate is given: it cannot be estimated responsibly without a lab test.'}`, `${c.names.vi ?? c.names.en} phát triển tốt nhất ở pH ${lo}-${hi}. ${per ? `Khoảng liều lưu huỳnh nguyên tố cho đất ${TEX_VI[tex]} theo bảng khuyến nông thông dụng (t S/ha cho mỗi đơn vị pH).` : 'Không đưa liều: không thể ước tính có trách nhiệm khi chưa phân tích đất.'}`), caveats };
+  }
+  return { current, target: current, amendment: 'none', rateTHa: null, basis: tx(`pH ${current} is inside the ${lo}-${hi} range ${c.names.en} prefers: no amendment needed.`, `pH ${current} nằm trong khoảng ${lo}-${hi} mà ${c.names.vi ?? c.names.en} ưa thích: không cần cải tạo.`), caveats };
 }
 
 // ------------------------------------------------------------------------------------------------

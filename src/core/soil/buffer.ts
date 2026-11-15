@@ -5,6 +5,20 @@ import { classifyReferenceSoilType } from './reference';
 import type { ReferenceSoilType } from './types';
 
 /**
+ * NOT USED BY THE ADVISORY REPORT. The pH plan a grower sees is `phPlan` in
+ * `src/core/advisory/actions.ts`; `buildSoilPlan` echoes that plan. `calculateBufferPhPlan` stays
+ * here as work in progress and is exported for its tests only.
+ *
+ * Why it is not wired in: the coefficients below have no table or page behind them (the class
+ * factors of LIME_BUFFER_FACTORS and SULFUR_BUFFER_FACTORS, 0.12 x CEC + 0.8, 0.06 x clay + 1.2,
+ * the 15 percent band), organic carbon is read but not used, the correction is not capped per
+ * application, and with a map pH the range it returns is too wide to act on (0.2-18.8 t/ha for
+ * alfalfa on the Dak Lak sample, where the report gives 5.5-8.8). See docs/SOIL.md, section 3.
+ *
+ * `findFact` and `factNum` below are the helpers the rest of the module reads telemetry with.
+ */
+
+/**
  * Buffer factors: metric tonnes of pure CaCO3 equivalent per hectare per 1.0 pH unit
  * in the top ~20 cm root zone.
  *
