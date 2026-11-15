@@ -21,6 +21,7 @@ import { rasterFor } from './picture';
 import { SatelliteCanvas } from './SatelliteCanvas';
 import { TileLegend } from './ScaleLegend';
 import { AccumChart, NdviChart, s2Points } from './StatusCharts';
+import { FieldWeather } from './FieldWeather';
 import './strings';
 
 /** A number that answers part of "how is the field": its name, the value, one line that qualifies it. */
@@ -356,6 +357,7 @@ export function OverviewTab({ workspace = false }: { workspace?: boolean }) {
     <div className={cn('flex flex-col gap-6', workspace && 'workspace-overview')}>
       {!closed && parcelId && <QuickFacts onClose={() => closeQuick(parcelId)} onMore={() => setTab('soil')} />}
       <Summary workspace={workspace} />
+      <FieldWeather workspace={workspace} />
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className={workspace ? 'workspace-section-title' : 'text-lg font-medium text-ink-1'}>{t('field.status.satellite')}</h2>

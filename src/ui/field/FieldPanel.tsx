@@ -1,9 +1,10 @@
 /**
- * Field panel: a header (name, area and crop, the score, close) and four tabs, one per question a
- * grower asks of a field.
- *   Overview           how is the field doing: one sentence, three numbers, the field by date, two charts.
- *   Soil and practice  what are its real conditions: what the grower enters, in four groups.
- *   Rotation           what should grow here: the top strategy against the current one.
+ * Field panel, step (1) of the path: a header (name, area and crop, the score, close) and three tabs,
+ * one per question a grower asks of a field as it is. What to grow is step (2): the button at the
+ * foot of the panel leads there.
+ *   Overview           how is the field doing: one sentence, three numbers, the weather, the field by date, two charts.
+ *   Soil and practice  what are its real conditions: what the grower enters, in four groups. The one
+ *                      place where the crop grown today is declared.
  *   Data               where the numbers come from: the eight branches, the zones within the field.
  */
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -21,7 +22,7 @@ import { CardDetail } from './CardDetail';
 import { FieldReport } from './FieldReport';
 import { MetricGrid, useSelectBranch } from './MetricCards';
 import { ChartCard, OverviewTab } from './OverviewTab';
-import { RotationTab } from './RotationTab';
+import { NextStep } from './NextStep';
 import { SoilTab } from './SoilTab';
 import { AccumChart, gddBase, gddNote, gddSeries } from './StatusCharts';
 import './strings';
@@ -167,7 +168,6 @@ export function FieldPanel({ workspace = false }: { workspace?: boolean }) {
   const t = useT();
   const tab = useMissionUi((s) => s.fieldTab);
   const setTab = useMissionUi((s) => s.setFieldTab);
-  const setPhase = useMission((s) => s.setPhase);
   const root = useRef<HTMLDivElement | null>(null);
   const parcelId = useMission((s) => s.parcel?.id);
   const entered = useMission((s) => countOverrides(s.groundTruth));
@@ -191,12 +191,11 @@ export function FieldPanel({ workspace = false }: { workspace?: boolean }) {
         activationMode={workspace ? 'manual' : 'automatic'}
         ariaLabel={t('field.tabs')}
         value={tab}
-        onValueChange={(next) => workspace && next === 'rotation' ? setPhase('advisory') : setTab(next)}
+        onValueChange={setTab}
         tabs={[
           { value: 'overview', label: t('field.tab.overview') },
-          // Four tabs must fit a phone's width without scrolling the bar: the long name shortens, the fixed count goes.
+          // The tabs must fit a phone's width without scrolling the bar: the long name shortens, the fixed count goes.
           { value: 'soil', label: t(narrow ? 'field.tab.soilShort' : 'field.tab.soil'), badge: entered > 0 ? badge(entered, t('field.tab.soilCount')) : undefined },
-          { value: 'rotation', label: t('field.tab.rotation') },
           { value: 'data', label: t('field.tab.data'), badge: narrow ? undefined : badge(BRANCHES.length, t('field.tab.dataCount')) },
         ]}
       >
@@ -207,14 +206,12 @@ export function FieldPanel({ workspace = false }: { workspace?: boolean }) {
           <TabPanel value="soil" className="pt-6">
             <SoilTab />
           </TabPanel>
-          <TabPanel value="rotation" className="pt-6">
-            <RotationTab />
-          </TabPanel>
           <TabPanel value="data" className="pt-6">
             <DataTab workspace={workspace} />
           </TabPanel>
         </div>
       </Tabs>
+      <NextStep className={workspace ? 'workspace-next-step-docked' : undefined} />
     </div>
   );
 }
