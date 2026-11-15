@@ -278,7 +278,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
       )}
 
       {VOICES.map((who, k) => (
-        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} reduced={reduced} className={cn('z-10', SPOT[who].at)} />
+        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} className={cn('z-10', SPOT[who].at)} />
       ))}
       {open && (
         <NoteCard

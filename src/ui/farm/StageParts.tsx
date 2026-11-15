@@ -203,12 +203,10 @@ export interface MascotSpotProps {
   look?: { x: number; y: number } | null;
   /** Order of the entrance, so the three come on one after the other. */
   order?: number;
-  /** Motion off: the character stays at rest. */
-  reduced?: boolean;
   className?: string;
 }
 
-export function MascotSpot({ who, note, open, onToggle, clip, beat, look = null, order = 0, reduced, className }: MascotSpotProps) {
+export function MascotSpot({ who, note, open, onToggle, clip, beat, look = null, order = 0, className }: MascotSpotProps) {
   const t = useT();
   const lang = useLang();
   const flying = who === 'space';
@@ -244,7 +242,7 @@ export function MascotSpot({ who, note, open, onToggle, clip, beat, look = null,
           {!flying && <span aria-hidden className="farm-ground-shadow" />}
           <span className={cn('block', flying ? 'farm-hover-fly' : 'farm-hover-stand')}>
             <span className="farm-lift block">
-              <Mascot who={MASCOT_OF[who]} clip={clip} beat={beat} look={look} reduced={reduced} className="h-[8.5rem] w-28 md:h-[11.5rem] md:w-[9.25rem]" fallback={<MascotFigure who={who} mood={note.mood} />} />
+              <Mascot who={MASCOT_OF[who]} clip={clip} beat={beat} look={look} className="h-[8.5rem] w-28 md:h-[11.5rem] md:w-[9.25rem]" fallback={<MascotFigure who={who} mood={note.mood} />} />
             </span>
           </span>
         </span>
