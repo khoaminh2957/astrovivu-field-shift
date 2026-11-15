@@ -1,5 +1,5 @@
 import type { I18nText, ISODate } from './common';
-import type { Iso3, SourceQuality } from './country';
+import type { Iso3, PrevalenceLevel, SourceQuality } from './country';
 import type { CropSuiteSummary, FarmerPriority, SowingWindow } from './model';
 import type { BranchId } from './telemetry';
 
@@ -184,6 +184,14 @@ export interface SlotCropChoice {
   suitability: number | null;
   startMonth: number;
   cycleMonths: number;
+  /**
+   * How much of the crop the country of the parcel grows, when the model was given the country's
+   * table (`ModelInput.country`). `absent`: the country's statistics report none, so the crop is
+   * offered as a new crop that needs a trial. `unknown`: the statistics cannot tell. Left out for
+   * fallow, for a crop the grower grows that the statistics report none of, and when there is no
+   * table.
+   */
+  prevalence?: PrevalenceLevel;
 }
 
 /**
