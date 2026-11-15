@@ -28,7 +28,7 @@ const INTEGER = new Set(['ecocrop_id', 'cycle_min_days', 'cycle_max_days', 'item
 /** Written "yes" or "no" in the atlas. */
 const BOOLEAN = new Set(['curated', 'item_reported']);
 /** A column whose name ends in a unit holds a quantity: temp_opt_min_c, area_ha, world_production_t. */
-const QUANTITY = /^ph_|_(c|mm|deg|m|ha|t|pct)$/;
+const QUANTITY = /^(ph_.+|.+_(c|mm|deg|m|ha|t|pct))$/;
 
 /** The type of a column, from its name. `supabase/migrations` declares the same types; a test compares the two. */
 export function kindOf(table: AtlasTable, column: string): Kind {
