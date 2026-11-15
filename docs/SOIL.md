@@ -12,6 +12,7 @@ The rule of this module: every number, threshold and formula has a source that c
 | `buildSoilPlan(diagnosis, input, ph)` | `plan.ts` | The steps that follow from the diagnosis: measure first, correct pH, leach salts, drain | `AdvisoryReport.soilPlan` |
 | `leachingRequirement(input, measured)` | `salinity.ts` | Salinity and sodicity class, leaching requirement, gypsum requirement | The salinity item of the soil plan (leaching note); the gypsum dose is not in the report yet |
 | `aluminiumRisk(input, measured)` | `aluminium.ts` | What is known about exchangeable aluminium and the lime that neutralises a measured amount | Not in the report yet |
+| `measurementPriorities(input, score)` | `measureFirst.ts` | Ranked list of which soil factors to measure first on the field, ordered by whether the map interval flips the soil plan (`changesAdvice`) and by suitability score spread (`whatIf`) | Ready for override / soil panel |
 | `calculateBufferPhPlan(input)` | `buffer.ts` | A pH plan scaled by buffer capacity | **Not used.** See section 3 |
 
 Statuses of a diagnosis row: `optimal`, `tolerable`, `outside`, `uncertain` (a map estimate whose interval reaches across a limit of the crop), `no_data` (no reading: the value is `null`, nothing stands in for it), `reading_only` (a reading with no requirement in the crop catalogue: no verdict).
@@ -141,6 +142,15 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Aluminium saturation = Al / (Al + exchangeable Ca, Mg, K, Na). The CEC of a soil map is measured at pH 7 and is not the effective CEC: without the exchangeable bases the saturation is not computed, and the result asks for them.
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
+
+### 5.6 What to measure first (`measureFirst.ts`)
+
+- `measurementPriorities(input, score)` tests each soil factor that the grower has not yet entered in `input.groundTruth`.
+- When a factor carries a 5-95% uncertainty interval from SoilGrids (`ph`, `clay_pct`/`sand_pct` mapped to texture class, `soc_gkg` mapped to organic matter), `buildSoilPlan` is evaluated with `groundTruth` set to the low end and to the high end of the interval. `changesAdvice` is `true` when the two ends differ in whether an amendment item is produced, its kind (`title`), or whether a dose (`rateRange`) is given.
+- `scoreSpread` is the absolute difference in suitability score between the low and high ends of the interval, computed via `whatIf(input, patch)` (`src/core/scoring/index.ts`).
+- Factors with `no_data` that the selected crop has a requirement for (`drainage`, `depth`, `salinity` outside the United States) are always included with the reason that no reading is held yet.
+- Factors from map sources that do not publish an uncertainty interval (such as SSURGO) get `changesAdvice: false` and `scoreSpread: 0`, with a reason stating that the source publishes no interval.
+- Field measurement methods cite USDA ARS / NRCS (1999), *Soil Quality Test Kit Guide*, PA-1629 (Section I, Chapters 2, 5, 6, and 10).
 
 ## 6. Removed from the output for lack of a source
 
