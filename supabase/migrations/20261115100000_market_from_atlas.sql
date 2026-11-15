@@ -161,7 +161,7 @@ create table public.crop_country (
   iso3                                text not null references public.areas (iso3),
   country                             text not null,
   faostat_item_code                   text,
-  match                               text not null check (match in ('exact', 'group', 'national')),
+  match                               text not null check (match in ('exact', 'group')),
   item_reported                       boolean not null,
   area_ha                             numeric check (area_ha >= 0),
   production_t                        numeric check (production_t >= 0),
@@ -172,9 +172,6 @@ create table public.crop_country (
   rank_in_country                     integer check (rank_in_country >= 1),
   level                               text not null check (level in ('major', 'common', 'minor', 'present', 'absent', 'unknown')),
   source                              text,
-  url                                 text,
-  accessed                            text,
-  note                                text,
   primary key (crop_id, iso3)
 );
 create index crop_country_iso3_level_idx on public.crop_country (iso3, level);
