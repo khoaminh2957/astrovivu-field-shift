@@ -12,6 +12,7 @@ The rule of this module: every number, threshold and formula has a source that c
 | `buildSoilPlan(diagnosis, input, ph)` | `plan.ts` | The steps that follow from the diagnosis: measure first, correct pH, leach salts, drain | `AdvisoryReport.soilPlan` |
 | `leachingRequirement(input, measured)` | `salinity.ts` | Salinity and sodicity class, leaching requirement, gypsum requirement | The salinity item of the soil plan (leaching note); the gypsum dose is not in the report yet |
 | `aluminiumRisk(input, measured)` | `aluminium.ts` | What is known about exchangeable aluminium and the lime that neutralises a measured amount | Not in the report yet |
+| `amendmentCost(plan, prices, areaHa, marginDeltaUsdPerHa)` | `cost.ts` | Material cost range (`dose x price x areaHa`) and indicative payback seasons for dosed plan items, given an external price map | Ready for economics / soil panel |
 | `calculateBufferPhPlan(input)` | `buffer.ts` | A pH plan scaled by buffer capacity | **Not used.** See section 3 |
 
 Statuses of a diagnosis row: `optimal`, `tolerable`, `outside`, `uncertain` (a map estimate whose interval reaches across a limit of the crop), `no_data` (no reading: the value is `null`, nothing stands in for it), `reading_only` (a reading with no requirement in the crop catalogue: no verdict).
@@ -141,6 +142,13 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Aluminium saturation = Al / (Al + exchangeable Ca, Mg, K, Na). The CEC of a soil map is measured at pH 7 and is not the effective CEC: without the exchangeable bases the saturation is not computed, and the result asks for them.
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
+
+### 5.6 Amendment cost and payback (`cost.ts`)
+
+- `amendmentCost(plan, prices, areaHa, marginDeltaUsdPerHa)` computes the material cost interval `[rateRange.min x usdPerT x areaHa, rateRange.max x usdPerT x areaHa]` for each item of `SoilPlan` that carries a dose (`rateRange`).
+- No material price is stored in `src/core/soil`: prices are passed by the caller (`prices: { lime?, sulfur?, gypsum? }`, each with `{ usdPerT, source, year }`). When a material has no entry in `prices`, `costUsd` is `null` and `reason` states why in both languages.
+- Payback (`paybackSeasons`) is computed only when a positive seasonal margin gain (`marginDeltaUsdPerHa`, USD/ha/season) is supplied by the economics model, and is explicitly labelled as a model estimate not verified in the field.
+- Spreading labour and transport costs are excluded, and material costs are not amortised across multiple years without a local residual curve; both limits are carried in `caveats`.
 
 ## 6. Removed from the output for lack of a source
 
