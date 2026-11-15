@@ -5,7 +5,7 @@
  * assistant and the language switch, because there is no rail yet; the add-a-field step opens above
  * the box. The component stays mounted across the two phases, so the search does not jump.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, MessageCircleQuestion, MousePointer2, Sprout } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { useLang, useT } from '@/i18n';
@@ -82,10 +82,13 @@ export function Finder() {
   const stack = useRef<HTMLDivElement>(null);
 
   // The shell reserves this much of the map's bottom edge, so a place the camera flies to lands above the finder.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = stack.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => setFinderH(Math.round(el.getBoundingClientRect().height)));
+    if (!el) return;
+    const measure = () => setFinderH(Math.round(el.getBoundingClientRect().height));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return () => setFinderH(0);
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => {
       ro.disconnect();

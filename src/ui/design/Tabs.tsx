@@ -21,6 +21,7 @@ export interface TabsProps<V extends string = string> {
   size?: 'md' | 'lg';
   /** Tabs share the full width equally (phone layouts). */
   block?: boolean;
+  activationMode?: 'automatic' | 'manual';
   /** `TabPanel` elements. Omit to drive your own content from `value`. */
   children?: ReactNode;
   className?: string;
@@ -30,9 +31,9 @@ export interface TabsProps<V extends string = string> {
  * Tabs switch between views of the same parcel (journal / seasons / finances). The active tab is
  * marked by an ink rule under its label and medium weight; arrow keys move, Home and End jump.
  */
-export function Tabs<V extends string = string>({ tabs, value, onValueChange, ariaLabel, size = 'md', block, children, className }: TabsProps<V>) {
+export function Tabs<V extends string = string>({ tabs, value, onValueChange, ariaLabel, size = 'md', block, activationMode, children, className }: TabsProps<V>) {
   return (
-    <RTabs.Root value={value} onValueChange={(v) => onValueChange(v as V)} className={cn('flex min-w-0 flex-col', className)}>
+    <RTabs.Root value={value} activationMode={activationMode} onValueChange={(v) => onValueChange(v as V)} className={cn('flex min-w-0 flex-col', className)}>
       <RTabs.List aria-label={ariaLabel} className="flex min-w-0 shrink-0 gap-7 overflow-x-auto border-b border-line-1 [scrollbar-width:none]">
         {tabs.map((tab) => (
           <RTabs.Trigger

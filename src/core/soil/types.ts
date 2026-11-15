@@ -2,6 +2,22 @@ import type { I18nText, SoilPlan, SoilPlanItem, SoilStatus } from '@/contracts';
 
 export type { SoilStatus, SoilPlanItem, SoilPlan };
 
+/** One soil value of the field as the soil module reads it: the source's figure, or the grower's own when there is one. */
+export interface SoilFact {
+  /** Same key as `StaticFact.key`, for example `ph`. */
+  key: string;
+  label: I18nText;
+  value: number | string | null;
+  unit?: string;
+  /** An id of `telemetry.sources`, or `ground-truth` for a grower's measurement. */
+  sourceId: string;
+  sourceName: I18nText;
+  uncertainty?: [lo: number, hi: number];
+  fromGrower: boolean;
+  /** The estimate the grower's value replaced; only set when `fromGrower` and the source had one. */
+  estimate?: number | string | null;
+}
+
 /** Soil groups of the buffer method (`buffer.ts`), which the report does not use yet. */
 export type ReferenceSoilType =
   | 'Sandy'

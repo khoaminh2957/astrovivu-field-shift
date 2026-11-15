@@ -207,8 +207,12 @@ Map controls are dark, as in the reference: #1c1c1e pills with white 20 px icons
 
 | Width | Layout |
 |---|---|
-| 1100 px and up | Rail 56 (`--rail-w`, #e5e5ea, 24 px icons in 40 px tiles 48 px apart, the page in view on a #d1d1d6 tile, names as tooltips) · list panel 280 (`--left-w`, white, 8 px left radius) · map with its dark controls (above) and a floating timeline strip 72 px (`--strip-h`) · field panel 580 (`--right-w`, 520 at 1280 x 720; 12 px radius, 24 px padding) floating over the right of the map once a field is locked. Advisory (Rotation), Tracking (Notes) and Urban fill everything right of the rail. |
-| below 1100 px (`narrow:`) | Map in the top 45 % (`--map-h`) with zoom, fit and layers; one scrolling sheet under it with a drag handle; timeline pinned above a 60 px tab bar (`--tabbar-h`); nothing under 12 px; touch controls 44 px. |
+| 1100 px and up | The 60 px navigation rail and the field panel share the left side. The map fills the right with its tools, scale, attribution and timeline. The field list opens inside the left panel in the current prototype. The assistant uses the bottom of the same column. The other workspace pages fill the page beside the same rail. |
+| below 1100 px (`narrow:`) | Map in the top 45 % (`--map-h`) with zoom, fit and layers. A scrolling sheet sits below it, with the timeline pinned above the 54 px tab bar. Navigation retains six labelled targets. |
+
+Field, Rotation and Urban share the light gradient, navy ink `#071A52`, teal `#086972`, green `#17B978` and lime `#A7FF83` in `src/styles/workspace.css`. Titles use the same display face and responsive size scale. The field map keeps the source imagery and the metric colour scale. The shell remembers the active Rotation tab and strategy for the same field, and the Urban location and filters for the session.
+
+Home shows the active field and its latest weather readings, with actions for Field, Weather, Rotation and Urban. Weather shows the active field's dated readings, daily forecast and seven-day history. Source links and dates appear with the values. Old, saved and simulated readings have visible labels. The A mark returns to the globe landing. Home and Weather keep the active field and its map view.
 
 Screens, and the one green button each has:
 
@@ -223,7 +227,7 @@ Screens, and the one green button each has:
 | Rotation (`src/ui/advisory`) | Priority chips (up to three); a strip of strategy tiles that stays at the top while the page scrolls (`StrategyCards`: current practice first as baseline, crop-group bar, crops, score and delta; green rim on the selection); then two columns on a wide screen, the calendar and trade-offs on the left and the five lists on the right: 12-month `SeasonCalendar` (`--group-*` tokens) aligned above the field's 20-year ERA5 rain and temperature `ClimateStrip` (hover/tap `SeasonBlock` for fit, water need vs rain, yield and margin; click any block on the selected strategy to filter and swap its crop into a live-scored `Custom` strategy), `TradeOffs` dumbbell chart against current (full table behind a disclosure), `StrategyStory` five lists with clickable branch-evidence tiles; `AnnualPlanView` on the same month grid and `ActionPlans`, each one line until opened (`Fold`) | Choose a field (only when empty) |
 | Urban Grower (`src/ui/urban`) | Location picker, illustrated `ChoiceTiles` for growing space and sun hours, 12-month temperature, rain and PAR `ClimateStrip` with source labels, `PlantGrid` of `PlantCard` tiles with linked FAO EcoCrop photographs (`CropPhoto`, group-icon tile fallback), score ring, difficulty, 12-month sowing strip and harvest days, opening `PlantDetail` sheet | Use my location / Pick on map |
 
-What differs from OneSoil on purpose: the name, the mark and all wording are ours (English and Vietnamese); icons are lucide; the typeface is Inter where theirs is Graphik; their field panel covers the whole map (8 px inset on every side, 808 px wide at 1440) where ours is 580 px on the right, because the map with the field picture and the timeline strip must stay visible; their second green pill (in the question card) is an outlined button in ours, so each panel has one primary; their rows carry status icons and a checkbox and their list has a seasons column, which we have no use for; their app has no narrow layout at all (`body` has a 1000 px minimum width), so ours below 1100 px is our own; the rail has five destinations and a two-way language switch; the timeline strip, the score cards, the "Field range / Fixed scale" switch and the ground-truth tab have no counterpart in the model.
+The Astrovivu field panel leaves the map, field picture and timeline visible. The navigation labels and field data support English and Vietnamese. The smaller layout uses a separate sheet and touch navigation. The map timeline, score cards, field range switch and ground-truth tab support the Astrovivu workflow.
 
 Field panel tabs, one per question a grower asks (`docs/UX_PLAN.md` U5, U6): Overview (three opening questions until closed, the model's one-sentence reading, three numbers, the field picture beside the satellite image, the NDVI and rainfall charts), Soil and practice (what the grower enters in four groups: soil, water, seasons and crops, money; then the ledger of what the entries changed), Rotation (the top strategy against the current one, and the way into the full comparison), Data (eight field-shaped metric cards, each opening a detail with legend, frame date and age, a filmstrip of real frames, series, facts, sources and caveats; the heat-sum chart; the within-field zones, folded until opened). Field pictures are canvases drawn from a store subscription, so playback never re-renders React. The radial HUD, leader lines and hub on the parcel are retired; their primitives stay in the style guide only.
 
@@ -300,6 +304,18 @@ Pass samples at native cadence (never interpolated) and the timeline window as `
 Rest (neutral), in focus (`active`), `watch` / `alert` (tinted border + tag; alert also colours the value), `stale` (dimmed value), `ground-truth` (value in inverse video, `estimate` struck through), `simulated` (hatched tag, dotted trace), `loading` (skeleton), `unavailable` (reason text). `nominal` draws nothing.
 
 ## Motion
+
+Workspace page and tab entries, the field list, extra map tools and the assistant use a short opacity and position change. Buttons and selection controls give press feedback. The system preference for reduced motion removes these effects, and the same behaviour can be checked with `?motion=reduced`.
+
+Step transition timing ([#87](https://github.com/quocbao271207/astrovivu-field-shift/issues/87)):
+
+| Transition | Camera | Interface (`opacity` / `transform` only) | Duration token |
+|---|---|---|---|
+| Home to map (`hero` → `explore`) | `enterView('explore')`, `'level'` | Hero overlay fades out (`--ease-in`); finder morphs to frosted dock (`Finder.tsx`); explore nav and map tools fade/translate in (`workspace-explore-chrome`) | `--dur-slow` (420 ms) / `--dur-base` (220 ms) |
+| Map to boundary (`explore` → `draft`) | `queueFrameDraft` (140 ms settle) + `frameDraft` | Add-field card (`workspace-add-card`) slides in from the left edge on desktop (`translate: -16px 0`) or from the bottom on narrow screens (`translate: 0 16px`) | `--dur-slow` (420 ms, `--ease-out`) |
+| Boundary to field (`draft` → `locked`) | `fly(pose, 'descend')` with destination `shellInsets` | Add-field card gives way at the same left edge to the rail and field panel (`workspace-slide-left`), while the timeline (`workspace-slide-up`) and map controls (`workspace-appear`) enter | `--dur-slow` (420 ms) / `--dur-base` (220 ms) |
+| Home to sample field (`hero` → `locked`) | `fly(pose, 'descend')` from orbit with destination `shellInsets` | Hero overlay fades out; rail and field panel slide in from the left (`workspace-slide-left`) or bottom sheet + tab bar slide up (`workspace-slide-up`) with the timeline | `--dur-slow` (420 ms) / `--dur-base` (220 ms) |
+| Field to map (`locked` → `explore`) | `fly(pose, 'ascend')` | Field panel and timeline unmount as the finder and explore controls (`workspace-explore-chrome`) enter | `--dur-base` (220 ms, `--ease-out`) |
 
 | Token | ms | For |
 |---|---:|---|
