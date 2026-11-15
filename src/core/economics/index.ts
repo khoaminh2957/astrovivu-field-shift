@@ -3,7 +3,7 @@
  * USD is the base currency; `getCurrency('VND')` gives the rate for a dong view. Reference values
  * are reference values (docs/ECONOMICS.md); the farmer's own yield, price and cost replace them.
  */
-import type { CurrencyInfo, ModelInput, Parcel, ScoreTimeline, SeasonEconomics, StrategyEconomics } from '@/contracts';
+import type { CurrencyInfo, GroundTruth, ModelInput, Parcel, ScoreTimeline, SeasonEconomics, StrategyEconomics } from '@/contracts';
 import { tx } from '@/contracts';
 import { EXCHANGE_RATE, REFERENCE_ECONOMICS } from '@/core/crops/curated.generated';
 import { assessCrop, computeScoreDetail, yieldRange } from '@/core/scoring';
@@ -50,6 +50,20 @@ export interface SeasonEconomicsInput {
   reference: ReferenceEconomics | null;
   /** The farmer's own numbers, already in USD and per tonne / per hectare. */
   own?: { yieldTHa?: number; priceUsdPerT?: number; costUsdPerHa?: number };
+}
+
+/**
+ * The grower's own yield, price and cost, in the units the model computes in (t/ha, USD per tonne,
+ * USD per hectare). Price and cost are entered in `groundTruth.currency`; without one they are in
+ * USD. Every place that lets the grower's numbers replace a reference value goes through here, so
+ * that an amount in dong is converted the same way everywhere.
+ */
+export function ownEconomics(gt: Pick<GroundTruth, 'lastYieldTHa' | 'pricePerT' | 'costPerHa' | 'currency'>): NonNullable<SeasonEconomicsInput['own']> {
+  return {
+    yieldTHa: gt.lastYieldTHa,
+    priceUsdPerT: gt.pricePerT != null ? toUsd(gt.pricePerT, gt.currency) : undefined,
+    costUsdPerHa: gt.costPerHa != null ? toUsd(gt.costPerHa, gt.currency) : undefined,
+  };
 }
 
 /**
@@ -133,13 +147,7 @@ export function estimateSeasonEconomics(input: ModelInput, score: ScoreTimeline,
     highFraction: range?.high,
     reference: referenceEconomics(id, input.parcel),
     // The farmer's numbers describe the crop they grow, so they apply to the selected crop only.
-    own: selected
-      ? {
-          yieldTHa: gt.lastYieldTHa,
-          priceUsdPerT: gt.pricePerT != null ? toUsd(gt.pricePerT, gt.currency) : undefined,
-          costUsdPerHa: gt.costPerHa != null ? toUsd(gt.costPerHa, gt.currency) : undefined,
-        }
-      : undefined,
+    own: selected ? ownEconomics(gt) : undefined,
   });
 }
 
