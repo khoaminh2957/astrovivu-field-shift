@@ -4,7 +4,7 @@
  */
 import type { CropProfile, EvidenceItem, FarmerPriority, I18nText, ModelInput, RotationKind, RotationSeason, RotationSeasonDetail, RotationStrategy, SeasonEconomics } from '@/contracts';
 import { getCrop, listCrops } from '@/core/crops';
-import { referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
+import { ownEconomics, referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
 import { scanSowingWindows, windowMonths } from '@/core/scoring';
 import { type MonthNormal, monthlyNormals } from '@/lib/climate';
 import { cropSeasonDetail, fallowSeasons, sumNormal } from './seasonDetail';
@@ -411,7 +411,8 @@ export function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: s
     const reliab = input.groundTruth.waterReliability === 'often-short' ? 0.5 : input.groundTruth.waterReliability === 'dry-season-short' ? 0.75 : 1;
     supply += Math.min(etc, rain + irr * reliab);
     nitrogen += N_CREDIT(c) * p.share;
-    const own = p.cropId === input.cropId ? { yieldTHa: input.groundTruth.lastYieldTHa, priceUsdPerT: input.groundTruth.currency === 'VND' || !input.groundTruth.pricePerT ? undefined : input.groundTruth.pricePerT, costUsdPerHa: input.groundTruth.currency === 'VND' || !input.groundTruth.costPerHa ? undefined : input.groundTruth.costPerHa } : undefined;
+    // The grower's numbers describe the crop they grow, so they apply to the seasons of that crop only.
+    const own = p.cropId === input.cropId ? ownEconomics(input.groundTruth) : undefined;
     const e = seasonEconomics({ cropId: p.cropId, areaHa: area * p.share, yieldFraction: s / 100, reference: referenceEconomics(p.cropId, input.parcel), own });
     if (e) seasons.push(e);
     else noEcon.add(p.cropId);

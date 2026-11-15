@@ -18,7 +18,7 @@ For the selected crop the fraction is the season outcome of the score; for any o
 
 **Cost is the operating (variable) cost**: inputs, hired work, machinery running costs. Land, family labour and overhead are left out because they do not change with the crop choice, so the margin is a gross margin over operating costs. Where a source publishes total cost, the total is quoted in the source line. Perennials: production years only, no establishment cost. Cover crops: no yield and no price, only the cost of seed and drilling, so their margin is negative by construction; their benefit is counted by the rotation planner, not here.
 
-**The farmer's numbers win.** `lastYieldTHa`, `pricePerT` and `costPerHa` (in USD or VND) replace the reference values for the selected crop; a farmer's yield is used as it is (range +/- 15 %) and not scaled by the score again. `usesReferenceValues` stays true while any of the three is a reference value.
+**The farmer's numbers win.** `lastYieldTHa`, `pricePerT` and `costPerHa` (in USD or VND) replace the reference values for the selected crop, in the season economics and in every rotation that contains the crop. Price and cost are converted to USD in one place, `ownEconomics` in `src/core/economics/index.ts`: an amount is read in `groundTruth.currency`, and in USD when no currency is stored, so the entry form stores the currency it shows with every amount. A farmer's yield is used as it is (range +/- 15 %) and not scaled by the score again. `usesReferenceValues` stays true while any of the three is a reference value.
 
 **Nothing is assumed.** If yield, price or cost is known neither from the farmer nor from a reference, `estimateSeasonEconomics` returns `null`.
 
