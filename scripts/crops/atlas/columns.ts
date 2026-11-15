@@ -261,5 +261,17 @@ add(EC, 'source', 'Source of the figures; when the three figures have separate s
 add(EC, 'url', 'Link to the source; when the three figures have separate URLs, written in yield | price | cost order.', 'Đường dẫn tới nguồn; khi ba con số có đường dẫn riêng, ghi theo thứ tự yield | price | cost.', '', 'to be filled', '');
 add(EC, 'accessed', 'Date the source was read.', 'Ngày tra cứu nguồn.', 'date', 'to be filled', '');
 
+// Long-format urban container table (`data/crops/atlas/urban.csv`), one row per crop and attribute.
+const UR = 'urban';
+add(UR, 'crop_id', 'Crop identifier (must exist in crops.csv).', 'Mã cây trồng (phải tồn tại trong crops.csv).', '', 'extension guides', 'join key');
+add(UR, 'attribute', 'Container attribute: pot_depth_min, pot_volume_min, spacing, sun_hours_min, first_harvest_min, first_harvest_max, harvest_type, needs_trellis, difficulty.', 'Thuộc tính trồng chậu: pot_depth_min, pot_volume_min, spacing, sun_hours_min, first_harvest_min, first_harvest_max, harvest_type, needs_trellis, difficulty.', '', 'extension guides', 'validated in scripts/crops/urban-table.ts');
+add(UR, 'value', 'Sourced value of the attribute (omitted when no source exists).', 'Giá trị có nguồn của thuộc tính (không ghi dòng nếu không có nguồn).', '', 'extension guides', 'when two sources differ, the more conservative figure is chosen');
+add(UR, 'unit', 'Unit of value (cm, L, h, days, or empty for categorical attributes).', 'Đơn vị của giá trị (cm, L, h, days, hoặc để trống với thuộc tính phân loại).', '', 'extension guides', 'validated per attribute');
+add(UR, 'source', 'Extension or national horticultural publication title and author.', 'Tên tài liệu khuyến nông đại học hoặc cấp quốc gia và tác giả.', '', 'extension guides', 'required on every row');
+add(UR, 'url', 'Direct URL to the publication.', 'Đường dẫn trực tiếp tới tài liệu.', '', 'extension guides', 'required on every row');
+add(UR, 'accessed', 'Date the source was read (YYYY-MM-DD).', 'Ngày truy cập nguồn (YYYY-MM-DD).', 'date', 'extension guides', 'required on every row');
+add(UR, 'note', 'Conversion note, source wording for difficulty (1..3), or multi-source comparison note.', 'Ghi chú quy đổi đơn vị, câu chữ gốc của nguồn cho độ khó (1..3), hoặc đối chiếu nhiều nguồn.', '', 'extension guides', 'required on difficulty rows');
+
 export const COLUMNS: readonly ColumnDoc[] = out;
 export const ECONOMICS_COLUMNS = out.filter((c) => c.table === EC).map((c) => c.column);
+export const URBAN_COLUMNS = out.filter((c) => c.table === UR).map((c) => c.column);
