@@ -7,7 +7,7 @@
  * The drawing is 1600 x 900 and is cropped to the box from its lower middle (`xMidYMax slice`), so
  * the field stays in view on a tall phone and on a wide desk alike.
  */
-import type { FarmCrop, FarmScene, SkyKind } from '@/core/farm';
+import type { FarmCrop, FarmScene, FieldPatches, SkyKind } from '@/core/farm';
 import { Birds, Chimney, CloudShadows, CanalShimmer, Dust, Grower, type GrowerWork, PaddyGlints, Pollinators, Splashes, SunRays, Yard } from './Ambient';
 import { Plant, RIPENS, Stubble, leafColours } from './plants';
 import './farm.css';
@@ -30,9 +30,12 @@ interface Spot {
   y: number;
   s: number;
   i: number;
+  /** Place in the grid of the field patches: depth row (far first) and ridge column (west first). */
+  row: number;
+  col: number;
 }
 /** Where plants stand: far rows first, left to right, which is also the order the harvester cuts them in. */
-const SPOTS: Spot[] = DEPTHS.flatMap((y) => RIDGES_NEAR.map((xn) => ({ x: rowX(xn, y), y, s: depthScale(y) })))
+const SPOTS: Spot[] = DEPTHS.flatMap((y, row) => RIDGES_NEAR.map((xn, col) => ({ x: rowX(xn, y), y, s: depthScale(y), row, col })))
   .filter((p) => p.x > -30 && p.x < W + 30)
   .map((p, i) => ({ ...p, i }));
 /** The row the grower walks: plants behind it are drawn before the grower, plants in front after. */
@@ -197,10 +200,25 @@ function Landscape({ kind, windy }: { kind: SkyKind; windy: boolean }) {
   );
 }
 
-/** The plants behind the grower's row (`near` false) or in front of it. */
-function Plants({ crop, beat, near }: { crop: FarmCrop; beat: string; near: boolean }) {
+/** Grid of the stage's plants, for `fieldPatches`. */
+export const PATCH_GRID = { rows: DEPTHS.length, cols: RIDGES_NEAR.length } as const;
+const clampK = (k: number): number => Math.max(0.7, Math.min(1.25, k));
+
+/**
+ * The plants behind the grower's row (`near` false) or in front of it. With field patches, each
+ * plant stands as its patch of the field does: shorter and paler where the NDVI picture is below
+ * the field mean, taller and greener above it (the ratio is held to 0.7..1.25 for drawing).
+ */
+function Plants({ crop, beat, near, patches }: { crop: FarmCrop; beat: string; near: boolean; patches?: FieldPatches | null }) {
   if (crop.look === 'none') return null;
   const { fill, dark } = leafColours(crop.vigor, crop.ripeness, RIPENS[crop.look]);
+  const at = (p: Spot) => {
+    const k = patches ? clampK(patches.ratio[p.row * patches.cols + p.col] ?? 1) : 1;
+    if (k === 1) return { growth: crop.growth, fill, dark };
+    const growth = Math.max(0.08, Math.min(1.12, crop.growth * (1 + (k - 1) * 1.4)));
+    const colours = leafColours(crop.vigor == null ? null : Math.max(0, Math.min(1, crop.vigor + (k - 1) * 1.6)), crop.ripeness, RIPENS[crop.look]);
+    return { growth, ...colours };
+  };
   const cut = crop.harvested == null ? 0 : Math.round(crop.harvested * SPOTS.length);
   return (
     // Keyed by the step shown, so that the plants rise into each new stage instead of switching.
@@ -212,7 +230,10 @@ function Plants({ crop, beat, near }: { crop: FarmCrop; beat: string; near: bool
           ) : (
             <g className="farm-rise" style={{ animationDelay: `${((p.i * 13) % 420).toFixed(0)}ms` }}>
               <g className="farm-sway" style={{ animationDelay: `-${((p.i * 0.37) % 4).toFixed(2)}s` }}>
-                <Plant look={crop.look} growth={crop.growth} ripeness={crop.ripeness} fill={fill} dark={dark} seed={p.i} />
+                {(() => {
+                  const v = at(p);
+                  return <Plant look={crop.look} growth={v.growth} ripeness={crop.ripeness} fill={v.fill} dark={v.dark} seed={p.i} />;
+                })()}
               </g>
             </g>
           )}
@@ -276,6 +297,8 @@ function Seeder() {
 
 export interface FarmSceneViewProps {
   scene: FarmScene;
+  /** How the crop differs across the field, from its NDVI picture; null or absent draws every plant alike. */
+  patches?: FieldPatches | null;
   /** Accessible name of the drawing. */
   title: string;
   /** Changes when the step shown changes: the plants then rise into their new stage. */
@@ -283,7 +306,7 @@ export interface FarmSceneViewProps {
   className?: string;
 }
 
-export function FarmSceneView({ scene, title, beat, className }: FarmSceneViewProps) {
+export function FarmSceneView({ scene, title, beat, patches, className }: FarmSceneViewProps) {
   const { weather, crop, soil } = scene;
   const sky = SKY[weather.kind];
   const windy = weather.windMs != null && weather.windMs >= 6;
@@ -349,9 +372,9 @@ export function FarmSceneView({ scene, title, beat, className }: FarmSceneViewPr
       <CanalShimmer x0={farLeft} x1={farRight - 46} y={FAR_Y - canal / 2 - 1} />
       <Yard />
 
-      <Plants crop={crop} beat={beat} near={false} />
+      <Plants crop={crop} beat={beat} near={false} patches={patches} />
       {work && <Grower work={work} x={470} y={WALK_Y} s={depthScale(WALK_Y) * 1.9} />}
-      <Plants crop={crop} beat={beat} near />
+      <Plants crop={crop} beat={beat} near patches={patches} />
       <Pollinators show={standing && crop.growth >= 0.3 && (weather.kind === 'clear' || weather.kind === 'hot' || weather.kind === 'cloudy')} />
 
       {crop.harvested != null && crop.harvested < 1 && (

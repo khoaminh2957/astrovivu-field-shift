@@ -74,12 +74,15 @@ A strategy other than the current practice is played with its own crops: `season
 The figures are the mascot owner's 3D models (Rice, Seed, Satellite; `docs/MASCOT.md`). Each carries a three-dot bubble; the bubble is amber with a mark when the character has something to look at. Nobody speaks until pressed, but nobody stands still either (rules in `direct.ts`, tested in `direct.test.ts`; timing in `useStageDirector.ts`):
 
 - **Entrance.** They hop in one after the other, then wave (the Satellite scans).
-- **Between notes.** Every 3.5 to 8 s one of them plays a small clip (Wave, LeafWiggle, Think, Spin, Scan, Jump): never the one who just moved, never one still in a clip, never within 2.2 s of another clip. Sometimes another glances at it. This pauses while a note is open and while the tab is hidden.
+- **Between notes.** Every 1.8 to 4.2 s one of them plays a small clip (Wave, LeafWiggle, Think, Spin, Scan, Jump, Point, Talk): never the one who just moved, never one still in a clip, never within 1.4 s of another clip. Sometimes another glances at it. This pauses while a note is open and while the tab is hidden.
 - **The story.** When the step shown changes, each character whose part changed answers it, one after the other (0.4 s apart), one clip each. The Satellite jumps at heavy rain, scans at rain, thinks at heat or frost; Rice celebrates when the harvest begins and jumps when sowing begins; Seed thinks when the ground turns dry and shakes its leaves when it turns wet. Otherwise a new alert makes the character point toward the field and look at it; a note turning worried makes it think, turning glad makes it celebrate (the Satellite spins).
 - **A note.** The speaker talks; the other two turn their eyes, and their body a little, toward it (`MascotStage.aimAt`) until it closes.
 - **Always.** The figure floats (the two on the ground bob over a soft shadow that shrinks as they rise; the Satellite drifts and tilts) and lifts on hover and while speaking.
 
-Under `prefers-reduced-motion` none of this runs: no clips, no float, no entrance.
+- **Between clips.** Each figure breathes, bobs and sways a little, blinks every 2 to 5 s and lets its eyes wander when the pointer is still (`MascotStage`), out of step with the other two.
+- **Every step.** A step of the time bar that changes nobody's part still makes one character, turn about, point at the field (`stepBeat`).
+
+Motion follows the app's setting (`useGlobeStatus().reducedMotion`): the system's `prefers-reduced-motion` unless the visitor switches motion on or off, with the switch next to the dossier button or on the map. Off, none of this runs: no clips, no float, no entrance.
 
 | Character | Stands | Note (`farmNotes`) | Proposes |
 |---|---|---|---|
@@ -93,9 +96,22 @@ A note is one verdict and at most two points, in a grower's words: no "NDVI", no
 
 ### Trials
 
-A trial is the same year of telemetry with one thing changed (`runTrial`). The proposals are the model's own `whatIf` moves that raise the season outcome, plus up to two more crops from `rankCrops`. **A trial is not advice about what will happen**; its caveat is printed with it. Nothing the grower entered is changed; only "Choose this crop" changes the field, through `setCrop`, and only after the grower confirms it in a dialog that says the crop changes everywhere (Soil and practice, the scores, the rotations). Trials are offered on the field as it is, not over a simulated rotation.
+A trial is the same year of telemetry with one thing changed (`runTrial`). The candidates are the model's own `whatIf` moves and the next crops of `rankCrops`, each re-scored over the same year (`farmOptions`). Each is compared on three figures:
+
+| Figure | Read from |
+|---|---|
+| Season outcome | `seasonOutcome`: the expected yield fraction, or the mean productivity |
+| Growing condition | the mean daily productivity of the year (`ScoreTimeline.summary.productivityMean`) |
+| Months under crop | the months the land strip shows a crop standing (`periodLand`) |
+
+A candidate is a **gain** when it raises the season outcome, or keeps it and raises the growing condition by at least 3 points (`MIN_GROWTH_GAIN`), without leaving the ground bare more than 2 months longer (`MAX_BARE_MONTHS`). The season outcome is full (100) on the three well-run sample fields, so every move there would otherwise read "100 to 100" and none would be offered. Anything else that changes a figure is a **trade-off**, shown with a "Trade-off" tag and its cost, and offered only when it costs at most 15 points of the season outcome (`MAX_TRADE_OFF`). A move that changes no figure is not offered. Each character keeps up to two, of different kinds where it can, gains first. The three thresholds are choices of the project.
+
+**A trial is not advice about what will happen**; its caveat is printed with it. Nothing the grower entered is changed; only "Choose this crop" changes the field, through `setCrop`, and only after the grower confirms it in a dialog that says the crop changes everywhere (Soil and practice, the scores, the rotations). Trials are offered on the field as it is, not over a simulated rotation.
 
 ## 5. The plants
+
+**Across the field.** When the field's NDVI picture (Sentinel-2 field raster, 10 m) has a date within 45 days before the day shown (`PATCH_MAX_AGE_DAYS`), each plant of the stage stands as its patch of the field does (`fieldPatches`): the picture is stretched over the stage's grid (far rows north, left column west) and each patch is its cell's ratio to the parcel mean, the measure of the within-field zones (below 0.93 low, above 1.07 high). A plant is drawn shorter and paler below the mean, taller and greener above it, the ratio held to 0.7 to 1.25 for drawing. An even field stays even. The picture is of the crop that grew there, so it is not laid over a trial or a simulated strategy.
+
 
 `cropLook` picks one of thirteen silhouettes from the genus, the category and the life span; `src/ui/farm/plants.tsx` draws each from the growth and the ripeness, so a seedling, a young plant, a full one and a ripe one are different drawings.
 

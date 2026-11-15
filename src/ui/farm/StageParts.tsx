@@ -329,9 +329,7 @@ export function NoteCard({ who, note, options, optionsLoading, trial, baseOutcom
                 {options.slice(0, 2).map((o) => (
                   <Button key={o.id} size="sm" variant="secondary" onClick={() => onTrial(o.id)} data-farm-option={o.kind}>
                     {pick(o.label, lang)}
-                    <span className="t-value ml-1.5 text-signal-strong" title={t('farm.gainLabel', { n: o.delta })}>
-                      +{o.delta}
-                    </span>
+                    <OptionFigure o={o} />
                   </Button>
                 ))}
               </div>
@@ -350,6 +348,29 @@ export function NoteCard({ who, note, options, optionsLoading, trial, baseOutcom
 }
 
 /** The two ways down from the stage: the analysis under it, and the dossier at the end. */
+/** What an option does to the field, in one short figure: a gain in green, a trade-off in a neutral tag with its cost. */
+export function OptionFigure({ o, full = false }: { o: FarmOption; full?: boolean }) {
+  const t = useT();
+  const title = [
+    t('farm.option.season', { a: o.before, b: o.after }),
+    t('farm.option.growth', { a: o.growthBefore, b: o.growthAfter }),
+    o.monthsAfter !== o.monthsBefore ? t('farm.option.months', { a: o.monthsBefore, b: o.monthsAfter }) : null,
+  ].filter(Boolean).join(' · ');
+  if (o.tradeOff) {
+    return (
+      <span className="ml-1.5 inline-flex items-center gap-1 text-xs text-ink-2" title={title} data-farm-tradeoff>
+        <span className="rounded-xs bg-surface-2 px-1 py-px font-medium">{t('farm.option.tradeOff')}</span>
+        <span className="t-value">{full ? title : o.monthsAfter < o.monthsBefore - 2 ? t('farm.option.monthsShort', { b: o.monthsAfter }) : `${o.before} → ${o.after}`}</span>
+      </span>
+    );
+  }
+  return (
+    <span className="t-value ml-1.5 text-signal-strong" title={title}>
+      {o.delta > 0 ? `+${o.delta}` : t('farm.option.growthShort', { n: o.growthDelta })}
+    </span>
+  );
+}
+
 export function StageLinks({ onDossier, reduced, onMotion }: { onDossier: () => void; reduced?: boolean; onMotion?: () => void }) {
   const t = useT();
   return (

@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronsDown, FlaskConical, MapPin } from 'lucide-react';
 import { type AdvisoryReport, type RotationStrategy, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
-import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodLand, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
+import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, fieldPatches, periodLand, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
 import { Button, Dialog, cn } from '@/ui/design';
@@ -25,7 +25,7 @@ const cropLabel = (id: string, lang: string): string => {
   const c = getCrop(id);
   return c ? (lang === 'vi' && c.names.vi ? c.names.vi : c.names.en) : id;
 };
-import { FarmSceneView, sunOf } from './FarmScene';
+import { FarmSceneView, PATCH_GRID, sunOf } from './FarmScene';
 import { MascotSpot, NoteCard, RotationPicker, StageLinks, TimeBar, periodLabel } from './StageParts';
 import { useStageDirector } from './useStageDirector';
 import { useFarmYear } from './year';
@@ -157,6 +157,9 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   // The soil plan of the report is for the field's own crop: it is not quoted over a simulated one.
   const notes = useMemo(() => (shown && view ? farmNotes(shown.input, view.scene, { summary: view.summary, report: simulated ? null : report }) : null), [shown, view, simulated, report]);
   const year = useFarmYear(shown?.input ?? null, shown?.score ?? null);
+  // The NDVI picture is of the crop that grew there: it is not laid over a trial or a simulated strategy.
+  const ndvi = useMission((s) => s.rasters.find((r) => r.key === 'ndvi'));
+  const patches = useMemo(() => (parcel && view && !trial && !simulated ? fieldPatches(ndvi, parcel, view.scene.t, PATCH_GRID.rows, PATCH_GRID.cols) : null), [parcel, view, trial, simulated, ndvi]);
   // What stands on the field each month or quarter, with the same crop source as the stage (trial, strategy or current).
   const land = useMemo(() => {
     if (!input || !score) return undefined;
@@ -201,7 +204,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
 
   return (
     <section ref={stageRef} aria-label={t('farm.page')} className="relative h-full min-h-[560px] w-full overflow-hidden bg-[#74a57b]" data-farm-stage data-farm-when={period?.id ?? 'today'}>
-      <FarmSceneView scene={scene} beat={`${period?.id ?? 'today'}|${shown.input.cropId ?? 'none'}|${trialId ?? ''}`} title={t('farm.title', { d: when, sky: t(`farm.sky.${w.kind}`) })} className="absolute inset-0 h-full w-full" />
+      <FarmSceneView scene={scene} patches={patches} beat={`${period?.id ?? 'today'}|${shown.input.cropId ?? 'none'}|${trialId ?? ''}`} title={t('farm.title', { d: when, sky: t(`farm.sky.${w.kind}`) })} className="absolute inset-0 h-full w-full" />
       {/* Daylight breathing over the land, as strong as the sun shows in the sky drawn. Decoration only. */}
       <div aria-hidden className="farm-daylight pointer-events-none absolute inset-0" style={{ '--farm-sun': sunOf(w.kind) } as React.CSSProperties} />
       {/* A little shade under the plates at the top and the bar at the bottom, so the drawing never fights them. */}
