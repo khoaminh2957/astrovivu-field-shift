@@ -4,7 +4,7 @@
  */
 import type { CropProfile, EvidenceItem, FarmerPriority, I18nText, ModelInput, RotationKind, RotationSeason, RotationSeasonDetail, RotationStrategy, SeasonEconomics } from '@/contracts';
 import { getCrop, listCrops } from '@/core/crops';
-import { economicRegions, ownEconomics, referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
+import { economicCountry, economicRegions, ownEconomics, referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
 import { scanSowingWindows, windowMonths } from '@/core/scoring';
 import { type MonthNormal, monthlyNormals } from '@/lib/climate';
 import { cropSeasonDetail, fallowSeasons, sumNormal } from './seasonDetail';
@@ -339,7 +339,7 @@ export function profitSearch(ctx: Ctx, current: Evaluated, currentPlans: Plan[] 
       const score = fit.s[m - 1];
       const reliability = fit.rel[m - 1];
       if (score < CASH_MIN_SCORE || (reliability != null && reliability < MIN_RELIABILITY)) continue;
-      const e = seasonEconomics({ cropId: crop.id, areaHa: area, yieldFraction: score / 100, reference, own: crop.id === input.cropId ? own : undefined });
+      const e = seasonEconomics({ cropId: crop.id, areaHa: area, yieldFraction: score / 100, reference, country: economicCountry(input.parcel), own: crop.id === input.cropId ? own : undefined });
       if (!e) continue;
       const months = Array.from({ length: len }, (_, i) => m - 1 + i);
       slots.push({
@@ -662,7 +662,7 @@ export function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: s
     nitrogen += N_CREDIT(c) * p.share;
     // The grower's numbers describe the crop they grow, so they apply to the seasons of that crop only.
     const own = p.cropId === input.cropId ? ownEconomics(input.groundTruth) : undefined;
-    const e = seasonEconomics({ cropId: p.cropId, areaHa: area * p.share, yieldFraction: s / 100, reference: referenceEconomics(p.cropId, input.parcel), own });
+    const e = seasonEconomics({ cropId: p.cropId, areaHa: area * p.share, yieldFraction: s / 100, reference: referenceEconomics(p.cropId, input.parcel), country: economicCountry(input.parcel), own });
     if (e) seasons.push(e);
     else noEcon.add(p.cropId);
     // The next crop in the sequence that is harvested (covers skipped): the one a legume's nitrogen is left for.
@@ -732,7 +732,9 @@ export function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: s
     groundCoverPct: r0(100 * coverFrac),
     pestBreak: r0(pest),
   };
-  const lists = buildLists(ctx, cand, metrics, crops, cur, noEcon, economics.seasons.some((s) => s.usesReferenceValues));
+  // The range of the margin over the yield ranges of the seasons; none when it has no width (nothing is harvested).
+  const marginRange = economics.perHaMarginLowUsd != null && economics.perHaMarginHighUsd != null && economics.perHaMarginLowUsd < economics.perHaMarginHighUsd ? { low: economics.perHaMarginLowUsd, high: economics.perHaMarginHighUsd } : null;
+  const lists = buildLists(ctx, cand, metrics, crops, cur, noEcon, economics.seasons.some((s) => s.usesReferenceValues), marginRange);
   return {
     id,
     kind: cand.kind,
@@ -770,7 +772,7 @@ const NAMES: Record<RotationKind, I18nText> = {
   custom: tx('Your custom rotation', 'Luân canh bạn tự chỉnh'),
 };
 
-function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], crops: CropProfile[], cur: Evaluated | null, noEcon: Set<string>, usesRef: boolean) {
+function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], crops: CropProfile[], cur: Evaluated | null, noEcon: Set<string>, usesRef: boolean, marginRange: { low: number; high: number } | null) {
   const { input } = ctx;
   const t = input.telemetry;
   const gt = input.groundTruth;
@@ -825,7 +827,10 @@ function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], c
   }
   evidence.push({
     label: tx('Margin per hectare and year', 'Lãi mỗi hecta mỗi năm'),
-    value: usesRef ? tx(`${m.marginUsdPerHaYr} USD (reference values)`, `${m.marginUsdPerHaYr} USD (giá trị tham chiếu)`) : `${m.marginUsdPerHaYr} USD`,
+    value: tx(
+      `${m.marginUsdPerHaYr} USD${marginRange ? `; ${marginRange.low} to ${marginRange.high} USD over the yield range` : ''}${usesRef ? ' (reference values)' : ''}`,
+      `${m.marginUsdPerHaYr} USD${marginRange ? `; từ ${marginRange.low} đến ${marginRange.high} USD theo khoảng năng suất` : ''}${usesRef ? ' (giá trị tham chiếu)' : ''}`,
+    ),
     sourceId: 'reference-economics',
   });
 
@@ -852,6 +857,13 @@ function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], c
   const cr = resolutionM(t, climSrc);
   if (cr && cr >= 1000) gaps.push(tx(`Climate history is a ~${r0(cr / 1000)} km grid average (${sourceName(t, climSrc)}): local frost pockets and rain shadows are not resolved.`, `Lịch sử khí hậu là trung bình ô lưới ~${r0(cr / 1000)} km (${sourceName(t, climSrc)}): điểm sương giá cục bộ và vùng khuất mưa không được thể hiện.`));
   if (usesRef || noEcon.size) gaps.push(tx(`Yields, prices and costs are reference values for the region, not your own figures${noEcon.size ? `; no reference economics for ${[...noEcon].map((id) => cropText(id).en).join(', ')}` : ''}.`, `Năng suất, giá và chi phí là giá trị tham chiếu của vùng, không phải số liệu của bạn${noEcon.size ? `; chưa có số liệu kinh tế tham chiếu cho ${[...noEcon].map((id) => cropText(id).vi).join(', ')}` : ''}.`));
+  if (marginRange && marginRange.low <= 0 && marginRange.high >= 0)
+    gaps.push(
+      tx(
+        `The margin range crosses zero (${marginRange.low} to ${marginRange.high} USD/ha a year): whether this rotation covers its operating costs depends on where the yields fall in their range.`,
+        `Khoảng lãi đi qua số 0 (từ ${marginRange.low} đến ${marginRange.high} USD/ha mỗi năm): phương án này có đủ bù chi phí sản xuất hay không tuỳ vào năng suất rơi vào đâu trong khoảng dao động.`,
+      ),
+    );
   if (ctx.irrigationInferred) gaps.push(tx('Irrigation was not entered: full irrigation is assumed because the climate is arid and the field is cropped.', 'Chưa nhập thông tin tưới: giả định tưới đủ vì khí hậu khô hạn mà ruộng vẫn canh tác.'));
   else if (!gt.irrigation) gaps.push(tx('Irrigation was not entered: the comparison assumes a rainfed field.', 'Chưa nhập thông tin tưới: so sánh giả định ruộng nhờ nước mưa.'));
   if (cand.kind === 'current' && ctx.currentSource === 'assumed') gaps.push(tx('Your actual rotation is not known: the current practice is assumed from the selected crop and the calendar. Enter it under Ground Truth.', 'Chưa biết luân canh thực tế: cách làm hiện tại được giả định từ cây đã chọn và lịch thời vụ. Hãy nhập ở mục Dữ liệu thực địa.'));

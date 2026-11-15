@@ -11,6 +11,7 @@ production (t)        = expected yield x area
 revenue               = production x price
 cost                  = operating cost per ha x area
 margin                = revenue - cost            margin % = margin / revenue
+low / high margin     = low / high yield x area x price - cost          (section 6)
 break-even yield      = operating cost per ha / price
 ```
 
@@ -67,7 +68,7 @@ Yields: FAOSTAT 2024 (Vietnam), USDA ERS and NASS 2025 (US). Prices: FAOSTAT pro
 
 ## 4. Limits
 
-Reference prices are annual averages or single quotes, not forecasts; price risk is not modelled. Yields are national or state averages, so the "attainable" yield of a well-managed field is understated for good farmers and overstated on poor land; the farmer's own yield corrects this. Irrigation water, drying, storage and transport costs are included only where the source budget includes them.
+Reference prices are annual averages or single quotes, not forecasts. Section 6 gives the margin when a price, a yield or a cost is off by 20 %; how likely such a move is, is not modelled. Yields are national or state averages, so the "attainable" yield of a well-managed field is understated for good farmers and overstated on poor land; the farmer's own yield corrects this. Irrigation water, drying, storage and transport costs are included only where the source budget includes them.
 
 ## 5. The most profitable sequence under constraints
 
@@ -118,3 +119,120 @@ In Iowa the sequence with the highest margin outright would earn 8,710 USD/ha/ye
 - **Reference prices are single values.** How the choice moves when prices, yields or costs move is the subject of section 6.
 - **The floor is as good as the current practice.** Where today's rotation is hard on the soil, the constraint asks for no more than that.
 
+## 6. Sensitivity
+
+Code: `marginSensitivity`, `seasonSensitivity` and `rankFlips` in `src/core/economics/index.ts`; the margin range in `seasonEconomics` and `strategyEconomics`; the lines of the rotation report in `src/core/advisory/rotation.ts`. Tests: `src/core/economics/economics.test.ts`, which computes every row of the four tables below and fails when this section and the code disagree.
+
+A margin is the difference of two larger numbers, so an error in a price, a yield or a cost moves it by more than the error itself. This section says by how much, in two ways: a range that every margin now carries, and a "what if" of 20 %.
+
+### 6.1 What is computed
+
+**A range for every margin.** A season has a low, an expected and a high yield (section 1). `marginLowUsd` and `marginHighUsd` are the margin at the low and at the high yield, with price and cost unchanged. The yield range has one of three origins, and `yield.basis` says which, in English and in Vietnamese:
+
+| Origin | Low and high yield | When |
+|---|---|---|
+| The analysed years | reference yield x the 10th and the 90th percentile of the yearly outcomes of the score (`yieldRange`) | the crop the field grows, on the season card, when at least five years of climate history exist |
+| The grower's last yield | 15 % below and above it | `lastYieldTHa` is entered |
+| A default | 20 % below the expected yield; 20 % above it, but not above the reference yield | every other crop, and every season of a rotation |
+
+For a rotation the low ends of its seasons are added, and so are the high ends: `perHaMarginLowUsd` and `perHaMarginHighUsd`, per hectare and year. This takes every season to be poor, or good, in the same year, so it is the widest range the seasons allow and not a probability interval. The rotation report prints the range in its evidence line on the margin, and adds a line to its gaps when zero lies inside the range.
+
+**A "what if" of 20 %.** `marginSensitivity` takes a yield, a price, an operating cost per hectare and an area. It returns the margin with each of the three lower and higher by 20 %, one at a time; with all three against the grower (price and yield down, cost up) and all three in their favour; the price at which the margin is zero (cost per hectare / yield) and the yield at which it is zero (cost per hectare / price). `seasonSensitivity` does the same for a season that was already computed.
+
+**20 % is a level to ask "what if" with (docs/PLAN.md, step K8). It is not an estimate of how far prices, yields or costs do move**: nothing in the repository measures that (6.5).
+
+Revenue is yield x price, and the operating cost per hectare does not depend on the yield in this model. A yield that is 20 % off therefore moves the margin exactly as a price that is 20 % off, and the tables give the two in one column.
+
+**Source quality.** The quality of the three reference figures (section 2: official, budget, press, derived) travels with the season as `SeasonEconomics.reference`: country, region, year, the quality of yield, price and cost, and whether the record is of the parcel's own country. A range can so be shown next to how good its inputs are.
+
+### 6.2 Five crops on the demo fields, 20 % up and down
+
+One hectare, one season, reference values, the fields as the app opens them (15 November 2026). USD per hectare.
+
+| Crop, field | Margin | Price or yield -20 % | +20 % | Cost +20 % | -20 % | All three against the grower | All three in favour | Break-even price, USD/t (assumed) | Break-even yield, t/ha (expected) | Source of yield, price, cost |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| Robusta coffee, Central Highlands robusta block | 7,614 | 5,619 | 9,609 | 7,141 | 8,087 | 3,550 | 12,476 | 796 (3,359) | 0.70 (2.97) | official, press, press |
+| Rice, Mekong Delta paddy | 538 | 257 | 819 | 365 | 711 | -141 | 1,330 | 141 (229) | 3.79 (6.15) | official, press, press |
+| Maize, Story County corn-soybean field | 932 | 507 | 1,357 | 693 | 1,171 | -73 | 2,107 | 91 (161) | 7.40 (13.18) | official, official, budget |
+| Soybean, Story County corn-soybean field | 749 | 456 | 1,042 | 606 | 892 | 78 | 1,537 | 183 (375) | 1.91 (3.91) | official, official, budget |
+| Alfalfa, Diamond Valley alfalfa pivot | -182 | -382 | 18 | -419 | 55 | -780 | 496 | 212 (180) | 6.59 (5.58) | official, official, budget |
+
+What the table says:
+
+- A price 20 % lower takes 26 % of the coffee margin, 39 % of the soybean margin, 46 % of the maize margin and 52 % of the rice margin. The smaller the margin is against the revenue, the more a price moves it.
+- Rice and maize lose money when all three go against the grower; soybean and coffee do not.
+- Alfalfa on the pivot loses money as assumed: the field scores 53 % of the reference yield, and the cost is that of an eastern Idaho budget (section 3). It breaks even at a price 18 % above the reference, or at a yield of 6.59 t/ha against the 5.58 expected.
+- The two Vietnamese rows rest on press figures for price and cost; the three American rows on an official price and a university budget.
+
+### 6.3 The yield range of the same five seasons
+
+The margin range the season card can show, from the yield range of 6.1. Yields in t/ha, margins in USD per hectare.
+
+| Crop, field | Low yield | Expected | High | Margin at the low yield | Margin | At the high yield | Origin of the range |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Robusta coffee, Central Highlands robusta block | 2.87 | 2.97 | 2.97 | 7,266 | 7,614 | 7,614 | the analysed years |
+| Rice, Mekong Delta paddy | 5.86 | 6.15 | 6.15 | 473 | 538 | 538 | the analysed years |
+| Maize, Story County corn-soybean field | 0.14 | 13.18 | 13.18 | -1,173 | 932 | 932 | the analysed years |
+| Soybean, Story County corn-soybean field | 3.13 | 3.91 | 4.27 | 456 | 749 | 883 | default of 20 % |
+| Alfalfa, Diamond Valley alfalfa pivot | 3.86 | 5.58 | 5.58 | -491 | -182 | -182 | the analysed years |
+
+- Where the field scores 100 % of the reference yield the range has one side only: the model has no yield above the reference.
+- **Maize in Iowa: the low end is not credible as a harvest.** The yearly outcomes of the score put four of the 20 analysed years at a tenth of the reference yield or less (0.00, 0.00, 0.01 and 0.10), so the 10th percentile is 1 %. These outcomes come from monthly climate scores, not from a daily water balance, and were not calibrated against harvests (docs/SCORING.md, section 8); they were not compared with county yields here. The range is shown as the model gives it; it is a reason to check the yearly outcomes, not a forecast of a lost crop.
+
+### 6.4 The rotations of the demo fields
+
+Margin per hectare and year, with the range of 6.1. Every season of a rotation uses the default of 20 %, the field's own crop included, so the same crop can have another range here than on the season card (6.5).
+
+| Field | Rotation | Margin | Low | High |
+|---|---|---:|---:|---:|
+| Central Highlands robusta block | Current practice | 7,614 | 5,619 | 7,614 |
+| Central Highlands robusta block | Soil-health rotation | 7,614 | 5,619 | 7,614 |
+| Central Highlands robusta block | Water-saver rotation | 5,522 | 4,044 | 5,572 |
+| Central Highlands robusta block | Resilience rotation | 4,696 | 3,445 | 4,729 |
+| Mekong Delta paddy | Income rotation | 2,284 | 570 | 2,405 |
+| Mekong Delta paddy | Current practice | 1,616 | 773 | 1,616 |
+| Mekong Delta paddy | Soil-health rotation | 1,453 | 294 | 1,645 |
+| Mekong Delta paddy | Resilience rotation | 761 | 190 | 802 |
+| Mekong Delta paddy | Water-saver rotation | 223 | 6 | 439 |
+| Story County corn-soybean field | Resilience rotation | 3,290 | 2,238 | 3,454 |
+| Story County corn-soybean field | Water-saver rotation | 2,011 | 366 | 2,178 |
+| Story County corn-soybean field | Soil-health rotation | 631 | 314 | 865 |
+| Story County corn-soybean field | Income rotation | 613 | 237 | 777 |
+| Story County corn-soybean field | Current practice | 407 | 134 | 680 |
+| Diamond Valley alfalfa pivot | Resilience rotation | -108 | -229 | 12 |
+| Diamond Valley alfalfa pivot | Soil-health rotation | -144 | -305 | 16 |
+| Diamond Valley alfalfa pivot | Current practice | -180 | -381 | 21 |
+
+Zero lies inside the range of the three rotations of the alfalfa pivot, and of no other rotation; the report says so in their gaps. On the paddy field the income rotation of section 5 earns more than three rice crops as assumed (2,284 against 1,616), and less at the low end (570 against 773): it sells about twice as much and spends more than twice as much (revenue 11,577 against 5,691 USD a year on the 1.35 ha, cost 8,494 against 3,510), so a poor year costs it more.
+
+**Does the order hold?** `rankFlips` asks at which common move the margins of two rotations are equal: all prices (or all yields) of a field moving by the same share, or all costs. Within 20 %:
+
+| Field | Ahead as assumed | Overtaken by | When all |
+|---|---|---|---|
+| Mekong Delta paddy | Current practice | Soil-health rotation | costs fall by 9 % |
+| Mekong Delta paddy | Current practice | Soil-health rotation | prices or yields rise by 10 % |
+| Mekong Delta paddy | Income rotation | Current practice | prices or yields fall by 15 % |
+| Mekong Delta paddy | Income rotation | Current practice | costs rise by 18 % |
+| Story County corn-soybean field | Soil-health rotation | Income rotation | costs fall by 6 % |
+| Story County corn-soybean field | Soil-health rotation | Income rotation | prices or yields rise by 6 % |
+| Diamond Valley alfalfa pivot | Resilience rotation | Current practice | costs fall by 15 % |
+| Diamond Valley alfalfa pivot | Resilience rotation | Soil-health rotation | costs fall by 15 % |
+| Diamond Valley alfalfa pivot | Soil-health rotation | Current practice | costs fall by 15 % |
+| Diamond Valley alfalfa pivot | Resilience rotation | Current practice | prices or yields rise by 18 % |
+| Diamond Valley alfalfa pivot | Soil-health rotation | Current practice | prices or yields rise by 18 % |
+| Diamond Valley alfalfa pivot | Resilience rotation | Soil-health rotation | prices or yields rise by 18 % |
+
+- **Mekong Delta paddy.** The advice to change to the income rotation holds unless all prices fall by 15 % or all costs rise by 18 %.
+- **Story County.** The income rotation stays ahead of the maize-soybean rotation over the whole range. It and the soil-health rotation are 18 USD apart and change places at 6 %: on margin the two are not to be told apart.
+- **Diamond Valley.** The three rotations are the same alfalfa in five, four and three years out of five; the break years have no price or cost in the reference table and count as nothing. So the three reach zero together and the order turns round there: once alfalfa pays, more of it pays more.
+- **Central Highlands.** No two rotations change places.
+
+### 6.5 Limits, and what was not done
+
+- **How far prices do move is not measured.** A range from observed prices needs a series of several years per crop and country in a file a pure function can read, each price checked. The FAOSTAT producer prices are in the price database (docs/DATABASE.md), not in such a file, and at least one series is known to be off (Viet Nam, coffee, 2024: section 3). Left as an idea; until then the 20 % stays a "what if".
+- **One input at a time, or all three together.** Price and yield are not tied to each other, although a poor harvest often comes with a higher price. "All three against the grower" is a corner of the cube, not a likely year.
+- **A common move only.** `rankFlips` moves all prices of a field together. Rice falling while soybean rises is not examined.
+- **The yield range of a rotation is the default.** Passing the 10th and 90th percentile of the years to every season of a rotation was left out: the rotation planner scores a crop by month, not year by year. The season card of the field's own crop and the same crop inside a rotation can therefore show different ranges (rice: 473 to 538 on the card, the default inside a rotation).
+- **The ends of a rotation's range add up**, as if all its seasons were poor in the same year.
+- **Cost does not move with the yield.** Harvest, drying and transport do in practice; with them a yield that is off would move the margin by less than a price that is off.
+- **Source quality is shown, not used.** A press figure does not get a wider range than an official one.

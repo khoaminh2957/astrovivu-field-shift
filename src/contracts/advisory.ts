@@ -1,4 +1,5 @@
 import type { I18nText, ISODate } from './common';
+import type { Iso3, SourceQuality } from './country';
 import type { CropSuiteSummary, FarmerPriority, SowingWindow } from './model';
 import type { BranchId } from './telemetry';
 
@@ -15,6 +16,23 @@ export interface YieldEstimate {
   basis: I18nText;
 }
 
+/**
+ * The reference record the yield, price and cost of a season were read from. It describes the
+ * record: a figure the grower entered replaces the record's figure (`SeasonEconomics.sources`
+ * names those), and its quality then says nothing about the number used.
+ */
+export interface EconomicsReference {
+  /** Country of the record. */
+  iso3: Iso3;
+  /** Part of the country the record refers to, as the reference table names it ("US-HEARTLAND"). Absent: the whole country. */
+  region?: string;
+  /** Year of the most recent figure of the record. */
+  year: number;
+  quality: { yield: SourceQuality; price: SourceQuality; cost: SourceQuality };
+  /** False when the record belongs to another country than the parcel's: its figures then show an order of magnitude only. */
+  sameCountry: boolean;
+}
+
 export interface SeasonEconomics {
   cropId: string;
   areaHa: number;
@@ -24,17 +42,31 @@ export interface SeasonEconomics {
   revenueUsd: number;
   costUsd: number;
   marginUsd: number;
+  /**
+   * Margin with the yield at the low and at the high end of `yield`, price and cost unchanged:
+   * marginLowUsd <= marginUsd <= marginHighUsd. `yield.basis` says where the yield range comes from.
+   */
+  marginLowUsd?: number;
+  marginHighUsd?: number;
   marginPct: number;
   breakEvenYieldTHa: number;
   /** Where yield, price and cost assumptions come from. */
   sources: string[];
   /** True when any input is a reference value rather than the farmer's own number. */
   usesReferenceValues: boolean;
+  /** The reference record behind the figures the grower did not enter. Absent when all three are the grower's own. */
+  reference?: EconomicsReference;
 }
 
 export interface StrategyEconomics {
   perYear: { revenueUsd: number; costUsd: number; marginUsd: number };
   perHaMarginUsd: number;
+  /**
+   * Margin per hectare and year with every season at the low end of its yield range, and with
+   * every season at the high end. Absent when a season has no range.
+   */
+  perHaMarginLowUsd?: number;
+  perHaMarginHighUsd?: number;
   seasons: SeasonEconomics[];
 }
 
