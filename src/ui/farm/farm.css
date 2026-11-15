@@ -1,81 +1,77 @@
 /*
- * The living farm scene (docs/FARM.md). The palette is the scene's own: an illustration, drawn
- * in daylight in both colour schemes like the satellite picture beside it.
+ * The living farm (docs/FARM.md): the scene and the stage over it. The palette of the drawing is
+ * its own: an illustration, in daylight in both colour schemes like the satellite picture.
  */
 .farm-scene {
-  --farm-sky-top: #8fcdf5;
-  --farm-sky-low: #dff3fb;
-  --farm-hill-far: #9fd4a3;
-  --farm-hill-near: #6fbf73;
-  --farm-soil-dry: #c49a6c;
-  --farm-soil-usual: #94603c;
-  --farm-soil-wet: #63422c;
-  --farm-soil-none: #a08a78;
-  --farm-water: #5aa9e6;
-  --farm-ease: 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --farm-soil-dry: #b89468;
+  --farm-soil-usual: #83593a;
+  --farm-soil-wet: #5c402d;
+  --farm-soil-none: #94816f;
+  --farm-water: #6fa8cf;
+  --farm-ease: 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
   display: block;
-  width: 100%;
-  height: auto;
   user-select: none;
 }
 
-/* Everything that depends on the day eases to its new state as the date moves. */
+/* Everything that depends on the step shown eases to its new state. */
 .farm-scene .farm-fade {
   transition:
     opacity var(--farm-ease),
     fill var(--farm-ease),
-    stroke var(--farm-ease);
+    stroke var(--farm-ease),
+    stop-color var(--farm-ease);
 }
-.farm-scene .farm-move {
-  transition:
-    transform var(--farm-ease),
-    opacity var(--farm-ease);
-  transform-box: fill-box;
-}
-
-/* A machine or a plant that moves to its new place or size as the date moves. */
 .farm-scene .farm-glide {
   transition: transform var(--farm-ease);
 }
-.farm-scene .farm-grow {
-  transition: transform var(--farm-ease);
+
+/* Plants rise into the stage of the step shown: a crop is seen growing from one month to the next. */
+.farm-scene .farm-rise {
   transform-box: fill-box;
   transform-origin: 50% 100%;
+  animation: farm-rise 820ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-/* The seeder crosses the field while sowing is under way. */
-.farm-scene .farm-cross {
-  animation: farm-cross 11s linear infinite;
-}
-@keyframes farm-cross {
+@keyframes farm-rise {
   from {
-    transform: translateX(-70px);
+    transform: scale(0.62, 0.4);
+    opacity: 0.2;
+  }
+  60% {
+    transform: scale(1.02, 1.06);
+    opacity: 1;
   }
   to {
-    transform: translateX(640px);
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
-.farm-scene .farm-cloud {
-  animation: farm-drift 46s linear infinite;
+/* The seeder crosses the field while sowing is under way. */
+.farm-scene .farm-cross {
+  animation: farm-cross 16s linear infinite;
 }
-.farm-scene .farm-cloud:nth-of-type(2) {
-  animation-duration: 64s;
-  animation-delay: -22s;
-}
-.farm-scene .farm-cloud:nth-of-type(3) {
-  animation-duration: 54s;
-  animation-delay: -40s;
-}
-.farm-scene .farm-cloud:nth-of-type(4) {
-  animation-duration: 72s;
-  animation-delay: -9s;
-}
-@keyframes farm-drift {
+@keyframes farm-cross {
   from {
     transform: translateX(-160px);
   }
   to {
-    transform: translateX(620px);
+    transform: translateX(1760px);
+  }
+}
+
+.farm-scene .farm-cloud {
+  animation: farm-drift 90s ease-in-out infinite alternate;
+}
+.farm-scene .farm-cloud-slow {
+  animation-duration: 140s;
+  animation-delay: -50s;
+}
+@keyframes farm-drift {
+  from {
+    transform: translateX(-90px);
+  }
+  to {
+    transform: translateX(150px);
   }
 }
 
@@ -92,63 +88,39 @@
 }
 @keyframes farm-fall {
   from {
-    transform: translate(10px, -40px);
+    transform: translate(24px, -90px);
   }
   to {
-    transform: translate(-22px, 110px);
+    transform: translate(-50px, 250px);
   }
 }
 
-.farm-scene .farm-sun-rays {
-  transform-origin: center;
-  transform-box: fill-box;
-  animation: farm-spin 60s linear infinite;
-}
 @keyframes farm-spin {
   to {
     transform: rotate(360deg);
   }
 }
+.farm-scene .farm-vane {
+  animation: farm-spin 9s linear infinite;
+}
+.farm-scene .farm-vane-fast {
+  animation-duration: 1.8s;
+}
 
 .farm-scene .farm-sway {
   transform-origin: 50% 100%;
   transform-box: fill-box;
-  animation: farm-sway 3.6s ease-in-out infinite alternate;
-}
-.farm-scene .farm-sway:nth-child(2n) {
-  animation-duration: 4.4s;
-  animation-delay: -1.3s;
-}
-.farm-scene .farm-sway:nth-child(3n) {
-  animation-duration: 3.1s;
-  animation-delay: -2.1s;
+  animation: farm-sway 3.8s ease-in-out infinite alternate;
 }
 .farm-scene[data-wind='strong'] .farm-sway {
-  animation-duration: 1.4s;
+  animation-duration: 1.5s;
 }
 @keyframes farm-sway {
   from {
-    transform: rotate(-3deg);
+    transform: rotate(-2.4deg);
   }
   to {
-    transform: rotate(3.5deg);
-  }
-}
-
-.farm-scene .farm-bob {
-  animation: farm-bob 3.2s ease-in-out infinite alternate;
-  transform-box: fill-box;
-}
-.farm-scene .farm-bob-slow {
-  animation: farm-bob 5s ease-in-out infinite alternate;
-  transform-box: fill-box;
-}
-@keyframes farm-bob {
-  from {
-    transform: translateY(-2px);
-  }
-  to {
-    transform: translateY(3px);
+    transform: rotate(2.8deg);
   }
 }
 
@@ -167,41 +139,6 @@
   }
   to {
     transform: translateY(-1.2px);
-  }
-}
-/* A machine drives in from the edge of the field when its work begins. */
-.farm-scene .farm-drive-in {
-  animation: farm-drive-in 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-@keyframes farm-drive-in {
-  from {
-    transform: translateX(-320px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-.farm-scene .farm-puff {
-  animation: farm-puff 1.2s ease-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.farm-scene .farm-puff:nth-child(2) {
-  animation-delay: -0.4s;
-}
-.farm-scene .farm-puff:nth-child(3) {
-  animation-delay: -0.8s;
-}
-@keyframes farm-puff {
-  from {
-    transform: translate(0, 0) scale(0.4);
-    opacity: 0.8;
-  }
-  to {
-    transform: translate(-16px, -14px) scale(1.5);
-    opacity: 0;
   }
 }
 
@@ -236,37 +173,145 @@
   }
 }
 
-.farm-scene .farm-mascot {
-  cursor: pointer;
-  outline: none;
+/*
+ * On the farm tab the rotation page is the stage: the header, the context row and the footer step
+ * aside and the scene fills everything under the tab strip.
+ */
+.rotation-workspace[data-rotation-page='farm'] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.farm-scene .farm-mascot .farm-ring {
-  opacity: 0;
-  transition: opacity 200ms;
+.rotation-workspace[data-rotation-page='farm'] > .rotation-header,
+.rotation-workspace[data-rotation-page='farm'] > .rotation-footer {
+  display: none;
 }
-.farm-scene .farm-mascot:hover .farm-ring,
-.farm-scene .farm-mascot:focus-visible .farm-ring,
-.farm-scene .farm-mascot[aria-pressed='true'] .farm-ring {
-  opacity: 1;
+.rotation-workspace[data-rotation-page='farm'] > .rotation-tabs {
+  flex: 1;
+  min-height: 0;
 }
-.farm-scene .farm-talk {
-  animation: farm-talk 1s ease-in-out infinite alternate;
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
+.rotation-workspace .rotation-farm[data-state='active'] {
+  display: flex;
+  padding: 0;
+  animation: none;
 }
-@keyframes farm-talk {
+.rotation-workspace .rotation-farm > * {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * The stage over the scene
+ * ------------------------------------------------------------------------------------------- */
+
+/* A plate over the drawing: readable under every sky, in both colour schemes. */
+.farm-plate {
+  background: color-mix(in srgb, var(--color-surface-0) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-line-2) 70%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    0 1px 2px rgb(8 20 14 / 0.1),
+    0 10px 28px rgb(8 20 14 / 0.16);
+}
+
+/* The three dots over a character: they wait to be pressed. */
+.farm-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.farm-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: farm-dot 1.4s ease-in-out infinite;
+}
+.farm-dots i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.farm-dots i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@keyframes farm-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.farm-bubble {
+  animation: farm-float 3.6s ease-in-out infinite alternate;
+}
+@keyframes farm-float {
   from {
-    transform: scale(0.9);
+    transform: translateY(0);
   }
   to {
-    transform: scale(1.08);
+    transform: translateY(-5px);
   }
+}
+
+.farm-pop {
+  animation: farm-pop 260ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  transform-origin: var(--farm-pop-origin, 50% 100%);
+}
+@keyframes farm-pop {
+  from {
+    transform: scale(0.9) translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* The step shown fills while the stage holds on it during playback. */
+.farm-hold {
+  transform-origin: 0 50%;
+  animation: farm-hold var(--farm-hold-ms, 2600ms) linear both;
+}
+@keyframes farm-hold {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.farm-figure .farm-bob,
+.farm-figure .farm-bob-slow {
+  animation: farm-float 3.2s ease-in-out infinite alternate;
+  transform-box: fill-box;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .farm-scene *,
-  .farm-scene {
+  .farm-scene,
+  .farm-dots i,
+  .farm-bubble,
+  .farm-pop,
+  .farm-hold,
+  .farm-figure * {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* The dossier prints alone, on white. */
+@media print {
+  body:has([data-farm-dossier][data-printing='true']) * {
+    visibility: hidden;
+  }
+  body:has([data-farm-dossier][data-printing='true']) [data-farm-dossier],
+  body:has([data-farm-dossier][data-printing='true']) [data-farm-dossier] * {
+    visibility: visible;
   }
 }

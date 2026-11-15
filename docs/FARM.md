@@ -1,72 +1,100 @@
 # The living farm
 
-The page behind the "Farm" entry of the left rail (it was "Rotation") opens with the field drawn as a small farm for the date shown. Three characters report on it and the grower can run trials; the comparison of rotation strategies follows on the same page. The field panel keeps its four tabs. Issue B21 (#101). Code: `src/core/farm/` (what to draw and say; pure, tested) and `src/ui/farm/` (the drawing).
+The "Farm" tab of the rotation page is a stage: the field drawn as a farm that fills the screen, three characters who each report their part, a time bar that steps through the year by month or by quarter, and the rotation being shown. The last tab of the page, "Dossier", lays out on one sheet how the answer for the field was reached. Code: `src/core/farm/` (what to draw and say; pure, tested) and `src/ui/farm/` (the drawing), the characters in `src/ui/mascot/`.
 
 The scene is an illustration of readings the app already has. It adds no data and no model. Where a reading is missing the scene is drawn in a neutral way and the character says there is no reading.
 
 ## 1. What each part is drawn from
 
-`farmSceneAt(input, score, day, weatherDay?)` in `src/core/farm/index.ts` returns the state; `FarmSceneView` in `src/ui/farm/FarmScene.tsx` draws it.
+`farmSceneAt(input, score, day)` in `src/core/farm/index.ts` returns the state of a day; `FarmSceneView` in `src/ui/farm/FarmScene.tsx` draws it.
 
 | Part of the scene | Read from | When missing |
 |---|---|---|
-| Temperature, rain of the day | `t2m_max`, `t2m_min` (agromet branch); `rain` of that day, else `rain_era5` when the first has no value for the day | `--`, sky drawn as "no weather reading" |
-| Rain of the last seven days | the same two series, summed | left out |
+| Temperature, rain | `t2m_max`, `t2m_min` (agromet branch); `rain`, else `rain_era5` | `--`, sky drawn as "no weather reading" |
 | Sky: clear, overcast, rain, heavy rain, hot, frost | the day's figures against the thresholds below | grey sky without sun or rain |
-| A forecast day | `fc_tmax`, `fc_tmin`, `fc_rain` (risk branch), days after `window.today` | the day is left out of the strip |
-| Plants: kind | `CropProfile.id`, `category`, `lifeSpan` (`cropLook`) | bare soil, "no crop is chosen" |
+| Plants: kind | `cropLook(CropProfile)`: thirteen silhouettes, section 5 | bare soil |
 | Plants: height, ripeness | `ScoreSnapshot.stage` of the day (`id`, `progress`) | bare soil |
 | Plants: colour | the latest `ndvi` that is not stale for its cadence | a neutral grey-green |
-| Cut rows and the harvester | the days since the crop entered its `harvest` stage, over the 14 days that stage lasts in the scorer | no harvester |
+| Cut rows and the harvester | days since the crop entered its `harvest` stage, over the 14 days that stage lasts in the scorer | no harvester |
 | The seeder | stage `pre-sowing`, or the first 6 % of the cycle | no seeder |
-| Soil colour, cracks, puddles, canal width | `sm_root` of the day against the 10th to 90th percentile of its baseline for the time of year; without a baseline, against the 20th to 80th percentile of the year shown | neutral soil colour |
+| Soil colour, cracks, puddles, canal width | `sm_root` against the 10th to 90th percentile of its baseline for the time of year; without a baseline, the 20th to 80th percentile of the year shown | neutral soil colour |
 | Paddy water | rice in the first part of its cycle; thinner when the root zone reads dry | none |
-| Score | `ScoreSnapshot.productivity` of the day | not shown |
+| Score | `ScoreSnapshot.productivity` | not shown |
 
 Thresholds of the sky are those of the risk events (`src/data/harmonize/risk.ts`): heavy rain from 30 mm in the day, a wet day from 1 mm, hot from a maximum of 35 °C, frost from a minimum of 2 °C or lower. Rain is drawn before heat or cloud.
 
-**Overcast is a drawing rule, not a cloud reading.** No series of the app measures cloud. A day is drawn overcast when its solar radiation (`par`) is below 65 % of the 90th percentile of the 31 days around it. The character never says "cloud cover"; it says "an overcast day".
+**Overcast is a drawing rule, not a cloud reading.** A day is drawn overcast when its solar radiation (`par`) is below 65 % of the 90th percentile of the 31 days around it.
 
-Plant height and ripeness are drawing rules on top of the scorer's stage: full height from mid-season, ripening over the last quarter of the cycle, a perennial always standing. They carry no number to the reader.
+The land around the field (the ranges, the hills, the farmstead, the trees, the wind pump) is decoration and stands for nothing. Only the sky follows the readings, and the wheel of the wind pump turns faster from a wind of 6 m/s.
 
-## 2. The three characters
+## 2. Time: today, then months or quarters
 
-| Character | Stands | Reports | Proposes |
+The stage opens on **today**. Play rewinds a year and steps forward; a step can also be pressed directly.
+
+- `farmPeriods(window, step)` gives the twelve calendar months ending with today's (clipped to the telemetry window, the last one partial), or the same months three at a time, the last quarter ending today.
+- `periodWeather` sums a period from its days: total rain, wet days, days of heavy rain, hot days, frost nights, mean daily high and low. Nothing is added to the record.
+- `farmSceneOfPeriod` draws the field of the **last day** of the period (crop stage, soil) under the sky of the **whole** period.
+- **The sky of a period is a drawing rule** (`periodSky`), on the share of the days read: heavy rain when at least two days and 7 % of the days had it; rain from 40 % wet days; frost from 15 %; hot from 30 %; overcast from 50 %; clear otherwise. Rain first, as for a day.
+
+Playback holds 2.4 s on a month and 3.4 s on a quarter. Plants rise into each new stage (a CSS animation keyed on the step); under `prefers-reduced-motion` the steps still change, without motion.
+
+## 3. The rotation on the stage
+
+The picker at the top is one line (name, plants, score) that opens into the strategy cards of the page. Until the grower picks one, the stage shows the current practice: the field as it is.
+
+A strategy other than the current practice is played with its own crops: `seasonRuns(input, strategy)` scores the year once per season of the strategy's first year, with that season's crop sown in its start month; `runOn(runs, day)` gives the season standing in the month shown; a month the strategy leaves empty is bare ground. **This is a simulation and is labelled "Simulation"**: the weather is the record of the year, the crop is the strategy's. The soil plan of the report (worked out for the field's own crop) is not quoted over a simulated crop. Crops grown between the rows or beside another (`slotRole` `inter-row`, `companion`) are not drawn. Nothing the grower entered is changed (tested).
+
+## 4. The three characters
+
+The figures are the mascot owner's 3D models (Rice, Seed, Satellite; `docs/MASCOT.md`). Each carries a three-dot bubble; the bubble is amber with a mark when the character has something to look at. Nobody speaks until pressed.
+
+| Character | Stands | Note (`farmNotes`) | Proposes |
 |---|---|---|---|
-| Space | in the sky | the weather of the day, the last seven days, the next warning of the forecast | nothing (the forecast strip is below) |
-| Soil | at the front edge of the field | root-zone moisture against its usual range; soil pH against what the crop takes, and whether the pH is the grower's or the soil map's | pH, irrigation, drainage |
-| Rice | among the rows | the stage of the crop, days to harvest, NDVI with the date of the image | another sowing date, another crop |
+| Satellite | in the sky | the weather of the day or of the period; the next warning | nothing |
+| Seed | at the left edge of the field | the ground drier, wetter or as usual; soil acidity against the crop; the first remedy of the soil plan, when it has one | pH, irrigation, drainage |
+| Rice | at the right edge | the crop greener or less green than other years; stage; days to harvest | another sowing date, another crop |
 
-`farmLines` builds one sentence per character in English and Vietnamese, with the ids of the sources of its figures; the tab prints the source names under the sentence. The characters take turns every 8 seconds until the reader picks one (no turns under `prefers-reduced-motion`).
+A note is one verdict and at most two points, in a grower's words: no "NDVI", no "m³/m³" (tested). The "Look deeper" line under it (the "!") opens the detail sheet (`DeepSheet.tsx`), where the measurements behind the verdict are laid out with their sources: the year month by month, the reading against its usual range, the factors of the score, the forecast, the soil plan.
 
-The figures in `src/ui/farm/Mascots.tsx` are stand-ins. The real characters belong to the mascot owner (`src/ui/mascot`, issues U2 and U3): replacing the body of `MascotFigure` (`who`, `mood`, `talking`) is the whole change.
+"The ground is dry: watch for wilting" is said when the root zone reads drier than usual under a standing crop. It is a thing to go and look at; no reading of the app measures wilting.
 
-## 3. Trials
+### Trials
 
-A trial is the same year of telemetry with one thing changed: `runTrial` copies the model input, applies the change and computes a new score timeline. The scene, the characters and the score then show the trial, under a "Trial" label, with the score of the year as it is and in the trial on one chart.
+A trial is the same year of telemetry with one thing changed (`runTrial`). The proposals are the model's own `whatIf` moves that raise the season outcome, plus up to two more crops from `rankCrops`. **A trial is not advice about what will happen**; its caveat is printed with it. Nothing the grower entered is changed; only "Choose this crop" changes the field, through `setCrop`. Trials are offered on the field as it is, not over a simulated rotation.
 
-- The proposals are the model's own: `whatIf(input)` (irrigation, pH, drainage, sowing date, the best other crop), kept when they raise the season outcome, plus up to two more crops from `rankCrops`, scored the same way. `WhatIfResult.apply` (added for this) says what a move changes.
-- **A trial is not advice about what will happen.** It says "the same year of weather, with this one thing changed". A pH trial shows the year as if the soil already had that pH; lime acts over months and its dose needs a soil test, and the trial says so. Markets and seed are not in a crop trial.
-- **Nothing the grower entered is changed.** The trial works on a copy; `groundTruth` in the store stays as it is (tested). Only "Choose this crop for the field" changes the field, through the same `setCrop` as elsewhere.
+## 5. The plants
 
-## 3.1 Where it sits, and the date
+`cropLook` picks one of thirteen silhouettes from the genus, the category and the life span; `src/ui/farm/plants.tsx` draws each from the growth and the ripeness, so a seedling, a young plant, a full one and a ripe one are different drawings.
 
-`FarmView` (`src/ui/farm/FarmView.tsx`) is the first element of the rotation page (`src/ui/advisory/index.tsx`). On a wide page the scene stands on the left and the speaking character beside it; the day's figures and the forecast follow in two columns. The date slider moves the same cursor as the strip under the map; that strip is not on this page, so the farm mounts `usePlayback` itself.
+| Look | Crops | Drawn as |
+|---|---|---|
+| `paddy` | rice | a fan of blades; ripe heads bow |
+| `cereal` | wheat, barley, millet | a fan of blades; ears stand |
+| `tall-cereal` | maize, sorghum, sugarcane | a stalk, arching leaves, tassel, cob |
+| `legume` | pulses | three-part leaves, pods that dry to tan |
+| `oilseed` | annual oilseeds | paired leaves, a yellow head that sets seed |
+| `root` | root and tuber crops | a tuft over the shoulder of the root |
+| `leafy` | vegetables, herbs | a rosette closing into a head |
+| `vine` | pepper, grape, passion fruit, hop, vanilla, kiwi | a stake and a climbing vine, clusters |
+| `bush` | coffee, tea, berries | a rounded shrub, red cherries |
+| `tree` | perennial fruit, industrial, spice, oilseed | a trunk and a layered crown, fruit |
+| `palm` | coconut, oil palm, banana, areca, date, pineapple, papaya | a leaning trunk and fronds |
+| `grass` | forage, cover crops | a low tuft |
+| `row` | anything else | a small bush with fruit |
 
-What stands behind the field (`Backdrop.tsx`: the range, the hills, trees, the farmstead, the wind pump, the fence) is decoration. Only the sky follows the day, and the wheel of the wind pump turns faster from a wind of 6 m/s.
+## 6. The dossier
 
-## 4. Weather now and ahead
+`Dossier.tsx` is the last tab. It computes nothing new; it orders what the page already knows as six steps: the sources read (per branch, with provenance), the year in months, the score and its factors, the ranking of other crops, the comparison of the rotations (score and four criteria, the bar under each figure longer when better for the grower), then the soil and the first actions. It prints alone ("Print or save as PDF").
 
-`forecastDays` returns today (from the record) and each forecast day that has figures. Picking a forecast day draws that day's sky over today's field and marks the figures "Forecast". Warnings are the `RiskEvent`s of the risk branch that have not ended.
+## 7. Limits
 
-## 5. Limits
-
-- One field per scene; the storehouse, trees and canal are decoration and stand for nothing.
+- One field per scene. A multi-year rotation is shown for its first year only.
+- A period shows the crop of its last day: a crop sown and cut inside one quarter is seen only in the monthly steps.
 - The harvester and the seeder follow the scorer's calendar, not an observation of machines.
 - The soil picture uses the root-zone moisture of a ~9 km reanalysis cell (ERA5-Land): it says how the season compares with other years, not where water stands in the field.
-- A trial of a soil amendment cannot show the months the amendment needs; the model has no such dynamics.
-- The reference for the look of the feature was a farm weather demo seen on video (15 November 2026). Only the genre was taken: the drawing, palette and text are this project's own.
+- A trial of a soil amendment cannot show the months the amendment needs.
+- The characters need WebGL; without it, or if a model fails to load, a flat stand-in figure is drawn and everything else works.
 
-## 6. Tests
+## 8. Tests
 
-`npx vitest run src/core/farm`: the sky against each threshold; a day without readings; the record against the forecast; all six kinds of sky occur on the demo fields; plant kinds; a year of the maize field (stages, full height at mid-season, the harvester only in the harvest stage, days to harvest counting down); a perennial; no crop; the characters' sentences with their sources; a field without data; the next warning; proposals sorted by gain; a trial leaves the grower's entries alone.
+`npx vitest run src/core/farm`: the sky against each threshold; the record against the forecast; plant kinds; a year of the maize field; trials leave the grower's entries alone (`farm.test.ts`); the twelve months and four quarters, a period summed from its days, the sky rule of a period, the field of the last day under the sky of the period, a rotation's crop in its months, bare ground, the notes in two languages without jargon, no reading instead of a guess (`stage.test.ts`).
