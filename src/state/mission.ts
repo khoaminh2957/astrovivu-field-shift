@@ -38,8 +38,8 @@ import { computeScoreTimeline } from '@/core/scoring';
 import { type CountryTableResult, getSampleParcel, loadCountryTable, loadFieldRasters, loadTelemetry } from '@/data';
 import { addDays, clampDate, todayISO } from '@/lib/time';
 
-/** hero -> explore -> locked (field panel + timeline) -> advisory; urban is a side mission. */
-export type Phase = 'hero' | 'explore' | 'locked' | 'advisory' | 'urban';
+/** hero -> explore -> locked (field panel + timeline) -> advisory; urban and ask (the crop assistant) are pages of their own, with or without a field. */
+export type Phase = 'hero' | 'explore' | 'locked' | 'advisory' | 'urban' | 'ask';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 /** The crop table of the parcel's country: on its way, loaded, not available for that country, or failed to load. */
 export type CountryTableState = CountryTableResult | { status: 'idle' | 'loading' | 'error' };
@@ -89,7 +89,6 @@ export interface MissionState {
   insets: ViewInsets;
   /** HUD branch the user is inspecting (expanded callout); also selects the parcel colouring. */
   focusBranch: BranchId | null;
-  askOpen: boolean;
 
   setLang(lang: Lang): void;
   setPhase(phase: Phase): void;
@@ -122,7 +121,6 @@ export interface MissionState {
   setAnchor(anchor: ScreenAnchor | null): void;
   setInsets(insets: ViewInsets): void;
   setFocusBranch(branch: BranchId | null): void;
-  setAskOpen(open: boolean): void;
 }
 
 const PLAY_TICK_MS = 110;
@@ -197,7 +195,6 @@ export const useMission = create<MissionState>()((set, get) => ({
   anchor: null,
   insets: { top: 0, right: 0, bottom: 0, left: 0 },
   focusBranch: null,
-  askOpen: false,
 
   setLang: (lang) => {
     set({ lang });
@@ -401,7 +398,6 @@ export const useMission = create<MissionState>()((set, get) => ({
     set({ insets });
   },
   setFocusBranch: (focusBranch) => set({ focusBranch }),
-  setAskOpen: (askOpen) => set({ askOpen }),
 }));
 
 /**
@@ -409,7 +405,7 @@ export const useMission = create<MissionState>()((set, get) => ({
  *   ?sample=daklak-coffee            lock a demo field
  *   &phase=advisory|locked           jump to a state after locking
  *   &crop=glycine-max  &lang=vi      override crop / language
- *   ?phase=explore | ?phase=urban    states that need no parcel
+ *   ?phase=explore|urban|ask         states that need no parcel (ask also follows a sample)
  */
 export function bootFromQuery(search: string): void {
   const q = new URLSearchParams(search);
@@ -423,9 +419,9 @@ export function bootFromQuery(search: string): void {
       const crop = q.get('crop');
       if (crop) useMission.getState().setCrop(crop);
       // Anything else (an old link to a page that no longer exists) stays on the field.
-      if (phase === 'advisory' || phase === 'urban') useMission.getState().setPhase(phase);
+      if (phase === 'advisory' || phase === 'urban' || phase === 'ask') useMission.getState().setPhase(phase);
     });
-  } else if (phase === 'explore' || phase === 'urban') {
+  } else if (phase === 'explore' || phase === 'urban' || phase === 'ask') {
     store.setPhase(phase);
   }
 }
