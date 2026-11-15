@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { FieldContext, KnowledgeChunk, Lang } from '../../src/contracts';
+import { lookupFieldFacts } from '../../src/rag/fieldFacts';
 import { analyze, search, type SearchOptions } from '../../src/rag/retrieve';
 import { KnowledgeStore } from '../../src/rag/store';
 import { fileLoader } from '../../server/loader';
@@ -25,6 +26,14 @@ export interface EvalQuestion {
   ask?: string;
   /** Focuses the router must find; it may find more. An empty list means it must find none. */
   focus?: string[];
+  /** Focuses the router must not find ("năng suất" is not "nắng"). */
+  notFocus?: string[];
+  /**
+   * For a question about a reading of the field: the readings the answer must be made of, as keys
+   * of the fixture's facts, and no others; and the readings it must name as missing.
+   */
+  facts?: string[];
+  missing?: string[];
   /** For `off-topic`: the reason the question is declined. */
   outOfScope?: string;
   /** Row of the scope table in docs/RAG.md. */
@@ -43,6 +52,26 @@ export function routingErrors(store: KnowledgeStore, q: EvalQuestion): string[] 
   if (q.ask && a.ask !== q.ask) out.push(`ask=${a.ask ?? 'none'}`);
   if (q.outOfScope && a.outOfScope !== q.outOfScope) out.push(`declined=${a.outOfScope ?? 'none'}`);
   if (q.focus && (q.focus.length ? !q.focus.every((f) => (a.focus as string[]).includes(f)) : a.focus.length > 0)) out.push(`focus=${a.focus.join('+') || 'none'}`);
+  if (q.notFocus?.some((f) => (a.focus as string[]).includes(f))) out.push(`focus=${a.focus.join('+')} holds one of ${q.notFocus.join('+')}`);
+  return out;
+}
+
+/**
+ * What the content of an answer about a reading gets wrong: the readings it would be made of
+ * against the ones the question states, and the same for the readings named as missing. Routing
+ * to the right intent is not enough: "how far can I trust the soil moisture of my field" must
+ * come back with the soil moisture and with nothing else.
+ */
+export function readingErrors(store: KnowledgeStore, q: EvalQuestion): string[] {
+  if (!q.facts && !q.missing) return [];
+  const a = analyze(store, q.q, q.lang, true, FIXTURE_CONTEXT.cropId);
+  const { readings, missing } = lookupFieldFacts(FIXTURE_CONTEXT, a.focus, a.termIds, q.lang);
+  const same = (got: string[], want: string[]) => got.length === want.length && want.every((k) => got.includes(k));
+  const out: string[] = [];
+  const got = readings.map((r) => r.key);
+  const gone = missing.map((m) => m.key);
+  if (!same(got, q.facts ?? [])) out.push(`readings=${got.join('+') || 'none'}, expected ${(q.facts ?? []).join('+') || 'none'}`);
+  if (!same(gone, q.missing ?? [])) out.push(`missing=${gone.join('+') || 'none'}, expected ${(q.missing ?? []).join('+') || 'none'}`);
   return out;
 }
 
@@ -162,4 +191,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
     console.log(`| ${g} | ${sub.length} (${sub.filter((q) => q.lang === 'en').length} / ${sub.filter((q) => q.lang === 'vi').length}) | ${sub.length - bad.length} |`);
   }
   console.log(`\nRouting: ${stated.length - wrong.length}/${stated.length} as expected${wrong.length ? `; wrong: ${wrong.join('; ')}` : ''}`);
+  // Content of the answers about a reading: the readings the answer is made of.
+  const withContent = all.filter((q) => q.facts || q.missing);
+  const off = withContent.flatMap((q) => readingErrors(store, q).map((e) => `${q.id}: ${e}`));
+  console.log(`Readings: ${withContent.length - new Set(off.map((e) => e.split(':')[0])).size}/${withContent.length} answers made of the stated readings and no others${off.length ? `; wrong: ${off.join('; ')}` : ''}`);
 }
