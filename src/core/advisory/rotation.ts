@@ -4,7 +4,7 @@
  */
 import type { CropProfile, EvidenceItem, FarmerPriority, I18nText, ModelInput, RotationKind, RotationSeason, RotationSeasonDetail, RotationStrategy, SeasonEconomics } from '@/contracts';
 import { getCrop, listCrops } from '@/core/crops';
-import { ownEconomics, referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
+import { economicRegions, ownEconomics, referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
 import { scanSowingWindows, windowMonths } from '@/core/scoring';
 import { type MonthNormal, monthlyNormals } from '@/lib/climate';
 import { cropSeasonDetail, fallowSeasons, sumNormal } from './seasonDetail';
@@ -244,6 +244,251 @@ function bestBy(ctx: Ctx, list: CropProfile[], value: (c: CropProfile, s: number
   return best;
 }
 
+// ------------------------------------------------------------------------------------------------
+// The most profitable sequence under constraints (docs/ECONOMICS.md, section 5)
+// ------------------------------------------------------------------------------------------------
+
+/** One season the search can place: a cash crop sown in a month in which the field suits it. */
+interface Slot {
+  crop: CropProfile;
+  start: number;
+  len: number;
+  /** Months of the year the season occupies, one bit each. */
+  mask: number;
+  /** Those of them that lie after December, in the following year. */
+  spill: number;
+  marginUsd: number;
+}
+
+/** A field score from which a cash crop is placed at all: the threshold `fill` has always used. */
+const CASH_MIN_SCORE = 55;
+/** A sowing month whose needs were met in fewer than half of the analysed years is not planned on (the scorer's own reliability threshold). */
+const MIN_RELIABILITY = 0.5;
+const MAX_SEASONS = 4;
+/** Sequences are checked against the constraints best margin first; this many are kept for that. */
+const KEPT = 2000;
+/** The search gives up (and the caller falls back) when this many of the best sequences all fail a constraint. */
+const MAX_CHECKED = 200;
+
+/** Two-year alternations are built from this many of the best one-year sequences (all of them when there are fewer). */
+const PAIRED = 300;
+
+export interface ProfitSearch {
+  plans: Plan[];
+  /** Length of the cycle in years: 1, or 2 for two different years in alternation. */
+  years: number;
+  /** Sequences compared: one-year sequences, and two-year alternations of them. */
+  examined: { oneYear: number; twoYear: number };
+  /** Place of the chosen sequence by margin; 1 when no constraint had to be applied. */
+  rank: number;
+  /** Margin per hectare and year, USD: of the chosen sequence, and of the best one before constraints. */
+  marginUsdPerHaYr: number;
+  bestMarginUsdPerHaYr: number;
+  /** How many sequences with a higher margin failed each constraint (a sequence can fail several). */
+  rejected: { soil: number; water: number; risk: number };
+  /** True when low risk is among the grower's priorities: the risk score may then not rise above today's. */
+  riskCapped: boolean;
+  /** True when what the grower does now came out first: the plan returned is then the next one. */
+  currentIsBest: boolean;
+  /** Crops that suit the field but have no reference price or cost for its region, and so were not compared. */
+  noEconomics: string[];
+}
+
+/** What the grower does now is the floor: a plan may earn more, it may not leave soil or water worse off. */
+export function meetsConstraints(e: Evaluated, current: Evaluated, riskCapped: boolean): { soil: boolean; water: boolean; risk: boolean } {
+  return {
+    soil: e.metrics.soilHealth >= current.metrics.soilHealth,
+    water: e.metrics.waterFit >= current.metrics.waterFit,
+    risk: !riskCapped || e.metrics.risk <= current.metrics.risk,
+  };
+}
+
+/** The seasons of a plan as a set, so that the same rotation written in another order compares equal. */
+const planKey = (plans: Pick<Plan, 'cropId' | 'start' | 'year'>[], years: number, shift = 0): string =>
+  plans
+    .map((p) => `${p.cropId}@${p.start}/${(p.year + shift) % years}`)
+    .sort()
+    .join('+');
+
+/**
+ * The sequence of cash crops with the highest expected margin that keeps soil health and water fit
+ * at least at the level of the current rotation (and risk no higher, when the grower ranks low
+ * risk). Compared are all one-year sequences of up to four seasons and all two-year alternations
+ * of them (of the best `PAIRED` when there are more). Nothing is sampled, so the same field gives
+ * the same answer. Null when no crop has economics for the region, or when none of the best
+ * sequences passes.
+ */
+export function profitSearch(ctx: Ctx, current: Evaluated, currentPlans: Plan[] = []): ProfitSearch | null {
+  const { input } = ctx;
+  const area = input.parcel.areaHa;
+  const own = ownEconomics(input.groundTruth);
+  // `referenceEconomics` falls back to another region when the parcel's has no figure for a crop.
+  // A comparison of margins may not rest on that: only figures of the parcel's own region count here.
+  const regions = economicRegions(input.parcel);
+  const localReference = (id: string) => {
+    const r = referenceEconomics(id, input.parcel);
+    return r && regions.includes(r.region) ? r : null;
+  };
+  const slots: Slot[] = [];
+  for (const crop of pool(ctx, 'cash')) {
+    const len = windowMonths(crop);
+    if (len > 12) continue;
+    const fit = ctx.fit(crop.id);
+    const reference = localReference(crop.id);
+    for (let m = 1; m <= 12; m++) {
+      const score = fit.s[m - 1];
+      const reliability = fit.rel[m - 1];
+      if (score < CASH_MIN_SCORE || (reliability != null && reliability < MIN_RELIABILITY)) continue;
+      const e = seasonEconomics({ cropId: crop.id, areaHa: area, yieldFraction: score / 100, reference, own: crop.id === input.cropId ? own : undefined });
+      if (!e) continue;
+      const months = Array.from({ length: len }, (_, i) => m - 1 + i);
+      slots.push({
+        crop,
+        start: m,
+        len,
+        mask: months.reduce((a, month) => a | (1 << month % 12), 0),
+        spill: months.filter((month) => month >= 12).reduce((a, month) => a | (1 << (month - 12)), 0),
+        marginUsd: e.marginUsd,
+      });
+    }
+  }
+  if (slots.length === 0) return null;
+  slots.sort((a, b) => a.start - b.start || a.crop.id.localeCompare(b.crop.id));
+
+  type Sequence = { margin: number; picks: number[] };
+  const pest = (i: number) => slots[i].crop.rotation!.pestGroup;
+  // Equal margins are ordered by what the sequence is, so the result does not depend on the order of enumeration.
+  const sig = (c: Sequence) => c.picks.map((i) => `${slots[i].crop.id}@${slots[i].start}`).join('+');
+  const byMargin = (a: Sequence, b: Sequence) => b.margin - a.margin || sig(a).localeCompare(sig(b));
+
+  // Every set of non-overlapping seasons of one year, built in order of sowing month. Two seasons
+  // that follow each other (the last and the first too: the year repeats) may not share a pest group.
+  let oneYearCount = 0;
+  let oneYear: Sequence[] = [];
+  let floor = -Infinity;
+  const picks: number[] = [];
+  const visit = (from: number, mask: number, margin: number): void => {
+    for (let i = from; i < slots.length; i++) {
+      const slot = slots[i];
+      if (mask & slot.mask) continue;
+      if (picks.length && pest(picks[picks.length - 1]) === pest(i)) continue;
+      picks.push(i);
+      const total = margin + slot.marginUsd;
+      if (picks.length === 1 || pest(picks[0]) !== pest(i)) {
+        oneYearCount++;
+        if (total > floor || oneYear.length < KEPT) {
+          oneYear.push({ margin: total, picks: [...picks] });
+          if (oneYear.length >= 2 * KEPT) {
+            oneYear.sort(byMargin);
+            oneYear = oneYear.slice(0, KEPT);
+            floor = oneYear[oneYear.length - 1].margin;
+          }
+        }
+      }
+      if (picks.length < MAX_SEASONS) visit(i + 1, mask | slot.mask, total);
+      picks.pop();
+    }
+  };
+  visit(0, 0, 0);
+  oneYear.sort(byMargin);
+  oneYear = oneYear.slice(0, KEPT);
+
+  // Two different years in alternation (maize, then soybean). A season that runs past December
+  // lands in the other year, and the last crop of one year is followed by the first of the other.
+  const own12 = (c: Sequence) => c.picks.reduce((a, i) => a | (slots[i].mask & ~slots[i].spill), 0);
+  const spill = (c: Sequence) => c.picks.reduce((a, i) => a | slots[i].spill, 0);
+  const first = (c: Sequence) => c.picks[0];
+  const last = (c: Sequence) => c.picks[c.picks.length - 1];
+  type Candidate2 = { margin: number; a: Sequence; b: Sequence | null };
+  const all: Candidate2[] = oneYear.map((a) => ({ margin: a.margin, a, b: null }));
+  const paired = oneYear.slice(0, PAIRED);
+  let twoYearCount = 0;
+  for (let i = 0; i < paired.length; i++)
+    for (let j = i + 1; j < paired.length; j++) {
+      const a = paired[i];
+      const b = paired[j];
+      if (spill(a) & own12(b) || spill(b) & own12(a)) continue;
+      if (pest(last(a)) === pest(first(b)) || pest(last(b)) === pest(first(a))) continue;
+      twoYearCount++;
+      all.push({ margin: (a.margin + b.margin) / 2, a, b });
+    }
+  const key2 = (c: Candidate2) => sig(c.a) + (c.b ? ` | ${sig(c.b)}` : '');
+  all.sort((x, y) => y.margin - x.margin || key2(x).localeCompare(key2(y)));
+
+  const riskCapped = input.priorities.includes('risk');
+  const rejected = { soil: 0, water: 0, risk: 0 };
+  const noEconomics = listCrops()
+    .filter((c) => c.lifeSpan === 'annual' && c.category !== 'cover' && c.rotation && !(input.groundTruth.avoidCropIds ?? []).includes(c.id) && !slots.some((slot) => slot.crop.id === c.id) && ctx.best(c.id).s >= CASH_MIN_SCORE)
+    .map((c) => c.id);
+  const toPlans = (c: Sequence, year: number) => c.picks.map((i): Plan => ({ cropId: slots[i].crop.id, start: slots[i].start, len: slots[i].len, year, share: 1 }));
+  const currentYears = Math.max(1, ...currentPlans.map((p) => p.year + 1));
+  const currentKeys = new Set(Array.from({ length: currentYears }, (_, shift) => planKey(currentPlans, currentYears, shift)));
+  let currentIsBest = false;
+  let failed = 0;
+  for (const c of all) {
+    if (failed >= MAX_CHECKED) break;
+    const years = c.b ? 2 : 1;
+    const plans = [...toPlans(c.a, 0), ...(c.b ? toPlans(c.b, 1) : [])];
+    if (years === currentYears && currentKeys.has(planKey(plans, years))) {
+      // What the grower already does, met before any sequence that passes: nothing that passes earns more.
+      currentIsBest = true;
+      continue;
+    }
+    const ok = meetsConstraints(evaluate(ctx, { kind: 'income', plans, years, why: [] }, current, 'income'), current, riskCapped);
+    if (ok.soil && ok.water && ok.risk)
+      return { plans, years, examined: { oneYear: oneYearCount, twoYear: twoYearCount }, rank: failed + 1 + (currentIsBest ? 1 : 0), marginUsdPerHaYr: c.margin / area, bestMarginUsdPerHaYr: all[0].margin / area, rejected, riskCapped, currentIsBest, noEconomics };
+    failed++;
+    if (!ok.soil) rejected.soil++;
+    if (!ok.water) rejected.water++;
+    if (!ok.risk) rejected.risk++;
+  }
+  return null;
+}
+
+/** In words: how the sequence was chosen, what was set aside, and what could not be compared. */
+function profitWhy(found: ProfitSearch): I18nText[] {
+  // Thousands are grouped as each language writes them: 1,278 and 1.278.
+  const num = (v: number, lang: 'en' | 'vi') => Math.round(v).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US');
+  const names = (ids: string[], lang: 'en' | 'vi') => ids.map((id) => cropText(id)[lang]).join(', ');
+  const why: I18nText[] = [
+    tx(
+      `The highest expected margin among ${num(found.examined.oneYear, 'en')} one-year sequences and ${num(found.examined.twoYear, 'en')} two-year alternations of crops that suit this field and have a reference price and cost here. Every one was compared; none was drawn at random.`,
+      `Lãi kỳ vọng cao nhất trong ${num(found.examined.oneYear, 'vi')} chuỗi cây trồng một năm và ${num(found.examined.twoYear, 'vi')} cách xen hai năm của các cây phù hợp với thửa ruộng và có giá, chi phí tham chiếu tại đây. Mọi phương án đều được so sánh, không chọn ngẫu nhiên.`,
+    ),
+    tx(
+      `It keeps the soil-health index and the water fit at least at the level of what you do now${found.riskCapped ? ', and the risk score no higher, because low risk is among your priorities' : ''}.`,
+      `Phương án giữ chỉ số sức khỏe đất và mức đáp ứng nước không thấp hơn cách làm hiện tại${found.riskCapped ? ', và điểm rủi ro không cao hơn, vì ít rủi ro nằm trong ưu tiên của bạn' : ''}.`,
+    ),
+  ];
+  if (found.currentIsBest) {
+    why.push(
+      tx(
+        'Under these conditions nothing compared earns more than what you do now: this is the next best sequence, shown for comparison.',
+        'Với các điều kiện này, không phương án nào được so sánh có lãi cao hơn cách bạn đang làm: đây là phương án tốt kế tiếp, đưa ra để so sánh.',
+      ),
+    );
+  }
+  const failed = found.rank - 1 - (found.currentIsBest ? 1 : 0);
+  if (failed > 0) {
+    const gap = found.bestMarginUsdPerHaYr - found.marginUsdPerHaYr;
+    why.push(
+      tx(
+        `${failed} sequences with a higher margin were set aside (soil health: ${found.rejected.soil}, water fit: ${found.rejected.water}${found.riskCapped ? `, risk: ${found.rejected.risk}` : ''}). The best of them would earn ${num(gap, 'en')} USD per hectare and year more.`,
+        `${failed} phương án có lãi cao hơn đã bị loại (sức khỏe đất: ${found.rejected.soil}, đáp ứng nước: ${found.rejected.water}${found.riskCapped ? `, rủi ro: ${found.rejected.risk}` : ''}). Phương án tốt nhất trong số đó lãi hơn ${num(gap, 'vi')} USD mỗi hecta mỗi năm.`,
+      ),
+    );
+  }
+  if (found.noEconomics.length) {
+    why.push(
+      tx(
+        `Not compared, because no reference price or cost is known for this region: ${names(found.noEconomics, 'en')}. No figure of another region was used in their place.`,
+        `Không được so sánh vì chưa có giá hoặc chi phí tham chiếu cho vùng này: ${names(found.noEconomics, 'vi')}. Không dùng số liệu của vùng khác để thay thế.`,
+      ),
+    );
+  }
+  return why;
+}
+
 export interface Candidate {
   kind: RotationKind;
   plans: Plan[];
@@ -251,7 +496,7 @@ export interface Candidate {
   why: I18nText[];
 }
 
-function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number): Candidate[] {
+function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number, current: Evaluated): Candidate[] {
   const out: Candidate[] = [];
   const main = getCrop(cur[0]?.cropId) ?? getCrop(bestOverall(ctx))!;
   const mainPlan: Plan = cur.find((p) => p.cropId === main.id) ?? mkSeason(ctx, main.id, 0);
@@ -280,12 +525,16 @@ function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number): Candidate[] 
     const an = cropText(a.id);
     out.push({ kind: 'water-saver', plans, years: 1, why: [tx(`Built around ${an.en}, the suitable crop with the lowest modelled water demand for its fit here, with at most one more season of a crop that is not a heavy water user; the remaining months stay fallow instead of carrying another thirsty crop.`, `Xây dựng quanh ${an.vi}, cây thích hợp có nhu cầu nước mô hình thấp nhất so với mức phù hợp ở đây, thêm tối đa một vụ cây không tốn nhiều nước; các tháng còn lại để đất nghỉ thay vì trồng thêm cây tốn nước.`)] });
   }
-  // Income: the highest reference margin per season, then the best-paying crop for the remaining months.
-  {
+  // Income: the sequence with the highest expected margin under the constraints (profitSearch). Where the search
+  // finds none: the highest reference margin per season, then the best-paying crop for the remaining months.
+  const found = profitSearch(ctx, current, cur);
+  if (found) out.push({ kind: 'income', plans: found.plans, years: found.years, why: profitWhy(found) });
+  else {
     const a = bestBy(ctx, cash, (c, s) => marginOf(ctx, c.id, s), 55) ?? main;
     const plans = fill(ctx, [a.id === main.id ? anchor : mkSeason(ctx, a.id, 0)], 0, incomeChooser(ctx), { allowCover: false });
     const an = cropText(a.id);
-    out.push({ kind: 'income', plans, years: 1, why: [tx(`${an.en} has the highest reference margin per season among the crops that fit this field; the remaining months go to the next best-paying crop that fits the calendar.`, `${an.vi} có lãi tham chiếu mỗi vụ cao nhất trong các cây phù hợp với thửa ruộng; các tháng còn lại dành cho cây có lãi cao tiếp theo phù hợp lịch thời vụ.`)] });
+    const borrowed = economicRegions(ctx.input.parcel).length === 0;
+    out.push({ kind: 'income', plans, years: 1, why: [tx(`${an.en} has the highest reference margin per season among the crops that fit this field; the remaining months go to the next best-paying crop that fits the calendar.`, `${an.vi} có lãi tham chiếu mỗi vụ cao nhất trong các cây phù hợp với thửa ruộng; các tháng còn lại dành cho cây có lãi cao tiếp theo phù hợp lịch thời vụ.`), ...(borrowed ? [tx('No reference price or cost is known for the country of this field. The margins here use figures of another region, named in the sources, and show an order of magnitude only.', 'Chưa có giá và chi phí tham chiếu cho nước của thửa ruộng này. Các con số lãi ở đây dùng số liệu của vùng khác, có ghi trong phần nguồn, và chỉ cho biết cỡ lớn.')] : [])] });
   }
   // Resilience: three years, three families, reliable crops first.
   {
@@ -690,6 +939,15 @@ export function scoreAll(all: Evaluated[], priorities: FarmerPriority[]): Rotati
   });
 }
 
+/** The search for one field, with the current rotation it is held against. For tests and for the tables of docs/ECONOMICS.md. */
+export function profitSearchFor(input: ModelInput): { found: ProfitSearch | null; current: Evaluated; ctx: Ctx } {
+  const ctx = makeCtx(input);
+  const cur = currentPlans(ctx);
+  const plans = cur.plans.length ? cur.plans : [mkSeason(ctx, bestOverall(ctx), 0)];
+  const current = evaluate(ctx, { kind: 'current', plans, years: cur.years, why: [] }, null, 'current');
+  return { found: profitSearch(ctx, current, plans), current, ctx };
+}
+
 function compute(input: ModelInput): RotationStrategy[] {
   const ctx = makeCtx(input);
   const cur = currentPlans(ctx);
@@ -697,7 +955,7 @@ function compute(input: ModelInput): RotationStrategy[] {
   const curCand: Candidate = { kind: 'current', plans: cur.plans.length ? cur.plans : [mkSeason(ctx, bestOverall(ctx), 0)], years: cur.years, why: [tx('The reference every alternative is compared with.', 'Mốc để so sánh mọi phương án khác.')] };
   const current = evaluate(ctx, curCand, null, 'current');
   const main = curMain ?? getCrop(curCand.plans[0].cropId)!;
-  const cands = main.lifeSpan !== 'annual' ? perennialCandidates(ctx, main) : annualCandidates(ctx, curCand.plans, cur.years);
+  const cands = main.lifeSpan !== 'annual' ? perennialCandidates(ctx, main) : annualCandidates(ctx, curCand.plans, cur.years, current);
   const sig = (c: { plans?: Plan[]; seasons?: RotationSeason[]; years?: number }) => JSON.stringify([c.years ?? 1, (c.plans ?? c.seasons ?? []).map((p) => ('cropId' in p ? [p.cropId, 'start' in p ? p.start : p.startMonth, p.year] : [])).sort()]);
   const seen = new Set([sig({ plans: curCand.plans, years: curCand.years })]);
   const alts: Evaluated[] = [];
