@@ -375,12 +375,44 @@ export function Stubble() {
   return <path d="M -7 0 L -8 -5 M -2.5 0 L -2.5 -6 M 2.5 0 L 3.5 -5 M 7 0 L 8 -6" stroke="#c4a566" strokeWidth={2} strokeLinecap="round" />;
 }
 
-/** A plant on a neutral ground, for a legend or a card: the full-grown, half-ripe drawing of its kind. */
-export function PlantIcon({ look, size = 28, vigor = 0.75 }: { look: CropLook; size?: number; vigor?: number }) {
-  const { fill, dark } = leafColours(vigor, 0.5, false);
+/**
+ * A patch of field for the time bar: three plants of the month's kind on a strip of soil, cropped
+ * tight so that a 30 px chip still reads. Height follows `growth`; a harvest shows stubble; bare
+ * ground is the strip alone.
+ */
+export function FieldChip({ look, growth, ripeness, cut = false, size = 30 }: { look: CropLook; growth: number; ripeness: number; cut?: boolean; size?: number }) {
+  const { fill, dark } = leafColours(0.85, ripeness, RIPENS[look]);
+  const g = Math.max(0.35, growth);
+  return (
+    <svg viewBox="-32 -60 64 66" width={size} height={size} aria-hidden>
+      <rect x={-30} y={0} width={60} height={5} rx={2.5} fill="#a9875c" />
+      {look === 'none'
+        ? <path d="M -22 -3 H 22" stroke="#a9875c" strokeWidth={2} strokeDasharray="3 4" strokeLinecap="round" />
+        : [-15, 0, 15].map((x, i) => (
+            <g key={x} transform={`translate(${x} 0) scale(${i === 1 ? 0.8 : 0.66})`}>
+              {cut ? <Stubble /> : <Plant look={look} growth={g} ripeness={ripeness} fill={fill} dark={dark} seed={i + 1} />}
+            </g>
+          ))}
+    </svg>
+  );
+}
+
+/**
+ * A plant on a neutral ground, for a legend, a card or the time bar: by default the full-grown,
+ * half-ripe drawing of its kind; with `growth` and `ripeness` the plant as it stands that month.
+ * `cut` draws what a harvest leaves; `look: 'none'` a bare strip of ground.
+ */
+export function PlantIcon({ look, size = 28, vigor = 0.75, growth = 1, ripeness = 0.7, cut = false }: { look: CropLook; size?: number; vigor?: number; growth?: number; ripeness?: number; cut?: boolean }) {
+  const { fill, dark } = leafColours(vigor, ripeness, RIPENS[look]);
   return (
     <svg viewBox="-34 -70 68 76" width={size} height={size} aria-hidden>
-      {look === 'none' ? <path d="M -24 0 H 24" stroke="var(--color-line-3)" strokeWidth={3} strokeDasharray="4 5" strokeLinecap="round" /> : <Plant look={look} growth={1} ripeness={0.7} fill={fill} dark={dark} />}
+      {look === 'none' ? (
+        <path d="M -24 0 H 24" stroke="var(--color-line-3)" strokeWidth={3} strokeDasharray="4 5" strokeLinecap="round" />
+      ) : cut ? (
+        <g transform="scale(2.2)"><Stubble /></g>
+      ) : (
+        <Plant look={look} growth={growth} ripeness={ripeness} fill={fill} dark={dark} />
+      )}
     </svg>
   );
 }

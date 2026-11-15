@@ -39,9 +39,9 @@ export function shellInsets({ width, height, narrow, locked, finding, finderH, a
 
 /** Can be called before React commits: phase and parcel already describe the destination. */
 export function getShellInsets({ phase, parcel }: Pick<MissionState, 'phase' | 'parcel'>): ViewInsets {
-  // Rotation covers the map, but leaving it should reveal the same field framing.
-  const locked = !!parcel && (phase === 'locked' || phase === 'advisory');
-  const finding = !locked && (phase === 'hero' || phase === 'explore' || !parcel);
+  // Rotation and the assistant cover the map, but leaving them should reveal the same field framing.
+  const locked = !!parcel && (phase === 'locked' || phase === 'advisory' || phase === 'ask');
+  const finding = !locked && (phase === 'hero' || phase === 'explore');
   const { finderH, addCard } = useMissionUi.getState();
   const css = getComputedStyle(document.documentElement);
   return shellInsets({

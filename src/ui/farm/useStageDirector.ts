@@ -7,7 +7,7 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { FarmVoice } from '@/core/farm';
 import type { MascotClip } from '@/ui/mascot';
-import { type StoryFrame, VOICES, idleDelay, nextIdle, storyReactions } from './direct';
+import { type StoryFrame, VOICES, idleDelay, nextIdle, stepBeat, storyReactions } from './direct';
 
 export type Aim = { x: number; y: number } | null;
 type Beats = Record<FarmVoice, { clip?: MascotClip; n: number }>;
@@ -18,7 +18,7 @@ const CLIP_MS = 2600;
 const STAGGER_MS = 420;
 const GLANCE_MS = 1900;
 /** No idle clip this soon after any other clip: two characters never start together. */
-const QUIET_MS = 2200;
+const QUIET_MS = 1400;
 const NO_LOOKS: Looks = { space: null, soil: null, rice: null };
 
 interface Options {
@@ -84,13 +84,15 @@ export function useStageDirector({ root, open, frame, reduced }: Options) {
 
   // A step of the story: the characters whose part changed answer it, one after the other.
   const prevFrame = useRef<StoryFrame | null>(null);
+  const steps = useRef(0);
   const frameKey = frame ? JSON.stringify(frame) : '';
   useEffect(() => {
     if (!frame) return;
     const prev = prevFrame.current;
     prevFrame.current = frame;
-    if (reduced) return;
-    storyReactions(prev, frame).forEach((r, k) => {
+    if (reduced || !prev) return;
+    steps.current += 1;
+    stepBeat(storyReactions(prev, frame), steps.current).forEach((r, k) => {
       later(() => {
         act(r.who, r.clip);
         if (r.toField && open == null) {
@@ -126,7 +128,7 @@ export function useStageDirector({ root, open, frame, reduced }: Options) {
           if (next) {
             last = next.who;
             act(next.who, next.clip);
-            if (Math.random() < 0.4) {
+            if (Math.random() < 0.55) {
               const others = VOICES.filter((v) => v !== next.who);
               const watcher = others[Math.floor(Math.random() * others.length)];
               setLook(watcher, aimFrom(watcher, next.who));

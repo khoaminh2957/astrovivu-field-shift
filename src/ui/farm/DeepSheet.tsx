@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { type AdvisoryReport, type FieldTelemetry, type ModelInput, type ScoreTimeline, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { type FarmOption, type FarmPeriodSummary, type FarmScene, type FarmVoice, forecastDays } from '@/core/farm';
+import { OptionFigure } from './StageParts';
 import { useLang, useT } from '@/i18n';
 import { scoreAt } from '@/lib/series';
 import { LocalReviewTag } from '@/ui/advisory/shared';
@@ -265,9 +266,7 @@ function OptionList({ options }: { options: FarmOption[] }) {
       {options.slice(0, 4).map((o) => (
         <li key={o.id} className="flex items-baseline justify-between gap-3 text-sm">
           <span className="min-w-0 text-ink-1">{pick(o.label, lang)}</span>
-          <span className="t-value shrink-0 text-signal-strong" title={t('farm.gainLabel', { n: o.delta })}>
-            {o.before} → {o.after}
-          </span>
+          <span className="shrink-0"><OptionFigure o={o} full /></span>
         </li>
       ))}
     </ul>

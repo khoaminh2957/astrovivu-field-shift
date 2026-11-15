@@ -166,7 +166,7 @@ export function PlaceSearch({ look, compact, onOpenChange, onOpenField, classNam
         if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
       }}
     >
-      <label className={cn('flex items-center text-white transition-colors duration-(--dur-fast)', style.pill)}>
+      <div className={cn('flex items-center text-white transition-colors duration-(--dur-fast)', style.pill)}>
         <Search size={style.icon} strokeWidth={1.5} aria-hidden className="shrink-0" />
         <input
           role="combobox"
@@ -195,7 +195,7 @@ export function PlaceSearch({ look, compact, onOpenChange, onOpenField, classNam
             <X size={16} aria-hidden />
           </button>
         )}
-      </label>
+      </div>
 
       <div className={cn('absolute z-(--z-popover) flex-col', look === 'glass' && 'inset-x-0', style.popup, shown ? 'flex' : 'hidden')}>
         {/* The list stays in the page while closed, so `aria-controls` always points at something. */}

@@ -97,7 +97,7 @@ const MetricCard = memo(function MetricCard({ id }: { id: BranchId }) {
           <BranchIcon branch={id} size={12} />
           {fmtDate(frameDate ?? cursor, lang)}
         </span>
-        <span className="truncate text-base font-medium text-ink-1">{title}</span>
+        <span className="workspace-card-title truncate">{title}</span>
       </span>
       <span data-metric-preview className="relative block aspect-[4/3] overflow-hidden">
         {unavailable ? null : pic === 'loading' || loading ? <span className="skeleton absolute inset-4 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={id} pad={10} />}
@@ -132,7 +132,7 @@ export function MetricGrid({ className }: { className?: string }) {
         ] as const
       ).map(([key, ids]) => (
         <section key={key} className="flex flex-col gap-3">
-          <h3 className="text-lg font-medium text-ink-1">{t(key)}</h3>
+          <h2 className="workspace-section-title">{t(key)}</h2>
           <div className="grid grid-cols-2 gap-2">
             {ids.map((b) => (
               <MetricCard key={b} id={b} />

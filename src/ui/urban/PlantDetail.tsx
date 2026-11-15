@@ -8,14 +8,16 @@ import { Droplets, ExternalLink, MessageCircleQuestion, Sun, Timer } from 'lucid
 import type { UrbanRecommendation } from '@/contracts';
 import { pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
-import { cropImage, ecocropPageUrl, sowLevels, yearFrom } from '@/core/urban';
+import { ecocropPageUrl, sowLevels, yearFrom } from '@/core/urban';
 import { useLang, useT } from '@/i18n';
-import { useMission } from '@/state/mission';
+import { openAssistant } from '@/ui/ask/chatStore';
+import '@/ui/ask/strings';
 import { useNarrow } from '@/ui/chrome/uiState';
 import { Button, Sheet, Tag, cn } from '@/ui/design';
 import { fmtNum, monthLong } from '@/ui/advisory/format';
 import { TextList } from '@/ui/advisory/shared';
-import { CropPhoto, useCropImages } from './CropPhoto';
+import { CropPhoto, hasEcoCropPhoto, useCropImages } from './CropPhoto';
+import { LOCAL_CROP_PHOTOS } from './cropPhotoCredits';
 import { Difficulty, IconLine, MonthDots, MonthKey, ScoreRing, SowMark, SowStatus } from './parts';
 import './strings';
 
@@ -24,18 +26,17 @@ export function PlantDetail({ rec, month, onClose }: { rec: UrbanRecommendation 
   const lang = useLang();
   const narrow = useNarrow();
   const images = useCropImages();
-  const setAskOpen = useMission((s) => s.setAskOpen);
   if (!rec) return null;
   const name = pick(rec.name, lang);
   const crop = getCrop(rec.cropId);
-  const hasPhoto = cropImage(images, crop?.ecocropId) != null;
+  const localPhoto = LOCAL_CROP_PHOTOS[rec.cropId];
   const levels = sowLevels(rec.care.sowMonths, rec.care.sowFit);
   const steps = yearFrom(rec.calendar, month);
 
   const askAssistant = () => {
     onClose();
     // After the sheet has handed focus back, so the assistant's input keeps it.
-    window.setTimeout(() => setAskOpen(true), 0);
+    window.setTimeout(() => openAssistant(t('ask.prefill.grow', { name })), 0);
   };
 
   return (
@@ -61,7 +62,14 @@ export function PlantDetail({ rec, month, onClose }: { rec: UrbanRecommendation 
         <div className="flex gap-4">
           <figure className="m-0 flex shrink-0 flex-col gap-1">
             <CropPhoto cropId={rec.cropId} name={name} size="lg" />
-            {hasPhoto && <figcaption className="t-meta">{t('urban.photoCredit')}</figcaption>}
+            {localPhoto ? (
+              <figcaption className="t-caption max-w-[136px]">
+                <a href={localPhoto.source} target="_blank" rel="noopener noreferrer" className="underline">{localPhoto.author}</a>
+                {' · '}
+                {localPhoto.licenseUrl ? <a href={localPhoto.licenseUrl} target="_blank" rel="noopener noreferrer" className="underline">{localPhoto.license}</a> : t('urban.photoPublicDomain')}
+                <span className="block">{t('urban.photoCropped')}</span>
+              </figcaption>
+            ) : hasEcoCropPhoto(images, rec.cropId) && <figcaption className="t-meta">{t('urban.photoCredit')}</figcaption>}
           </figure>
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="flex items-center gap-3">

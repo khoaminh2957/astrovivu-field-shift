@@ -12,6 +12,8 @@ import { getCrop } from '@/core/crops';
 import { computeScoreTimeline, rankCrops, whatIf } from '@/core/scoring';
 import { sampleAt, scoreAt } from '@/lib/series';
 import { addDays, dayOfYear, diffDays } from '@/lib/time';
+// period.ts imports this module too; both only call each other inside functions, so the cycle is safe.
+import { farmPeriods, periodLand } from './period';
 
 // Thresholds of the risk events (src/data/harmonize/risk.ts): the scene shows a day the way the risk branch would flag it.
 export const HEAVY_RAIN_MM = 30;
@@ -231,6 +233,11 @@ export function cropLook(crop: CropProfile | null | undefined): CropLook {
   return 'row';
 }
 
+/** Silhouettes of perennials that keep their height through the year. */
+const WOODY = new Set<CropLook>(['tree', 'bush', 'palm', 'vine']);
+/** Height drawn for a herbaceous perennial while dormant or between seasons: its crown and stubble. A drawing rule. */
+export const CROWN = 0.3;
+
 /** Stages after which an annual crop is no longer on the field. */
 const OFF_FIELD = new Set<string>(['initial', 'fallow', 'pre-sowing', 'dormant']);
 
@@ -269,7 +276,11 @@ function cropAt(input: ModelInput, score: ScoreTimeline, day: ISODate): FarmCrop
   const progress = stage?.progress ?? 0;
   const standing = id != null && id !== 'fallow' && id !== 'pre-sowing';
   // An annual is at its full height from mid-season on; a perennial stands the whole year.
-  const growth = !crop ? 0 : perennial ? 1 : !standing ? 0 : id === 'initial' || id === 'development' ? Math.min(0.95, 0.12 + progress / 0.5) : 1;
+  // A woody perennial (tree, bush, palm, vine) keeps its height all year. A herbaceous one (alfalfa,
+  // pasture) dies back to its crown while dormant and grows again through its stages, as an annual does.
+  const woody = WOODY.has(cropLook(crop));
+  const growing = id === 'initial' || id === 'development' ? Math.min(0.95, 0.12 + progress / 0.5) : 1;
+  const growth = !crop ? 0 : perennial && woody ? 1 : perennial ? (standing && id !== 'dormant' ? Math.max(CROWN, growing) : CROWN) : !standing ? 0 : growing;
   const ripeness = !standing ? 0 : id === 'harvest' ? 1 : clamp01((progress - 0.75) / 0.25);
 
   const ndviSeries = seriesOf(input.telemetry, 'ndvi');
@@ -483,6 +494,15 @@ export interface FarmOption {
   before: number;
   after: number;
   delta: number;
+  /** Mean daily growing condition over the year before and after (0..100): tells moves apart once the season outcome is full. */
+  growthBefore: number;
+  growthAfter: number;
+  growthDelta: number;
+  /** Months of the year with a crop standing, before and after: a rotation that leaves the ground bare longer is not a gain. */
+  monthsBefore: number;
+  monthsAfter: number;
+  /** True when the change lowers the season outcome or the growing condition, or leaves the ground bare longer: shown as a trade-off, not as a gain. */
+  tradeOff: boolean;
   change: FarmChange;
   /** What a grower must know before reading the trial as advice. */
   caveat: I18nText;
@@ -516,42 +536,71 @@ export function withChange(input: ModelInput, change: FarmChange): ModelInput {
 
 const KIND: Record<string, FarmOption['kind']> = { irrigation: 'irrigation', ph: 'ph', drainage: 'drainage', sowing: 'sowing', crop: 'crop' };
 
+/** A move that leaves the season outcome where it is still counts as a gain when it lifts the year's mean growing condition by this much. A project choice. */
+export const MIN_GROWTH_GAIN = 3;
+/** A trade-off is shown only when it costs at most this much of the season outcome. A project choice. */
+export const MAX_TRADE_OFF = 15;
+/** A move that leaves the ground bare for more than this many extra months is a trade-off, whatever its scores. A project choice. */
+export const MAX_BARE_MONTHS = 2;
+
 /**
- * What the characters can propose for this field: the model's own what-if moves that raise the
- * season outcome, and the two best other crops of the ranking. Sorted by gain.
+ * What the characters can propose for this field. Candidates: the model's own what-if moves and the
+ * next crops of the ranking, each re-scored over the same year. A candidate is a gain when it raises
+ * the season outcome, or keeps it and raises the mean growing condition by MIN_GROWTH_GAIN (the
+ * outcome is full on many good fields, where every move would read 100 to 100). Each character
+ * keeps up to two, of different kinds where it can: its gains first, then, so that a well-run field
+ * still has something real to compare, its least costly trade-offs, marked as such.
  */
 export function farmOptions(input: ModelInput, base: ScoreTimeline, moves: WhatIfResult[] = whatIf(input)): FarmOption[] {
-  const out: FarmOption[] = [];
+  const before = seasonOutcome(base);
+  const growthBefore = Math.round(base.summary.productivityMean);
+  const months = farmPeriods(input.telemetry.window, 'month');
+  const standing = (i: ModelInput, s: ScoreTimeline) => months.filter((p) => !periodLand(i, s, p).bare).length;
+  const monthsBefore = standing(input, base);
+  const cands: FarmOption[] = [];
+  const seen = new Set<string>();
+  const add = (kind: FarmOption['kind'], label: I18nText, change: FarmChange) => {
+    // The what-if and the ranking can propose the same crop: one trial per crop.
+    const key = kind === 'crop' ? `crop:${change.cropId}` : JSON.stringify(change);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const next = withChange(input, change);
+    const score = computeScoreTimeline(next);
+    const after = seasonOutcome(score);
+    const monthsAfter = standing(next, score);
+    const growthAfter = Math.round(score.summary.productivityMean);
+    const delta = after - before;
+    const growthDelta = growthAfter - growthBefore;
+    // A move that changes neither figure is not worth a trial: nothing would differ on the stage.
+    if (delta === 0 && Math.abs(growthDelta) < 1) return;
+    const barer = monthsAfter < monthsBefore - MAX_BARE_MONTHS;
+    const gain = !barer && (delta > 0 || (delta === 0 && growthDelta >= MIN_GROWTH_GAIN));
+    cands.push({ id: '', by: kind === 'crop' || kind === 'sowing' ? 'rice' : 'soil', kind, label, before, after, delta, growthBefore, growthAfter, growthDelta, monthsBefore, monthsAfter, tradeOff: !gain, change, caveat: CAVEAT[kind] });
+  };
   for (const m of moves) {
     const kind = KIND[m.changedFactor];
-    if (!kind || !m.apply || m.delta <= 0) continue;
-    out.push({
-      id: `${kind}-${out.length}`,
-      by: kind === 'crop' || kind === 'sowing' ? 'rice' : 'soil',
-      kind,
-      label: m.label,
-      before: m.before,
-      after: m.after,
-      delta: m.delta,
-      change: m.apply,
-      caveat: CAVEAT[kind],
-    });
+    if (kind && m.apply) add(kind, m.label, m.apply);
   }
-  // More crops than the one the what-if tries: the next of the ranking, scored the same way.
   if (input.cropId) {
-    const before = seasonOutcome(base);
-    const tried = new Set([input.cropId, ...out.filter((o) => o.kind === 'crop').map((o) => o.change.cropId)]);
-    for (const r of rankCrops(input, { limit: 5 })) {
-      if (tried.has(r.cropId) || out.filter((o) => o.kind === 'crop').length >= 3) continue;
+    for (const r of rankCrops(input, { limit: 6 })) {
+      if (r.cropId === input.cropId) continue;
       const crop = getCrop(r.cropId);
-      if (!crop) continue;
-      const change: FarmChange = { cropId: r.cropId, groundTruth: { sowingDate: undefined } };
-      const after = seasonOutcome(computeScoreTimeline(withChange(input, change)));
-      if (after <= before) continue;
-      out.push({ id: `crop-${r.cropId}`, by: 'rice', kind: 'crop', label: tx(`Switch to ${crop.names.en}`, `Chuyển sang ${crop.names.vi ?? crop.names.en}`), before, after, delta: after - before, change, caveat: CAVEAT.crop });
+      if (crop) add('crop', tx(`Switch to ${crop.names.en}`, `Chuyển sang ${crop.names.vi ?? crop.names.en}`), { cropId: r.cropId, groundTruth: { sowingDate: undefined } });
     }
   }
-  return out.sort((a, b) => b.delta - a.delta);
+  const better = (a: FarmOption, b: FarmOption) => b.delta - a.delta || b.growthDelta - a.growthDelta;
+  const out: FarmOption[] = [];
+  for (const by of ['soil', 'rice'] as const) {
+    const mine = cands.filter((o) => o.by === by);
+    const gains = mine.filter((o) => !o.tradeOff).sort(better);
+    const trades = mine.filter((o) => o.tradeOff && o.delta >= -MAX_TRADE_OFF).sort(better);
+    const picked: FarmOption[] = [];
+    // Different kinds first, then a second of the same kind if there is room.
+    for (const pool of [gains, trades]) for (const o of pool) if (picked.length < 2 && !picked.some((p) => p.kind === o.kind)) picked.push(o);
+    for (const pool of [gains, trades]) for (const o of pool) if (picked.length < 2 && !picked.includes(o)) picked.push(o);
+    out.push(...picked);
+  }
+  return out.sort((a, b) => Number(a.tradeOff) - Number(b.tradeOff) || better(a, b)).map((o, k) => ({ ...o, id: `${o.kind}-${k}` }));
 }
 
 export interface FarmTrial {
@@ -569,3 +618,4 @@ export function runTrial(input: ModelInput, option: FarmOption): FarmTrial {
 export * from './period';
 export * from './rotation';
 export * from './notes';
+export * from './patches';

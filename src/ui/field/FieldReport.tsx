@@ -192,7 +192,7 @@ export function FieldReport() {
       {ndvi && frames.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <h3 className="text-md leading-[22px] font-medium text-ink-1">{t('field.report.images', { n: frames.length })}</h3>
+            <h3 className="workspace-card-title">{t('field.report.images', { n: frames.length })}</h3>
             <p className="t-caption">{t('field.report.imagesNote')}</p>
           </div>
           <ul className="grid grid-cols-3 gap-2">
@@ -228,7 +228,7 @@ export function FieldReport() {
       )}
 
       <section className="flex flex-col gap-3">
-        <h3 className="text-md leading-[22px] font-medium text-ink-1">{t('field.report.maps')}</h3>
+        <h3 className="workspace-card-title">{t('field.report.maps')}</h3>
         <div className="grid grid-cols-3 gap-2">
           <Tile title={t('field.report.zones')}>{result ? <ZonesCanvas parcel={parcel} raster={result.raster} pad={30} /> : <span className="skeleton absolute inset-8 opacity-20" />}</Tile>
           <Tile title={t('field.report.moisture')}>

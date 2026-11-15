@@ -2,7 +2,7 @@
 import type { UrbanRecommendation } from '@/contracts';
 import { ECOCROP_TERMS_URL } from '@/core/urban';
 import { useT } from '@/i18n';
-import { hasCropPhoto, useCropImages } from './CropPhoto';
+import { hasEcoCropPhoto, useCropImages } from './CropPhoto';
 import { PlantCard } from './PlantCard';
 import './strings';
 
@@ -14,7 +14,7 @@ export function PlantGrid({ recs, month, onOpen }: { recs: UrbanRecommendation[]
   const images = useCropImages();
   const top = recs.slice(0, 3);
   const rest = recs.slice(3);
-  const anyPhoto = recs.some((r) => hasCropPhoto(images, r.cropId));
+  const anyEcoCropPhoto = recs.some((r) => hasEcoCropPhoto(images, r.cropId));
   return (
     <div className="@container flex flex-col gap-4">
       <ul className={`m-0 list-none p-0 ${GRID}`}>
@@ -36,7 +36,7 @@ export function PlantGrid({ recs, month, onOpen }: { recs: UrbanRecommendation[]
           </ul>
         </>
       )}
-      {anyPhoto && (
+      {anyEcoCropPhoto && (
         <p className="t-caption">
           {t('urban.photosCredit')}{' '}
           <a href={ECOCROP_TERMS_URL} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" className="text-ink-2 underline">

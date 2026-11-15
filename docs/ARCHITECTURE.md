@@ -154,6 +154,7 @@ hero --click--> explore --lock parcel--> locked <--> advisory
                     ^                      |
                     +----- change field ---+
 urban  (side mission, reachable from any state)
+ask    (the crop assistant, a page of its own; keeps the open field, if any, and answers about it)
 ```
 
 `src/state/mission.ts` (Zustand) is the only runtime coupling between layers:
@@ -184,10 +185,10 @@ Mount points (each folder exports the component from its `index.tsx`; `src/App.t
 | `GroundTruthPanel` | `src/ui/override` | locked |
 | `AdvisoryPanel` | `src/ui/advisory` | advisory |
 | `UrbanCompanion` | `src/ui/urban` | urban |
-| `AskPanel` | `src/ui/ask` | all but hero |
+| `AskPage` (the crop assistant, a chat page) | `src/ui/ask` | ask |
 | `StyleGuide` | `src/ui/design` | `#/styleguide` |
 
-Deep links for demos and testing: `?sample=daklak-coffee&phase=advisory&crop=glycine-max&lang=vi`, `?phase=explore`, `?phase=urban`.
+Deep links for demos and testing: `?sample=daklak-coffee&phase=advisory&crop=glycine-max&lang=vi`, `?phase=explore`, `?phase=urban`, `?phase=ask` (with `&sample=<id>` the assistant answers about that field).
 
 ## 8. Runtime modes
 

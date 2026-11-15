@@ -54,7 +54,6 @@ export function openOwnField(): void {
 export function goLanding(): void {
   const mission = useMission.getState();
   const ui = useMissionUi.getState();
-  mission.setAskOpen(false);
   mission.cancelDraw();
   ui.setListMode('list');
   if (mission.parcel) mission.unlockParcel();

@@ -21,6 +21,8 @@ export interface MascotProps {
    * While set, the eyes and a slight turn of the body follow it instead of the pointer.
    */
   look?: { x: number; y: number } | null;
+  /** Motion off: the character stays at rest. Omitted, it follows the system setting. */
+  reduced?: boolean;
   /** Drawn while the model loads and when it cannot be shown. */
   fallback?: ReactNode;
   className?: string;
@@ -28,10 +30,13 @@ export interface MascotProps {
 
 const ASSET_BASE = `${import.meta.env.BASE_URL}mascot`.replace(/\/\//g, '/');
 
-export function Mascot({ who, clip, beat = 0, look = null, fallback, className }: MascotProps) {
+export function Mascot({ who, clip, beat = 0, look = null, reduced, fallback, className }: MascotProps) {
   const host = useRef<HTMLDivElement | null>(null);
   const stage = useRef<MascotStage | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  // Read when the stage is made; later changes go through setReduced without rebuilding the model.
+  const reducedRef = useRef(reduced);
+  reducedRef.current = reduced;
 
   useEffect(() => {
     const el = host.current;
@@ -42,7 +47,7 @@ export function Mascot({ who, clip, beat = 0, look = null, fallback, className }
     import('./stage')
       .then(async ({ MascotStage: Stage }) => {
         if (gone) return;
-        made = new Stage(el, who, ASSET_BASE);
+        made = new Stage(el, who, ASSET_BASE, reducedRef.current);
         await made.load();
         if (gone) return;
         stage.current = made;
@@ -60,6 +65,10 @@ export function Mascot({ who, clip, beat = 0, look = null, fallback, className }
       made?.dispose();
     };
   }, [who]);
+
+  useEffect(() => {
+    if (state === 'ready' && reduced != null) stage.current?.setReduced(reduced);
+  }, [reduced, state]);
 
   useEffect(() => {
     if (state === 'ready' && clip) stage.current?.play(clip);
