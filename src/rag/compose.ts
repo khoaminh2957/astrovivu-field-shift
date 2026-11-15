@@ -89,6 +89,8 @@ const CHECK_NAME: Record<Check['key'], [string, string]> = {
   drainage: ['Drainage', 'Thoát nước'],
   frost: ['Recent minimum air temperature', 'Nhiệt độ tối thấp gần đây'],
   altitude: ['Elevation', 'Độ cao'],
+  salinity: ['Soil salinity (electrical conductivity)', 'Độ mặn của đất (độ dẫn điện)'],
+  depth: ['Depth to a layer that stops roots', 'Độ sâu đến tầng hạn chế rễ'],
 };
 
 function factsChunk(store: KnowledgeStore, id: string, lang: Lang): KnowledgeChunk | undefined {
@@ -129,7 +131,7 @@ function sourceCaveat(key: Check['key'], fact: string, lang: Lang): string | nul
   if (f.provenance !== 'modelled' && !/SoilGrids/i.test(fact)) return null;
   const cell = f.pixel ? t(`a ${f.pixel} cell`, `một ô ${f.pixel}`) : t('the neighbourhood', 'khu vực');
   // Only a soil property can be settled by a soil test; rain and temperature are settled by records.
-  return key === 'ph' || key === 'texture' || key === 'drainage'
+  return key === 'ph' || key === 'texture' || key === 'drainage' || key === 'salinity' || key === 'depth'
     ? t(`It is a model estimate for ${cell}, not a measurement of your field; a soil test would confirm it.`, `Đây là ước tính của mô hình cho ${cell}, không phải số đo của ruộng bạn; phân tích đất sẽ xác nhận.`)
     : t(`It is a model estimate for ${cell}, not a measurement on your field.`, `Đây là ước tính của mô hình cho ${cell}, không phải số đo tại ruộng của bạn.`);
 }
@@ -314,16 +316,29 @@ function composeField(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Cit
         paras.push(t(`Months whose normal mean temperature is inside the optimum: ${monthList(c.goodMonths, 'en') || 'none'}.`, `Các tháng có nhiệt độ trung bình nằm trong khoảng tối ưu: ${monthList(c.goodMonths, 'vi') || 'không có'}.`));
     }
   } else if (focusKeys.size) {
-    const k = [...focusKeys][0] as Check['key'];
-    if (CHECK_NAME[k]) paras.push(t(`Your field has no ${CHECK_NAME[k][0].toLowerCase()} reading to compare with ${name}'s requirement ${marker}.`, `Ruộng của bạn chưa có số đo ${CHECK_NAME[k][1].toLowerCase()} để so với yêu cầu của ${name} ${marker}.`));
+    const k = [...focusKeys].find((x) => as.missing.includes(x as Check['key'])) ?? [...focusKeys][0];
+    if (CHECK_NAME[k as Check['key']]) {
+      // What the crop asks for is still said, so that the missing reading has something to be held against.
+      const asked = factLines(crop, a.lang).find((l) => l.key === k)?.line;
+      paras.push(
+        t(`Your field has no ${CHECK_NAME[k as Check['key']][0].toLowerCase()} reading to compare with ${name}'s requirement ${marker}.`, `Ruộng của bạn chưa có số đo ${CHECK_NAME[k as Check['key']][1].toLowerCase()} để so với yêu cầu của ${name} ${marker}.`) +
+          (asked ? ` ${t(`EcoCrop gives for ${name}:`, `EcoCrop ghi cho ${name}:`)} ${asked}` : ''),
+      );
+    }
   }
-  // A reading EcoCrop sets no requirement on (slope, organic matter, CEC...): the field's value on
-  // its own, so that the question is answered about the reading that was asked for.
-  const unchecked = fs.filter((f) => !['ph', 'temp', 'rain', 'water', 'soil', 'texture', 'drainage', 'frost', 'altitude', 'cycle', 'light'].includes(f));
+  // A reading EcoCrop has nothing comparable for: the field's value on its own, so that the
+  // question is answered about the reading that was asked for. EcoCrop knows soil fertility as a
+  // class (high, moderate, low), which cannot be held against a figure for organic matter, CEC or
+  // nitrogen; it records nothing on slope or bulk density.
+  const FERTILITY: Focus[] = ['organic', 'cec', 'nitrogen'];
+  const unchecked = fs.filter((f) => FERTILITY.includes(f) || f === 'slope' || f === 'density');
   if (unchecked.length) {
     const { readings, missing } = lookupFieldFacts(ctx, unchecked, [], a.lang);
     paras.push(...readingParagraphs(store, readings, ctx, cite, a.lang), ...missing.map((m) => missingSentence(m, a.lang)));
-    if (readings.length) paras.push(t(`EcoCrop sets no threshold on this for ${name}, so the reading is given without a verdict.`, `EcoCrop không có ngưỡng nào về mục này cho ${name}, nên tôi chỉ nêu số liệu, không kết luận.`));
+    const fertility = unchecked.some((f) => FERTILITY.includes(f)) ? factLines(crop, a.lang).find((l) => l.key === 'fertility')?.line : undefined;
+    if (fertility)
+      paras.push(t(`EcoCrop describes what ${name} needs as a fertility class, not as a figure: ${fertility} A class cannot be held against the reading, so it is given without a verdict.`, `EcoCrop mô tả nhu cầu của ${name} bằng một mức độ phì, không bằng con số: ${fertility} Không so được một mức với số liệu, nên tôi chỉ nêu số liệu, không kết luận.`) + ` ${marker}`);
+    else if (readings.length) paras.push(t(`EcoCrop records no requirement on this for ${name}, so the reading is given without a verdict.`, `EcoCrop không ghi yêu cầu nào về mục này cho ${name}, nên tôi chỉ nêu số liệu, không kết luận.`));
   }
   const ph = as.checks.find((c) => c.key === 'ph');
   if (ph && AMEND.test(fold(a.query))) paras.push(amendNote(ph, crop, a.lang));
@@ -331,8 +346,11 @@ function composeField(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Cit
     const desc = others.map((c) => `${t(CHECK_NAME[c.key][0], CHECK_NAME[c.key][1]).toLowerCase()} ${c.status === 'optimal' || c.status === 'match' ? t('optimal', 'tối ưu') : c.status.startsWith('tolerated') ? t('tolerated', 'chịu được') : t('outside the range', 'ngoài ngưỡng')}`);
     paras.push(`${t('Other requirements for', 'Các yêu cầu khác của')} ${name}: ${desc.join(', ')}.`);
   }
-  if (as.missing.length) {
-    const ms = as.missing.map((k) => `${t(CHECK_NAME[k][0], CHECK_NAME[k][1]).toLowerCase()} (${howToGet(k, a.lang)})`);
+  // Salinity and soil depth come from the US soil survey only: elsewhere they are missing on every
+  // field, so they are named as missing when the question is about them and not in every answer.
+  const missingHere = as.missing.filter((k) => (k !== 'salinity' && k !== 'depth') || focusKeys.has(k));
+  if (missingHere.length) {
+    const ms = missingHere.map((k) => `${t(CHECK_NAME[k][0], CHECK_NAME[k][1]).toLowerCase()} (${howToGet(k, a.lang)})`);
     paras.push(`${t('Missing for this comparison:', 'Còn thiếu để so sánh:')} ${ms.join('; ')}.`);
   }
   const q = supportingQuotes(hits, a, cite, a.lang, { max: 1, extra: [crop.sci], sentenceMust: sentenceWords(a.focus) });

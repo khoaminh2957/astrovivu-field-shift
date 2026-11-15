@@ -26,15 +26,24 @@ const demo = (id: string) => contexts.get(id) ?? contexts.set(id, sampleContext(
 const numbers = (s: string): string[] => s.match(/\d+(?:\.\d+)?/g) ?? [];
 
 /**
- * Numbers of an answer that are not in the facts of the field. Quoted glossary sentences and
- * citation markers are left out; so are whole numbers up to 31 (days of a date the answer
- * reckons, months, counts), the "5-95" of the range and the thresholds of the warning rules.
+ * Numbers of an answer that are neither in the facts of the field nor among the ones the caller
+ * says the answer may add. Quoted glossary sentences and citation markers are left out. What an
+ * answer may always add: the width of the parcel it reckons from its area, and the "5" and "95"
+ * of "5-95 %" where the field has a fact with such a range. Nothing else is let through: a date
+ * the answer reckons, a count, a month or a threshold has to be named by the test that expects it.
  */
-function strangers(answer: string, ctx: FieldContext): string[] {
-  const own = new Set([...Object.values(ctx.facts).flatMap(numbers), String(Math.round(Math.sqrt(ctx.areaHa * 10_000))), '95', '35', '50']);
+function strangers(answer: string, ctx: FieldContext, mayAdd: (string | number)[] = []): string[] {
+  const facts = Object.values(ctx.facts);
+  const own = new Set([...facts.flatMap(numbers), String(Math.round(Math.sqrt(ctx.areaHa * 10_000))), ...(facts.some((f) => f.includes('5-95%')) ? ['5', '95'] : []), ...mayAdd.map(String)]);
   const body = answer.replace(/“[^”]*”/g, '').replace(/\[S\d+\]/g, '');
-  return numbers(body).filter((n) => !own.has(n) && !(Number.isInteger(Number(n)) && Number(n) <= 31));
+  return numbers(body).filter((n) => !own.has(n));
 }
+
+/** The numbers of a day written out ("21 November 2026", "21/11/2026"). */
+const dayParts = (iso: string): number[] => iso.split('-').map(Number);
+/** The thresholds the app warns by, which a forecast answer states. */
+const RULES = [2, 35, 30, 1, 50];
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 describe('the seven questions of the issue, on the fixture field', () => {
   it('gives the pH of the field and says where the number comes from', async () => {
@@ -161,7 +170,8 @@ describe('on the demo fields', () => {
       const r = await ask(q, lang, ctx);
       expect(r.retrieval.analysis.intent, q).toBe('field-fact');
       for (const key of keys) expect(r.answer, `${q} (${key})`).toContain(parseFieldFact(key, ctx.facts[key]).amount);
-      expect(strangers(r.answer, ctx), `${id}: ${q}\n${r.answer}`).toEqual([]);
+      // "Rain over the last 30 days" and "the last 90 days" are names of readings.
+      expect(strangers(r.answer, ctx, /rain/i.test(q) ? [30, 90] : []), `${id}: ${q}\n${r.answer}`).toEqual([]);
     }
   });
 
@@ -173,8 +183,9 @@ describe('on the demo fields', () => {
     expect(wettest.answer).toContain(`the wettest month is ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][rain.max.month - 1]}, ${rain.max.text} mm`);
     const coldest = await ask('Tháng nào lạnh nhất ở đây?', 'vi', ctx);
     expect(coldest.answer).toMatch(new RegExp(`^Ở ruộng của bạn, tháng lạnh nhất là tháng ${temp.min.month}, ${temp.min.text.replace('.', '\\.')} °C`));
+    // The months are numbered in the Vietnamese answer and in its list of twelve.
     expect(strangers(wettest.answer, ctx)).toEqual([]);
-    expect(strangers(coldest.answer, ctx)).toEqual([]);
+    expect(strangers(coldest.answer, ctx, MONTHS)).toEqual([]);
   });
 
   it('salinity is a number in Iowa (soil survey) and missing in Đắk Lắk', async () => {
@@ -194,7 +205,9 @@ describe('on the demo fields', () => {
     const whole = await ask('Dự báo có sương giá không?', 'vi', ctx);
     expect(whole.answer).toContain('có 2 cảnh báo sương giá đến 28/11/2026');
     expect(whole.answer).toContain('- 22/11/2026 đến 28/11/2026: sương giá, mức 3/3. Nhiệt độ thấp nhất xuống -13.1 °C.');
-    expect(strangers(whole.answer, ctx)).toEqual([]);
+    // Beside the facts: the count of warnings, the "3" of "level 2 of 3" and the frost threshold.
+    expect(strangers(whole.answer, ctx, [2, 3])).toEqual([]);
+    expect(strangers(week.answer, ctx, [1, 2, 3, ...dayParts('2026-11-21')])).toEqual([]);
   });
 
   it('says there is no warning, with the number that shows it', async () => {
@@ -210,7 +223,7 @@ describe('on the demo fields', () => {
     const r = await ask('Độ dốc ruộng tôi có hợp với cà phê vối không?', 'vi', ctx);
     expect(r.retrieval.analysis.intent).toBe('field');
     expect(r.answer).toMatch(/^Độ dốc của ruộng bạn: 7\.7 °/);
-    expect(r.answer).toContain('EcoCrop không có ngưỡng nào về mục này cho cà phê vối');
+    expect(r.answer).toContain('EcoCrop không ghi yêu cầu nào về mục này cho cà phê vối');
   });
 
   it('a model value of rain or temperature is not said to need a soil test', async () => {
@@ -218,6 +231,137 @@ describe('on the demo fields', () => {
     const rain = r.answer.split('\n\n').find((p) => p.startsWith('Mean annual rainfall'))!;
     expect(rain).toContain('It is a model estimate for a 25 km cell, not a measurement on your field.');
     expect(rain).not.toContain('soil test');
+  });
+});
+
+describe('what the first review of this change found', () => {
+  it('the app\'s own score is given as a score, not as a value from a source', async () => {
+    const r = await ask('What is the productivity score of my field?', 'en', FIXTURE_CONTEXT);
+    expect(r.answer).toMatch(/^Productivity score on your field: 71\/100, on 2026-11-10 \(growing condition 74, site compatibility 88; confidence of the score 0\.62\)\./);
+    expect(r.answer).toContain('It is a result the app computes itself');
+    expect(r.answer).not.toMatch(/Source:|mapped or surveyed/);
+    expect(r.citations[0].chunkId).toBe('gloss-en:productivity-score');
+    expect(strangers(r.answer, FIXTURE_CONTEXT)).toEqual([]);
+    const vi = await ask('Điểm năng suất của ruộng tôi bao nhiêu?', 'vi', FIXTURE_CONTEXT);
+    expect(vi.answer).toMatch(/^Điểm năng suất của ruộng bạn: 71\/100, ngày 2026-11-10 \(điều kiện sinh trưởng 74, mức phù hợp của khu đất 88; độ tin cậy của điểm 0\.62\)\./);
+  });
+
+  it('the two numbers beside the elevation are the lowest and the highest point of the parcel, not a 5-95 % range', async () => {
+    const ctx = demo('iowa-corn-soy');
+    expect(ctx.facts.elevation_m).toContain('lowest and highest point of the parcel: 302-314');
+    const r = await ask('How high is my field?', 'en', ctx);
+    expect(r.answer).toContain('Elevation on your field: 308 m.');
+    expect(r.answer).toContain('Inside the parcel the elevation goes from 302 to 314 m.');
+    expect(r.answer).not.toContain('5-95');
+    const vi = await ask('Ruộng tôi ở độ cao bao nhiêu?', 'vi', ctx);
+    expect(vi.answer).toContain('Trong thửa, độ cao đi từ 302 đến 314 m.');
+    // The soil estimates keep their range.
+    expect((await ask('What is the pH of my soil?', 'en', demo('daklak-coffee'))).answer).toContain('The source gives a 5-95 % range of 4.3 to 7.4.');
+  });
+
+  it('"in the next two weeks" is fourteen days, and the second frost warning is not left out', async () => {
+    const ctx = demo('iowa-corn-soy');
+    const vi = await ask('Trong 2 tuần tới có sương giá không?', 'vi', ctx);
+    expect(vi.answer).toContain('có 2 cảnh báo sương giá đến 28/11/2026');
+    expect(vi.answer).toContain('- 22/11/2026 đến 28/11/2026: sương giá, mức 3/3.');
+    const en = await ask('Will there be frost in the next two weeks?', 'en', ctx);
+    expect(en.answer).toContain('holds 2 frost warnings up to 28 November 2026');
+    // Ten days: to 24 November, which the second warning has begun by.
+    expect((await ask('Is frost coming in the next 10 days?', 'en', ctx)).answer).toContain('holds 2 frost warnings up to 24 November 2026');
+    // Five days: to 19 November, before the second warning.
+    expect((await ask('Is frost coming in the next 5 days?', 'en', ctx)).answer).toContain('holds 1 frost warning up to 19 November 2026');
+  });
+
+  it('a question that reaches beyond the forecast is answered up to its last day, and says so', async () => {
+    const ctx = demo('iowa-corn-soy');
+    const r = await ask('Will there be frost in the next 30 days?', 'en', ctx);
+    expect(r.answer).toContain('up to 28 November 2026');
+    expect(r.answer).not.toContain('December');
+    expect(r.answer).toContain('The forecast reaches only to 28 November 2026, not the 30 days you asked about: nothing can be said of the days after it.');
+    // A field without a warning: "no warning" is said for the days of the forecast only.
+    const calm = await ask('Trong 30 ngày tới có sương giá không?', 'vi', demo('cantho-rice'));
+    expect(calm.answer).toMatch(/^Dự báo cho ruộng của bạn không có cảnh báo sương giá nào đến 28\/11\/2026\./);
+    expect(calm.answer).toContain('Dự báo chỉ tới ngày 28/11/2026, không đủ 30 ngày như bạn hỏi');
+    expect(strangers(calm.answer, demo('cantho-rice'), [30, 2])).toEqual([]);
+  });
+
+  it('salinity and soil depth are held against the classes EcoCrop gives the crop', async () => {
+    const iowa = await ask('Is my soil too salty for maize?', 'en', demo('iowa-corn-soy'));
+    expect(iowa.answer).toMatch(/^Soil salinity \(electrical conductivity\) on your field is 0 dS\/m \(SSURGO soil survey[^)]*\)\): inside maize's optimal range \(optimal low \(<4 dS\/m\), tolerated medium \(4-10 dS\/m\)\)/);
+    expect(iowa.answer).not.toMatch(/sets no threshold|records no requirement/);
+    // No reading on the fixture field: the requirement is still said, and the reading named as missing.
+    const none = await ask('Is my soil too salty for maize?', 'en', FIXTURE_CONTEXT);
+    expect(none.answer).toMatch(/^Your field has no soil salinity \(electrical conductivity\) reading to compare with maize's requirement/);
+    expect(none.answer).toContain('EcoCrop gives for maize: Salinity: optimal low (<4 dS/m); tolerated medium (4-10 dS/m).');
+    expect(none.answer).toContain('Missing for this comparison: soil salinity (electrical conductivity) (an EC meter');
+    const depth = await ask('Is my soil deep enough for maize?', 'en', FIXTURE_CONTEXT);
+    expect(depth.answer).toContain('EcoCrop gives for maize: Soil depth: optimal medium (50-150 cm); tolerated shallow (20-50 cm).');
+    // A question about something else does not list the two as missing.
+    expect((await ask('Is my soil too acid for maize?', 'en', FIXTURE_CONTEXT)).answer).not.toMatch(/salinity|stops roots/);
+  });
+
+  it('a salty or a shallow soil is told from one the crop tolerates', async () => {
+    const salty = (ec: string): FieldContext => ({ ...FIXTURE_CONTEXT, facts: { ...FIXTURE_CONTEXT.facts, ec_dsm: `${ec} dS/m (measured by the farmer)` } });
+    const status = async (ctx: FieldContext, q: string) => (await ask(q, 'en', ctx)).answer.split('\n\n')[0];
+    expect(await status(salty('2'), 'Is my soil too salty for maize?')).toContain("inside maize's optimal range");
+    expect(await status(salty('6'), 'Is my soil too salty for maize?')).toContain('outside the optimum but within what maize tolerates');
+    expect(await status(salty('12'), 'Is my soil too salty for maize?')).toContain('beyond what maize tolerates');
+    const deep = (cm: string): FieldContext => ({ ...FIXTURE_CONTEXT, facts: { ...FIXTURE_CONTEXT.facts, depth_cm: `${cm} cm (measured by the farmer)` } });
+    expect(await status(deep('90'), 'Is my soil deep enough for maize?')).toContain("inside maize's optimal range");
+    expect(await status(deep('30'), 'Is my soil deep enough for maize?')).toContain('outside the optimum but within what maize tolerates');
+    expect(await status(deep('10'), 'Is my soil deep enough for maize?')).toContain('beyond what maize tolerates');
+  });
+
+  it('a reading EcoCrop knows only as a fertility class is given without a verdict, and says why', async () => {
+    const r = await ask('Is the organic matter of my soil enough for maize?', 'en', FIXTURE_CONTEXT);
+    expect(r.answer).toMatch(/^Soil organic carbon on your field: 19\.4 g\/kg\./);
+    expect(r.answer).toContain('EcoCrop describes what maize needs as a fertility class, not as a figure: Soil fertility: optimal high; tolerated low.');
+  });
+
+  it('a question about the soil moisture is answered with the soil moisture and nothing else', async () => {
+    const r = await ask('Số độ ẩm đất của ruộng tôi tin được tới đâu?', 'vi', FIXTURE_CONTEXT);
+    expect(r.answer).toMatch(/^Độ ẩm đất vùng rễ của ruộng bạn: 0\.21 m³\/m³\./);
+    for (const other of ['pH', 'Lượng mưa', 'Tưới', 'Carbon hữu cơ', 'thành phần cơ giới']) expect(r.answer, other).not.toContain(other);
+    const iowa = await ask('How reliable is the soil moisture reading for my field?', 'en', demo('iowa-corn-soy'));
+    expect(iowa.answer).toMatch(/^Root-zone soil moisture on your field: 0\.38 m³\/m³; surface soil moisture: 0\.34 m³\/m³\./);
+    expect(iowa.answer).not.toMatch(/pH|Rain|Irrigation|organic/);
+  });
+
+  it('the normal of a named month is given for that month', async () => {
+    const r = await ask('Tháng 3 ruộng tôi mưa bao nhiêu?', 'vi', FIXTURE_CONTEXT);
+    expect(r.retrieval.analysis).toMatchObject({ intent: 'field-fact', ask: 'month-value', months: [3] });
+    expect(r.answer).toMatch(/^Vào tháng 3, ruộng của bạn mưa trung bình 22 mm\./);
+    expect(strangers(r.answer, FIXTURE_CONTEXT, MONTHS)).toEqual([]);
+    expect((await ask('How much does it rain on my field in March?', 'en', FIXTURE_CONTEXT)).answer).toMatch(/^In March your field gets 22 mm of rain on average\./);
+    expect((await ask('How warm is it on my field in July?', 'en', FIXTURE_CONTEXT)).answer).toMatch(/^In July the mean air temperature on your field is 24\.1 °C\./);
+  });
+
+  it('rain summed from the reanalysis says that it stands in for the observed series', async () => {
+    const ctx = demo('iowa-corn-soy');
+    expect(ctx.facts.rain_30d).toContain('in place of CHIRPS daily rainfall');
+    const r = await ask('How much rain fell on my field in the last 30 days?', 'en', ctx);
+    expect(r.answer).toContain('It stands in for CHIRPS daily rainfall (ClimateSERV dataset 0), the observed series, which ends on 2026-09-30.');
+  });
+
+  it('a temperature is compared with its normal in degrees, not as a share of it', async () => {
+    const ctx = demo('iowa-corn-soy');
+    expect(ctx.facts.t2m_min).not.toMatch(/\d{3,}%/);
+    const r = await ask('What is the air temperature on my field?', 'en', ctx);
+    expect(r.answer).toMatch(/minimum air temperature of the day: 3\.99 °C/);
+    expect(r.answer).toMatch(/minimum air temperature of the day 4\.05 °C above normal \(within the normal band, normal -0\.06\)/);
+    expect((await ask('Nhiệt độ ở ruộng tôi bao nhiêu?', 'vi', ctx)).answer).toMatch(/nhiệt độ không khí thấp nhất ngày cao hơn bình thường 4\.05 °C \(trong dải bình thường, mức bình thường -0\.06\)/);
+  });
+
+  it('a forecast of the weather, with no hazard named, lists every warning', async () => {
+    const r = await ask('Dự báo thời tiết tuần tới cho ruộng tôi thế nào?', 'vi', demo('iowa-corn-soy'));
+    expect(r.retrieval.analysis).toMatchObject({ intent: 'field-fact', ask: 'forecast' });
+    expect(r.answer).toMatch(/^Dự báo cho ruộng của bạn có 1 cảnh báo thời tiết đến 21\/11\/2026:/);
+  });
+
+  it('"how is my field" is the comparison with the crop of the field, as it was', async () => {
+    const r = await ask('Ruộng của tôi thế nào?', 'vi', FIXTURE_CONTEXT);
+    expect(r.retrieval.analysis).toMatchObject({ intent: 'field', cropIds: ['coffea-canephora'] });
+    expect(r.answer).toContain('nằm trong khoảng tối ưu của cà phê vối');
   });
 });
 
@@ -231,6 +375,15 @@ describe('words that fold into a crop name', () => {
     // Garlic is still found where it is meant.
     expect((await ask('Tôi trồng tỏi thì cần pH bao nhiêu?', 'vi')).retrieval.analysis.cropIds).toEqual(['allium-sativum']);
     expect((await ask('toi trong toi thi can ph bao nhieu', 'vi')).retrieval.analysis.cropIds).toEqual(['allium-sativum']);
+  });
+
+  it('a question about garlic typed with accents keeps its crop: the "toi" phrases are set aside only without accents', async () => {
+    const ph = await ask('Tỏi cần pH bao nhiêu?', 'vi');
+    expect(ph.retrieval.analysis).toMatchObject({ intent: 'ideal', cropIds: ['allium-sativum'] });
+    expect(ph.answer).toContain('pH đất: tối ưu 6-6.6');
+    for (const q of ['Tỏi nên trồng vào tháng mấy?', 'Tỏi cần đất gì?', 'Tỏi có chịu được đất chua không?', 'Tỏi trồng ở đất cát được không?']) expect((await ask(q, 'vi')).retrieval.analysis.cropIds, q).toEqual(['allium-sativum']);
+    // Typed without accents, "toi can" is "I need": the field, not garlic.
+    expect((await ask('toi can biet ph dat cua toi', 'vi', FIXTURE_CONTEXT)).retrieval.analysis).toMatchObject({ intent: 'field-fact', cropIds: [] });
   });
 
   it('"sương giá" (frost) is not a price', async () => {

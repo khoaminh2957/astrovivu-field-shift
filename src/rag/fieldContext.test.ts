@@ -87,16 +87,39 @@ describe('buildFieldContext', () => {
   });
   it('sums the rain of the last 30 days from the observed series, and from the reanalysis where that stops short', () => {
     const t = telemetry();
-    // The observed series of the fixture covers 12 February to 13 March.
+    // Thirty days of 1 mm, 12 February to 13 March, in place of the fixture's series (whose dates run past the end of February).
+    const observed = t.branches.rainfall.series.find((x) => x.key === 'rain')!;
+    observed.samples = Array.from({ length: 30 }, (_, i) => ({ t: addDays('2026-02-12', i), v: 1 }));
+    expect(observed.samples.at(-1)!.t).toBe('2026-03-13');
     expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-03-13', cropId: null }).facts.rain_30d).toBe('30 mm over the 30 days to 2026-03-13 (GPM IMERG, 10 km pixel)');
     // Six weeks later it has nothing for the window: no rain_30d without another series...
     expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-04-30', cropId: null }).facts.rain_30d).toBeUndefined();
-    // ...and the reanalysis series, named as a model, when there is one.
-    t.branches.rainfall.series.push({ key: 'rain_era5', branch: 'rainfall', label: { en: 'Rain (ERA5)', vi: 'Mưa (ERA5)' }, unit: 'mm/day', sourceId: 'era5', cadence: 'daily', samples: Array.from({ length: 30 }, (_, i) => ({ t: `2026-04-${String(1 + i).padStart(2, '0')}`, v: 2.5 })) });
+    // ...and the reanalysis series when there is one. The fact names it as a model, and says that it stands in for the observed series and where that one ends.
+    t.branches.rainfall.series.push({ key: 'rain_era5', branch: 'rainfall', label: { en: 'Rain (ERA5)', vi: 'Mưa (ERA5)' }, unit: 'mm/day', sourceId: 'era5', cadence: 'daily', samples: Array.from({ length: 30 }, (_, i) => ({ t: addDays('2026-04-01', i), v: 2.5 })) });
     t.sources.era5 = { id: 'era5', name: 'ERA5', agency: 'ECMWF', provenance: 'modelled', resolutionM: 25_000, cadenceDays: 1, latencyDays: 5, access: 'sample cache', url: '' };
-    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-04-30', cropId: null }).facts.rain_30d).toBe('75 mm over the 30 days to 2026-04-30 (ERA5, 25 km pixel, modelled)');
-    // The observed series still wins where it reaches the cursor.
-    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-03-13', cropId: null }).facts.rain_30d).toContain('GPM IMERG');
+    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-04-30', cropId: null }).facts.rain_30d).toBe('75 mm over the 30 days to 2026-04-30 (ERA5, 25 km pixel, modelled; in place of GPM IMERG, the observed series, which ends on 2026-03-13)');
+    // The observed series still wins where it reaches the cursor, and then nothing is said of a stand-in.
+    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-03-13', cropId: null }).facts.rain_30d).toBe('30 mm over the 30 days to 2026-03-13 (GPM IMERG, 10 km pixel)');
+  });
+  it('compares a temperature with its normal in degrees, and a reading whose normal is near zero in its unit', () => {
+    const t = telemetry();
+    const series = (key: string, unit: string, v: number, mean: number, p10: number, p90: number) => ({ key, branch: 'agromet' as const, label: { en: key, vi: key }, unit, sourceId: 'smap-l4', cadence: 'daily' as const, samples: [{ t: '2026-03-12', v }], baseline: [{ doy: 71, mean, p10, p90 }] });
+    // 4 °C against a normal of -0.06 °C is "6750 % above normal" as a share: it is 4.06 °C above.
+    t.branches.agromet.series.push(series('t2m_min', '°C', 4, -0.06, -6, 5), series('wind', 'm/s', 3.12, 0.03, 0.01, 0.05), series('rh', '%', 73, 75.4, 60, 90), series('t2m', '°C', 21.8, 21.8, 20, 24));
+    const facts = buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-03-12', cropId: null }).facts;
+    expect(facts.t2m_min).toContain('; 4.06 °C above normal (within the normal band, normal -0.06))');
+    expect(facts.wind).toContain('; 3.09 m/s above normal (above the 90th percentile, normal 0.03))');
+    expect(facts.rh).toContain('; 3% below normal (within the normal band, normal 75.4))');
+    expect(facts.t2m).toContain('; about normal (within the normal band, normal 21.8))');
+    // A share is still what a reading far from zero gets.
+    expect(facts.sm_root).toContain('23% below normal');
+  });
+  it('labels the pair of the elevation as what it is: the lowest and the highest point of the parcel', () => {
+    const t = telemetry();
+    t.branches.terrain.facts.push({ key: 'elevation_m', branch: 'terrain', label: { en: 'Elevation', vi: 'Độ cao' }, value: 308, unit: 'm', sourceId: 'soilgrids', uncertainty: [302, 314] });
+    const facts = buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-03-12', cropId: null }).facts;
+    expect(facts.elevation_m).toBe('308 m (SoilGrids v2.0, 250 m pixel, modelled; lowest and highest point of the parcel: 302-314)');
+    expect(facts.ph).toContain('; 5-95%: 4.9-6.3)');
   });
   it('says what the forecast holds from the cursor on', () => {
     const t = telemetry();

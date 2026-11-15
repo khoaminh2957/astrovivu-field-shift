@@ -53,10 +53,22 @@ function anomalyText(series: Series, v: number, t: ISODate): string | null {
   if (!series.baseline?.length) return null;
   const d = dayOfYear(t);
   const b = series.baseline.reduce((best, p) => (Math.abs(p.doy - d) < Math.abs(best.doy - d) ? p : best), series.baseline[0]);
-  if (!Number.isFinite(b.mean) || b.mean === 0) return null;
-  const pct = ((v - b.mean) / Math.abs(b.mean)) * 100;
+  if (!Number.isFinite(b.mean)) return null;
   const band = v < b.p10 ? 'below the 10th percentile' : v > b.p90 ? 'above the 90th percentile' : 'within the normal band';
-  return `${Math.abs(pct) < 1 ? 'about normal' : `${Math.round(Math.abs(pct))}% ${pct < 0 ? 'below' : 'above'} normal`} (${band}, normal ${fmt(b.mean)})`;
+  const diff = v - b.mean;
+  const pct = b.mean === 0 ? Infinity : (diff / Math.abs(b.mean)) * 100;
+  // A share of the normal means nothing for a temperature (4 °C against a normal of -0.06 °C is
+  // "6750 % above") or for any normal close to zero: those are given as a difference in the unit.
+  const asDifference = /°C/.test(series.unit) || Math.abs(pct) >= 300;
+  const unit = series.unit ? ` ${series.unit}` : '';
+  const how = asDifference
+    ? Math.abs(diff) < 0.05
+      ? 'about normal'
+      : `${fmt(Math.abs(diff))}${unit} ${diff < 0 ? 'below' : 'above'} normal`
+    : Math.abs(pct) < 1
+      ? 'about normal'
+      : `${Math.round(Math.abs(pct))}% ${pct < 0 ? 'below' : 'above'} normal`;
+  return `${how} (${band}, normal ${fmt(b.mean)})`;
 }
 
 function allSeries(t: FieldTelemetry): Series[] {
@@ -95,13 +107,17 @@ export function buildFieldContext(input: FieldContextInput): FieldContext {
       facts[key] = `${fmt(at.sample.v)} ${s.unit}`.trim() + ` (${srcLabel(src, s.sourceId)}, ${at.sample.t}${extra.length ? `; ${extra.join('; ')}` : ''})`;
     }
     // The observed series first; where it stops short of the cursor (CHIRPS is published weeks
-    // late), the reanalysis series, named as such in the fact.
+    // late), the reanalysis series. The fact then names that series and says that it stands in
+    // for the observed one, and up to which day the observed one goes.
     const rainSeries = ['rain', 'rain_era5'].map((key) => series.find((x) => x.key === key)).filter((x): x is Series => x != null);
     for (const days of [30, 90]) {
       for (const rain of rainSeries) {
         const w = sumWindow(rain, cursor, days);
         if (w.n < days * 0.7) continue;
-        facts[`rain_${days}d`] = `${fmt(w.total)} mm over the ${days} days to ${cursor} (${srcLabel(sources[rain.sourceId], rain.sourceId)})`;
+        const observed = rain === rainSeries[0] ? null : rainSeries[0];
+        const last = observed?.samples.filter((x) => x.v != null).at(-1)?.t;
+        const standsIn = observed ? `; in place of ${sources[observed.sourceId]?.name ?? observed.sourceId}, the observed series${last ? `, which ends on ${last}` : ''}` : '';
+        facts[`rain_${days}d`] = `${fmt(w.total)} mm over the ${days} days to ${cursor} (${srcLabel(sources[rain.sourceId], rain.sourceId)}${standsIn})`;
         break;
       }
     }
@@ -130,7 +146,8 @@ export function buildFieldContext(input: FieldContextInput): FieldContext {
       for (const f of b.facts) {
         if (f.value == null) continue;
         const src = sources[f.sourceId];
-        const unc = f.uncertainty ? `; 5-95%: ${f.uncertainty[0]}-${f.uncertainty[1]}` : '';
+        // The data layer puts the lowest and the highest point of the parcel into the same pair for the elevation.
+        const unc = f.uncertainty ? `; ${f.key === 'elevation_m' ? 'lowest and highest point of the parcel' : '5-95%'}: ${f.uncertainty[0]}-${f.uncertainty[1]}` : '';
         facts[f.key] = `${typeof f.value === 'number' ? fmt(f.value) : f.value}${f.unit ? ` ${f.unit}` : ''} (${srcLabel(src, f.sourceId)}${unc})`;
       }
       const lowConf = b.confidence.level === 'low' ? `low confidence: ${b.confidence.reasons.map((r) => pick(r, 'en')).join('; ')}` : '';
