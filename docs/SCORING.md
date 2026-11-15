@@ -516,7 +516,7 @@ Without reported production in the country, compatibility from 60: none.
 - **The level is per country.** Robusta coffee is second on the Mekong Delta paddy field: it reaches the full score there and is `common` in Viet Nam as a whole. Regions inside a country (`region_crops.csv`) are not used yet.
 - **Prevalence breaks ties, it does not re-weight scores.** Maize is seventh in Iowa, not first: its rank score is 90 against 97.5 for potato, onion and cabbage, because 20 % of the analysed years fell short of its needs. Whether a crop grown on a third of the country's cropland should rank above a better-scoring minor crop is a question for K5.
 - **Crops at score 0 are still listed** (Nevada, places 5 to 15), now ordered by what the country grows.
-- **The app passes the country table since 15 November 2026** (B20: `src/data/country.ts`, `src/state/mission.ts`; docs/CROP_DATA.md section 11.1). `rankCrops` therefore leaves out `absent` crops in the one place the app calls it, the "switch to another crop" what-if. The rotation builder does not read the table yet (K10), and no screen shows the two lists of `rankCropLists` yet (B2).
+- **The app passes the country table since 15 November 2026** (B20: `src/data/country.ts`, `src/state/mission.ts`; docs/CROP_DATA.md section 11.1). `rankCrops` therefore leaves out `absent` crops in the one place the app calls it, the "switch to another crop" what-if. The rotation builder reads the table as well (12.5). No screen shows the two lists of `rankCropLists` yet (B2).
 
 ### 12.5 The rotation builder reads the same table (K10)
 
@@ -548,7 +548,7 @@ The filter is applied wherever the builder draws candidate crops: cash crops, co
 
 - **Unreported is not the same as not grown** (12.4) applies here with more weight, because a crop now leaves a strategy. Whether Viet Nam grows no buckwheat, or reports none, was not checked. Of the crops offered last for the third rice slot of the paddy field, tomato, cucumber and eggplant are three of those 12.4 names as unreported. The levels are the atlas's and are not changed here; national statistics (task T4) are what will correct them.
 - **Where a crop the country reports none of should appear is not settled.** It is offered in the crop choices of a slot, last and marked, and nowhere else. A strategy of its own under a "trial" label is the alternative; it is not built. The decision is the project lead's, with the interface (task B2).
-- **The app does not pass a country table yet** (12.4): until it does, nothing a user sees changes.
+- **This is what a grower sees.** The app gives the model the country's table (12.4), so the changes of the table above are in the product: on the Mekong Delta demo field the water-saver rotation no longer holds buckwheat, and the rotations with a crop the statistics cannot tell about say so. The marks on the crop choices of a slot are in the data; the interface does not show them yet (task B2).
 - **A cover crop is filtered like any other.** Most have no FAOSTAT item and read as "cannot tell"; buckwheat has one, which is why it is the crop that left.
 
 ## 13. The latitude gate, reviewed (K6)

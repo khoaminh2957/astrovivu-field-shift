@@ -10,7 +10,7 @@ import { computeScoreTimeline, prevalenceStatus, TRIAL_MIN_COMPATIBILITY } from 
 import { getSampleParcel } from '@/data/samples';
 import { countryCropsFromAtlas } from '../../../scripts/crops/country-crops';
 import { buildAdvisoryReport, slotCropChoices, swapRotationSeason } from './index';
-import { buildRotations, countryKey, countryStatus } from './rotation';
+import { buildRotations, countryKey, countryStatus, profitSearchFor } from './rotation';
 
 const FIELDS = ['daklak-coffee', 'cantho-rice', 'iowa-corn-soy', 'nevada-alfalfa'] as const;
 const ISO3: Record<string, string> = { 'daklak-coffee': 'VNM', 'cantho-rice': 'VNM', 'iowa-corn-soy': 'USA', 'nevada-alfalfa': 'USA' };
@@ -148,6 +148,29 @@ describe('with the table of the country', () => {
     expect(rotations.find((r) => r.kind === 'current')!.seasons.filter((s) => s.cropId === 'oryza-sativa')).toHaveLength(3);
     expect(rotations.filter((r) => r.kind !== 'current').some((r) => cropsOf(r).includes('oryza-sativa'))).toBe(true);
     for (const r of rotations) expect(r.risks.some((x) => /New crop, needs a trial/.test(x.en)), r.id).toBe(false);
+  });
+});
+
+describe('the search for the most profitable sequence (docs/ECONOMICS.md, section 5)', () => {
+  it.each(['cantho-rice', 'iowa-corn-soy'] as const)('%s: compares the same sequences and chooses the same one with the table', (id) => {
+    const without = profitSearchFor(inputFor(id)).found!;
+    const withTable = profitSearchFor(inputFor(id, countryCropsFromAtlas(ISO3[id]))).found!;
+    expect(withTable.examined).toEqual(without.examined);
+    expect(withTable.plans).toEqual(without.plans);
+    expect(withTable.marginUsdPerHaYr).toBe(without.marginUsdPerHaYr);
+    expect(withTable.rejected).toEqual(without.rejected);
+  });
+
+  it('no longer names, among the crops without a price, those the country reports none of', () => {
+    const vnm = countryCropsFromAtlas('VNM');
+    const without = profitSearchFor(inputFor('cantho-rice')).found!.noEconomics;
+    const withTable = profitSearchFor(inputFor('cantho-rice', vnm)).found!.noEconomics;
+    expect([without.length, withTable.length]).toEqual([31, 20]);
+    const gone = without.filter((c) => !withTable.includes(c));
+    expect(gone).toHaveLength(11);
+    for (const c of gone) expect(prevalenceStatus(vnm.prevalence[c]), c).toBe('absent');
+    // Iowa: the United States report every one of them.
+    expect(profitSearchFor(inputFor('iowa-corn-soy', countryCropsFromAtlas('USA'))).found!.noEconomics).toHaveLength(13);
   });
 });
 
