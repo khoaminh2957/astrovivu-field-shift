@@ -206,18 +206,19 @@ const clampK = (k: number): number => Math.max(0.7, Math.min(1.25, k));
 
 /**
  * The plants behind the grower's row (`near` false) or in front of it. With field patches, each
- * plant stands as its patch of the field does: shorter and paler where the NDVI picture is below
- * the field mean, taller and greener above it (the ratio is held to 0.7..1.25 for drawing).
+ * plant stands as its patch of the field does: smaller and paler where the NDVI picture is below
+ * the field mean, bigger and greener above it (the ratio is held to 0.7..1.25 for drawing).
  */
 function Plants({ crop, beat, near, patches }: { crop: FarmCrop; beat: string; near: boolean; patches?: FieldPatches | null }) {
   if (crop.look === 'none') return null;
   const { fill, dark } = leafColours(crop.vigor, crop.ripeness, RIPENS[crop.look]);
+  // Size and greenness per plant: every silhouette scales the same way, woody ones included.
   const at = (p: Spot) => {
     const k = patches ? clampK(patches.ratio[p.row * patches.cols + p.col] ?? 1) : 1;
-    if (k === 1) return { growth: crop.growth, fill, dark };
-    const growth = Math.max(0.08, Math.min(1.12, crop.growth * (1 + (k - 1) * 1.4)));
-    const colours = leafColours(crop.vigor == null ? null : Math.max(0, Math.min(1, crop.vigor + (k - 1) * 1.6)), crop.ripeness, RIPENS[crop.look]);
-    return { growth, ...colours };
+    if (k === 1) return { size: 1, fill, dark };
+    const size = 1 + (k - 1) * 1.3;
+    const vigor = crop.vigor ?? 0.6;
+    return { size, ...leafColours(Math.max(0, Math.min(1, vigor + (k - 1) * 1.8)), crop.ripeness, RIPENS[crop.look]) };
   };
   const cut = crop.harvested == null ? 0 : Math.round(crop.harvested * SPOTS.length);
   return (
@@ -232,7 +233,11 @@ function Plants({ crop, beat, near, patches }: { crop: FarmCrop; beat: string; n
               <g className="farm-sway" style={{ animationDelay: `-${((p.i * 0.37) % 4).toFixed(2)}s` }}>
                 {(() => {
                   const v = at(p);
-                  return <Plant look={crop.look} growth={v.growth} ripeness={crop.ripeness} fill={v.fill} dark={v.dark} seed={p.i} />;
+                  return (
+                    <g transform={v.size === 1 ? undefined : `scale(${v.size.toFixed(3)})`}>
+                      <Plant look={crop.look} growth={crop.growth} ripeness={crop.ripeness} fill={v.fill} dark={v.dark} seed={p.i} />
+                    </g>
+                  );
                 })()}
               </g>
             </g>
