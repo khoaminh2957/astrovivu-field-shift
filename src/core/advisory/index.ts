@@ -34,7 +34,8 @@ export function buildAdvisoryReport(input: ModelInput, score: ScoreTimeline): Ad
   const best = [...rotations].sort((a, b) => b.score - a.score)[0];
   const cropSuite = input.cropId ? assessCropSuite(input, input.cropId)?.cropSuite : undefined;
   const soilDiag = diagnoseSoil(input);
-  const soilPlan = buildSoilPlan(soilDiag, input);
+  // The soil plan echoes the dose of the pH plan above, so the report never carries two lime figures.
+  const soilPlan = buildSoilPlan(soilDiag, input, ph);
   const report: AdvisoryReport = {
     generatedAt: input.today,
     cropId: input.cropId,
