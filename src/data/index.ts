@@ -16,6 +16,7 @@ import { getJson } from './http';
 import { allUnavailable, loadLive } from './live';
 import { mockTelemetry } from './mock';
 import { nominatimSearch, parseCoordinates, photonSearch, reverse } from './adapters/geocode';
+import { type CountryLoadOptions, type CountryTableResult, loadCountryCrops } from './country';
 import { loadUrban } from './urban';
 
 export { DEMO_FIELD, SAMPLE_PARCELS, getSampleParcel } from './samples';
@@ -150,6 +151,13 @@ export async function reverseGeocode(at: LngLat, lang: Lang): Promise<PlaceInfo 
   } catch {
     return null;
   }
+}
+
+export type { CountryTableResult } from './country';
+
+/** What the country of the parcel grows (`ModelInput.country`); `missing` when the country has no table or cannot be told. */
+export function loadCountryTable(parcel: Pick<Parcel, 'centroid' | 'place'>, opts: Pick<CountryLoadOptions, 'signal' | 'lang'> = {}): Promise<CountryTableResult> {
+  return loadCountryCrops(parcel, { ...opts, reverseGeocode });
 }
 
 /** Monthly climate normals plus current conditions for the Urban Grower Companion. */
