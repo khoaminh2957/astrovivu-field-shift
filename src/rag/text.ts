@@ -17,6 +17,31 @@ export function fold(s: string): string {
     .toLowerCase();
 }
 
+/** Whether the text was typed with Vietnamese accents (any combining mark, or đ). */
+export function hasDiacritics(s: string): boolean {
+  return /[\u0300-\u036f]/.test(s.normalize('NFD')) || /[đĐ]/.test(s);
+}
+
+/**
+ * Fold a question for rule matching without confusing the syllables that folding makes equal.
+ * `accepted` maps a folded syllable to the accented spellings that are the word a rule means
+ * ("mua": mưa, rain). In a question typed with accents, the same syllable in any other spelling
+ * ("mua", to buy; "mùa", season) comes out with a `0` appended ("mua0"), so a rule written for
+ * the plain syllable does not match it. A question typed without accents is folded as usual:
+ * there is nothing to tell the words apart by.
+ */
+export function foldGuarded(s: string, accepted: Record<string, string[]>): string {
+  if (!hasDiacritics(s)) return fold(s);
+  return s
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/[\p{L}\p{N}]+/gu, (w) => {
+      const f = fold(w);
+      const ok = accepted[f];
+      return ok && !ok.includes(w) ? `${f}0` : f;
+    });
+}
+
 /** Slug of a scientific name: `Coffea canephora` -> `coffea-canephora`. */
 export function slugify(s: string): string {
   return fold(s)
