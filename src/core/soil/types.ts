@@ -1,10 +1,22 @@
-import type { FactorKind, I18nText } from '@/contracts';
-
-export type SoilStatus = 'optimal' | 'tolerable' | 'outside' | 'uncertain' | 'no_data';
-
 import type { I18nText, SoilPlan, SoilPlanItem, SoilStatus } from '@/contracts';
 
 export type { SoilStatus, SoilPlanItem, SoilPlan };
+
+/** One soil value of the field as the soil module reads it: the source's figure, or the grower's own when there is one. */
+export interface SoilFact {
+  /** Same key as `StaticFact.key`, for example `ph`. */
+  key: string;
+  label: I18nText;
+  value: number | string | null;
+  unit?: string;
+  /** An id of `telemetry.sources`, or `ground-truth` for a grower's measurement. */
+  sourceId: string;
+  sourceName: I18nText;
+  uncertainty?: [lo: number, hi: number];
+  fromGrower: boolean;
+  /** The estimate the grower's value replaced; only set when `fromGrower` and the source had one. */
+  estimate?: number | string | null;
+}
 
 /** Soil groups of the buffer method (`buffer.ts`), which the report does not use yet. */
 export type ReferenceSoilType =
@@ -15,71 +27,6 @@ export type ReferenceSoilType =
   | 'Peat / Organic'
   | 'Chalky / Calcareous';
 
-export interface SoilTypeReference {
-  soilType: ReferenceSoilType;
-  ph: { min: number; opt: number; max: number };
-  awcInFt: { min: number; opt: number; max: number };
-  cecMeq100g: { min: number; opt: number; max: number };
-  macronutrientsKgHa: {
-    n: number;
-    p2o5: number;
-    k2o: number;
-  };
-  secondaryMacronutrientsKgHa: {
-    ca: number;
-    mg: number;
-    s: number;
-  };
-  micronutrientsKgHa: {
-    fe: number;
-    zn: number;
-    mn: number;
-    cu: number;
-    b: number;
-  };
-}
-
-export type SoilGapStatus = 'optimal' | 'tolerated' | 'outside' | 'unknown';
-
-export interface SoilGapAmount {
-  amount: number;
-  unit: string;
-  direction: 'raise' | 'lower';
-}
-
-export type SoilGapKey = 'ph' | 'texture' | 'drainage' | 'depth' | 'salinity' | 'fertility';
-
-export interface SoilGap {
-  key: SoilGapKey;
-  label: I18nText;
-  facts: SoilFact[];
-  optimal: string;
-  tolerated: string;
-  status: SoilGapStatus;
-  gap: SoilGapAmount | null;
-  gapAtEnds?: [SoilGapAmount | null, SoilGapAmount | null];
-  limiting: boolean;
-  kind: FactorKind;
-  note?: I18nText;
-}
-
-export interface SoilDiagnosis {
-  cropId: string;
-  gaps: SoilGap[];
-  limitingKey: SoilGapKey | null;
-  conflicts: I18nText[];
-}
-
-export interface SoilFact {
-  key: string;
-  label: I18nText;
-  value: number | string | null;
-  unit?: string;
-  sourceId: string;
-  sourceName: I18nText;
-  uncertainty?: [lo: number, hi: number];
-  fromGrower: boolean;
-  estimate?: number | string | null;
 /**
  * Status of one row of the diagnosis. `reading_only`: the field has a reading, but the crop
  * catalogue holds no requirement to set it against, so no verdict is given.
