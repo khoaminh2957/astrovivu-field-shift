@@ -1,11 +1,12 @@
 /** Retrieval regression guard over data/rag/eval.json (see docs/RAG.md for the full table). */
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { KnowledgeStore } from '../../src/rag/store';
-import { analyze } from '../../src/rag/retrieve';
-import { FIXTURE_CONTEXT, loadEval, loadStore, runVariant, VARIANTS } from './eval';
+import { hasTarget, loadEval, loadStore, readingErrors, routingErrors, runVariant, VARIANTS } from './eval';
 
 let store: KnowledgeStore;
-const qs = loadEval();
+const all = loadEval();
+/** Retrieval is scored on the questions that have something to retrieve. */
+const qs = all.filter(hasTarget);
 beforeAll(async () => {
   store = await loadStore();
 });
@@ -30,11 +31,50 @@ describe('retrieval eval', () => {
   });
 
   it('routes at least 90% of questions to the expected intent', () => {
-    const withIntent = qs.filter((q) => q.intent);
-    const ok = withIntent.filter((q) => {
-      const ctx = q.field ? FIXTURE_CONTEXT : undefined;
-      return analyze(store, q.q, q.lang, Boolean(ctx), ctx?.cropId).intent === q.intent;
-    });
+    const withIntent = all.filter((q) => q.intent);
+    const ok = withIntent.filter((q) => !routingErrors(store, { id: q.id, lang: q.lang, q: q.q, field: q.field, intent: q.intent }).length);
     expect(ok.length / withIntent.length).toBeGreaterThanOrEqual(0.9);
+  });
+});
+
+describe('questions about the field itself (scope table of docs/RAG.md)', () => {
+  const field = all.filter((q) => q.group && q.group !== 'regression');
+
+  it('has at least four questions for every group, in both languages', () => {
+    const groups = new Set(field.map((q) => q.group));
+    expect(groups).toEqual(new Set(['soil', 'terrain', 'climate', 'risk', 'source', 'contrast', 'declined']));
+    for (const g of groups) {
+      const sub = field.filter((q) => q.group === g);
+      expect(sub.length, g).toBeGreaterThanOrEqual(4);
+      expect(sub.some((q) => q.lang === 'en'), g).toBe(true);
+      expect(sub.some((q) => q.lang === 'vi'), g).toBe(true);
+    }
+  });
+
+  it('routes every one to the expected intent, kind of question and focus', () => {
+    expect(field.flatMap((q) => routingErrors(store, q).map((e) => `${q.id}: ${e}`))).toEqual([]);
+  });
+
+  it('answers a question about a reading with that reading and no other', () => {
+    const withContent = all.filter((q) => q.facts || q.missing);
+    // Every question about a value of the soil, the terrain or a source states what its answer is made of.
+    expect(withContent.length).toBeGreaterThanOrEqual(20);
+    expect(field.filter((q) => q.ask === 'value' && ['soil', 'terrain', 'source'].includes(q.group!) && !q.facts && !q.missing).map((q) => q.id)).toEqual([]);
+    expect(withContent.flatMap((q) => readingErrors(store, q).map((e) => `${q.id}: ${e}`))).toEqual([]);
+  });
+});
+
+describe('questions that used to be answered and must stay so (review of the field-readings change)', () => {
+  const guarded = all.filter((q) => q.group === 'regression');
+
+  it('has them in both the plain and the field form, and routes each as stated', () => {
+    expect(guarded.length).toBeGreaterThanOrEqual(12);
+    expect(guarded.flatMap((q) => routingErrors(store, q).map((e) => `${q.id}: ${e}`))).toEqual([]);
+  });
+
+  it('still finds the crop of a question about garlic typed with accents', () => {
+    const garlic = guarded.filter((q) => q.crops?.includes('allium-sativum'));
+    expect(garlic.length).toBeGreaterThanOrEqual(3);
+    expect(runVariant(store, garlic, VARIANTS[VARIANTS.length - 1]).misses).toEqual([]);
   });
 });

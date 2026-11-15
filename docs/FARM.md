@@ -1,6 +1,6 @@
 # The living farm
 
-The first tab of an open field draws the field as a small farm for the date shown, lets three characters report on it, and lets the grower run trials. Issue B21 (#101). Code: `src/core/farm/` (what to draw and say; pure, tested) and `src/ui/farm/` (the drawing).
+The page behind the "Farm" entry of the left rail (it was "Rotation") opens with the field drawn as a small farm for the date shown. Three characters report on it and the grower can run trials; the comparison of rotation strategies follows on the same page. The field panel keeps its four tabs. Issue B21 (#101). Code: `src/core/farm/` (what to draw and say; pure, tested) and `src/ui/farm/` (the drawing).
 
 The scene is an illustration of readings the app already has. It adds no data and no model. Where a reading is missing the scene is drawn in a neutral way and the character says there is no reading.
 
@@ -48,6 +48,12 @@ A trial is the same year of telemetry with one thing changed: `runTrial` copies 
 - The proposals are the model's own: `whatIf(input)` (irrigation, pH, drainage, sowing date, the best other crop), kept when they raise the season outcome, plus up to two more crops from `rankCrops`, scored the same way. `WhatIfResult.apply` (added for this) says what a move changes.
 - **A trial is not advice about what will happen.** It says "the same year of weather, with this one thing changed". A pH trial shows the year as if the soil already had that pH; lime acts over months and its dose needs a soil test, and the trial says so. Markets and seed are not in a crop trial.
 - **Nothing the grower entered is changed.** The trial works on a copy; `groundTruth` in the store stays as it is (tested). Only "Choose this crop for the field" changes the field, through the same `setCrop` as elsewhere.
+
+## 3.1 Where it sits, and the date
+
+`FarmView` (`src/ui/farm/FarmView.tsx`) is the first element of the rotation page (`src/ui/advisory/index.tsx`). On a wide page the scene stands on the left and the speaking character beside it; the day's figures and the forecast follow in two columns. The date slider moves the same cursor as the strip under the map; that strip is not on this page, so the farm mounts `usePlayback` itself.
+
+What stands behind the field (`Backdrop.tsx`: the range, the hills, trees, the farmstead, the wind pump, the fence) is decoration. Only the sky follows the day, and the wheel of the wind pump turns faster from a wind of 6 m/s.
 
 ## 4. Weather now and ahead
 
