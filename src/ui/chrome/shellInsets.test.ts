@@ -29,4 +29,11 @@ describe('shellInsets', () => {
     expect(shellInsets({ ...desktop, locked: false, finding: true, addCard: true, finderH: 162 }))
       .toEqual({ top: 12, left: 376, right: 64, bottom: 174 });
   });
+
+  it('ignores finder geometry when reopening a locked field from the finder', () => {
+    expect(shellInsets({ ...desktop, locked: true, finding: true, addCard: true, finderH: 162 }))
+      .toEqual({ top: 96, left: 648, right: 0, bottom: 96 });
+    expect(shellInsets({ ...desktop, width: 426, height: 690, narrow: true, locked: true, finding: true, addCard: true, finderH: 162 }))
+      .toEqual({ top: 52, left: 0, right: 56, bottom: 379 });
+  });
 });

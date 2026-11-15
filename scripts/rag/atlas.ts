@@ -86,6 +86,17 @@ export interface CountryArea {
   rank: number;
   /** The years the area is the mean of (`year_from`, `year_to` of crop_country.csv). */
   years?: string;
+  /** The FAOSTAT item codes of the row, as crop_country.csv writes them. */
+  codes: string[];
+}
+
+let itemNameOf: Map<string, string> | null = null;
+/** The name of a FAOSTAT item code (data/crops/atlas/items.csv). */
+export function itemName(code: string): string {
+  itemNameOf ??= new Map(readCsv('items.csv').map((r) => [r.faostat_item_code, r.faostat_item]));
+  const name = itemNameOf.get(code);
+  if (!name) throw new Error(`items.csv has no item ${code}`);
+  return name;
 }
 
 let byCrop: Map<string, CountryArea[]> | null = null;
@@ -99,7 +110,7 @@ export function countriesOf(cropId: string): CountryArea[] {
       if (areaHa == null || areaHa <= 0 || r.match !== 'exact') continue;
       const list = byCrop.get(r.crop_id) ?? [];
       const years = r.year_from && r.year_to ? (r.year_from === r.year_to ? r.year_from : `${r.year_from}-${r.year_to}`) : undefined;
-      list.push({ iso3: r.iso3, name: r.country, areaHa, level: r.level, rank: 0, ...(years ? { years } : {}) });
+      list.push({ iso3: r.iso3, name: r.country, areaHa, level: r.level, rank: 0, ...(years ? { years } : {}), codes: r.faostat_item_code.split(';').filter(Boolean) });
       byCrop.set(r.crop_id, list);
     }
     for (const list of byCrop.values()) {
@@ -151,12 +162,16 @@ export function whereOf(crop: AtlasCrop): CropWhere {
   where.faostatItem = text(r.faostat_item);
   where.sharedBy = num(r.item_shared_by_n_crops);
   if (crop.match === 'group') return where;
+  const own = r.faostat_item_code;
+  const otherItems = (r.faostat_other_item_codes ?? '').split(';').filter(Boolean).map(itemName);
+  if (otherItems.length) where.otherItems = otherItems;
   where.countries = num(r.n_countries_producing);
   where.worldAreaHa = num(r.world_area_ha);
   where.commonness = text(r.commonness);
   where.years = text(r.data_years);
   const top = topCountries(crop.cropId, 5);
-  const pick = (c: CountryArea) => ({ iso3: c.iso3, name: c.name, areaHa: c.areaHa, level: c.level, rank: c.rank, ...(c.years ? { years: c.years } : {}) });
+  // A country's figure names its items when they are not the crop's first item alone.
+  const pick = (c: CountryArea) => ({ iso3: c.iso3, name: c.name, areaHa: c.areaHa, level: c.level, rank: c.rank, ...(c.years ? { years: c.years } : {}), ...(c.codes.length !== 1 || c.codes[0] !== own ? { items: c.codes.map(itemName) } : {}) });
   if (top.length) where.top = top.map(pick);
   const also = countriesOf(crop.cropId).filter((c) => HOME_COUNTRIES.includes(c.iso3) && !top.some((t) => t.iso3 === c.iso3));
   if (also.length) where.also = also.map(pick);

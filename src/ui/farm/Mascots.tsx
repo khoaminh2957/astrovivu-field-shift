@@ -1,10 +1,7 @@
 /**
- * Stand-in figures of the three characters (Space, Soil, Rice) for the farm scene. They are
- * placeholders drawn here so that the scene has someone to speak; the real characters are the
- * mascot owner's (`src/ui/mascot`, issues U2 and U3). To swap them in, replace the body of
- * `MascotFigure`: the scene only knows `who`, `mood` and `talking`.
- *
- * Each figure is drawn around (0, 0) in a box of about 44 x 52 and is placed by its parent.
+ * Stand-in figures of the three characters, drawn in SVG. The characters on the stage are the
+ * mascot owner's 3D figures (`@/ui/mascot`); these are shown while a model loads and in its place
+ * when WebGL or the file is not available. Each is drawn around (0, 0) in a box of about 44 x 52.
  */
 import type { FarmVoice } from '@/core/farm';
 
@@ -37,7 +34,7 @@ function Space({ mood }: { mood: MascotMood }) {
       <circle cx={0} cy={0} r={17} fill="#3e5fd0" />
       <path d="M -15 -7 A 17 17 0 0 1 9 -14 A 22 22 0 0 0 -15 -7 Z" fill="#6d8af0" />
       <line x1={0} y1={-17} x2={0} y2={-26} stroke="#3e5fd0" strokeWidth={2} strokeLinecap="round" />
-      <path d="M 0 -33 l 1.9 4 4.3 0.5 -3.2 2.9 0.9 4.2 -3.9 -2.2 -3.9 2.2 0.9 -4.2 -3.2 -2.9 4.3 -0.5 Z" fill="#f5c84b" className="farm-twinkle" />
+      <path d="M 0 -33 l 1.9 4 4.3 0.5 -3.2 2.9 0.9 4.2 -3.9 -2.2 -3.9 2.2 0.9 -4.2 -3.2 -2.9 4.3 -0.5 Z" fill="#f5c84b" />
       <Face mood={mood} y={1} ink="#fff" />
     </g>
   );
@@ -78,23 +75,14 @@ function Rice({ mood }: { mood: MascotMood }) {
 
 const FIGURE: Record<FarmVoice, (p: { mood: MascotMood }) => React.ReactElement> = { space: Space, soil: Soil, rice: Rice };
 
-/** One character, with a ring when it is the one speaking and a small bubble that pulses while it talks. */
-export function MascotFigure({ who, mood, talking }: { who: FarmVoice; mood: MascotMood; talking: boolean }) {
+/** One stand-in character. It is drawn only until the 3D figure is on screen, or in its place when that cannot be shown. */
+export function MascotFigure({ who, mood }: { who: FarmVoice; mood: MascotMood }) {
   const Figure = FIGURE[who];
   return (
-    <>
-      <circle className="farm-ring" cx={0} cy={0} r={30} fill="#fff" fillOpacity={0.35} stroke="#fff" strokeWidth={2} />
+    <svg viewBox="-34 -42 68 70" className="farm-figure h-3/5 w-3/5" aria-hidden>
       <g className={who === 'space' ? 'farm-bob-slow' : 'farm-bob'}>
         <Figure mood={mood} />
-        {talking && (
-          <g className="farm-talk" transform="translate(20 -26)">
-            <path d="M -9 -8 h 18 a 5 5 0 0 1 5 5 v 6 a 5 5 0 0 1 -5 5 h -11 l -5 5 v -5 h -2 a 5 5 0 0 1 -5 -5 v -6 a 5 5 0 0 1 5 -5 Z" fill="#fff" stroke="#2b2b2b" strokeWidth={1.2} />
-            <circle cx={-5} cy={0} r={1.4} fill="#2b2b2b" />
-            <circle cx={0} cy={0} r={1.4} fill="#2b2b2b" />
-            <circle cx={5} cy={0} r={1.4} fill="#2b2b2b" />
-          </g>
-        )}
       </g>
-    </>
+    </svg>
   );
 }

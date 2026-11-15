@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseCsvObjects } from './csv';
+import { parseCsv, parseCsvObjects } from './csv';
 import type { AtlasSpecies } from './ecocrop';
-import { URBAN_RULE, urbanCandidate } from './urban';
+import { URBAN_RULE, urbanCandidate, urbanCandidateRow } from './urban';
 
 function mockSpecies(over: Partial<AtlasSpecies> = {}): AtlasSpecies {
   return {
@@ -153,36 +153,66 @@ describe('scripts/crops/atlas/urban (D1, #14)', () => {
     expect(URBAN_RULE.maxCycleMinDays).toBe(120);
   });
 
-  it('matches the built columns and counts in crops.csv, columns.csv, and summary.csv', () => {
+  it('writes urban_candidates.csv with one row per crop of crops.csv, in its order, and the counts of summary.csv', () => {
     const crops = parseCsvObjects(readFileSync('data/crops/atlas/crops.csv', 'utf8'));
-    const columns = parseCsvObjects(readFileSync('data/crops/atlas/columns.csv', 'utf8'));
+    const [header, ...rows] = parseCsv(readFileSync('data/crops/atlas/urban_candidates.csv', 'utf8'));
     const summary = new Map(
       parseCsvObjects(readFileSync('data/crops/atlas/summary.csv', 'utf8')).map((r) => [r.metric, r.value]),
     );
 
-    const yesRows = crops.filter((r) => r.urban_candidate === 'yes');
+    expect(header).toEqual(['crop_id', 'urban_candidate', 'urban_candidate_rule']);
+    expect(rows.map((r) => r[0])).toEqual(crops.map((c) => c.crop_id));
+
+    const yesRows = rows.filter((r) => r[1] === 'yes');
     expect(yesRows.length).toBeGreaterThan(32);
     expect(yesRows.length).toBe(106);
     expect(Number(summary.get('urban_candidates'))).toBe(yesRows.length);
 
-    for (const r of crops) {
-      if (r.urban_candidate === 'yes') {
-        expect(r.urban_candidate_rule).toMatch(/^(short-cycle|perennial-aromatic-herb|short-cycle;perennial-aromatic-herb)$/);
+    for (const [, candidate, rule] of rows) {
+      if (candidate === 'yes') {
+        expect(rule).toMatch(/^(short-cycle|perennial-aromatic-herb|short-cycle;perennial-aromatic-herb)$/);
       } else {
-        expect(r.urban_candidate).toBe('');
-        expect(r.urban_candidate_rule).toBe('');
+        expect(candidate).toBe('');
+        expect(rule).toBe('');
       }
     }
 
     // Broadacre field crops excluded by the refined rule
     for (const fieldId of ['arachis-hypogaea', 'solanum-tuberosum', 'lens-culinaris', 'linum-usitatissimum']) {
-      const row = crops.find((r) => r.crop_id === fieldId);
-      expect(row?.urban_candidate, `${fieldId} should not be an urban candidate`).toBe('');
+      const row = rows.find((r) => r[0] === fieldId);
+      expect(row?.[1], `${fieldId} should not be an urban candidate`).toBe('');
     }
+  });
 
-    const colCand = columns.find((c) => c.table === 'crops' && c.column === 'urban_candidate');
-    const colRule = columns.find((c) => c.table === 'crops' && c.column === 'urban_candidate_rule');
-    expect(colCand?.meaning_en && colCand?.meaning_vi).toBeTruthy();
-    expect(colRule?.meaning_en && colRule?.meaning_vi).toBeTruthy();
+  it('holds in urban_candidates.csv exactly what the rule computes from the EcoCrop columns of crops.csv', () => {
+    // The five cells the rule reads are copied from EcoCrop into crops.csv, so the file can be recomputed from it.
+    const crops = parseCsvObjects(readFileSync('data/crops/atlas/crops.csv', 'utf8'));
+    const rows = parseCsv(readFileSync('data/crops/atlas/urban_candidates.csv', 'utf8')).slice(1);
+    const computed = crops.map((c) =>
+      urbanCandidateRow(
+        c.crop_id,
+        mockSpecies({
+          lifeForm: c.life_form,
+          habit: c.habit,
+          category: c.category,
+          lifeSpan: c.life_span,
+          cycleMin: c.cycle_min_days === '' ? null : Number(c.cycle_min_days),
+        }),
+      ),
+    );
+    expect(rows).toEqual(computed);
+  });
+
+  it('leaves crops.csv, which the market database mirrors, without an urban column', () => {
+    const header = parseCsv(readFileSync('data/crops/atlas/crops.csv', 'utf8'))[0];
+    expect(header.filter((c) => c.startsWith('urban_'))).toEqual([]);
+  });
+
+  it('describes the columns of urban_candidates in columns.csv, and none of them under crops', () => {
+    const columns = parseCsvObjects(readFileSync('data/crops/atlas/columns.csv', 'utf8'));
+    const described = columns.filter((c) => c.table === 'urban_candidates');
+    expect(described.map((c) => c.column)).toEqual(['crop_id', 'urban_candidate', 'urban_candidate_rule']);
+    for (const c of described) expect(c.meaning_en && c.meaning_vi, c.column).toBeTruthy();
+    expect(columns.filter((c) => c.table === 'crops' && c.column.startsWith('urban_'))).toEqual([]);
   });
 });

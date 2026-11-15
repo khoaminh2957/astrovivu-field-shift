@@ -10,7 +10,7 @@
  *
  * Both are produced by `npm run crops:build`; see docs/SCORING.md §2 and data/crops/CLEANING_LOG.md.
  */
-import type { CropProfile, Lang } from '@/contracts';
+import type { CropPrevalence, CropProfile, Iso3, Lang } from '@/contracts';
 import { decodeCatalog, type CatalogFile } from './codec';
 import { CATALOG_META, CURATED_CROPS, CURATION_NOTES, URBAN_CANDIDATE_CROPS } from './curated.generated';
 import { fold } from './text';
@@ -22,6 +22,8 @@ const URBAN_CROPS: CropProfile[] = [...CURATED_CROPS.filter((c) => c.urban?.suit
 const byId = new Map<string, CropProfile>([...CURATED_CROPS, ...URBAN_CANDIDATE_CROPS].map((c) => [c.id, c]));
 let full: CropProfile[] | null = null;
 let loading: Promise<CropProfile[]> | null = null;
+let prevalenceTable: Record<string, Record<Iso3, CropPrevalence>> | null = null;
+let loadingPrevalence: Promise<Record<string, Record<Iso3, CropPrevalence>>> | null = null;
 
 /** Curated crops, in catalogue order (cereals, pulses, oilseeds, roots, perennials, forages, covers, garden). */
 export function listCrops(): CropProfile[] {
@@ -48,11 +50,19 @@ export function curationNotes(id: string): string[] {
 }
 
 export const isFullCatalogLoaded = (): boolean => full != null;
+export const isPrevalenceLoaded = (): boolean => prevalenceTable != null;
 
 async function fetchCatalog(): Promise<unknown> {
   const base = import.meta.env?.BASE_URL ?? '/';
   const res = await fetch(`${base}data/crops/ecocrop.json`);
   if (!res.ok) throw new Error(`Crop catalogue request failed: HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchPrevalence(): Promise<unknown> {
+  const base = import.meta.env?.BASE_URL ?? '/';
+  const res = await fetch(`${base}data/crops/prevalence.json`);
+  if (!res.ok) throw new Error(`Crop prevalence request failed: HTTP ${res.status}`);
   return res.json();
 }
 
@@ -66,7 +76,11 @@ export function loadFullCatalog(source: () => Promise<unknown> = fetchCatalog): 
   loading ??= source()
     .then((json) => {
       const rest = decodeCatalog(json as CatalogFile).filter((p) => !byId.has(p.id));
-      for (const p of rest) byId.set(p.id, p);
+      for (const p of rest) {
+        const prev = prevalenceTable?.[p.id];
+        if (prev) p.prevalence = prev;
+        byId.set(p.id, p);
+      }
       full = [...CURATED_CROPS, ...rest];
       searchIndex = null;
       return full;
@@ -76,6 +90,32 @@ export function loadFullCatalog(source: () => Promise<unknown> = fetchCatalog): 
       throw err;
     });
   return loading;
+}
+
+/**
+ * Country prevalence for all 387 atlas crops (`public/data/crops/prevalence.json`).
+ * Curated crops already carry `VNM` and `USA` prevalence synchronously; this loader
+ * hydrates all countries and non-curated atlas species on demand.
+ */
+export function loadPrevalence(
+  source: () => Promise<unknown> = fetchPrevalence,
+): Promise<Record<string, Record<Iso3, CropPrevalence>>> {
+  if (prevalenceTable) return Promise.resolve(prevalenceTable);
+  loadingPrevalence ??= source()
+    .then((json) => {
+      const table = json as Record<string, Record<Iso3, CropPrevalence>>;
+      for (const [cropId, prev] of Object.entries(table)) {
+        const crop = byId.get(cropId);
+        if (crop) crop.prevalence = prev;
+      }
+      prevalenceTable = table;
+      return table;
+    })
+    .catch((err: unknown) => {
+      loadingPrevalence = null;
+      throw err;
+    });
+  return loadingPrevalence;
 }
 
 // ------------------------------------------------------------------------------------------------

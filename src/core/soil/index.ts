@@ -1,4 +1,5 @@
 export * from './types';
+export * from './facts';
 export * from './reference';
 export * from './mass';
 export * from './buffer';

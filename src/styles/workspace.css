@@ -73,6 +73,24 @@
 }
 
 .workspace-nav-item svg { width: 18px; height: 18px; stroke-width: 1.7; }
+/* The three steps of a field carry their number; Urban and Ask stand apart under a rule. */
+.workspace-nav-step {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--workspace-line);
+  color: var(--workspace-ink);
+  font: 750 9.5px/1 var(--font-sans);
+}
+.workspace-tab-bar .workspace-nav-step { top: -4px; right: -3px; }
+[aria-current='page'] > .workspace-nav-step,
+[aria-current='page'] .workspace-nav-step { background: var(--workspace-green); color: #fff; }
+.workspace-nav-rule { width: 30px; height: 1px; margin: 7px 0; background: var(--workspace-line); }
 .workspace-nav-item:hover { background: #e0f3ec; }
 .workspace-rail .workspace-nav-item:is([aria-current='page'], [aria-pressed='true']) { color: var(--workspace-ink); background: var(--workspace-accent); }
 .workspace-tab-bar,
@@ -129,6 +147,42 @@
 .workspace-field-content { display: flex; flex: 1; min-height: 0; }
 .workspace-field-content[hidden] { display: none; }
 .workspace-field-list { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 0; }
+/* The way on from step 1: docked at the foot of the field panel on a wide screen, at the end of the sheet on a phone. */
+.workspace-next-step {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid #acdbd2;
+  border-radius: 13px;
+  background: linear-gradient(100deg, #e9f8f4, #d8f1e9);
+}
+.workspace-next-step-docked { margin: 0 var(--workspace-gutter) 14px; }
+.workspace-next-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px 0 8px;
+  border-radius: 10px;
+  background: var(--workspace-green);
+  color: #fff;
+  font: 700 14px/1 var(--font-sans);
+  transition: filter var(--dur-fast);
+}
+.workspace-next-button:hover { filter: brightness(1.06); }
+.workspace-next-num {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.22);
+  font-size: 12px;
+}
 .workspace-field-inner { width: 100%; min-height: 0; gap: 9px; }
 .workspace-field-header { flex: none; padding: 13px var(--workspace-gutter) 0; }
 .workspace-field-header h1,
@@ -414,6 +468,24 @@
 .rotation-links small { display: block; margin-top: 2px; color: var(--workspace-muted); font-size: 14px; }
 .rotation-links svg { flex: none; }
 .rotation-footer { margin-top: 55px; padding: 16px 0 24px; border-top: 1px solid var(--workspace-line); }
+/* Steps 2 and 3 of the path: the number before the title, the way on at the foot of a tab. The dossier is step 3: the page shows it without the tab strip. */
+.rotation-step-num {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  margin-right: 12px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--workspace-green);
+  color: #fff;
+  font: 750 16px/1 var(--font-sans);
+  letter-spacing: 0;
+  vertical-align: 5px;
+}
+.rotation-workspace[data-rotation-page='dossier'] .rotation-tabs [role='tablist'] { display: none; }
+.rotation-glance-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; color: var(--workspace-muted); font-size: 15px; line-height: 1.45; }
+.rotation-glance-line strong { color: var(--workspace-ink); font-weight: 740; }
+.rotation-next { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--workspace-line); }
 
 @media (max-height: 50rem) and (min-width: 68.75rem) {
   .workspace-back { padding-top: 12px; }
@@ -467,6 +539,27 @@
     animation: workspace-appear var(--dur-base) var(--ease-out);
   }
 
+  .workspace-rail,
+  .workspace-field-panel,
+  .workspace-add-card {
+    animation: workspace-slide-left var(--dur-slow) var(--ease-out) both;
+  }
+
+  .workspace-tab-bar,
+  .workspace-mobile-field,
+  .workspace-timeline {
+    animation: workspace-slide-up var(--dur-slow) var(--ease-out) both;
+  }
+
+  .workspace-map-layer,
+  .workspace-map-tools,
+  .workspace-map-legend,
+  .workspace-map-credit,
+  .workspace-field-top,
+  .workspace-explore-chrome {
+    animation: workspace-appear var(--dur-base) var(--ease-out) both;
+  }
+
   :is(.workspace-rail, .workspace-tab-bar, .workspace-field-panel, .workspace-mobile-field, .rotation-workspace, .urban-workspace, .workspace-dashboard)
     :is(button, label:has(input[type='radio'])) {
     transition: scale var(--dur-instant) var(--ease-out), color var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
@@ -485,6 +578,22 @@
   @keyframes workspace-appear {
     from { opacity: 0.65; translate: 0 6px; }
     to { opacity: 1; translate: 0 0; }
+  }
+
+  @keyframes workspace-slide-left {
+    from { opacity: 0; translate: -16px 0; }
+    to { opacity: 1; translate: 0 0; }
+  }
+
+  @keyframes workspace-slide-up {
+    from { opacity: 0; translate: 0 16px; }
+    to { opacity: 1; translate: 0 0; }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 68.74rem) {
+  .workspace-add-card {
+    animation-name: workspace-slide-up;
   }
 }
 
