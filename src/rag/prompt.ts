@@ -34,6 +34,14 @@ export function sanitize(s: string): string {
   return s.replace(/[<>]/g, (c) => (c === '<' ? '‹' : '›')).replace(/\u0000/g, '');
 }
 
+/**
+ * The same for a value placed inside a double-quoted attribute of a wrapper tag. There a quote
+ * ends the attribute, and what follows it would be read as further attributes of our own tag.
+ */
+export function sanitizeAttribute(s: string): string {
+  return sanitize(s).replace(/"/g, "'").replace(/\s*[\r\n]+\s*/g, ' ');
+}
+
 export interface PromptPassage {
   /** Citation id shown to the model, e.g. S1. */
   sid: string;
@@ -55,7 +63,7 @@ export function fieldContextBlock(ctx: FieldContext | undefined): string {
 export function knowledgeBlock(passages: PromptPassage[]): string {
   const items = passages.map(
     ({ sid, chunk }) =>
-      `<passage id="${sid}" source="${sanitize(chunk.source.name)}" license="${sanitize(chunk.source.license)}" lang="${chunk.lang}">\n` +
+      `<passage id="${sid}" source="${sanitizeAttribute(chunk.source.name)}" license="${sanitizeAttribute(chunk.source.license)}" lang="${sanitizeAttribute(chunk.lang)}">\n` +
       `title: ${sanitize(chunk.title)}\n${sanitize(chunk.text)}\n</passage>`,
   );
   return `<knowledge>\n${items.join('\n') || 'No passages were retrieved.'}\n</knowledge>`;

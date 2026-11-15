@@ -155,6 +155,8 @@ export function MoneyGroup() {
   // What the comparison uses for this crop until the grower enters their own: the current rotation's season of it.
   const ref = useMission((s) => s.advisory?.rotations.find((r) => r.kind === 'current')?.economics.seasons.find((x) => x.cropId === s.cropId));
   const crop = getCrop(cropId);
+  // The unit shown is the unit meant: a price or cost is stored together with it (`also` below), so a grower who
+  // never touches the switch does not have Vietnamese dong read as dollars.
   const cur: Currency = gt.currency ?? (lang === 'vi' ? 'VND' : 'USD');
   const money = (usd: number) => `${Math.round(fromUsd(usd, cur)).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US')} ${cur}`;
   const refHint = (text: string) => t('gt.ref', { v: text });
@@ -212,6 +214,7 @@ export function MoneyGroup() {
         step={big ? 1000 : 1}
         digits={0}
         disabled={!crop}
+        also={{ currency: cur }}
         hint={gt.pricePerT == null && ref ? refHint(`${money(ref.priceUsdPerT)}/t`) : undefined}
       />
       <NumberOverride
@@ -223,6 +226,7 @@ export function MoneyGroup() {
         step={big ? 1000 : 1}
         digits={0}
         disabled={!crop}
+        also={{ currency: cur }}
         hint={gt.costPerHa == null && ref && ref.areaHa > 0 ? refHint(`${money(ref.costUsd / ref.areaHa)}/ha`) : undefined}
         className="col-span-2 narrow:col-span-1"
       />

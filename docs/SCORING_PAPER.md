@@ -329,6 +329,86 @@ Evaluating the entire cleaned catalogue ($2{,}063$ species $\times 4$ parcels $=
 
 Notably, on the Diamond Valley, Nevada center pivot—where SSURGO records strongly alkaline silt loam ($\mathrm{pH}\ 8.8$) combined with $-8\,^\circ\mathrm{C}$ Great Basin winters—only **$3$ of $2{,}063$ global species ($0.15\%$)** achieve $S_1/S_2$ suitability without chemical soil amendment, and *Medicago sativa* (alfalfa, observed on the parcel in every USDA Cropland Data Layer year 2019–2025) is directly recovered among them.
 
+
+### 6.7 Experiment 7: Do the Crops a Country Grows Score Higher Than Those It Does Not?
+
+Code: `scripts/crops/evaluate-prevalence.ts` (and its test). Result: `data/crops/prevalence-eval-results.json`. Re-run: `npx tsx scripts/crops/evaluate-prevalence.ts` (about a minute, no network; it also compares latitude gates, `docs/SCORING.md` section 13).
+
+**Question.** Experiments 1 to 6 test the score against itself and against 56 cases written by the team. This one asks an outside source: in a country, do the crops farmers grow at scale get a higher suitability score than the crops nobody reports?
+
+**Labels.** The crop atlas (`data/crops/atlas/crop_country.csv`, `docs/CROP_DATA.md`), crops with an exact FAOSTAT match only. Grown: level `major` or `common` (at least 0.5 % of the country's harvested area, three-year mean up to 2024). Not grown: `absent`. `minor` and `present` crops are left out, and so are group crops, whose level is unknown.
+
+**Sites.** A score needs a place. The sites are those of the MIRCA-OS validation (`docs/SCORING.md` section 10): a cropland pixel in a farmed administrative unit, with 2001-2020 climate and SoilGrids soil, 153 sites in 35 countries. Viet Nam has no site there, so the two Vietnamese demo fields stand in for it, scored without the grower's entries. Each site is scored against the labels of its country; a country's result is the mean over its sites, so that the 28 sites of India or the United States count once.
+
+**Score.** `assessCrop(...).bestCompatibility` at the best sowing window, once rainfed and once with full irrigation. ROC-AUC per site over the labelled crops (at least 5 of each kind).
+
+**Result.** 155 sites in 36 countries; 158 exact crops scored (7 of the 165 are not in the scoring catalogue).
+
+| Scored | Water | Mean country ROC-AUC | 95 % interval of the mean | Median | Middle half | Range | Countries above 0.5 |
+|---|---|---:|---|---:|---|---|---:|
+| Astrovivu-AEZ v2 as it is | rainfed | 0.699 | 0.665 to 0.733 | 0.693 | 0.619 to 0.788 | 0.505 to 0.895 | 100 % |
+| Astrovivu-AEZ v2 as it is | irrigated | 0.750 | 0.721 to 0.778 | 0.728 | 0.681 to 0.838 | 0.593 to 0.934 | 100 % |
+| Only crops that are alone on their FAOSTAT item (84) | rainfed | 0.731 | 0.695 to 0.765 | 0.749 | 0.629 to 0.823 | 0.529 to 0.884 | 100 % |
+| Only crops that are alone on their FAOSTAT item (84) | irrigated | 0.758 | 0.729 to 0.786 | 0.785 | 0.712 to 0.813 | 0.554 to 0.913 | 100 % |
+| Only crops of the curated list (41) | rainfed | 0.740 | 0.698 to 0.783 | 0.745 | 0.663 to 0.829 | 0.459 to 0.956 | 97 % |
+| Only crops of the curated list (41) | irrigated | 0.786 | 0.747 to 0.826 | 0.806 | 0.685 to 0.887 | 0.560 to 0.960 | 100 % |
+
+The interval is over countries (2000 resamples, seed 20261115).
+
+- In every one of the 36 countries the crops the country grows score higher on average than those it does not (ROC-AUC above 0.5), rainfed and irrigated.
+- The irrigated score separates better than the rainfed one (0.750 against 0.699). A country grows crops under whatever water it has, so a score that assumes rain alone marks down crops that are in fact irrigated.
+- The spread is wide: from 0.505 (Azerbaijan) to 0.895 (United Kingdom of Great Britain and Northern Ireland) rainfed. A mean hides that in a quarter of the countries the rainfed ROC-AUC is below 0.619.
+- On the crops that are alone on their FAOSTAT item, where the label belongs to one species, the result is a little higher (0.731 rainfed), and higher again on the curated crops (0.740), whose requirements were checked by hand.
+
+Per country, best first (rainfed):
+
+| Country | Sites | Grown | Not grown | ROC-AUC rainfed | irrigated |
+|---|---:|---:|---:|---:|---:|
+| United Kingdom of Great Britain and Northern Ireland | 1 | 12 | 118 | 0.895 | 0.862 |
+| Slovakia | 1 | 15 | 90 | 0.885 | 0.934 |
+| Austria | 2 | 18 | 93 | 0.860 | 0.841 |
+| France | 2 | 18 | 68 | 0.858 | 0.838 |
+| Germany | 2 | 16 | 99 | 0.824 | 0.869 |
+| Angola | 1 | 14 | 109 | 0.808 | 0.717 |
+| Switzerland | 1 | 22 | 97 | 0.808 | 0.803 |
+| Netherlands (Kingdom of the) | 2 | 25 | 108 | 0.803 | 0.857 |
+| Belgium | 2 | 27 | 107 | 0.799 | 0.838 |
+| Poland | 2 | 18 | 93 | 0.784 | 0.809 |
+| Russian Federation | 8 | 17 | 85 | 0.773 | 0.876 |
+| India | 28 | 28 | 63 | 0.743 | 0.786 |
+| Australia | 1 | 22 | 57 | 0.734 | 0.701 |
+| Czechia | 1 | 16 | 96 | 0.726 | 0.871 |
+| Nigeria | 10 | 32 | 105 | 0.719 | 0.775 |
+| Republic of Korea | 3 | 35 | 96 | 0.710 | 0.724 |
+| Hungary | 1 | 17 | 78 | 0.707 | 0.827 |
+| Benin | 2 | 23 | 108 | 0.693 | 0.853 |
+| Denmark | 1 | 13 | 115 | 0.693 | 0.720 |
+| Albania | 2 | 35 | 92 | 0.679 | 0.740 |
+| Spain | 3 | 25 | 50 | 0.661 | 0.736 |
+| Italy | 3 | 31 | 66 | 0.657 | 0.691 |
+| Chile | 2 | 47 | 72 | 0.652 | 0.637 |
+| Ethiopia | 10 | 29 | 76 | 0.643 | 0.706 |
+| Armenia | 2 | 28 | 115 | 0.625 | 0.670 |
+| United States of America | 28 | 19 | 56 | 0.625 | 0.675 |
+| Algeria | 5 | 24 | 90 | 0.623 | 0.715 |
+| Mexico | 5 | 33 | 43 | 0.606 | 0.635 |
+| Türkiye | 6 | 29 | 59 | 0.603 | 0.732 |
+| Viet Nam | 2 | 29 | 103 | 0.603 | 0.681 |
+| Bangladesh | 6 | 15 | 92 | 0.601 | 0.699 |
+| Bhutan | 3 | 27 | 86 | 0.589 | 0.656 |
+| Georgia | 2 | 24 | 101 | 0.573 | 0.621 |
+| Brazil | 1 | 28 | 70 | 0.572 | 0.631 |
+| Jordan | 2 | 39 | 94 | 0.535 | 0.681 |
+| Azerbaijan | 2 | 25 | 81 | 0.505 | 0.593 |
+
+**What it cannot say.**
+
+- A crop can be absent from a country for reasons the score does not model: markets, habit, policy, a neighbour that grows it cheaper. A ROC-AUC well below 1 does not by itself mean the score is wrong, and it would stay below 1 with a perfect climate-and-soil model.
+- `absent` means FAOSTAT has no figure above zero. For Viet Nam that includes tomato, cucumber and eggplant (`docs/SCORING.md` section 12.4): crops that are grown but not reported count here as not grown, which lowers the ROC-AUC of countries that report few items.
+- The label is for the country, the score for one place in it. A crop grown only in another climate zone of the same country is a false "grown" for the site. Countries are represented by 1 to 28 sites chosen for another purpose; Viet Nam by two demo fields.
+- Crops that share an item (coffee: four *Coffea* species) all carry the item's label.
+- **Ranking with prevalence (K3) is not evaluated here.** It does not change any score, and gating the list with the same table the labels come from would only measure the table against itself.
+
 ---
 
 ## 7. Discussion, Uncertainty, and Known Scientific Limitations
@@ -357,6 +437,9 @@ npx.cmd vitest run src/core/scoring/literature.test.ts src/core/scoring/scoring.
 
 # 2. Regenerate all 6 experimental datasets and tables in data/crops/scoring-paper-results.json
 npx.cmd tsx scripts/crops/evaluate-scoring-paper.ts
+
+# 3. Experiment 7, the country-prevalence check, in data/crops/prevalence-eval-results.json
+npx.cmd tsx scripts/crops/evaluate-prevalence.ts
 ```
 
 ---

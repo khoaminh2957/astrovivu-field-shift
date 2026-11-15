@@ -6,13 +6,14 @@ Nhóm Astrovivu làm trên một repo: <https://github.com/quocbao271207/astrovi
 
 | Người | Tài khoản | Phần phụ trách | Thư mục của mình |
 |---|---|---|---|
-| Bảo | `quocbao271207` | UI/UX toàn bộ, bản đồ, hợp đồng dữ liệu, gộp nhánh | `src/ui/**` (trừ `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
-| Uyên | `thuyyen03052008` | Mascot | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
+| Bảo | `quocbao271207` | UI/UX toàn bộ và chốt nội dung hiện ở từng bước; bản đồ, hợp đồng dữ liệu, gộp nhánh | `src/ui/**` (trừ `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
+| Ngọc | `nguyennhatngoc1506` | Tái cấu trúc giao diện: bố cục, chuyển cảnh giữa các bước, chỗ camera dừng. Làm trong các thư mục giao diện; Bảo chốt nội dung và duyệt mọi pull request | `src/ui/**` (trừ `mascot`), `src/globe/**`, `src/styles/**` (Bảo vẫn là người giữ thư mục và là người duyệt) |
+| Uyên | `thuyyen03052008` | Mascot: ba nhân vật Vũ trụ, Đất, Lúa xuất hiện luân phiên theo bước | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
 | Thái | `quocthai2711` | Dữ liệu cây trồng, giá và chi phí; công cụ trồng rau đô thị | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `src/core/urban/**`, `docs/CROP_DATA.md` |
 | Khoa | `khoaminh2957` | Mô hình: độ phù hợp và tối ưu lợi nhuận; chatbot | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `src/rag/**`, `server/**`, `scripts/rag/**`, `data/rag/**`, `public/rag/**`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md`, `docs/RAG.md` |
 | Duy | `MinDuy314` | Cải tạo đất từ dữ liệu đất | `src/core/soil/**`, `docs/SOIL.md` |
 
-`.github/CODEOWNERS` ghi lại bảng này cho GitHub: pull request chạm vào thư mục nào thì người phụ trách thư mục đó được mời review.
+`.github/CODEOWNERS` ghi lại bảng này cho GitHub: pull request chạm vào thư mục nào thì người phụ trách thư mục đó được mời review. Từ ngày 15/11/2026 lời mời này là điều kiện bắt buộc: pull request chỉ gộp được khi **người phụ trách của từng thư mục bị chạm, hoặc Bảo, đã duyệt**. Bảo được ghi là người phụ trách thứ hai của mọi thư mục, vì GitHub không cho tác giả tự duyệt pull request của mình.
 
 Cần sửa ngoài thư mục của mình thì vẫn sửa được, nhưng người phụ trách phần đó phải review. Riêng `src/contracts/**` chỉ được **thêm** (trường tuỳ chọn mới, kiểu mới), không đổi tên, không xoá: ba phần còn lại đều đọc từ đó.
 
@@ -68,7 +69,7 @@ Không commit thẳng lên `main`. Mỗi việc một nhánh, xong thì mở pul
    git push -u origin data/crop-prevalence-vn
    ```
 
-4. Mở pull request vào `main` trên GitHub và điền mẫu có sẵn. Nhánh `main` được bảo vệ: GitHub chỉ cho gộp khi CI xanh và có ít nhất một người khác duyệt (người phụ trách phần bị chạm được mời tự động). Không ai đẩy thẳng, đẩy đè (force push) hay xoá `main` được; riêng chủ repo đẩy thẳng được khi cần. Gộp bằng **Squash and merge**, rồi xoá nhánh.
+4. Mở pull request vào `main` trên GitHub và điền mẫu có sẵn. Nhánh `main` được bảo vệ: GitHub chỉ cho gộp khi CI xanh và người phụ trách của mọi thư mục bị chạm (hoặc Bảo) đã duyệt; lượt duyệt của người không phụ trách thư mục đó không đủ. Không ai đẩy thẳng, đẩy đè (force push) hay xoá `main` được; riêng chủ repo đẩy thẳng được khi cần. Gộp bằng **Squash and merge**, rồi xoá nhánh.
 
 5. Nhánh sống lâu hơn một ngày thì cập nhật từ `main` trước khi làm tiếp:
 

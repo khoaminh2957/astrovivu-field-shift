@@ -7,7 +7,7 @@ import { assessCropSuite, scanSowingWindows } from '@/core/scoring';
 import { buildSoilPlan, diagnoseSoil } from '@/core/soil';
 import { advisories, annualPlan, irrigationPlan, phPlan } from './actions';
 import { computeInsights } from './insights';
-import { buildRotations } from './rotation';
+import { buildRotations, countryKey } from './rotation';
 
 export { annualPlan } from './actions';
 export { type CustomRotationSpec, evaluateCustomRotation, slotCropChoices, swapRotationSeason } from './customRotation';
@@ -23,7 +23,7 @@ const memo = new WeakMap<object, Map<string, AdvisoryReport>>();
 
 /** Irrigation schedule, pH plan, sowing-window shift and the >= 3 rotation strategies. */
 export function buildAdvisoryReport(input: ModelInput, score: ScoreTimeline): AdvisoryReport {
-  const key = JSON.stringify([input.cropId, input.groundTruth, input.priorities, input.parcel.id, input.parcel.areaHa, input.today, score.snapshots.length]);
+  const key = JSON.stringify([input.cropId, input.groundTruth, input.priorities, input.parcel.id, input.parcel.areaHa, input.today, score.snapshots.length, countryKey(input)]);
   let m = memo.get(input.telemetry);
   if (!m) memo.set(input.telemetry, (m = new Map()));
   const hit = m.get(key);

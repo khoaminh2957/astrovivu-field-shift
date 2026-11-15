@@ -2,6 +2,7 @@ export * from './common';
 export * from './geo';
 export * from './telemetry';
 export * from './crop';
+export * from './country';
 export * from './model';
 export * from './advisory';
 export * from './experience';

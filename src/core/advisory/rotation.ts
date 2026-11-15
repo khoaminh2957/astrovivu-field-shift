@@ -4,8 +4,8 @@
  */
 import type { CropProfile, EvidenceItem, FarmerPriority, I18nText, ModelInput, RotationKind, RotationSeason, RotationSeasonDetail, RotationStrategy, SeasonEconomics } from '@/contracts';
 import { getCrop, listCrops } from '@/core/crops';
-import { referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
-import { scanSowingWindows, windowMonths } from '@/core/scoring';
+import { economicCountry, economicRegions, ownEconomics, referenceEconomics, seasonEconomics, strategyEconomics } from '@/core/economics';
+import { prevalenceStatus, type PrevalenceStatus, scanSowingWindows, windowMonths } from '@/core/scoring';
 import { type MonthNormal, monthlyNormals } from '@/lib/climate';
 import { cropSeasonDetail, fallowSeasons, sumNormal } from './seasonDetail';
 import { climateNormals, cropText, effectiveIrrigation, factNum, meanKc, monthEn, monthVi, monthsFrom, r0, resolutionM, sourceName, tx, wrapMonth } from './util';
@@ -151,11 +151,33 @@ function mkSeason(ctx: Ctx, id: string, year: number, role?: Plan['role'], share
   return { cropId: id, start: c.lifeSpan === 'annual' ? b.month : 1, len, year, share, ...(role ? { role } : {}) };
 }
 
+/**
+ * How the country of the parcel grows a crop, read as the crop ranking reads it
+ * (`prevalenceStatus`; docs/SCORING.md, section 12). Null when the model was given no country
+ * table: the builder then works as it did before there was one.
+ */
+export function countryStatus(input: ModelInput, cropId: string): PrevalenceStatus | null {
+  return input.country ? prevalenceStatus(input.country.prevalence[cropId]) : null;
+}
+
+/** The crops the grower grows now. What a statistic says of them does not matter: they are grown here. */
+function grownHere(input: ModelInput, cropId: string): boolean {
+  return cropId === input.cropId || (input.groundTruth.currentRotation ?? []).some((s) => s.cropId === cropId);
+}
+
+/**
+ * Whether the builder may put a crop into a strategy of its own. A crop the country's statistics
+ * report none of stays out; a crop they cannot tell about stays in, and the strategy says so.
+ */
+export function proposable(input: ModelInput, cropId: string): boolean {
+  return countryStatus(input, cropId) !== 'absent' || grownHere(input, cropId);
+}
+
 function bestOverall(ctx: Ctx): string {
   let best = 'zea-mays';
   let bs = -1;
   for (const c of listCrops()) {
-    if (c.lifeSpan !== 'annual' || !hasEcon(c.id, ctx.input)) continue;
+    if (c.lifeSpan !== 'annual' || !hasEcon(c.id, ctx.input) || !proposable(ctx.input, c.id)) continue;
     const s = ctx.best(c.id).s;
     if (s > bs) (bs = s), (best = c.id);
   }
@@ -171,7 +193,7 @@ type Chooser = (c: CropProfile, month: number, s: number) => number;
 function pool(ctx: Ctx, kind: 'cash' | 'cover' | 'tree'): CropProfile[] {
   const avoid = new Set(ctx.input.groundTruth.avoidCropIds ?? []);
   return listCrops().filter((c) => {
-    if (avoid.has(c.id) || !c.rotation) return false;
+    if (avoid.has(c.id) || !c.rotation || !proposable(ctx.input, c.id)) return false;
     if (kind === 'cover') return c.category === 'cover' && c.lifeSpan !== 'perennial';
     if (kind === 'tree') return isTree(c) && hasEcon(c.id, ctx.input);
     return c.lifeSpan === 'annual' && c.category !== 'cover' && hasEcon(c.id, ctx.input);
@@ -244,6 +266,251 @@ function bestBy(ctx: Ctx, list: CropProfile[], value: (c: CropProfile, s: number
   return best;
 }
 
+// ------------------------------------------------------------------------------------------------
+// The most profitable sequence under constraints (docs/ECONOMICS.md, section 5)
+// ------------------------------------------------------------------------------------------------
+
+/** One season the search can place: a cash crop sown in a month in which the field suits it. */
+interface Slot {
+  crop: CropProfile;
+  start: number;
+  len: number;
+  /** Months of the year the season occupies, one bit each. */
+  mask: number;
+  /** Those of them that lie after December, in the following year. */
+  spill: number;
+  marginUsd: number;
+}
+
+/** A field score from which a cash crop is placed at all: the threshold `fill` has always used. */
+const CASH_MIN_SCORE = 55;
+/** A sowing month whose needs were met in fewer than half of the analysed years is not planned on (the scorer's own reliability threshold). */
+const MIN_RELIABILITY = 0.5;
+const MAX_SEASONS = 4;
+/** Sequences are checked against the constraints best margin first; this many are kept for that. */
+const KEPT = 2000;
+/** The search gives up (and the caller falls back) when this many of the best sequences all fail a constraint. */
+const MAX_CHECKED = 200;
+
+/** Two-year alternations are built from this many of the best one-year sequences (all of them when there are fewer). */
+const PAIRED = 300;
+
+export interface ProfitSearch {
+  plans: Plan[];
+  /** Length of the cycle in years: 1, or 2 for two different years in alternation. */
+  years: number;
+  /** Sequences compared: one-year sequences, and two-year alternations of them. */
+  examined: { oneYear: number; twoYear: number };
+  /** Place of the chosen sequence by margin; 1 when no constraint had to be applied. */
+  rank: number;
+  /** Margin per hectare and year, USD: of the chosen sequence, and of the best one before constraints. */
+  marginUsdPerHaYr: number;
+  bestMarginUsdPerHaYr: number;
+  /** How many sequences with a higher margin failed each constraint (a sequence can fail several). */
+  rejected: { soil: number; water: number; risk: number };
+  /** True when low risk is among the grower's priorities: the risk score may then not rise above today's. */
+  riskCapped: boolean;
+  /** True when what the grower does now came out first: the plan returned is then the next one. */
+  currentIsBest: boolean;
+  /** Crops that suit the field but have no reference price or cost for its region, and so were not compared. */
+  noEconomics: string[];
+}
+
+/** What the grower does now is the floor: a plan may earn more, it may not leave soil or water worse off. */
+export function meetsConstraints(e: Evaluated, current: Evaluated, riskCapped: boolean): { soil: boolean; water: boolean; risk: boolean } {
+  return {
+    soil: e.metrics.soilHealth >= current.metrics.soilHealth,
+    water: e.metrics.waterFit >= current.metrics.waterFit,
+    risk: !riskCapped || e.metrics.risk <= current.metrics.risk,
+  };
+}
+
+/** The seasons of a plan as a set, so that the same rotation written in another order compares equal. */
+const planKey = (plans: Pick<Plan, 'cropId' | 'start' | 'year'>[], years: number, shift = 0): string =>
+  plans
+    .map((p) => `${p.cropId}@${p.start}/${(p.year + shift) % years}`)
+    .sort()
+    .join('+');
+
+/**
+ * The sequence of cash crops with the highest expected margin that keeps soil health and water fit
+ * at least at the level of the current rotation (and risk no higher, when the grower ranks low
+ * risk). Compared are all one-year sequences of up to four seasons and all two-year alternations
+ * of them (of the best `PAIRED` when there are more). Nothing is sampled, so the same field gives
+ * the same answer. Null when no crop has economics for the region, or when none of the best
+ * sequences passes.
+ */
+export function profitSearch(ctx: Ctx, current: Evaluated, currentPlans: Plan[] = []): ProfitSearch | null {
+  const { input } = ctx;
+  const area = input.parcel.areaHa;
+  const own = ownEconomics(input.groundTruth);
+  // `referenceEconomics` falls back to another region when the parcel's has no figure for a crop.
+  // A comparison of margins may not rest on that: only figures of the parcel's own region count here.
+  const regions = economicRegions(input.parcel);
+  const localReference = (id: string) => {
+    const r = referenceEconomics(id, input.parcel);
+    return r && regions.includes(r.region) ? r : null;
+  };
+  const slots: Slot[] = [];
+  for (const crop of pool(ctx, 'cash')) {
+    const len = windowMonths(crop);
+    if (len > 12) continue;
+    const fit = ctx.fit(crop.id);
+    const reference = localReference(crop.id);
+    for (let m = 1; m <= 12; m++) {
+      const score = fit.s[m - 1];
+      const reliability = fit.rel[m - 1];
+      if (score < CASH_MIN_SCORE || (reliability != null && reliability < MIN_RELIABILITY)) continue;
+      const e = seasonEconomics({ cropId: crop.id, areaHa: area, yieldFraction: score / 100, reference, country: economicCountry(input.parcel), own: crop.id === input.cropId ? own : undefined });
+      if (!e) continue;
+      const months = Array.from({ length: len }, (_, i) => m - 1 + i);
+      slots.push({
+        crop,
+        start: m,
+        len,
+        mask: months.reduce((a, month) => a | (1 << month % 12), 0),
+        spill: months.filter((month) => month >= 12).reduce((a, month) => a | (1 << (month - 12)), 0),
+        marginUsd: e.marginUsd,
+      });
+    }
+  }
+  if (slots.length === 0) return null;
+  slots.sort((a, b) => a.start - b.start || a.crop.id.localeCompare(b.crop.id));
+
+  type Sequence = { margin: number; picks: number[] };
+  const pest = (i: number) => slots[i].crop.rotation!.pestGroup;
+  // Equal margins are ordered by what the sequence is, so the result does not depend on the order of enumeration.
+  const sig = (c: Sequence) => c.picks.map((i) => `${slots[i].crop.id}@${slots[i].start}`).join('+');
+  const byMargin = (a: Sequence, b: Sequence) => b.margin - a.margin || sig(a).localeCompare(sig(b));
+
+  // Every set of non-overlapping seasons of one year, built in order of sowing month. Two seasons
+  // that follow each other (the last and the first too: the year repeats) may not share a pest group.
+  let oneYearCount = 0;
+  let oneYear: Sequence[] = [];
+  let floor = -Infinity;
+  const picks: number[] = [];
+  const visit = (from: number, mask: number, margin: number): void => {
+    for (let i = from; i < slots.length; i++) {
+      const slot = slots[i];
+      if (mask & slot.mask) continue;
+      if (picks.length && pest(picks[picks.length - 1]) === pest(i)) continue;
+      picks.push(i);
+      const total = margin + slot.marginUsd;
+      if (picks.length === 1 || pest(picks[0]) !== pest(i)) {
+        oneYearCount++;
+        if (total > floor || oneYear.length < KEPT) {
+          oneYear.push({ margin: total, picks: [...picks] });
+          if (oneYear.length >= 2 * KEPT) {
+            oneYear.sort(byMargin);
+            oneYear = oneYear.slice(0, KEPT);
+            floor = oneYear[oneYear.length - 1].margin;
+          }
+        }
+      }
+      if (picks.length < MAX_SEASONS) visit(i + 1, mask | slot.mask, total);
+      picks.pop();
+    }
+  };
+  visit(0, 0, 0);
+  oneYear.sort(byMargin);
+  oneYear = oneYear.slice(0, KEPT);
+
+  // Two different years in alternation (maize, then soybean). A season that runs past December
+  // lands in the other year, and the last crop of one year is followed by the first of the other.
+  const own12 = (c: Sequence) => c.picks.reduce((a, i) => a | (slots[i].mask & ~slots[i].spill), 0);
+  const spill = (c: Sequence) => c.picks.reduce((a, i) => a | slots[i].spill, 0);
+  const first = (c: Sequence) => c.picks[0];
+  const last = (c: Sequence) => c.picks[c.picks.length - 1];
+  type Candidate2 = { margin: number; a: Sequence; b: Sequence | null };
+  const all: Candidate2[] = oneYear.map((a) => ({ margin: a.margin, a, b: null }));
+  const paired = oneYear.slice(0, PAIRED);
+  let twoYearCount = 0;
+  for (let i = 0; i < paired.length; i++)
+    for (let j = i + 1; j < paired.length; j++) {
+      const a = paired[i];
+      const b = paired[j];
+      if (spill(a) & own12(b) || spill(b) & own12(a)) continue;
+      if (pest(last(a)) === pest(first(b)) || pest(last(b)) === pest(first(a))) continue;
+      twoYearCount++;
+      all.push({ margin: (a.margin + b.margin) / 2, a, b });
+    }
+  const key2 = (c: Candidate2) => sig(c.a) + (c.b ? ` | ${sig(c.b)}` : '');
+  all.sort((x, y) => y.margin - x.margin || key2(x).localeCompare(key2(y)));
+
+  const riskCapped = input.priorities.includes('risk');
+  const rejected = { soil: 0, water: 0, risk: 0 };
+  const noEconomics = listCrops()
+    .filter((c) => c.lifeSpan === 'annual' && c.category !== 'cover' && c.rotation && proposable(input, c.id) && !(input.groundTruth.avoidCropIds ?? []).includes(c.id) && !slots.some((slot) => slot.crop.id === c.id) && ctx.best(c.id).s >= CASH_MIN_SCORE)
+    .map((c) => c.id);
+  const toPlans = (c: Sequence, year: number) => c.picks.map((i): Plan => ({ cropId: slots[i].crop.id, start: slots[i].start, len: slots[i].len, year, share: 1 }));
+  const currentYears = Math.max(1, ...currentPlans.map((p) => p.year + 1));
+  const currentKeys = new Set(Array.from({ length: currentYears }, (_, shift) => planKey(currentPlans, currentYears, shift)));
+  let currentIsBest = false;
+  let failed = 0;
+  for (const c of all) {
+    if (failed >= MAX_CHECKED) break;
+    const years = c.b ? 2 : 1;
+    const plans = [...toPlans(c.a, 0), ...(c.b ? toPlans(c.b, 1) : [])];
+    if (years === currentYears && currentKeys.has(planKey(plans, years))) {
+      // What the grower already does, met before any sequence that passes: nothing that passes earns more.
+      currentIsBest = true;
+      continue;
+    }
+    const ok = meetsConstraints(evaluate(ctx, { kind: 'income', plans, years, why: [] }, current, 'income'), current, riskCapped);
+    if (ok.soil && ok.water && ok.risk)
+      return { plans, years, examined: { oneYear: oneYearCount, twoYear: twoYearCount }, rank: failed + 1 + (currentIsBest ? 1 : 0), marginUsdPerHaYr: c.margin / area, bestMarginUsdPerHaYr: all[0].margin / area, rejected, riskCapped, currentIsBest, noEconomics };
+    failed++;
+    if (!ok.soil) rejected.soil++;
+    if (!ok.water) rejected.water++;
+    if (!ok.risk) rejected.risk++;
+  }
+  return null;
+}
+
+/** In words: how the sequence was chosen, what was set aside, and what could not be compared. */
+function profitWhy(found: ProfitSearch): I18nText[] {
+  // Thousands are grouped as each language writes them: 1,278 and 1.278.
+  const num = (v: number, lang: 'en' | 'vi') => Math.round(v).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US');
+  const names = (ids: string[], lang: 'en' | 'vi') => ids.map((id) => cropText(id)[lang]).join(', ');
+  const why: I18nText[] = [
+    tx(
+      `The highest expected margin among ${num(found.examined.oneYear, 'en')} one-year sequences and ${num(found.examined.twoYear, 'en')} two-year alternations of crops that suit this field and have a reference price and cost here. Every one was compared; none was drawn at random.`,
+      `Lãi kỳ vọng cao nhất trong ${num(found.examined.oneYear, 'vi')} chuỗi cây trồng một năm và ${num(found.examined.twoYear, 'vi')} cách xen hai năm của các cây phù hợp với thửa ruộng và có giá, chi phí tham chiếu tại đây. Mọi phương án đều được so sánh, không chọn ngẫu nhiên.`,
+    ),
+    tx(
+      `It keeps the soil-health index and the water fit at least at the level of what you do now${found.riskCapped ? ', and the risk score no higher, because low risk is among your priorities' : ''}.`,
+      `Phương án giữ chỉ số sức khỏe đất và mức đáp ứng nước không thấp hơn cách làm hiện tại${found.riskCapped ? ', và điểm rủi ro không cao hơn, vì ít rủi ro nằm trong ưu tiên của bạn' : ''}.`,
+    ),
+  ];
+  if (found.currentIsBest) {
+    why.push(
+      tx(
+        'Under these conditions nothing compared earns more than what you do now: this is the next best sequence, shown for comparison.',
+        'Với các điều kiện này, không phương án nào được so sánh có lãi cao hơn cách bạn đang làm: đây là phương án tốt kế tiếp, đưa ra để so sánh.',
+      ),
+    );
+  }
+  const failed = found.rank - 1 - (found.currentIsBest ? 1 : 0);
+  if (failed > 0) {
+    const gap = found.bestMarginUsdPerHaYr - found.marginUsdPerHaYr;
+    why.push(
+      tx(
+        `${failed} sequences with a higher margin were set aside (soil health: ${found.rejected.soil}, water fit: ${found.rejected.water}${found.riskCapped ? `, risk: ${found.rejected.risk}` : ''}). The best of them would earn ${num(gap, 'en')} USD per hectare and year more.`,
+        `${failed} phương án có lãi cao hơn đã bị loại (sức khỏe đất: ${found.rejected.soil}, đáp ứng nước: ${found.rejected.water}${found.riskCapped ? `, rủi ro: ${found.rejected.risk}` : ''}). Phương án tốt nhất trong số đó lãi hơn ${num(gap, 'vi')} USD mỗi hecta mỗi năm.`,
+      ),
+    );
+  }
+  if (found.noEconomics.length) {
+    why.push(
+      tx(
+        `Not compared, because no reference price or cost is known for this region: ${names(found.noEconomics, 'en')}. No figure of another region was used in their place.`,
+        `Không được so sánh vì chưa có giá hoặc chi phí tham chiếu cho vùng này: ${names(found.noEconomics, 'vi')}. Không dùng số liệu của vùng khác để thay thế.`,
+      ),
+    );
+  }
+  return why;
+}
+
 export interface Candidate {
   kind: RotationKind;
   plans: Plan[];
@@ -251,7 +518,7 @@ export interface Candidate {
   why: I18nText[];
 }
 
-function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number): Candidate[] {
+function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number, current: Evaluated): Candidate[] {
   const out: Candidate[] = [];
   const main = getCrop(cur[0]?.cropId) ?? getCrop(bestOverall(ctx))!;
   const mainPlan: Plan = cur.find((p) => p.cropId === main.id) ?? mkSeason(ctx, main.id, 0);
@@ -280,12 +547,16 @@ function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number): Candidate[] 
     const an = cropText(a.id);
     out.push({ kind: 'water-saver', plans, years: 1, why: [tx(`Built around ${an.en}, the suitable crop with the lowest modelled water demand for its fit here, with at most one more season of a crop that is not a heavy water user; the remaining months stay fallow instead of carrying another thirsty crop.`, `Xây dựng quanh ${an.vi}, cây thích hợp có nhu cầu nước mô hình thấp nhất so với mức phù hợp ở đây, thêm tối đa một vụ cây không tốn nhiều nước; các tháng còn lại để đất nghỉ thay vì trồng thêm cây tốn nước.`)] });
   }
-  // Income: the highest reference margin per season, then the best-paying crop for the remaining months.
-  {
+  // Income: the sequence with the highest expected margin under the constraints (profitSearch). Where the search
+  // finds none: the highest reference margin per season, then the best-paying crop for the remaining months.
+  const found = profitSearch(ctx, current, cur);
+  if (found) out.push({ kind: 'income', plans: found.plans, years: found.years, why: profitWhy(found) });
+  else {
     const a = bestBy(ctx, cash, (c, s) => marginOf(ctx, c.id, s), 55) ?? main;
     const plans = fill(ctx, [a.id === main.id ? anchor : mkSeason(ctx, a.id, 0)], 0, incomeChooser(ctx), { allowCover: false });
     const an = cropText(a.id);
-    out.push({ kind: 'income', plans, years: 1, why: [tx(`${an.en} has the highest reference margin per season among the crops that fit this field; the remaining months go to the next best-paying crop that fits the calendar.`, `${an.vi} có lãi tham chiếu mỗi vụ cao nhất trong các cây phù hợp với thửa ruộng; các tháng còn lại dành cho cây có lãi cao tiếp theo phù hợp lịch thời vụ.`)] });
+    const borrowed = economicRegions(ctx.input.parcel).length === 0;
+    out.push({ kind: 'income', plans, years: 1, why: [tx(`${an.en} has the highest reference margin per season among the crops that fit this field; the remaining months go to the next best-paying crop that fits the calendar.`, `${an.vi} có lãi tham chiếu mỗi vụ cao nhất trong các cây phù hợp với thửa ruộng; các tháng còn lại dành cho cây có lãi cao tiếp theo phù hợp lịch thời vụ.`), ...(borrowed ? [tx('No reference price or cost is known for the country of this field. The margins here use figures of another region, named in the sources, and show an order of magnitude only.', 'Chưa có giá và chi phí tham chiếu cho nước của thửa ruộng này. Các con số lãi ở đây dùng số liệu của vùng khác, có ghi trong phần nguồn, và chỉ cho biết cỡ lớn.')] : [])] });
   }
   // Resilience: three years, three families, reliable crops first.
   {
@@ -307,7 +578,7 @@ function annualCandidates(ctx: Ctx, cur: Plan[], curYears: number): Candidate[] 
 function perennialCandidates(ctx: Ctx, main: CropProfile): Candidate[] {
   const out: Candidate[] = [];
   const mn = cropText(main.id);
-  const covers = listCrops().filter((c) => c.category === 'cover' && c.rotation?.nitrogenFixing && !(ctx.input.groundTruth.avoidCropIds ?? []).includes(c.id));
+  const covers = listCrops().filter((c) => c.category === 'cover' && c.rotation?.nitrogenFixing && proposable(ctx.input, c.id) && !(ctx.input.groundTruth.avoidCropIds ?? []).includes(c.id));
   const cover = bestBy(ctx, covers, (c, s) => s + (c.lifeSpan === 'perennial' ? 40 : 0) + COV[c.rotation!.coverValue] * 10, 30);
   const stand = (share = 1): Plan => ({ cropId: main.id, start: 1, len: 12, year: 0, share });
   if (isTree(main)) {
@@ -411,8 +682,9 @@ export function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: s
     const reliab = input.groundTruth.waterReliability === 'often-short' ? 0.5 : input.groundTruth.waterReliability === 'dry-season-short' ? 0.75 : 1;
     supply += Math.min(etc, rain + irr * reliab);
     nitrogen += N_CREDIT(c) * p.share;
-    const own = p.cropId === input.cropId ? { yieldTHa: input.groundTruth.lastYieldTHa, priceUsdPerT: input.groundTruth.currency === 'VND' || !input.groundTruth.pricePerT ? undefined : input.groundTruth.pricePerT, costUsdPerHa: input.groundTruth.currency === 'VND' || !input.groundTruth.costPerHa ? undefined : input.groundTruth.costPerHa } : undefined;
-    const e = seasonEconomics({ cropId: p.cropId, areaHa: area * p.share, yieldFraction: s / 100, reference: referenceEconomics(p.cropId, input.parcel), own });
+    // The grower's numbers describe the crop they grow, so they apply to the seasons of that crop only.
+    const own = p.cropId === input.cropId ? ownEconomics(input.groundTruth) : undefined;
+    const e = seasonEconomics({ cropId: p.cropId, areaHa: area * p.share, yieldFraction: s / 100, reference: referenceEconomics(p.cropId, input.parcel), country: economicCountry(input.parcel), own });
     if (e) seasons.push(e);
     else noEcon.add(p.cropId);
     // The next crop in the sequence that is harvested (covers skipped): the one a legume's nitrogen is left for.
@@ -482,7 +754,9 @@ export function evaluate(ctx: Ctx, cand: Candidate, cur: Evaluated | null, id: s
     groundCoverPct: r0(100 * coverFrac),
     pestBreak: r0(pest),
   };
-  const lists = buildLists(ctx, cand, metrics, crops, cur, noEcon, economics.seasons.some((s) => s.usesReferenceValues));
+  // The range of the margin over the yield ranges of the seasons; none when it has no width (nothing is harvested).
+  const marginRange = economics.perHaMarginLowUsd != null && economics.perHaMarginHighUsd != null && economics.perHaMarginLowUsd < economics.perHaMarginHighUsd ? { low: economics.perHaMarginLowUsd, high: economics.perHaMarginHighUsd } : null;
+  const lists = buildLists(ctx, cand, metrics, crops, cur, noEcon, economics.seasons.some((s) => s.usesReferenceValues), marginRange);
   return {
     id,
     kind: cand.kind,
@@ -520,7 +794,7 @@ const NAMES: Record<RotationKind, I18nText> = {
   custom: tx('Your custom rotation', 'Luân canh bạn tự chỉnh'),
 };
 
-function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], crops: CropProfile[], cur: Evaluated | null, noEcon: Set<string>, usesRef: boolean) {
+function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], crops: CropProfile[], cur: Evaluated | null, noEcon: Set<string>, usesRef: boolean, marginRange: { low: number; high: number } | null) {
   const { input } = ctx;
   const t = input.telemetry;
   const gt = input.groundTruth;
@@ -575,7 +849,10 @@ function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], c
   }
   evidence.push({
     label: tx('Margin per hectare and year', 'Lãi mỗi hecta mỗi năm'),
-    value: usesRef ? tx(`${m.marginUsdPerHaYr} USD (reference values)`, `${m.marginUsdPerHaYr} USD (giá trị tham chiếu)`) : `${m.marginUsdPerHaYr} USD`,
+    value: tx(
+      `${m.marginUsdPerHaYr} USD${marginRange ? `; ${marginRange.low} to ${marginRange.high} USD over the yield range` : ''}${usesRef ? ' (reference values)' : ''}`,
+      `${m.marginUsdPerHaYr} USD${marginRange ? `; từ ${marginRange.low} đến ${marginRange.high} USD theo khoảng năng suất` : ''}${usesRef ? ' (giá trị tham chiếu)' : ''}`,
+    ),
     sourceId: 'reference-economics',
   });
 
@@ -602,13 +879,40 @@ function buildLists(ctx: Ctx, cand: Candidate, m: RotationStrategy['metrics'], c
   const cr = resolutionM(t, climSrc);
   if (cr && cr >= 1000) gaps.push(tx(`Climate history is a ~${r0(cr / 1000)} km grid average (${sourceName(t, climSrc)}): local frost pockets and rain shadows are not resolved.`, `Lịch sử khí hậu là trung bình ô lưới ~${r0(cr / 1000)} km (${sourceName(t, climSrc)}): điểm sương giá cục bộ và vùng khuất mưa không được thể hiện.`));
   if (usesRef || noEcon.size) gaps.push(tx(`Yields, prices and costs are reference values for the region, not your own figures${noEcon.size ? `; no reference economics for ${[...noEcon].map((id) => cropText(id).en).join(', ')}` : ''}.`, `Năng suất, giá và chi phí là giá trị tham chiếu của vùng, không phải số liệu của bạn${noEcon.size ? `; chưa có số liệu kinh tế tham chiếu cho ${[...noEcon].map((id) => cropText(id).vi).join(', ')}` : ''}.`));
+  if (marginRange && marginRange.low <= 0 && marginRange.high >= 0)
+    gaps.push(
+      tx(
+        `The margin range crosses zero (${marginRange.low} to ${marginRange.high} USD/ha a year): whether this rotation covers its operating costs depends on where the yields fall in their range.`,
+        `Khoảng lãi đi qua số 0 (từ ${marginRange.low} đến ${marginRange.high} USD/ha mỗi năm): phương án này có đủ bù chi phí sản xuất hay không tuỳ vào năng suất rơi vào đâu trong khoảng dao động.`,
+      ),
+    );
   if (ctx.irrigationInferred) gaps.push(tx('Irrigation was not entered: full irrigation is assumed because the climate is arid and the field is cropped.', 'Chưa nhập thông tin tưới: giả định tưới đủ vì khí hậu khô hạn mà ruộng vẫn canh tác.'));
   else if (!gt.irrigation) gaps.push(tx('Irrigation was not entered: the comparison assumes a rainfed field.', 'Chưa nhập thông tin tưới: so sánh giả định ruộng nhờ nước mưa.'));
   if (cand.kind === 'current' && ctx.currentSource === 'assumed') gaps.push(tx('Your actual rotation is not known: the current practice is assumed from the selected crop and the calendar. Enter it under Ground Truth.', 'Chưa biết luân canh thực tế: cách làm hiện tại được giả định từ cây đã chọn và lịch thời vụ. Hãy nhập ở mục Dữ liệu thực địa.'));
   if (crops.some((c) => c.lifeSpan !== 'annual')) gaps.push(tx('Establishment years of perennial stands (lower yield, extra cost) are not modelled; margins are for a mature stand.', 'Chưa mô hình năm kiến thiết của cây lâu năm (năng suất thấp, thêm chi phí); lãi tính cho vườn/đồng đã ổn định.'));
   if (crops.some((c) => c.category === 'cover')) gaps.push(tx('Cover-crop benefits (nitrogen, soil cover) are indicative literature values, not measured here.', 'Lợi ích cây che phủ (đạm, che phủ đất) là giá trị tham khảo từ tài liệu, không đo tại đây.'));
 
+  // What the country's statistics say of the crops this strategy brings in. The grower's own crops are grown here, whatever a statistic says.
+  const brought = [...new Map(crops.filter((c) => !grownHere(input, c.id)).map((c) => [c.id, c])).values()];
+  const untold = brought.filter((c) => countryStatus(input, c.id) === 'unknown');
+  if (untold.length)
+    gaps.push(
+      tx(
+        `No statistic says whether the country of this field grows ${untold.map((c) => c.names.en).join(', ')}: FAOSTAT counts ${untold.length > 1 ? 'them' : 'it'} inside a group of crops, or not at all. Ask locally whether seed and buyers exist.`,
+        `Chưa có số liệu cho biết nước của thửa ruộng này có trồng ${untold.map((c) => c.names.vi).join(', ')} hay không: FAOSTAT gộp vào một nhóm cây hoặc không thống kê. Hãy hỏi tại địa phương xem có giống và nơi tiêu thụ không.`,
+      ),
+    );
+
   const risks: I18nText[] = [];
+  // A crop the country reports none of gets here only when the grower puts it in by hand.
+  const unreported = brought.filter((c) => countryStatus(input, c.id) === 'absent');
+  if (unreported.length)
+    risks.push(
+      tx(
+        `New crop, needs a trial: the statistics of the country of this field report no ${unreported.map((c) => c.names.en).join(', ')} (FAOSTAT). A crop a country does not itemise reads the same way, so ask locally first; if nobody grows it nearby, try it on a small area before committing land.`,
+        `Cây mới, cần thử nghiệm: thống kê của nước có thửa ruộng này không ghi nhận ${unreported.map((c) => c.names.vi).join(', ')} (FAOSTAT). Cây mà một nước không thống kê riêng cũng hiện ra như vậy, nên hãy hỏi tại địa phương trước; nếu quanh vùng không ai trồng thì trồng thử trên diện tích nhỏ trước khi mở rộng.`,
+      ),
+    );
   const newCrops = crops.filter((c) => !cur || !cur.seasons.some((s) => s.cropId === c.id));
   if (cur && newCrops.length) risks.push(tx(`Market, varieties and seed supply for ${[...new Set(newCrops.map((c) => c.names.en))].join(', ')} must be checked locally before switching.`, `Cần kiểm tra thị trường, giống và nguồn hạt giống của ${[...new Set(newCrops.map((c) => c.names.vi ?? c.names.en))].join(', ')} tại địa phương trước khi chuyển đổi.`));
   const prevPaddy = (cur?.seasons ?? []).some((s) => s.cropId === 'oryza-sativa') || input.cropId === 'oryza-sativa';
@@ -647,8 +951,27 @@ function norm(v: number, xs: number[]): number {
   return hi - lo < 1 ? 0.5 : (v - lo) / (hi - lo);
 }
 
+const countryKeys = new WeakMap<object, string>();
+
+/**
+ * The part of the country table the rotations depend on, as a string for the memo keys: which
+ * crops are grown, which are not, and which the table cannot tell about. Equal tables give equal
+ * keys whatever object carries them.
+ */
+export function countryKey(input: ModelInput): string {
+  const country = input.country;
+  if (!country) return '';
+  let key = countryKeys.get(country);
+  if (key == null) {
+    const ids = Object.keys(country.prevalence).sort();
+    key = `${country.iso3}:${ids.map((id) => `${id}=${prevalenceStatus(country.prevalence[id])[0]}`).join(',')}`;
+    countryKeys.set(country, key);
+  }
+  return key;
+}
+
 export function buildRotations(input: ModelInput): RotationStrategy[] {
-  const key = JSON.stringify([input.cropId, input.groundTruth, input.priorities, input.parcel.id, input.parcel.areaHa]);
+  const key = JSON.stringify([input.cropId, input.groundTruth, input.priorities, input.parcel.id, input.parcel.areaHa, countryKey(input)]);
   let m = memo.get(input.telemetry);
   if (!m) memo.set(input.telemetry, (m = new Map()));
   const hit = m.get(key);
@@ -689,6 +1012,15 @@ export function scoreAll(all: Evaluated[], priorities: FarmerPriority[]): Rotati
   });
 }
 
+/** The search for one field, with the current rotation it is held against. For tests and for the tables of docs/ECONOMICS.md. */
+export function profitSearchFor(input: ModelInput): { found: ProfitSearch | null; current: Evaluated; ctx: Ctx } {
+  const ctx = makeCtx(input);
+  const cur = currentPlans(ctx);
+  const plans = cur.plans.length ? cur.plans : [mkSeason(ctx, bestOverall(ctx), 0)];
+  const current = evaluate(ctx, { kind: 'current', plans, years: cur.years, why: [] }, null, 'current');
+  return { found: profitSearch(ctx, current, plans), current, ctx };
+}
+
 function compute(input: ModelInput): RotationStrategy[] {
   const ctx = makeCtx(input);
   const cur = currentPlans(ctx);
@@ -696,7 +1028,7 @@ function compute(input: ModelInput): RotationStrategy[] {
   const curCand: Candidate = { kind: 'current', plans: cur.plans.length ? cur.plans : [mkSeason(ctx, bestOverall(ctx), 0)], years: cur.years, why: [tx('The reference every alternative is compared with.', 'Mốc để so sánh mọi phương án khác.')] };
   const current = evaluate(ctx, curCand, null, 'current');
   const main = curMain ?? getCrop(curCand.plans[0].cropId)!;
-  const cands = main.lifeSpan !== 'annual' ? perennialCandidates(ctx, main) : annualCandidates(ctx, curCand.plans, cur.years);
+  const cands = main.lifeSpan !== 'annual' ? perennialCandidates(ctx, main) : annualCandidates(ctx, curCand.plans, cur.years, current);
   const sig = (c: { plans?: Plan[]; seasons?: RotationSeason[]; years?: number }) => JSON.stringify([c.years ?? 1, (c.plans ?? c.seasons ?? []).map((p) => ('cropId' in p ? [p.cropId, 'start' in p ? p.start : p.startMonth, p.year] : [])).sort()]);
   const seen = new Set([sig({ plans: curCand.plans, years: curCand.years })]);
   const alts: Evaluated[] = [];

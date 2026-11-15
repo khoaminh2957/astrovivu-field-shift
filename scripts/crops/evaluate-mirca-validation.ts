@@ -80,9 +80,9 @@ const METHODS: MethodDef[] = [
 // Model input for a validation site
 // ------------------------------------------------------------------------------------------------
 
-type RainSeries = 'rain' | 'rainPower';
+export type RainSeries = 'rain' | 'rainPower';
 
-function telemetryFor(s: ValidationSite, years: [number, number], rainKey: RainSeries): FieldTelemetry {
+export function telemetryFor(s: ValidationSite, years: [number, number], rainKey: RainSeries): FieldTelemetry {
   const c = s.climate;
   const history: YearClimate[] = [];
   for (let y = years[0]; y <= years[1]; y++) {
@@ -126,7 +126,7 @@ function telemetryFor(s: ValidationSite, years: [number, number], rainKey: RainS
   };
 }
 
-function parcelFor(s: ValidationSite): Parcel {
+export function parcelFor(s: ValidationSite): Parcel {
   const [lon, lat] = s.site;
   const d = 0.0005;
   return {

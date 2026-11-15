@@ -1,6 +1,11 @@
 # Who reviews what. The last matching line wins. A pull request that touches a path asks its
 # owner for review automatically. Full description of the areas: CONTRIBUTING.md.
 
+# Since 2026-11-15 the main branch requires an approving review from a code owner of every path a
+# pull request touches. The author of a pull request cannot approve it, so a path with one owner
+# would leave that owner's own pull requests with nobody able to approve them. The project lead is
+# therefore a second owner of every path: a pull request needs the area's owner or the project lead.
+
 # Default: the project lead.
 *                                   @quocbao271207
 
@@ -17,56 +22,55 @@
 /src/state/                         @quocbao271207
 
 # Mascot.
-/src/ui/mascot/                     @thuyyen03052008
-/public/mascot/                     @thuyyen03052008
-/docs/MASCOT.md                     @thuyyen03052008
+/src/ui/mascot/                     @thuyyen03052008 @quocbao271207
+/public/mascot/                     @thuyyen03052008 @quocbao271207
+/docs/MASCOT.md                     @thuyyen03052008 @quocbao271207
 
 # Crop data: catalogue, regional prevalence, costs and prices per country.
-/data/crops/                        @quocthai2711
-/data/ecocrop/                      @quocthai2711
-/scripts/crops/                     @quocthai2711
-/scripts/build-crop-catalog.ts      @quocthai2711
-/public/data/crops/                 @quocthai2711
-/src/core/crops/                    @quocthai2711
-/docs/CROP_DATA.md                  @quocthai2711
+/data/crops/                        @quocthai2711 @quocbao271207
+/data/ecocrop/                      @quocthai2711 @quocbao271207
+/scripts/crops/                     @quocthai2711 @quocbao271207
+/scripts/build-crop-catalog.ts      @quocthai2711 @quocbao271207
+/public/data/crops/                 @quocthai2711 @quocbao271207
+/src/core/crops/                    @quocthai2711 @quocbao271207
+/docs/CROP_DATA.md                  @quocthai2711 @quocbao271207
 
 # Urban grower logic (the screen itself stays with the UI lead).
-/src/core/urban/                    @quocthai2711
+/src/core/urban/                    @quocthai2711 @quocbao271207
 
 # Model: suitability scoring and profit optimisation.
-/src/core/scoring/                  @khoaminh2957
-/src/core/economics/                @khoaminh2957
-/src/core/advisory/rotation.ts      @khoaminh2957
-/src/core/advisory/customRotation.ts @khoaminh2957
-/scripts/crops/evaluate-scoring-paper.ts @khoaminh2957
-/docs/SCORING.md                    @khoaminh2957
-/docs/SCORING_PAPER.md              @khoaminh2957
-/docs/ECONOMICS.md                  @khoaminh2957
+/src/core/scoring/                  @khoaminh2957 @quocbao271207
+/src/core/economics/                @khoaminh2957 @quocbao271207
+/src/core/advisory/rotation.ts      @khoaminh2957 @quocbao271207
+/src/core/advisory/customRotation.ts @khoaminh2957 @quocbao271207
+/scripts/crops/evaluate-scoring-paper.ts @khoaminh2957 @quocbao271207
+/docs/SCORING.md                    @khoaminh2957 @quocbao271207
+/docs/SCORING_PAPER.md              @khoaminh2957 @quocbao271207
+/docs/ECONOMICS.md                  @khoaminh2957 @quocbao271207
 
 # Independent validation of the scoring methods (model work kept beside the crop scripts).
-/scripts/crops/evaluate-cropsuite.ts        @khoaminh2957
-/scripts/crops/build-mirca-validation.ts    @khoaminh2957
-/scripts/crops/evaluate-mirca-validation.ts @khoaminh2957
-/scripts/crops/mirca-validation.test.ts     @khoaminh2957
-/data/crops/cropsuite-comparison.json       @khoaminh2957
-/data/crops/mirca-validation-results.json   @khoaminh2957
-/data/crops/validation/                     @khoaminh2957
+/scripts/crops/evaluate-cropsuite.ts        @khoaminh2957 @quocbao271207
+/scripts/crops/build-mirca-validation.ts    @khoaminh2957 @quocbao271207
+/scripts/crops/evaluate-mirca-validation.ts @khoaminh2957 @quocbao271207
+/scripts/crops/mirca-validation.test.ts     @khoaminh2957 @quocbao271207
+/data/crops/cropsuite-comparison.json       @khoaminh2957 @quocbao271207
+/data/crops/mirca-validation-results.json   @khoaminh2957 @quocbao271207
+/data/crops/validation/                     @khoaminh2957 @quocbao271207
 
 # Chatbot: retrieval, table lookups, server.
-/src/rag/                           @khoaminh2957
-/server/                            @khoaminh2957
-/scripts/rag/                       @khoaminh2957
-/data/rag/                          @khoaminh2957
-/public/rag/                        @khoaminh2957
-/docs/RAG.md                        @khoaminh2957
+/src/rag/                           @khoaminh2957 @quocbao271207
+/server/                            @khoaminh2957 @quocbao271207
+/scripts/rag/                       @khoaminh2957 @quocbao271207
+/data/rag/                          @khoaminh2957 @quocbao271207
+/public/rag/                        @khoaminh2957 @quocbao271207
+/docs/RAG.md                        @khoaminh2957 @quocbao271207
 
 # Soil improvement from soil data.
-/src/core/soil/                     @MinDuy314
-/docs/SOIL.md                       @MinDuy314
+/src/core/soil/                     @MinDuy314 @quocbao271207
+/docs/SOIL.md                       @MinDuy314 @quocbao271207
 
-# Database (Supabase) and FAOSTAT producer prices. Two owners, so that a pull request by one of
-# them still has a code owner who can review it.
+# Database (Supabase) and FAOSTAT producer prices.
 /supabase/                          @khoaminh2957 @quocbao271207
 /scripts/market/                    @khoaminh2957 @quocbao271207
-/data/market/                       @khoaminh2957 @quocthai2711
+/data/market/                       @khoaminh2957 @quocthai2711 @quocbao271207
 /docs/DATABASE.md                   @khoaminh2957 @quocbao271207

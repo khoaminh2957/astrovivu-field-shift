@@ -14,6 +14,7 @@ import { type CustomRotationSpec, annualPlan, evaluateCustomRotation, slotCropCh
 import { getCrop } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
+import { FarmView } from '@/ui/farm/FarmView';
 import { Button, EmptyState, Panel, Skeleton, SkeletonText, StatusGlyph, cn } from '@/ui/design';
 import { AdvisoryBody, CropSuiteView, IrrigationView, PhView, SowingView } from './ActionPlans';
 import { AnnualPlanView } from './AnnualPlanView';
@@ -41,6 +42,7 @@ export function AdvisoryPanel() {
   const branchStatus = useMission((s) => s.branchStatus);
   const cropId = useMission((s) => s.cropId);
   const groundTruth = useMission((s) => s.groundTruth);
+  const countryTable = useMission((s) => s.countryTable);
   const today = useMission((s) => s.telemetry?.window.today ?? s.timeline.end);
   const setPhase = useMission((s) => s.setPhase);
   const [currency, setCurrency] = useState<CurrencyCode>(groundTruth.currency ?? (lang === 'vi' ? 'VND' : 'USD'));
@@ -48,8 +50,8 @@ export function AdvisoryPanel() {
   const fixture = useFixture(import.meta.env.DEV ? () => import('./__fixtures__/advisory').then((m) => m.advisoryFixture) : null);
   const report: AdvisoryReport | null = fixture ? fixture(priorities) : live;
   const modelInput = useMemo(
-    () => (fixture ? null : toModelInput({ parcel, telemetry, cropId, groundTruth, priorities })),
-    [fixture, parcel, telemetry, cropId, groundTruth, priorities],
+    () => (fixture ? null : toModelInput({ parcel, telemetry, cropId, groundTruth, priorities, countryTable })),
+    [fixture, parcel, telemetry, cropId, groundTruth, priorities, countryTable],
   );
   const loading = !report && Object.values(branchStatus).some((s) => s === 'loading');
   const crop = getCrop(report?.cropId ?? cropId);
@@ -261,6 +263,8 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
 
   return (
     <>
+      {/* The farm first: the field as it is on the date shown, and trials of what could change. The comparison of rotations follows. */}
+      <FarmView />
       {selected ? (
         // Stays under the page's top edge while the rest scrolls: another strategy is one press away from anywhere.
         <section aria-labelledby="adv-rot" className="sticky top-0 z-10 -mx-6 -mt-3 flex flex-col gap-1 border-b border-line-1 bg-surface-0 px-6 pt-2 pb-2 compact:-mx-4 compact:px-4 narrow:-mx-3 narrow:px-3">

@@ -7,12 +7,14 @@
 import type { AskResult, FieldContext, KnowledgeChunk, Lang } from '@/contracts';
 import { bestSentences, Citer, mentions, quote } from './cite';
 import { cropLabel, cropShortName, factLines, viTerm } from './facts';
+import { composeFieldFact, missingSentence, readingParagraphs } from './fieldAnswer';
+import { lookupFieldFacts, parseFieldFact, TERM_FACTS } from './fieldFacts';
 import { followUps } from './followups';
-import type { Focus } from './intent';
+import type { Focus, OutOfScope } from './intent';
 import type { Analysis, Hit } from './retrieve';
 import type { KnowledgeStore } from './store';
 import { assess, type Check, howToGet } from './suitability';
-import { cap, terms } from './text';
+import { cap, fold, terms } from './text';
 import type { CropFacts } from './types';
 import { chunkKind } from './types';
 
@@ -37,6 +39,13 @@ const FOCUS_KEYS: Record<Focus, string[]> = {
   light: ['light'],
   salinity: ['salinity'],
   altitude: ['alt'],
+  // EcoCrop has one fertility class and one depth class; it records nothing on slope or bulk density.
+  organic: ['fertility'],
+  cec: ['fertility'],
+  nitrogen: ['fertility'],
+  density: [],
+  slope: [],
+  depth: ['depth'],
 };
 const DEFAULT_KEYS = ['temp', 'rain', 'ph', 'texture', 'drainage', 'cycle'];
 
@@ -56,6 +65,12 @@ const FOCUS_WORDS: Record<Focus, string[]> = {
   light: ['light', 'shade', 'sun', 'sáng', 'bóng', 'nắng'],
   salinity: ['salin', 'salt', 'mặn'],
   altitude: ['altitude', 'elevation', 'cao'],
+  organic: ['organic', 'humus', 'fertil', 'hữu', 'mùn', 'phì'],
+  cec: ['cation', 'fertil', 'phì'],
+  nitrogen: ['nitrogen', 'fertil', 'đạm', 'phì'],
+  density: ['compact', 'dense', 'chặt'],
+  slope: ['slope', 'steep', 'erosion', 'dốc', 'xói'],
+  depth: ['deep', 'depth', 'shallow', 'sâu', 'nông'],
 };
 const REQUIREMENT_WORDS = [...new Set(Object.values(FOCUS_WORDS).flat()), 'climate', 'grow', 'cultivat', 'hậu', 'trồng', 'trưởng'];
 const sentenceWords = (focus: Focus[]) => (focus.length ? [...new Set(focus.flatMap((f) => FOCUS_WORDS[f]))] : REQUIREMENT_WORDS);
@@ -74,6 +89,8 @@ const CHECK_NAME: Record<Check['key'], [string, string]> = {
   drainage: ['Drainage', 'Thoát nước'],
   frost: ['Recent minimum air temperature', 'Nhiệt độ tối thấp gần đây'],
   altitude: ['Elevation', 'Độ cao'],
+  salinity: ['Soil salinity (electrical conductivity)', 'Độ mặn của đất (độ dẫn điện)'],
+  depth: ['Depth to a layer that stops roots', 'Độ sâu đến tầng hạn chế rễ'],
 };
 
 function factsChunk(store: KnowledgeStore, id: string, lang: Lang): KnowledgeChunk | undefined {
@@ -106,12 +123,34 @@ function supportingQuotes(hits: Hit[], a: Analysis, cite: Citer, lang: Lang, opt
   return out;
 }
 
-function sourceCaveat(fact: string, lang: Lang): string | null {
+function sourceCaveat(key: Check['key'], fact: string, lang: Lang): string | null {
   const t = tr(lang);
   if (/measured by the farmer/.test(fact)) return t('This is your own measurement, so it overrides the satellite and model estimates.', 'Đây là số đo của bạn nên được ưu tiên hơn ước tính vệ tinh và mô hình.');
-  if (/SoilGrids|modelled/i.test(fact)) return t('It is a modelled estimate for the neighbourhood (e.g. SoilGrids, 250 m), not a measurement of your field; a soil test would confirm it.', 'Đây là ước tính mô hình cho khu vực (ví dụ SoilGrids, 250 m), không phải số đo của ruộng bạn; phân tích đất sẽ xác nhận.');
   if (/simulated/i.test(fact)) return t('This value is simulated demo data.', 'Giá trị này là dữ liệu demo mô phỏng.');
-  return null;
+  const f = parseFieldFact(key, fact);
+  if (f.provenance !== 'modelled' && !/SoilGrids/i.test(fact)) return null;
+  const cell = f.pixel ? t(`a ${f.pixel} cell`, `một ô ${f.pixel}`) : t('the neighbourhood', 'khu vực');
+  // Only a soil property can be settled by a soil test; rain and temperature are settled by records.
+  return key === 'ph' || key === 'texture' || key === 'drainage' || key === 'salinity' || key === 'depth'
+    ? t(`It is a model estimate for ${cell}, not a measurement of your field; a soil test would confirm it.`, `Đây là ước tính của mô hình cho ${cell}, không phải số đo của ruộng bạn; phân tích đất sẽ xác nhận.`)
+    : t(`It is a model estimate for ${cell}, not a measurement on your field.`, `Đây là ước tính của mô hình cho ${cell}, không phải số đo tại ruộng của bạn.`);
+}
+
+const AMEND = /what (should i|to|do i|can i) (apply|add|use|spread)|\bamend|\bfertili[sz]|\blime\b|liming|bon gi|can bon|bon them|bon voi|bon phan|cai tao/;
+
+/**
+ * "What should I apply" on a field whose pH is known: what the pH alone says, and what it cannot
+ * say. Amounts are never given; they need a soil test (the soil plan of the advisory panel).
+ */
+function amendNote(ph: Check, crop: CropFacts, lang: Lang): string {
+  const t = tr(lang);
+  const name = cropShortName(crop, lang);
+  const f = parseFieldFact('ph', ph.fact);
+  const range = f.interval ? t(` The source's 5-95 % range is ${f.interval[0]} to ${f.interval[1]}, so the true value may lie outside the optimum: a soil test settles it.`, ` Khoảng 5-95 % của nguồn là ${f.interval[0]} đến ${f.interval[1]}, nên giá trị thật có thể nằm ngoài khoảng tối ưu: phân tích đất sẽ cho câu trả lời.`) : '';
+  const rest = t(' What else to apply (nitrogen, phosphorus, potassium) cannot be read from these data.', ' Cần bón gì khác (đạm, lân, kali) thì không đọc được từ các số liệu này.');
+  if (ph.status === 'optimal') return t(`What to apply: by pH alone, nothing. ${ph.value} is inside ${name}'s optimum, so this number gives no reason to lime.`, `Cần bón gì: nếu chỉ xét pH thì chưa cần. ${ph.value} nằm trong khoảng tối ưu của ${name}, nên con số này chưa cho lý do để bón vôi.`) + range + rest;
+  if (ph.status.endsWith('low')) return t('What to apply: lime is what raises a low pH; the amount depends on texture and buffer capacity and has to come from a soil test and local guidance.', 'Cần bón gì: vôi là thứ nâng pH thấp; lượng bón tuỳ thành phần cơ giới và khả năng đệm của đất, phải dựa vào phân tích đất và hướng dẫn địa phương.') + rest;
+  return t('What to apply: lime would raise the pH further and is not called for; lowering a high pH is slow and costly, so ask a local agronomist first.', 'Cần bón gì: vôi sẽ làm pH cao thêm nên không nên bón; hạ pH cao thì chậm và tốn kém, nên hỏi cán bộ nông nghiệp địa phương trước.') + rest;
 }
 
 function checkSentence(c: Check, crop: CropFacts, lang: Lang, marker: string): string {
@@ -244,12 +283,11 @@ function composeField(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Cit
   const t = tr(a.lang);
   const crop = store.crops.get(a.cropIds[0] ?? ctx.cropId ?? '');
   if (!crop) {
-    // A field question with no crop: report the facts that match the focus.
-    const keys = a.focus.includes('ph') ? ['ph'] : a.focus.includes('water') ? ['sm_root', 'rain_30d'] : a.focus.includes('rain') ? ['rain_30d', 'rain_90d'] : ['score_now'];
-    const lines = keys.filter((k) => ctx.facts[k]).map((k) => `- ${k}: ${ctx.facts[k]}`);
-    const paras = [lines.length ? `${t('From your field telemetry:', 'Từ dữ liệu của ruộng bạn:')}\n${lines.join('\n')}` : t('Your field has no reading for this yet.', 'Ruộng của bạn chưa có số đo cho mục này.')];
-    paras.push(t('Choose a crop (or name one in the question) and I can compare these readings with its requirements.', 'Hãy chọn cây trồng (hoặc nêu tên trong câu hỏi) để tôi so sánh các số đo này với yêu cầu của cây.'));
-    return paras;
+    // A field question with no crop to compare with: the readings themselves.
+    return [
+      ...composeFieldFact(store, { ...a, ask: 'value' }, cite, ctx),
+      t('Choose a crop (or name one in the question) and I can compare the readings with what it needs.', 'Hãy chọn cây trồng (hoặc nêu tên trong câu hỏi) để tôi so sánh các số liệu này với yêu cầu của cây.'),
+    ];
   }
   const fc = factsChunk(store, crop.id, a.lang);
   const marker = fc ? cite.cite(fc) : '';
@@ -264,21 +302,47 @@ function composeField(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Cit
   const name = cropShortName(crop, a.lang);
   if (primary.length) {
     for (const c of primary) {
-      const s = [checkSentence(c, crop, a.lang, marker), sourceCaveat(c.fact, a.lang), manageNote(c, a.lang)].filter(Boolean).join(' ');
+      const s = [checkSentence(c, crop, a.lang, marker), sourceCaveat(c.key, c.fact, a.lang), manageNote(c, a.lang)].filter(Boolean).join(' ');
       paras.push(s);
       if (c.key === 'temp' && c.goodMonths && c.goodMonths.length < 12)
         paras.push(t(`Months whose normal mean temperature is inside the optimum: ${monthList(c.goodMonths, 'en') || 'none'}.`, `Các tháng có nhiệt độ trung bình nằm trong khoảng tối ưu: ${monthList(c.goodMonths, 'vi') || 'không có'}.`));
     }
   } else if (focusKeys.size) {
-    const k = [...focusKeys][0] as Check['key'];
-    if (CHECK_NAME[k]) paras.push(t(`Your field has no ${CHECK_NAME[k][0].toLowerCase()} reading to compare with ${name}'s requirement ${marker}.`, `Ruộng của bạn chưa có số đo ${CHECK_NAME[k][1].toLowerCase()} để so với yêu cầu của ${name} ${marker}.`));
+    const k = [...focusKeys].find((x) => as.missing.includes(x as Check['key'])) ?? [...focusKeys][0];
+    if (CHECK_NAME[k as Check['key']]) {
+      // What the crop asks for is still said, so that the missing reading has something to be held against.
+      const asked = factLines(crop, a.lang).find((l) => l.key === k)?.line;
+      paras.push(
+        t(`Your field has no ${CHECK_NAME[k as Check['key']][0].toLowerCase()} reading to compare with ${name}'s requirement ${marker}.`, `Ruộng của bạn chưa có số đo ${CHECK_NAME[k as Check['key']][1].toLowerCase()} để so với yêu cầu của ${name} ${marker}.`) +
+          (asked ? ` ${t(`EcoCrop gives for ${name}:`, `EcoCrop ghi cho ${name}:`)} ${asked}` : ''),
+      );
+    }
   }
+  // A reading EcoCrop has nothing comparable for: the field's value on its own, so that the
+  // question is answered about the reading that was asked for. EcoCrop knows soil fertility as a
+  // class (high, moderate, low), which cannot be held against a figure for organic matter, CEC or
+  // nitrogen; it records nothing on slope or bulk density.
+  const FERTILITY: Focus[] = ['organic', 'cec', 'nitrogen'];
+  const unchecked = fs.filter((f) => FERTILITY.includes(f) || f === 'slope' || f === 'density');
+  if (unchecked.length) {
+    const { readings, missing } = lookupFieldFacts(ctx, unchecked, [], a.lang);
+    paras.push(...readingParagraphs(store, readings, ctx, cite, a.lang), ...missing.map((m) => missingSentence(m, a.lang)));
+    const fertility = unchecked.some((f) => FERTILITY.includes(f)) ? factLines(crop, a.lang).find((l) => l.key === 'fertility')?.line : undefined;
+    if (fertility)
+      paras.push(t(`EcoCrop describes what ${name} needs as a fertility class, not as a figure: ${fertility} A class cannot be held against the reading, so it is given without a verdict.`, `EcoCrop mô tả nhu cầu của ${name} bằng một mức độ phì, không bằng con số: ${fertility} Không so được một mức với số liệu, nên tôi chỉ nêu số liệu, không kết luận.`) + ` ${marker}`);
+    else if (readings.length) paras.push(t(`EcoCrop records no requirement on this for ${name}, so the reading is given without a verdict.`, `EcoCrop không ghi yêu cầu nào về mục này cho ${name}, nên tôi chỉ nêu số liệu, không kết luận.`));
+  }
+  const ph = as.checks.find((c) => c.key === 'ph');
+  if (ph && AMEND.test(fold(a.query))) paras.push(amendNote(ph, crop, a.lang));
   if (others.length) {
     const desc = others.map((c) => `${t(CHECK_NAME[c.key][0], CHECK_NAME[c.key][1]).toLowerCase()} ${c.status === 'optimal' || c.status === 'match' ? t('optimal', 'tối ưu') : c.status.startsWith('tolerated') ? t('tolerated', 'chịu được') : t('outside the range', 'ngoài ngưỡng')}`);
     paras.push(`${t('Other requirements for', 'Các yêu cầu khác của')} ${name}: ${desc.join(', ')}.`);
   }
-  if (as.missing.length) {
-    const ms = as.missing.map((k) => `${t(CHECK_NAME[k][0], CHECK_NAME[k][1]).toLowerCase()} (${howToGet(k, a.lang)})`);
+  // Salinity and soil depth come from the US soil survey only: elsewhere they are missing on every
+  // field, so they are named as missing when the question is about them and not in every answer.
+  const missingHere = as.missing.filter((k) => (k !== 'salinity' && k !== 'depth') || focusKeys.has(k));
+  if (missingHere.length) {
+    const ms = missingHere.map((k) => `${t(CHECK_NAME[k][0], CHECK_NAME[k][1]).toLowerCase()} (${howToGet(k, a.lang)})`);
     paras.push(`${t('Missing for this comparison:', 'Còn thiếu để so sánh:')} ${ms.join('; ')}.`);
   }
   const q = supportingQuotes(hits, a, cite, a.lang, { max: 1, extra: [crop.sci], sentenceMust: sentenceWords(a.focus) });
@@ -344,28 +408,6 @@ function composeScoreChange(store: KnowledgeStore, a: Analysis, hits: Hit[], cit
   void hits;
   return paras;
 }
-
-const TERM_FACTS: Record<string, string[]> = {
-  ndvi: ['ndvi'],
-  evi: ['evi'],
-  lst: ['lst_day'],
-  'evaporative-stress': ['esi'],
-  evapotranspiration: ['et0', 'et'],
-  'crop-coefficient': ['et0'],
-  'soil-moisture': ['sm_root', 'sm_surface'],
-  'soil-moisture-anomaly': ['sm_root'],
-  'water-balance': ['rain_30d', 'et0'],
-  'growing-degree-days': ['t2m'],
-  'frost-risk': ['t2m_min'],
-  'imerg-rainfall': ['rain_30d'],
-  'nasa-power': ['t2m'],
-  par: ['par'],
-  'srtm-terrain': ['elevation_m', 'slope_deg'],
-  soilgrids: ['ph', 'clay_pct'],
-  'soil-ph': ['ph'],
-  'soil-texture': ['texture_class', 'drainage_class'],
-  'productivity-score': ['score_now'],
-};
 
 function composeTerm(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Citer, ctx?: FieldContext): string[] {
   const t = tr(a.lang);
@@ -495,6 +537,35 @@ function composeGeneral(_store: KnowledgeStore, a: Analysis, hits: Hit[], cite: 
   ];
 }
 
+/** What the assistant says when it declines, by reason (docs/RAG.md, scope table). */
+function declined(reason: OutOfScope, lang: Lang): string {
+  const t = tr(lang);
+  switch (reason) {
+    case 'photo-diagnosis':
+      return t(
+        'I cannot look at a photo or diagnose a pest or disease from a description. I can tell you what the readings of your field say (soil, moisture, weather risk) and what a crop needs; for a diagnosis take a sample or a photo to the local plant-protection office.',
+        'Tôi không xem được ảnh và không chẩn đoán được sâu bệnh qua mô tả. Tôi có thể cho biết số liệu của ruộng bạn (đất, độ ẩm, rủi ro thời tiết) và yêu cầu của cây trồng; để chẩn đoán, hãy mang mẫu hoặc ảnh tới trạm bảo vệ thực vật địa phương.',
+      );
+    case 'price-forecast':
+      return t(
+        'I do not forecast prices. The prices in the economics panel are published reference values with their year and source, not predictions; for the coming days ask a local buyer or the commodity exchange.',
+        'Tôi không dự báo giá. Giá trong bảng kinh tế là giá tham chiếu đã công bố, có năm và nguồn, không phải dự đoán; giá những ngày tới hãy hỏi thương lái địa phương hoặc sàn giao dịch nông sản.',
+      );
+    case 'legal':
+      return t(
+        'I do not give legal advice (land rights, contracts, disputes). The commune or district office and a lawyer are the right places; I can help with the crop, soil and water side of the question.',
+        'Tôi không tư vấn pháp lý (quyền sử dụng đất, hợp đồng, tranh chấp). Hãy hỏi uỷ ban xã, phường hoặc luật sư; tôi có thể giúp phần cây trồng, đất và nước của câu hỏi.',
+      );
+    case 'pesticide-dose':
+      return t(
+        'I do not name pesticide products or doses: describe the problem to the local plant-protection office, which knows the registered options. I can tell you what the crop needs and what the readings of your field say.',
+        'Tôi không nêu tên thuốc hay liều lượng thuốc bảo vệ thực vật: hãy mô tả vấn đề với trạm bảo vệ thực vật địa phương, nơi nắm các thuốc được phép sử dụng. Tôi có thể cho biết yêu cầu của cây và số liệu của ruộng bạn.',
+      );
+    default:
+      return t('That is outside what I can help with here: I answer questions about crops, soil, water and the readings for your field.', 'Câu hỏi này nằm ngoài phạm vi tôi có thể giúp: tôi trả lời về cây trồng, đất, nước và các số đo của ruộng bạn.');
+  }
+}
+
 // ------------------------------------------------------------------------------------------------
 
 export function composeExtractive(store: KnowledgeStore, a: Analysis, hits: Hit[], ctx?: FieldContext): AskResult {
@@ -503,7 +574,7 @@ export function composeExtractive(store: KnowledgeStore, a: Analysis, hits: Hit[
   let paras: string[] = [];
   let confidence = 0;
   if (a.intent === 'off-topic') {
-    paras = [t('That is outside what I can help with here: I answer questions about crops, soil, water and the readings for your field.', 'Câu hỏi này nằm ngoài phạm vi tôi có thể giúp: tôi trả lời về cây trồng, đất, nước và các số đo của ruộng bạn.')];
+    paras = [declined(a.outOfScope ?? 'other', a.lang)];
   } else {
     const run = (): string[] => {
       switch (a.intent) {
@@ -513,6 +584,8 @@ export function composeExtractive(store: KnowledgeStore, a: Analysis, hits: Hit[
           return composeCompare(store, a, hits, cite, ctx);
         case 'field':
           return ctx ? composeField(store, a, hits, cite, ctx) : composeIdeal(store, a, hits, cite);
+        case 'field-fact':
+          return composeFieldFact(store, a, cite, ctx);
         case 'score-change':
           return ctx ? composeScoreChange(store, a, hits, cite, ctx) : [];
         case 'term':
@@ -527,9 +600,9 @@ export function composeExtractive(store: KnowledgeStore, a: Analysis, hits: Hit[
     };
     paras = run();
     if (!paras.length) paras = composeGeneral(store, a, hits, cite);
-    const base: Record<string, number> = { ideal: 0.8, compare: 0.75, field: 0.7, 'score-change': 0.65, term: 0.75, rotation: 0.6, care: 0.5, general: 0.4 };
+    const base: Record<string, number> = { ideal: 0.8, compare: 0.75, field: 0.7, 'field-fact': 0.7, 'score-change': 0.65, term: 0.75, rotation: 0.6, care: 0.5, general: 0.4 };
     confidence = paras.length ? (base[a.intent] ?? 0.4) * (cite.list.length ? 1 : 0.6) : 0;
-    if (!ctx && (a.intent === 'field' || a.aboutField)) paras.push(t('No field is locked, so this answer uses reference knowledge only.', 'Chưa khoá thửa ruộng nào, nên câu trả lời chỉ dựa trên kiến thức tham khảo.'));
+    if (!ctx && a.intent !== 'field-fact' && (a.intent === 'field' || a.aboutField)) paras.push(t('No field is locked, so this answer uses reference knowledge only.', 'Chưa khoá thửa ruộng nào, nên câu trả lời chỉ dựa trên kiến thức tham khảo.'));
   }
   if (!paras.length) {
     paras = [t("I could not find this in Astrovivu's knowledge base. Try naming the crop (for example 'soybean') or the reading (for example 'root-zone moisture').", "Tôi không tìm thấy thông tin này trong cơ sở kiến thức của Astrovivu. Hãy thử nêu tên cây (ví dụ 'đậu nành') hoặc số đo (ví dụ 'độ ẩm vùng rễ').")];

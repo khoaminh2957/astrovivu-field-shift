@@ -2,10 +2,13 @@
 
 Viết ngày 15/11/2026. Ai làm phần nào và theo quy trình git nào: xem `CONTRIBUTING.md`. Tài liệu này nói **làm gì, theo thứ tự nào, xong là thế nào**. Mốc thời gian chưa có ngày: Bảo điền khi chốt hạn nộp.
 
+Mỗi bước dưới đây có một issue trên GitHub với hiện trạng đã kiểm trong mã, việc cần làm, tiêu chí xong và cách kiểm. Bảng theo dõi tất cả: <https://github.com/quocbao271207/astrovivu-field-shift/issues/69>. Khi tài liệu này và một issue nói khác nhau về chi tiết, issue là bản mới hơn.
+
 | Người | Phần việc |
 |---|---|
-| Bảo | UI/UX toàn bộ, bản đồ, hợp đồng dữ liệu, gộp nhánh |
-| Uyên | Mascot |
+| Bảo | UI/UX toàn bộ, chốt nội dung hiện ở từng bước (issue #84), bản đồ, hợp đồng dữ liệu, gộp nhánh |
+| Ngọc | Tái cấu trúc giao diện: bố cục, chuyển cảnh, chỗ camera dừng (issue #85 đến #88) |
+| Uyên | Mascot: ba nhân vật Vũ trụ, Đất, Lúa |
 | Thái | Dữ liệu cây trồng (mục 2), giá và chi phí, công cụ trồng rau đô thị (mục 7) |
 | Khoa | Mô hình độ phù hợp và lợi nhuận (mục 3), chatbot (mục 6) |
 | Duy | Cải tạo đất từ dữ liệu đất (mục 8) |
@@ -94,7 +97,14 @@ Bảng cũ được dựng lại thành một bộ dữ liệu trong repo (`data
 
 **Kết quả (15/11/2026).** Giữ 387 trên 2.568 loài; 165 loài khớp `exact`, 202 loài thuộc hàng gộp, 20 loài không có hàng FAOSTAT nào (cây thức ăn gia súc, cây phủ đất và vài loại rau trong 73 cây đã biên soạn). 198 nước; 2.273 tỉnh, bang từ MapSPAM. Google Sheet: <https://docs.google.com/spreadsheets/d/1AWTjpsYIUrwBiPcq9UKlxkZezkZLP5gJOZiXXD6Abto/edit>. Chi tiết, nguồn và giấy phép: `docs/CROP_DATA.md`.
 
-**Còn thiếu, cần Thái xử lý.** 12 trong 73 cây đã biên soạn chỉ khớp ở mức hàng gộp nên mức phổ biến theo nước còn `unknown` (ví dụ đậu cô ve, ớt, xoài, xà lách, bí đỏ, sầu riêng); 138 cây chưa có tên tiếng Anh thông dụng từ nguồn; tên tiếng Việt mới có cho 73 cây.
+**Còn thiếu, cần Thái xử lý.** 12 trong 73 cây đã biên soạn chỉ khớp ở mức hàng gộp nên mức phổ biến theo nước còn `unknown` (ví dụ đậu cô ve, ớt, xoài, xà lách, bí đỏ, sầu riêng); tên tiếng Việt mới có cho 73 cây.
+
+**Đính chính sau khi đếm lại trong `data/crops/atlas/` (chiều 15/11/2026).**
+
+- Chưa có mức ở Việt Nam và ở Mỹ là 32 cây đã biên soạn, không phải 12: ngoài 12 cây `unknown` còn 20 cây khớp `none` nên không có dòng nào trong `crop_country.csv` (rau muống, mồng tơi, húng quế, cỏ linh lăng nằm trong số này).
+- 20 cây đã biên soạn khác mang mức `absent` ở Việt Nam, trong đó có cà chua, dưa leo, cà tím, đậu bắp và gừng. FAOSTAT không có dòng riêng cho các mặt hàng đó ở Việt Nam (cột `item_reported` là `no`); Việt Nam báo 898.373 ha dưới mặt hàng gộp "Other vegetables, fresh n.e.c.". Tức `absent` ở đây nghĩa là "FAOSTAT không báo cáo", chưa chắc là "không ai trồng". Ở Mỹ có 9 cây như vậy. Cách xử lý đang chờ quyết định: issue #66, mục 6.
+- Chưa có tên tiếng Anh là 157 cây, không phải 138.
+- Bảng `region_crops.csv` có 44 bang của Mỹ và không có Nevada, nơi có thửa mẫu `nevada-alfalfa`.
 
 ### 2.3 Các bước còn lại của Thái
 
@@ -159,6 +169,8 @@ K1 làm ngay được. K3 trở đi cần T3 và T4 của Thái; trong lúc ch�
 
 ## 4. Mascot (Uyên)
 
+**Đổi hướng ngày 15/11/2026.** Không còn chọn một nhân vật: Uyên làm ba nhân vật Vũ trụ, Đất và Lúa, xuất hiện luân phiên theo bước của người dùng (ở trang đầu là Vũ trụ; hạ xuống cánh đồng thì tới Đất và Lúa). Bảng dưới là bản cũ, giữ lại để đối chiếu; nội dung hiện hành nằm ở các issue #37 đến #41, kịch bản tương tác gợi ý ở #40, phần gắn vào giao diện ở #58.
+
 | Bước | Việc | Xong khi |
 |---|---|---|
 | U1 | Ba phác thảo nhân vật, cả nhóm chọn một | một hướng được chọn, ghi trong `docs/MASCOT.md` |
@@ -167,9 +179,11 @@ K1 làm ngay được. K3 trở đi cần T3 và T4 của Thái; trong lúc ch�
 | U4 | Đề xuất chỗ xuất hiện: màn hình đầu, trạng thái trống, trợ lý hỏi đáp, công cụ trồng rau đô thị, lúc đang tải | danh sách trong pull request; Bảo gắn vào |
 | U5 | Ghi cách làm ra từng tệp tranh | `docs/MASCOT.md` |
 
-## 5. UI/UX (Bảo)
+## 5. UI/UX (Bảo, Ngọc)
 
 Kế hoạch chi tiết, từng hạng mục có vấn đề, thay đổi và tiêu chí xong: `docs/UX_PLAN.md`. Bảng dưới là các việc nối với phần của người khác.
+
+**Chia lại ngày 15/11/2026.** Bảo chốt **nội dung** hiện ở từng bước (issue #84). Ngọc lo **bố cục và chuyển động**: camera bay tới đúng giữa phần bản đồ còn trống, không còn bước chỉnh lại ở cuối (#85); bố cục khi đã có ruộng (#86); chuyển cảnh giữa các bước (#87); và một phần việc mở để tự rà, tự đề xuất, tự làm (#88).
 
 | Bước | Việc | Cần |
 |---|---|---|
@@ -182,6 +196,8 @@ Kế hoạch chi tiết, từng hạng mục có vấn đề, thay đổi và ti
 | B7 | Cập nhật README, kịch bản demo, JUDGING cho khớp giao diện mới | không |
 
 ## 6. Chatbot (Khoa)
+
+**Bổ sung ngày 15/11/2026.** Phạm vi câu hỏi được mở rộng bằng hai việc: C9 (issue #89), trợ lý trả lời đúng mọi số liệu đã có của thửa ruộng (đất, địa hình, khí hậu theo tháng, rủi ro, nguồn); và C10 (#90), trợ lý trả lời câu hỏi cải tạo đất bằng mô-đun đất của Duy. Căn cứ: chạy thử trợ lý với bảy câu hỏi về đất và thửa ruộng, năm câu lạc đề (bảng trong #89). Thứ tự Khoa làm xen kẽ giữa mô hình và chatbot: issue #91.
 
 ### 6.1 Chatbot hiện tại yếu ở đâu
 
@@ -308,7 +324,7 @@ Khí hậu nhiều năm theo tháng nằm ở `input.telemetry.climateHistory` (
 
 | Thứ | Ở đâu |
 |---|---|
-| Yêu cầu của cây đang chọn: pH, cơ giới, độ sâu, thoát nước, độ mặn, độ phì, mỗi thứ có mức tối ưu và mức chịu được | `getCrop(id).requirements`, kiểu `CropRequirements` trong `src/contracts/crop.ts`; gốc là FAO EcoCrop |
+| Yêu cầu của cây đang chọn: pH, cơ giới, độ sâu, thoát nước, độ mặn, độ phì, mỗi thứ có mức tối ưu và mức chịu được | `getCrop(id).req`, kiểu `CropRequirements` trong `src/contracts/crop.ts`; gốc là FAO EcoCrop |
 | Mức chịu độc nhôm của cây (`soil_al_toxicity_opt`, `soil_al_toxicity_abs`) | mới chỉ có trong `data/crops/atlas/crops.csv`, chưa vào `CropRequirements`. Cần thì nhờ Thái thêm vào danh mục |
 | Số người trồng nhập: pH, chất hữu cơ, cơ giới, thoát nước, độ mặn, độ sâu tầng đất, tưới, nguồn nước | `input.groundTruth` (kiểu `GroundTruth` trong `src/contracts/model.ts`); nhập ở thẻ "Đất và canh tác" |
 | Lời khuyên hiện có để chuyển sang mô-đun mới: bón vôi hoặc lưu huỳnh theo khoảng liều, thoát nước, chống xói mòn | `phPlan` và `advisories` trong `src/core/advisory/actions.ts` |

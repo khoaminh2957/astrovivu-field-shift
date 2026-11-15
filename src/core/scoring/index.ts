@@ -16,6 +16,7 @@
 import type {
   BranchId,
   CalibrationNote,
+  CropPrevalence,
   CropProfile,
   CropSuiteSummary,
   FactorKind,
@@ -25,6 +26,7 @@ import type {
   GrowthStage,
   I18nText,
   ModelInput,
+  PrevalenceLevel,
   Quad,
   ScoreSnapshot,
   ScoreTimeline,
@@ -140,6 +142,14 @@ export const FACTOR_WEIGHTS = AHP_SOLUTION.exponents;
 /** Sys, Van Ranst & Debaveye (1991) parametric ratings for categorical optimal / tolerated / unsuitable classes. */
 const CLASS_SCORE = { opt: 1, abs: 0.7, out: 0.15 } as const;
 const GATE = { zoneCurated: 0.5, zoneRaw: 0.7, photoperiodMin: 0.7, latitude: 0.7, altitude: 0.8 } as const;
+
+/** The latitude gate: beyond `toleranceDeg` past the latitude limit EcoCrop gives for a crop, its compatibility is multiplied by `factor`. */
+export interface LatitudeGate {
+  toleranceDeg: number;
+  factor: number;
+}
+/** The gate in use. Kept after the comparison of docs/SCORING.md, section 13. */
+export const LATITUDE_GATE: LatitudeGate = { toleranceDeg: 3, factor: GATE.latitude };
 /** Ramirez-Villegas et al. 2013: a month whose mean minimum is below Tkill + 4 °C contains a killing night. */
 const KILL_MARGIN_C = 4;
 /** A year counts as meeting the crop's needs when neither temperature nor water falls below this. */
@@ -702,6 +712,7 @@ function fitFor(
   irrigation: GroundTruth['irrigation'],
   src: { soil?: string; climate?: string; terrain?: string },
   method: ParametricMethod = 'astrovivu-v2',
+  latitudeGate: LatitudeGate | null = LATITUDE_GATE,
 ): Fit {
   const factors: FactorScore[] = [];
   const aggItems: AggregationItem[] = [];
@@ -841,7 +852,7 @@ function fitFor(
   if (season?.photo != null) add('photoperiod', tx('Day length', 'Độ dài ngày'), season.photo, 1, null, req.photoperiod!.join(', '), 'choice', 'agromet', true, undefined, season.photo < 1 ? reviewNote : undefined);
   if (req.latitudeAbs) {
     const limit = site.lat >= 0 ? req.latitudeAbs[1] : req.latitudeAbs[0];
-    if (Math.abs(site.lat) > limit + 3) add('latitude', tx('Latitude', 'Vĩ độ'), GATE.latitude, 1, round(site.lat, 1), `<= ${limit}°`, 'fixed', 'terrain', true, '°', reviewNote);
+    if (latitudeGate && Math.abs(site.lat) > limit + latitudeGate.toleranceDeg) add('latitude', tx('Latitude', 'Vĩ độ'), latitudeGate.factor, 1, round(site.lat, 1), `<= ${limit}°`, 'fixed', 'terrain', true, '°', reviewNote);
   }
   if (req.altitudeMaxM != null && site.elevationM != null && site.elevationM > req.altitudeMaxM * 1.1) add('altitude', tx('Altitude', 'Độ cao'), GATE.altitude, 1, site.elevationM, `<= ${req.altitudeMaxM}`, 'fixed', 'terrain', true, 'm', reviewNote);
 
@@ -1098,6 +1109,8 @@ export interface AssessOptions {
   cropSuite?: Pick<CropSuiteOptions, 'variability' | 'photoperiod'>;
   /** CropSuite only: false skips the multiple-cropping search (used when ranking many crops). */
   multipleCropping?: boolean;
+  /** Another latitude gate than `LATITUDE_GATE`, or null for none. For the comparison of gates only; the app never sets it. */
+  latitudeGate?: LatitudeGate | null;
 }
 
 const sources = (t: FieldTelemetry) => ({ soil: t.branches.soil?.sources[0], terrain: t.branches.terrain?.sources[0], climate: t.climateSourceId });
@@ -1115,7 +1128,7 @@ function assess(crop: CropProfile, input: ModelInput, site: Site, climate: Clima
   const fits: Fit[] = [];
   const stats: (YearStats | null)[] = [];
   for (let m = 1; m <= 12; m++) {
-    fits.push(fitFor(crop, site, climate, m, irrigation, src, method));
+    fits.push(fitFor(crop, site, climate, m, irrigation, src, method, opts.latitudeGate === undefined ? LATITUDE_GATE : opts.latitudeGate));
     stats.push(climate ? yearStats(crop, site, climate, m, irrigation) : null);
   }
   const rel = (i: number) => (stats[i]?.yearsTotal ? stats[i]!.yearsOk / stats[i]!.yearsTotal : 0);
@@ -1182,6 +1195,24 @@ export function assessCrop(input: ModelInput, cropId: string, opts: AssessOption
   return a;
 }
 
+/** How the ranking reads the prevalence of a crop in the country of the parcel. */
+export type PrevalenceStatus = 'grown' | 'unknown' | 'absent';
+
+/**
+ * Only a record tied to the crop itself can say "grown" or "absent". A record of a group item
+ * ("Other vegetables") and no record at all say nothing about the crop: both read as unknown.
+ */
+export function prevalenceStatus(p: CropPrevalence | undefined): PrevalenceStatus {
+  if (!p || p.match === 'group' || p.level === 'unknown') return 'unknown';
+  return p.level === 'absent' ? 'absent' : 'grown';
+}
+
+/** Order among crops with the same rank score: what the country grows most first, what it does not grow last. */
+const LEVEL_ORDER: Record<PrevalenceLevel, number> = { major: 0, common: 1, minor: 2, present: 3, unknown: 4, absent: 5 };
+
+/** From this compatibility ("suitable" in the score classes) a crop the country does not grow is worth a trial. */
+export const TRIAL_MIN_COMPATIBILITY = 0.6;
+
 export interface CropRanking {
   cropId: string;
   compatibility: number;
@@ -1190,21 +1221,129 @@ export interface CropRanking {
   limiting: string | null;
   /** compatibility x (0.5 + 0.5 reliability): the second stage that separates crops tied at 100. */
   rankScore: number;
+  /**
+   * How the country of the parcel grows the crop. Absent when the input carries no country table
+   * (`ModelInput.country`): the ranking then rests on climate and soil alone.
+   */
+  prevalence?: { status: PrevalenceStatus; level: PrevalenceLevel; sharePct?: number; source?: string };
 }
 
-/** Second-stage ranking of the curated crops (or `cropIds`) at their best sowing window. */
-export function rankCrops(input: ModelInput, opts: { limit?: number; cropIds?: string[]; irrigation?: GroundTruth['irrigation']; method?: SuitabilityMethod } = {}): CropRanking[] {
+/**
+ * Order of the ranking. Rank score first. Among equal scores: the crop the country grows more of
+ * (level, then share of its harvested area), then the more reliable one over the analysed years,
+ * and the crop id last, only so that the same input always gives the same list.
+ */
+function byRank(x: CropRanking, y: CropRanking): number {
+  const level = (r: CropRanking) => LEVEL_ORDER[r.prevalence?.level ?? 'unknown'];
+  return (
+    y.rankScore - x.rankScore ||
+    level(x) - level(y) ||
+    (y.prevalence?.sharePct ?? -1) - (x.prevalence?.sharePct ?? -1) ||
+    (y.reliability ?? -1) - (x.reliability ?? -1) ||
+    x.cropId.localeCompare(y.cropId)
+  );
+}
+
+export interface RankOptions {
+  limit?: number;
+  cropIds?: string[];
+  irrigation?: GroundTruth['irrigation'];
+  method?: SuitabilityMethod;
+  /**
+   * With a country table in the input, crops the country does not grow (`absent`) are left out
+   * unless this is `'all'`. Without one, every crop is ranked, as before.
+   */
+  include?: 'main' | 'all';
+}
+
+function rankAll(input: ModelInput, opts: RankOptions): CropRanking[] {
   const site = buildSite(input);
   const climate = prepare(input).climate;
   const avoid = new Set(input.groundTruth.avoidCropIds ?? []);
   const crops = (opts.cropIds?.map((id) => getCrop(id)).filter((c): c is CropProfile => !!c) ?? listCrops()).filter((c) => !avoid.has(c.id));
-  const out = crops.map((crop) => {
+  const country = input.country;
+  const out = crops.map((crop): CropRanking => {
     const a = assess(crop, { ...input, groundTruth: { ...input.groundTruth, sowingDate: undefined } }, site, climate, { irrigation: opts.irrigation, method: opts.method, multipleCropping: false });
     const reliability = a.reliability ? a.reliability.yearsOk / a.reliability.yearsTotal : null;
-    return { cropId: crop.id, compatibility: round(a.bestCompatibility, 3), reliability, bestSowingMonth: a.bestSowingMonth, limiting: a.limiting?.key ?? null, rankScore: round(a.bestCompatibility * (0.5 + 0.5 * (reliability ?? 0.5)), 4) };
+    const ranking: CropRanking = { cropId: crop.id, compatibility: round(a.bestCompatibility, 3), reliability, bestSowingMonth: a.bestSowingMonth, limiting: a.limiting?.key ?? null, rankScore: round(a.bestCompatibility * (0.5 + 0.5 * (reliability ?? 1)), 4) };
+    if (country) {
+      const p = country.prevalence[crop.id];
+      const status = prevalenceStatus(p);
+      // A group record carries the level of the group, not of the crop: it is not passed on.
+      ranking.prevalence = { status, level: status === 'unknown' ? 'unknown' : p!.level, ...(status === 'grown' && p!.sharePct != null ? { sharePct: p!.sharePct } : {}), ...(p ? { source: p.source } : {}) };
+    }
+    return ranking;
   });
-  out.sort((x, y) => y.rankScore - x.rankScore || x.cropId.localeCompare(y.cropId));
+  return out.sort(byRank);
+}
+
+/**
+ * Second-stage ranking of the curated crops (or `cropIds`) at their best sowing window.
+ * With `input.country`, the list holds the crops the country grows and those it has no figure
+ * for; a crop the country does not grow is left to `rankCropLists(...).trial`.
+ */
+export function rankCrops(input: ModelInput, opts: RankOptions = {}): CropRanking[] {
+  const all = rankAll(input, opts);
+  const out = opts.include === 'all' ? all : all.filter((r) => r.prevalence?.status !== 'absent');
   return opts.limit ? out.slice(0, opts.limit) : out;
+}
+
+export interface CropRankingLists {
+  /** Crops the country grows, and crops it has no figure for (`prevalence.status === 'unknown'`), best first. */
+  main: CropRanking[];
+  /**
+   * Crops the country's statistics do not report although climate and soil of the field suit them
+   * (compatibility from `TRIAL_MIN_COMPATIBILITY`). New to the country, or grown there without
+   * being reported: the note of each entry says so, and to try a new crop on a small area first.
+   */
+  trial: (CropRanking & { note: I18nText })[];
+  /** Whether the country table was applied, and in words what that means for the two lists. */
+  gate: { applied: boolean; iso3?: string; note: I18nText };
+}
+
+/** The ranking as two lists: what to choose from, and what would be new to the country. */
+export function rankCropLists(input: ModelInput, opts: Omit<RankOptions, 'include'> = {}): CropRankingLists {
+  const all = rankAll(input, opts);
+  const country = input.country;
+  if (!country) {
+    return {
+      main: opts.limit ? all.slice(0, opts.limit) : all,
+      trial: [],
+      gate: {
+        applied: false,
+        note: tx(
+          'The country of this field is not known, or its crop table is not loaded: crops are ranked on climate and soil alone, whether or not they are grown locally.',
+          'Chưa xác định được nước của thửa ruộng, hoặc chưa nạp bảng cây trồng của nước đó: cây được xếp hạng chỉ theo khí hậu và đất, không xét cây đó có được trồng tại chỗ hay không.',
+        ),
+      },
+    };
+  }
+  const place = input.parcel.place?.country ?? country.iso3;
+  const main = all.filter((r) => r.prevalence?.status !== 'absent');
+  const trial = all
+    .filter((r) => r.prevalence?.status === 'absent' && r.compatibility >= TRIAL_MIN_COMPATIBILITY)
+    .map((r) => {
+      const source = r.prevalence?.source ?? 'the crop statistics used';
+      return {
+        ...r,
+        note: tx(
+          `No production of this crop is reported for ${place} (${source}). It may be new there, or grown without being reported: ask locally, and if it is new, try it on a small area first.`,
+          `Không có số liệu sản xuất của cây này ở ${place} (${source}). Có thể đây là cây mới ở đó, hoặc có trồng nhưng không được thống kê: hãy hỏi tại địa phương; nếu là cây mới thì nên trồng thử trên diện tích nhỏ trước.`,
+        ),
+      };
+    });
+  return {
+    main: opts.limit ? main.slice(0, opts.limit) : main,
+    trial: opts.limit ? trial.slice(0, opts.limit) : trial,
+    gate: {
+      applied: true,
+      iso3: country.iso3,
+      note: tx(
+        `The main list holds crops reported as grown in ${place} and crops without a figure of their own (marked unknown). Crops with no reported production there are listed apart, as crops to check and to trial.`,
+        `Danh sách chính gồm các cây được ghi nhận có trồng ở ${place} và các cây chưa có số liệu riêng (đánh dấu chưa rõ). Cây không có số liệu sản xuất ở đó được liệt kê riêng, là cây cần hỏi lại và trồng thử.`,
+      ),
+    },
+  };
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1679,7 +1818,11 @@ export function whatIf(input: ModelInput, patch?: Partial<GroundTruth>): WhatIfR
   const out: WhatIfResult[] = [];
   const tryIt = (changedFactor: string, label: I18nText, next: ModelInput) => {
     const after = seasonScore(next);
-    out.push({ label, changedFactor, before, after, delta: after - before });
+    // What the move changed, for a view that wants to run it as a trial.
+    const groundTruth: Partial<GroundTruth> = {};
+    for (const k of Object.keys(next.groundTruth) as (keyof GroundTruth)[]) if (next.groundTruth[k] !== input.groundTruth[k]) Object.assign(groundTruth, { [k]: next.groundTruth[k] });
+    const apply = { ...(next.cropId !== input.cropId ? { cropId: next.cropId } : {}), ...(Object.keys(groundTruth).length ? { groundTruth } : {}) };
+    out.push({ label, changedFactor, before, after, delta: after - before, apply });
   };
   const withGt = (g: Partial<GroundTruth>): ModelInput => ({ ...input, groundTruth: { ...input.groundTruth, ...g } });
   if (patch && Object.keys(patch).length) {
