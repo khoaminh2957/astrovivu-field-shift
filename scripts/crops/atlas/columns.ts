@@ -252,13 +252,13 @@ add(EC, 'iso3', 'Country.', 'Quốc gia.', '', 'to be filled', '');
 add(EC, 'region', 'Region inside the country, if the figure is regional.', 'Vùng trong nước, nếu số liệu theo vùng.', '', 'to be filled', '');
 add(EC, 'yield_t_ha', 'Yield.', 'Năng suất.', 't/ha', 'to be filled', '');
 add(EC, 'price_usd_t', 'Farm-gate price.', 'Giá bán tại ruộng.', 'USD/t', 'to be filled', '');
-add(EC, 'cost_usd_ha', 'Production cost.', 'Chi phí sản xuất.', 'USD/ha', 'to be filled', '');
+add(EC, 'cost_usd_ha', 'Operating (variable) production cost per hectare, matching costUsdPerHa of ReferenceEconomics.', 'Chi phí sản xuất biến đổi (chi phí vận hành) trên một ha, khớp với costUsdPerHa của ReferenceEconomics.', 'USD/ha', 'to be filled', '');
 add(EC, 'year', 'Year of the figures.', 'Năm của số liệu.', 'year', 'to be filled', '');
-add(EC, 'quality_yield', 'Quality of the yield figure (official, press, estimate).', 'Độ tin cậy của số năng suất (chính thức, báo chí, ước tính).', '', 'to be filled', '');
-add(EC, 'quality_price', 'Quality of the price figure.', 'Độ tin cậy của số giá.', '', 'to be filled', '');
-add(EC, 'quality_cost', 'Quality of the cost figure.', 'Độ tin cậy của số chi phí.', '', 'to be filled', '');
-add(EC, 'source', 'Source of the figures.', 'Nguồn số liệu.', '', 'to be filled', '');
-add(EC, 'url', 'Link to the source.', 'Đường dẫn tới nguồn.', '', 'to be filled', '');
+add(EC, 'quality_yield', 'Quality of the yield figure (official, budget, press, derived, none).', 'Độ tin cậy của số năng suất (official, budget, press, derived, none).', '', 'to be filled', '');
+add(EC, 'quality_price', 'Quality of the price figure (official, budget, press, derived, none).', 'Độ tin cậy của số giá (official, budget, press, derived, none).', '', 'to be filled', '');
+add(EC, 'quality_cost', 'Quality of the cost figure (official, budget, press, derived, none).', 'Độ tin cậy của số chi phí (official, budget, press, derived, none).', '', 'to be filled', '');
+add(EC, 'source', 'Source of the figures; when the three figures have separate sources, written in yield | price | cost order (as in data/crops/curated-crops.csv).', 'Nguồn số liệu; khi ba con số lấy từ ba nguồn khác nhau, ghi theo thứ tự yield | price | cost (như trong data/crops/curated-crops.csv).', '', 'to be filled', '');
+add(EC, 'url', 'Link to the source; when the three figures have separate URLs, written in yield | price | cost order.', 'Đường dẫn tới nguồn; khi ba con số có đường dẫn riêng, ghi theo thứ tự yield | price | cost.', '', 'to be filled', '');
 add(EC, 'accessed', 'Date the source was read.', 'Ngày tra cứu nguồn.', 'date', 'to be filled', '');
 
 // Long-format urban container table (`data/crops/atlas/urban.csv`), one row per crop and attribute.

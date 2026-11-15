@@ -307,15 +307,15 @@ Rest (neutral), in focus (`active`), `watch` / `alert` (tinted border + tag; ale
 
 Workspace page and tab entries, the field list, extra map tools and the assistant use a short opacity and position change. Buttons and selection controls give press feedback. The system preference for reduced motion removes these effects, and the same behaviour can be checked with `?motion=reduced`.
 
-Proposed flight timing, awaiting the review in [#87](https://github.com/quocbao271207/astrovivu-field-shift/issues/87#issuecomment-6889713952).
+Step transition timing ([#87](https://github.com/quocbao271207/astrovivu-field-shift/issues/87)):
 
-| Transition | Camera and interface |
-|---|---|
-| Home to map | Update the finder at takeoff and reveal the map tools near arrival. |
-| Map to boundary | Reveal the add-field card when the camera starts framing the boundary. Use the left edge on desktop and bottom on narrow screens. |
-| Boundary to field | Show the field panel at the same edge near touchdown, using the destination insets for the whole flight. |
-| Home to sample field | Withdraw the finder at takeoff and reveal the field panel and timeline near touchdown. |
-| Field to map | Withdraw the panel as the camera ascends and restore the finder near arrival. |
+| Transition | Camera | Interface (`opacity` / `transform` only) | Duration token |
+|---|---|---|---|
+| Home to map (`hero` → `explore`) | `enterView('explore')`, `'level'` | Hero overlay fades out (`--ease-in`); finder morphs to frosted dock (`Finder.tsx`); explore nav and map tools fade/translate in (`workspace-explore-chrome`) | `--dur-slow` (420 ms) / `--dur-base` (220 ms) |
+| Map to boundary (`explore` → `draft`) | `queueFrameDraft` (140 ms settle) + `frameDraft` | Add-field card (`workspace-add-card`) slides in from the left edge on desktop (`translate: -16px 0`) or from the bottom on narrow screens (`translate: 0 16px`) | `--dur-slow` (420 ms, `--ease-out`) |
+| Boundary to field (`draft` → `locked`) | `fly(pose, 'descend')` with destination `shellInsets` | Add-field card gives way at the same left edge to the rail and field panel (`workspace-slide-left`), while the timeline (`workspace-slide-up`) and map controls (`workspace-appear`) enter | `--dur-slow` (420 ms) / `--dur-base` (220 ms) |
+| Home to sample field (`hero` → `locked`) | `fly(pose, 'descend')` from orbit with destination `shellInsets` | Hero overlay fades out; rail and field panel slide in from the left (`workspace-slide-left`) or bottom sheet + tab bar slide up (`workspace-slide-up`) with the timeline | `--dur-slow` (420 ms) / `--dur-base` (220 ms) |
+| Field to map (`locked` → `explore`) | `fly(pose, 'ascend')` | Field panel and timeline unmount as the finder and explore controls (`workspace-explore-chrome`) enter | `--dur-base` (220 ms, `--ease-out`) |
 
 | Token | ms | For |
 |---|---:|---|

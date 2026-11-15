@@ -5,9 +5,22 @@
  */
 import MiniSearch from 'minisearch';
 import type { KnowledgeChunk } from '@/contracts';
-import { type AliasTable, mergeAliases } from './aliases';
+import { type AliasTable, detectCrops, mergeAliases } from './aliases';
 import { INDEX_OPTIONS } from './searchConfig';
-import type { CropFacts, IndexDoc, RagBundle } from './types';
+import type { CropFacts, DroppedTable, IndexDoc, RagBundle } from './types';
+
+/** An EcoCrop species the crop atlas does not keep, as a question named it. */
+export interface DroppedMention {
+  id: string;
+  sci: string;
+  /** `no-item`: no FAOSTAT crop item names it. `group-only`: named only in a group item and not described as cultivated. */
+  reason: 'no-item' | 'group-only';
+  /** The words of the question that named it. */
+  alias: string;
+  /** Where those words are in the question, as token positions (as `detectCrops` counts them). */
+  start: number;
+  end: number;
+}
 
 export type BundleKind = 'core' | 'full';
 export type BundleLoader = (kind: BundleKind) => Promise<RagBundle>;
@@ -25,6 +38,8 @@ export class KnowledgeStore {
   readonly chunks = new Map<string, KnowledgeChunk>();
   readonly crops = new Map<string, CropFacts>();
   aliases: AliasTable = { map: {}, exact: {} };
+  /** Names of the species the atlas dropped; arrives with the full bundle. */
+  dropped: DroppedTable | null = null;
   hasFull = false;
   private corePromise: Promise<void> | null = null;
   private fullPromise: Promise<void> | null = null;
@@ -37,6 +52,7 @@ export class KnowledgeStore {
     // `as never`: MiniSearch's AsPlainObject type is not exported; the bundle holds exactly toJSON() output.
     this.index = MiniSearch.loadJS<IndexDoc>(b.index as never, INDEX_OPTIONS);
     this.aliases = b.kind === 'core' ? mergeAliases(b.aliases, this.aliases) : mergeAliases(this.aliases, b.aliases);
+    if (b.dropped) this.dropped = b.dropped;
   }
 
   ensureCore(): Promise<void> {
@@ -68,5 +84,22 @@ export class KnowledgeStore {
 
   isCurated(id: string): boolean {
     return this.crops.get(id)?.curated ?? false;
+  }
+
+  /**
+   * Species the atlas dropped that the question names. Empty until the full bundle has loaded.
+   * A name a kept crop answers to is not in this table, but a longer name can hold one
+   * ("Abelmoschus manihot" holds "manihot", cassava): `analyze` gives the longer name the word.
+   */
+  findDropped(query: string): DroppedMention[] {
+    if (!this.dropped) return [];
+    const out: DroppedMention[] = [];
+    for (const m of detectCrops(query, { map: this.dropped.aliases, exact: {} })) {
+      for (const id of m.cropIds) {
+        const s = this.dropped.species[id];
+        if (s && !out.some((x) => x.id === id)) out.push({ id, sci: s[0], reason: s[1] === 'g' ? 'group-only' : 'no-item', alias: m.alias, start: m.start, end: m.end });
+      }
+    }
+    return out;
   }
 }

@@ -14,6 +14,10 @@ describe('parseLatLon', () => {
     expect(parseLatLon(' 39.71961 -115.96894 ')).toEqual([-115.96894, 39.71961]);
     expect(parseLatLon('10.4;106.1')).toEqual([106.1, 10.4]);
   });
+  it('reads the minus sign U+2212 that fmtNum writes, so a picked point put back in the box is still a coordinate', () => {
+    expect(parseLatLon('34.77275, −96.79985')).toEqual([-96.79985, 34.77275]);
+    expect(parseLatLon('−8.05, −35.2')).toEqual([-35.2, -8.05]);
+  });
   it('rejects text and values off the globe', () => {
     expect(parseLatLon('Cai Lậy')).toBeNull();
     expect(parseLatLon('95, 10')).toBeNull();

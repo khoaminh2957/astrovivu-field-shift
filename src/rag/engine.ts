@@ -18,9 +18,11 @@ export async function retrieveFor(store: KnowledgeStore, req: AskRequest): Promi
   if (ctxCrop && !store.crops.has(ctxCrop)) await store.ensureFull().catch(() => undefined);
   let analysis = analyze(store, req.query, req.lang, Boolean(req.context), ctxCrop);
   let hits = search(store, analysis, req.topK ?? 6);
-  // The core bundle only knows curated crops: an unrecognised question may name one of the other
-  // ~2,500 EcoCrop species, so retry once against the full index.
-  if (!store.hasFull && (analysis.intent === 'general' || hits.length === 0)) {
+  // The core bundle only knows the curated crops. A question that names none of them may name
+  // another crop of the atlas, or a species the atlas dropped: both are known to the full bundle,
+  // so retry once against it. A question about a term or about the field does not wait for it.
+  const cropless = analysis.cropIds.length === 0 && ['ideal', 'care', 'rotation', 'compare'].includes(analysis.intent);
+  if (!store.hasFull && (analysis.intent === 'general' || hits.length === 0 || cropless)) {
     try {
       await store.ensureFull();
       analysis = analyze(store, req.query, req.lang, Boolean(req.context), ctxCrop);
