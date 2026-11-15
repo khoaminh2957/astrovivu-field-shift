@@ -36,20 +36,13 @@ Access date of every download: 2026-11-15. Checksums and sizes are in `sources.c
 | FAOSTAT, Crops and livestock products (QCL), normalized bulk file, `bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip` (34 MB; 4,209,110 rows read, 1,195,494 used) | Area harvested, production and yield per country, item and year up to 2024; item names and CPC codes; area names and M49 codes | CC BY 4.0, FAO Statistical Database Terms of Use |
 | FAO, "Definition and classification of commodities" (draft), chapters 1 to 13, `www.fao.org/es/faodef/fdef01e.htm` to `fdef13e.htm` | The scientific names behind each FAOSTAT item code (501 commodity rows) | FAO website terms: may be copied for private study, research, teaching and non-commercial products with acknowledgement |
 | CPC Ver. 2.1 structure and explanatory notes, FAO Caliper, `stats.fao.org/caliper/download/CPCv2.1/CPC21-core.csv` | Plant names in the notes of 35 classes that FAOSTAT items use; class hierarchy | None stated on the download page; FAO website terms apply; a United Nations classification |
-| UN M49 overview, `unstats.un.org/unsd/methodology/m49/overview/` | M49 code to ISO alpha-3 (196 codes used) | **chưa xác minh** (`(c) United Nations; terms page https://www.un.org/en/about-us/terms-of-use returned HTTP 403 when checked on 2026-11-15 — chưa xác minh`). Only standard ISO 3166-1 numeric / UN M49 and ISO alpha-3 country codes are read. |
+| UN M49 overview, `unstats.un.org/unsd/methodology/m49/overview/` | M49 code to ISO alpha-3 (196 codes used) | (c) United Nations; no data licence on the page; the UN terms page answered HTTP 403 and was not read |
 | GeoNames `countryInfo.txt` | FIPS 10-4 to ISO alpha-3 for MapSPAM (175 codes); ISO numeric fallback for 2 FAOSTAT areas | CC BY 4.0 |
 | mapspamc, `inst/mappings/faostat2crop.csv` (GitHub michielvandijk/mapspamc, commit e729598) | FAOSTAT item code to SPAM crop, 156 rows | MIT |
 | MapSPAM 2020 V2r2 readme | The 46 crop codes and names, file layout | CC BY 4.0, IFPRI Dataverse Terms of Use |
 | MapSPAM 2020 V2r2, global harvested area, CSV (109 MB zip; 964,647 grid cells of `spam2020V2r2_global_H_TA.csv`) | Harvested area per 5-arc-minute cell with country and admin-1 names | CC BY 4.0 with citation and the notice below |
 | `data/crops/curated-crops.csv` | Our `crop_id`, `name_en`, `name_vi` for 73 crops | Project file |
-| `data/crops/national/prevalence.csv` | National statistical figures and notes for `VNM`, `USA`, `IND`, and `BRA` (140 rows, 25 with a figure and 115 with a note only) | Official public statistics of Viet Nam (NSO, MARD), the United States (USDA NASS, public domain, 17 U.S.C. § 105), India (MoAFW & DES, GODL-India), and Brazil (IBGE PAM 5457); see Section 7.1 |
-
-### 2.1 Licences and competition-rule review (`m49`, `faodef`, `cpc21`, `spam2020-ha`, T8 `#71`)
-
-- **`m49` (`unstats.un.org/unsd/methodology/m49/overview/`):** The UN Statistics Division M49 page displays `© United Nations` without a separate data licence, and `https://www.un.org/en/about-us/terms-of-use` returned `HTTP 403` when checked on `2026-11-15`. In `scripts/crops/atlas/fetch.ts` and `data/crops/atlas/sources.csv`, the licence is explicitly marked **`chưa xác minh`**. Note that ISO 3166-1 alpha-3 and numeric country codes are also available in `geonames` (`countryInfo.txt`, CC BY 4.0).
-- **`faodef` (FAO commodity definitions) and `cpc21` (CPC Ver. 2.1 explanatory notes) vs. competition rules:** AstroVivu Field Shift is an open-source, non-commercial educational and research entry for the NASA Space Apps Challenge (`LICENSE`). Under FAO's website terms, copying and deriving botanical-to-commodity mappings (`items.csv`, `crops.csv`) for research, study, and non-commercial products with attribution to FAO is permitted. Taxonomic equivalences (which botanical species a commodity code denotes) are factual relations; only the short definition excerpt in `items.csv` (`definition_text`) reproduces FAO text and should be stripped if the repository is ever relicensed for commercial distribution.
-- **`spam2020-ha` (MapSPAM 2020 V2r2 via IFPRI's Dropbox mirror with Dataverse MD5 verification) — Project lead decision:**
-  - **Decision (`quocbao271207`, `2026-11-15`):** **Keep** the automated download from IFPRI's official Dropbox link (`mapspam.info/data`) verified against the Harvard Dataverse MD5 checksum (`9e82eb7c6202cdcf10daf3508356c2dd`, datafile `13740106`). The dataset itself is licensed under **CC BY 4.0** (`doi:10.7910/DVN/SWPENT`), required attribution is printed in Section 2 below and in `sources.csv`, and the runtime web app never downloads from Dropbox or Dataverse (it reads pre-built static tables in the repo). If a future deployment requires avoiding the Dropbox mirror during offline/CI rebuilds, pre-populate `.cache/atlas/raw/spam2020V2r2_global_harvested_area.csv.zip` from Harvard Dataverse after completing the Dataverse guestbook form and run `npx tsx scripts/crops/atlas/build.ts --offline`.
+| `data/crops/national/prevalence.csv` | National statistical figures and notes for `VNM` and `USA` (76 rows, 17 with a figure and 59 with a note only: all 32 `group` + `none` curated crops in both countries, plus 12 `sai-absent`/`thieu` rows from T1 `#8`) | Official public statistics of Viet Nam (NSO, MARD) and the United States (USDA NASS, public domain, 17 U.S.C. § 105); see Section 7.1 |
 
 How three of them were obtained, since it was not straightforward:
 
@@ -74,7 +67,7 @@ Text columns are copied. Numbers are cleaned by removal only (`ecocrop.ts`); not
 
 EcoCrop's latitude "min" and "max" are the southern and northern limits in degrees from the equator (rice: 36 and 55), so they are not checked for order. Among the 386 kept EcoCrop rows, 4 carry a note.
 
-`crop_id` is the slug of the EcoCrop scientific name, the rule of the app catalogue (`src/core/crops/text.ts`), with the EcoCrop id appended when two rows share a name; a curated crop keeps its curated id. `name_vi` comes from the curated list only. `name_en` is the curated name, else the FAOSTAT item name when the item is that one species, else the vernacular name the FAO definition prints before the scientific name ("durian (Durio zibethinus)"), else empty: EcoCrop's common names carry no language, so none can be called English by rule. `name_ecocrop_first` gives the first common name in plain Latin letters, which is what the app shows today (often Portuguese or Spanish). 157 kept crops have no `name_en` (`crops_without_name_en = 157`, `crops_with_name_en = 230` in `summary.csv`).
+`crop_id` is the slug of the EcoCrop scientific name, the rule of the app catalogue (`src/core/crops/text.ts`), with the EcoCrop id appended when two rows share a name; a curated crop keeps its curated id. `name_vi` comes from the curated list only. `name_en` is the curated name, else the FAOSTAT item name when the item is that one species, else the vernacular name the FAO definition prints before the scientific name ("durian (Durio zibethinus)"), else empty: EcoCrop's common names carry no language, so none can be called English by rule. `name_ecocrop_first` gives the first common name in plain Latin letters, which is what the app shows today (often Portuguese or Spanish). 138 kept crops have no `name_en`.
 
 ### 3.1 Aluminium toxicity (`eco_soil_al_tox_opt`, `eco_soil_al_tox_abs`)
 
@@ -146,24 +139,23 @@ All 73 curated crops are kept. The 21 `curated-only` ones: amaranthus-tricolor, 
 
 `commonness` (exact matches only), from the number of producing countries and the world harvested area, both required:
 
-| Tier | Countries | Area | Crops | Rationale (`scripts/crops/atlas/levels.ts`, `COMMONNESS`) |
-|---|---|---|---|---|
-| `global` | $\ge 50$ | $\ge 1,000,000\text{ ha}$ | 85 | Cultivated across at least a quarter of the 198 FAOSTAT countries and at least $10^6\text{ ha}$ worldwide (world staples, major oilseeds, fibres, and fruits) |
-| `widespread` | $\ge 20$ | $\ge 100,000\text{ ha}$ | 54 | Multi-regional commercial crops across $\ge 20$ countries and $\ge 10^5\text{ ha}$ |
-| `regional` | $\ge 5$ | $\ge 10,000\text{ ha}$ | 20 | Regionally established crops across $\ge 5$ countries and $\ge 10^4\text{ ha}$ |
-| `local` | $< 5$ or $< 10,000\text{ ha}$ | | 6 | Narrow geographic distribution or small world area (fonio, jojoba, kapok, karite, ramie, sisal/agave) |
+| Tier | Countries | Area | Crops |
+|---|---|---|---|
+| `global` | 50 | 1,000,000 ha | 85 |
+| `widespread` | 20 | 100,000 ha | 54 |
+| `regional` | 5 | 10,000 ha | 20 |
+| `local` | less | | 6 |
 
-Why both criteria (`countries` **and** `area`) are required on logarithmic $10\times$ area steps ($10^6, 10^5, 10^4\text{ ha}$): a single mega-country crop with $>10^6\text{ ha}$ in one or two countries is not `global`, while a minor horticultural crop reported with tiny areas in 50 countries is not a global field staple. Requiring both country count and world area prevents either tail from inflating `commonness`. All thresholds are in `scripts/crops/atlas/levels.ts`.
+All thresholds are in `scripts/crops/atlas/levels.ts`.
 
 ## 7. Countries
 
 `crop_country.csv` has one row per kept crop and FAOSTAT country.
 
 - **Exact crops.** Area and production are the sums over the crop's own items that the country reports above zero; `faostat_item_code` lists them, largest first. Tonnes of different products are added when a crop has several items (maize grain and green corn). The yield is FAOSTAT's yield of the first item, not production divided by area. `share_of_country_harvested_area_pct` is the area over the area of all 157 crop items of the country; `rank_in_country` is 1 plus the number of other items with a larger area.
-- **Level (`scripts/crops/atlas/levels.ts`, `LEVEL`).** `major` from `5 %` (`LEVEL.majorPct`) of the country's harvested area, `common` from `0.5 %` (`LEVEL.commonPct`), `minor` below `0.5 %` with `area > 0`, `present` when `production > 0` is reported without harvested area, `absent` when FAOSTAT covers the country and none of the crop's items is above zero.
-  - **Why `5 %` and `0.5 %` (`LEVEL`), and consultation with `khoaminh2957` (K3 `#23`):** `5 %` (`1/20` of national harvested area) isolates the 1–7 dominant landscape staples of a country (`VNM`: rice `52.5 %`, maize `6.5 %`, rubber `5.4 %`; `USA`: soybean `34.7 %`, maize `34.0 %`, wheat `15.2 %`, alfalfa `6.0 %`), while `0.5 %` (`1/200` of national harvested area, one decade below `major`) separates widely farmed commercial crops (`VNM` ~`67,500 ha`: coffee, cassava, cashew, cinnamon, coconut, sugarcane, groundnut, banana, durian, mango; `USA` ~`494,000 ha`: cotton, sorghum, rice, canola, barley, groundnut, almond) from specialty/horticultural crops (`minor`). Confirmed with `khoaminh2957` for the K3 (`#23`) country prevalence gate: K3 admits all four grown levels (`major`, `common`, `minor`, `present`) by default and only filters out `absent`, so boundary cases between `minor` and `common` (such as US potato `0.38 %`, sugar beet `0.46 %`, sunflower `0.48 %`) or between `common` and `major` (such as Viet Nam robusta coffee `4.94 %`) are never excluded by the gate.
+- **Level.** `major` from 5 % of the country's harvested area, `common` from 0.5 %, `minor` below, `present` when production is reported without area, `absent` when FAOSTAT covers the country and none of the crop's items is above zero.
 - **Group crops.** `level = unknown` in every country unless supplied by `data/crops/national/prevalence.csv`; `item_reported` says whether the country reports the group item at all. The quantities are in `item_country.csv`, attached to the item.
-- **National prevalence (`match = national`).** Read by `scripts/crops/atlas/national.ts` from `data/crops/national/prevalence.csv`. For `group` and `none` crops (and false-`absent` rows identified in T1 `#8`), a row with a national figure writes `match = national`, an empty `faostat_item_code`, `year_from = year_to = year`, `share_of_country_harvested_area_pct = (area_ha / total_harvested_area_ha) * 100` (**the numerator is the national `area_ha` and the denominator is FAOSTAT's `total_harvested_area_ha` of the country**), `level = levelFor(area_ha, share, production_t)`, and adds the crop to `cropsOfCountry` so `country_crops.csv` lists it. A row without a national figure leaves `area_ha` empty and keeps `level = unknown` (never inferred from a group item); on a `group` crop the FAOSTAT group row stays as it is, on a crop with no item or an `absent` row it is written with `match = national`. **`crop_country.csv` gets no new column**: a national row is recognised by `match = national` and by `source`, which names the national statistic instead of `FAOSTAT QCL`. The URL, access date, table and `note` of every national row (the reason, when there is no figure) are in `data/crops/national/prevalence.csv`, keyed by `crop_id` and `iso3`, and the publication is a row of `sources.csv`. Outside `VNM`, `USA`, `IND`, and `BRA` the file is byte for byte what it was. A national row only replaces `unknown` or `absent`; it **never** changes an `exact` row for which FAOSTAT reports the crop in the country, with an area or with production alone (`present`), whether the national row has a figure or not. Such a row is ignored and the build says so (`national rows ignored` in its report, `national_rows_ignored` in `summary.csv`; none today). **A figure is entered only when the source gives it for the species and for the whole country.** The area of one city, one commune or one demonstration plot is not a national figure, and the figure of a group (all dry edible beans, pumpkins and squash of every species, all Chinese cabbages, all vetches) is not the figure of one species: in both cases `area_ha` and `production_t` stay empty, the level is `unknown`, and the `note` gives what the source does say. `summary.csv` counts the `match = national` rows with a figure (`crop_country_rows_national_with_figure`, 25) apart from those without (`crop_country_rows_national_without_figure`, 79); the publications are rows of `sources.csv` (`national-…`), written by the build from `NATIONAL_SOURCES` in `national.ts`, and a row citing a URL that is not registered there stops the build.
+- **National prevalence (`match = national`).** Read by `scripts/crops/atlas/national.ts` from `data/crops/national/prevalence.csv`. For `group` and `none` crops (and false-`absent` rows identified in T1 `#8`), a row with a national figure writes `match = national`, an empty `faostat_item_code`, `year_from = year_to = year`, `share_of_country_harvested_area_pct = (area_ha / total_harvested_area_ha) * 100` (**the numerator is the national `area_ha` and the denominator is FAOSTAT's `total_harvested_area_ha` of the country**), `level = levelFor(area_ha, share, production_t)`, and adds the crop to `cropsOfCountry` so `country_crops.csv` lists it. A row without a national figure leaves `area_ha` empty and keeps `level = unknown` (never inferred from a group item); on a `group` crop the FAOSTAT group row stays as it is, on a crop with no item or an `absent` row it is written with `match = national`. **`crop_country.csv` gets no new column**: a national row is recognised by `match = national` and by `source`, which names the national statistic instead of `FAOSTAT QCL`. The URL, access date, table and `note` of every national row (the reason, when there is no figure) are in `data/crops/national/prevalence.csv`, keyed by `crop_id` and `iso3`, and the publication is a row of `sources.csv`. Outside `VNM` and `USA` the file is byte for byte what it was. A national row only replaces `unknown` or `absent`; it **never** changes an `exact` row for which FAOSTAT reports the crop in the country, with an area or with production alone (`present`), whether the national row has a figure or not. Such a row is ignored and the build says so (`national rows ignored` in its report, `national_rows_ignored` in `summary.csv`; none today). **A figure is entered only when the source gives it for the species and for the whole country.** The area of one city, one commune or one demonstration plot is not a national figure, and the figure of a group (all dry edible beans, pumpkins and squash of every species, all Chinese cabbages, all vetches) is not the figure of one species: in both cases `area_ha` and `production_t` stay empty, the level is `unknown`, and the `note` gives what the source does say. `summary.csv` counts the `match = national` rows with a figure (`crop_country_rows_national_with_figure`, 17) apart from those without (`crop_country_rows_national_without_figure`, 42); the publications are rows of `sources.csv` (`national-…`), written by the build from `NATIONAL_SOURCES` in `national.ts`, and a row citing a URL that is not registered there stops the build.
 - **Shared items.** 30 single items belong to more than one crop (wheat to 3 Triticum rows, coffee to 4 Coffea species, cabbages to 6 Brassica rows). Each of those crops shows the item's full quantities; `item_shared_by_n_crops` in `crops.csv` says so, and `country_crops.crops_by_area` lists them after one arrow. FAOSTAT cannot split arabica from robusta; MapSPAM can.
 
 `country_crops.csv` gives, per country: the 15 largest items, the crop ids at each level, the items with their crops in order of area, the group items reported, and the kept crops that are members of those (`possible_crop_ids`).
@@ -379,51 +371,7 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 
 `economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
 
-## 13. Urban candidates (`urban_candidate`, `urban_candidate_rule`)
-
-`scripts/crops/atlas/urban.ts` (`urbanCandidate(s)`, constants in `URBAN_RULE`) selects urban / container candidate crops from the 387 kept atlas rows using only EcoCrop columns (`life_form`, `habit`, `category`, `life_span`, `cycle_min_days`) and writes `urban_candidate` (`yes` or empty) and `urban_candidate_rule` (`short-cycle`, `perennial-aromatic-herb`, or `short-cycle;perennial-aromatic-herb`) into `data/crops/atlas/crops.csv` and `urban_candidates` into `data/crops/atlas/summary.csv`.
-
-### 13.1 Rule and variants tested
-
-A row qualifies when all three conditions hold:
-
-1. **Life form (`life_form`)**: contains `herb`, `sub-shrub`, `shrub` or `vine`, and does **not** contain `tree`.
-2. **Use category & broadacre field-crop filter (`category`, `habit`, `cycle_min_days`)**:
-   - `category` contains at least one of `vegetables`, `fruits & nuts`, `ornamentals/turf`, or `medicinals & aromatic`.
-   - If the only qualifying category is `medicinals & aromatic` and the row also carries a broadacre field/industrial category (`cereals & pseudocereals`, `pulses (grain legumes)`, `roots/tubers`, `forage/pasture`, `materials`, `cover crop`, `forest/wood`), it is excluded unless `habit` contains `climber/scrambler/scadent`.
-   - If `category` includes a staple field-crop category (`cereals & pseudocereals`, `pulses (grain legumes)`, `roots/tubers`), it must either have `habit` containing `climber/scrambler/scadent` or `cycle_min_days <= 60` (`maxStapleVegetableCycleMinDays`).
-3. **Cycle / longevity (`cycle_min_days`, `life_span`)**:
-   - **`short-cycle`**: `cycle_min_days <= 120` (`maxCycleMinDays`), **or**
-   - **`perennial-aromatic-herb`**: `life_span` contains `perennial`, `category` contains `medicinals & aromatic`, and `life_form` contains `herb` or `sub-shrub`.
-
-| Variant | Rule summary | Atlas rows matched | Of 32 hand-curated urban crops | Union (`rule ∪ overlay`) | Broadacre field crops excluded (`arachis-hypogaea`, `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`) |
-|---|---|---:|---:|---:|---|
-| `R0` (issue baseline) | Any of the 4 categories + non-tree life form + (`cycle_min_days <= 120` or perennial aromatic herb) | 128 (110 short-cycle, 18 perennial herb) | 23 / 32 | 137 | None (all 4 included) |
-| `R1` (strict medicinal only) | Disqualify `medicinals & aromatic`-only rows when paired with any field category | 106 | 22 / 32 (drops `pisum-sativum`) | 116 | Excludes `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`; keeps `arachis-hypogaea` |
-| **`R` (adopted in `urban.ts`)** | `R1` + allow `climber/scrambler/scadent` on pulses (`pisum-sativum`) + require `climber` or `cycle_min_days <= 60` on staple categories | **106** (79 `short-cycle`, 15 `perennial-aromatic-herb`, 12 both) | **23 / 32** | **115** | **All 4 excluded** |
-
-### 13.2 Hand-curated urban crops not matched by the rule (9 of 32)
-
-The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts`) that the EcoCrop rule does not select remain in the urban pool through the overlay (`candidate set = rule ∪ overlay = 115 crops`):
-
-| `crop_id` | Name | Why `urbanCandidate` returns `false` on its EcoCrop row |
-|---|---|---|
-| `ipomoea-batatas` | Sweet potato (Khoai lang) | `life_form`, `habit`, and `category` are empty in EcoCrop (`ecocrop_id = 1265`) |
-| `tagetes-erecta` | Marigold (Cúc vạn thọ) | Not in the FAO EcoCrop CSV (`curated-only`, `ecocrop_id` empty) |
-| `mentha-spicata-var-crispa` | Spearmint (Húng lủi) | EcoCrop `category` is only `materials` (missing `medicinals & aromatic` and `vegetables`) |
-| `cymbopogon-citratus` | Lemongrass (Sả) | EcoCrop `life_form` is `grass` (excluded so cereal/forage grasses do not enter) |
-| `vigna-radiata` | Mung bean (Đậu xanh) | EcoCrop `category` is `pulses (grain legumes), forage/pasture, cover crop, environmental` (lacks `vegetables`) |
-| `vigna-unguiculata-ssp-sesquipedalis` | Yardlong bean (Đậu đũa) | EcoCrop `category` is `pulses (grain legumes), forage/pasture, environmental` (lacks `vegetables`) |
-| `arachis-pintoi` | Pinto peanut (Lạc dại) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
-| `musa-acuminata` | Banana (Chuối) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
-| `fragaria-x-ananassa` | Strawberry (Dâu tây) | `cycle_min_days = 180` (> 120) and `category` is `fruits & nuts` without `medicinals & aromatic` |
-
-### 13.3 Limitations
-
-- **Empty EcoCrop cells.** Missing `life_form`, `category`, or `cycle_min_days` evaluates to `false` rather than guessing.
-- **Dropped species.** 676 cultivated EcoCrop species with no FAOSTAT crop item are in `dropped.csv` (section 10), including many ornamentals and culinary herbs; `urban_candidate` is evaluated on the 387 kept atlas crops only.
-
-## 14. Atlas coverage summary (`summary.csv`, T7 `#12` & T8 `#71`)
+## 13. Atlas coverage summary (`summary.csv`, T7 `#12` & T8 `#71`)
 
 Every metric below is emitted into `data/crops/atlas/summary.csv` by `scripts/crops/atlas/build.ts`:
 
@@ -458,7 +406,7 @@ Every metric below is emitted into `data/crops/atlas/summary.csv` by `scripts/cr
 
 The result has a file of its own and `crops.csv` has no `urban_` column: the market database mirrors `crops.csv` column for column (`scripts/market/atlas.ts`, `docs/DATABASE.md`), so a column added there would change the table of a migration that is already applied. Join on `crop_id`.
 
-### 13.1 Rule and variants tested
+### 14.1 Rule and variants tested
 
 A row qualifies when all three conditions hold:
 
@@ -477,7 +425,7 @@ A row qualifies when all three conditions hold:
 | `R1` (strict medicinal only) | Disqualify `medicinals & aromatic`-only rows when paired with any field category | 106 | 22 / 32 (drops `pisum-sativum`) | 116 | Excludes `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`; keeps `arachis-hypogaea` |
 | **`R` (adopted in `urban.ts`)** | `R1` + allow `climber/scrambler/scadent` on pulses (`pisum-sativum`) + require `climber` or `cycle_min_days <= 60` on staple categories | **106** (79 `short-cycle`, 15 `perennial-aromatic-herb`, 12 both) | **23 / 32** | **115** | **All 4 excluded** |
 
-### 13.2 Hand-curated urban crops not matched by the rule (9 of 32)
+### 14.2 Hand-curated urban crops not matched by the rule (9 of 32)
 
 The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts`) that the EcoCrop rule does not select remain in the urban pool through the overlay (`candidate set = rule ∪ overlay = 115 crops`):
 
@@ -493,7 +441,7 @@ The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts
 | `musa-acuminata` | Banana (Chuối) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
 | `fragaria-x-ananassa` | Strawberry (Dâu tây) | `cycle_min_days = 180` (> 120) and `category` is `fruits & nuts` without `medicinals & aromatic` |
 
-### 13.3 Limitations
+### 14.3 Limitations
 
 - **The thresholds are a choice of the project.** The 120-day limit of the short-cycle clause (`maxCycleMinDays`) and the 60-day limit for staple categories (`maxStapleVegetableCycleMinDays`) are a choice of the project, not taken from a publication.
 - **The rule selects more than a balcony can hold.** It reads only EcoCrop's life form, category, life span and shortest cycle, so `yes` also falls on crops that are not pot crops: papaya (`carica-papaya`: life form `herb`, `perennial`, `medicinals & aromatic`), vanilla (`vanilla-planifolia`: `herb, vine`, `perennial`, `medicinals & aromatic`), jojoba and myrtle (`simmondsia-chinensis`, `myrtus-communis`: `shrub`, shortest cycle 120 days), pigeon pea (`cajanus-cajan`: `shrub`, 90 days) and rapeseed (`brassica-napus`: 85 days). `yes` means the crop passes this filter, not that it is recommended: a crop may be offered to a balcony grower only when it also has container figures with a source.

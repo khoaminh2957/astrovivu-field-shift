@@ -435,8 +435,6 @@ async function main() {
       k.worldProductionT != null ? Math.round(k.worldProductionT) : null,
       k.yearFrom != null ? (k.yearFrom === k.yearTo ? String(k.yearFrom) : `${k.yearFrom}-${k.yearTo}`) : '',
       k.curated ? 'yes' : 'no',
-      urbanCandidate(s).candidate ? 'yes' : '',
-      urbanCandidate(s).rule,
     ];
   });
 

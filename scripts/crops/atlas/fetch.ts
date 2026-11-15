@@ -109,8 +109,7 @@ export const SOURCES: Source[] = [
     publisher: 'United Nations Statistics Division',
     url: 'https://unstats.un.org/unsd/methodology/m49/overview/',
     landing: 'https://unstats.un.org/unsd/methodology/m49/overview/',
-    licence:
-      'chưa xác minh (unverified): (c) United Nations (page footer); no data licence is stated on the M49 page, and https://www.un.org/en/about-us/terms-of-use answered HTTP 403 to automated and non-interactive requests on 2026-11-15 and was not read',
+    licence: '(c) United Nations (page footer); no data licence is stated on the page, the UN website Terms of Use apply (https://www.un.org/en/about-us/terms-of-use, which answered HTTP 403 to this build and was not read)',
     file: 'unsd_m49_overview.html',
   },
   {
