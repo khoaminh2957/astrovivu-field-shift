@@ -142,6 +142,29 @@ GR (t/ha of pure gypsum) = 0.086 x depth (m) x bulk density (t/m3) x CEC (cmol(+
 - Status: `unknown` without a measurement (or with a negative value, which is not a reading); `safe` when the measurement is 0, with no lime recommended; `potential_risk` when aluminium is present. Nothing is called toxic: the module holds no saturation threshold with a source.
 - No crop tolerance is reported for any crop (section 6).
 
+### 5.6 Crop nutrient removal budgets (Issue #49 / S8)
+
+- Nutrient removal per metric ton of harvested product:
+  $$\text{Removal (kg/ha)} = \text{Target Yield (t/ha)} \times \text{Removal Factor (kg/t)}$$
+- Source: International Plant Nutrition Institute (IPNI, 2014), *Nutrient Removal by Crops*, Table 1; IFA/FAO (2002), *Fertilizer Use by Crop*.
+
+| Crop | Harvested Product | N Removal (kg/t) | P₂O₅ Removal (kg/t) | K₂O Removal (kg/t) | Default Target Yield (t/ha) |
+|---|---|---|---|---|---|
+| Maize (`zea-mays`) | Grain | 21–25 | 8–10 | 18–24 | 8.0 |
+| Paddy Rice (`oryza-sativa`) | Grain | 16–20 | 7–9 | 20–28 | 6.0 |
+| Soybean (`glycine-max`) | Seed | 55–65 | 13–17 | 25–35 | 3.5 |
+| Coffee (`coffea-canephora`) | Green bean | 30–40 | 6–8 | 35–50 | 2.5 |
+| Alfalfa (`medicago-sativa`) | Dry hay | 26–30 | 6–7 | 24–28 | 10.0 |
+| Wheat (`triticum-aestivum`) | Grain | 24–28 | 9–11 | 18–22 | 5.0 |
+
+- Soil nitrogen supply and mineralization:
+  - Total topsoil (0–20 cm) nitrogen stock = $\text{total N (g/kg)} \times \text{soil mass (t/ha)}$ (from section 5.1).
+  - Annual plant-available mineralized N = 1% to 3% of total organic N stock.
+- Caveats and rules:
+  - Legumes (soybean, alfalfa) note that 50–70% of N requirements are supplied through symbiotic biological $N_2$ fixation.
+  - Potassium removal depends on whether straw/stover is exported or retained in the field (straw holds 70–80% of total plant K).
+  - No specific P or K fertilizer dosage is stated without an on-farm soil test (e.g. Olsen P, Bray-1 P, or exchangeable K). The module reports harvest removal to prevent nutrient mining.
+
 ## 6. Removed from the output for lack of a source
 
 Each can come back with a publication, year, table or page, and licence.
