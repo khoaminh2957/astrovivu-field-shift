@@ -24,8 +24,10 @@ Details, revision ids and the sources considered and rejected: `data/rag/ATTRIBU
 | `match` | Crops | The sheet says |
 |---|---:|---|
 | `exact` | 165 | how many countries report production; the harvested area of the world, with the span of years that covers the countries' figures and the statement that each country's figure is the mean of its own latest three years with data; the atlas's commonness class; the five countries with the largest area and, when they are not among the five, Viet Nam and the United States with their place, each with the years its figure is the mean of (said once when the countries listed share them); and the FAOSTAT item the figures are of, always. For 80 of them the item is tied to more than one crop, and the sheet says the figures are the item's, not one crop's; for the other 85 it names the item all the same, because an item can be wider than the crop ("Carrots and turnips" for carrot) |
-| `group` | 202 | the name of the FAOSTAT item the crop is counted in and how many other crops share it; no area of any country |
-| `none` | 20 | that the atlas ties no FAOSTAT item to it and so has no figures by country. Not that FAOSTAT has no such item: bananas have one, and the atlas ties none to *Musa acuminata* |
+| `group` | 202 | the name of the FAOSTAT item the crop is counted in and how many other crops share it; that FAOSTAT gives no area for any country |
+| `none` | 20 | that the atlas ties no FAOSTAT item to it and so has no FAOSTAT figures by country. Not that FAOSTAT has no such item: bananas have one, and the atlas ties none to *Musa acuminata* |
+
+**National statistics.** Since 15 November 2026 the atlas also holds what the statistics of Viet Nam and of the United States say of 59 crop and country pairs that FAOSTAT counts inside a group, has no item for, or reports nothing of (`match = national` in `crop_country.csv`); 17 of them carry a figure. A sheet of any of the three kinds gives each such figure in a sentence of its own, with the area, the production where there is one, the year and the publication as the atlas names it: "Viet Nam, from its national statistics: 178,800 ha harvested and 1,470,000 t produced in 2024 (…)" for durian. It is not ranked among FAOSTAT's countries, and a national row without a figure is not turned into a statement.
 
 Every number of every sheet is a column of `crops.csv` or `crop_country.csv` (a test checks all 387), the years included (`year_from`, `year_to` of each country's row). In an extractive answer the sheet is given whole, with the sentence that names the item, or not at all: sentences are never picked out of it. Country names are FAOSTAT's, in both languages, except Viet Nam and the United States, which have their Vietnamese name in the Vietnamese sheet.
 
@@ -139,8 +141,8 @@ The answers themselves are checked in `src/rag/fieldAnswer.test.ts`: on the fixt
 
 | Artifact | Raw | gzip | Loaded |
 |---|---|---|---|
-| `public/rag/core.json` (1,522 chunks, 70 crops, index over core) | 4,067 kB | 1,000 kB | on the first question (or `warmUp()`) |
-| `public/rag/full.json` (index over all 2,951 chunks + 1,429 extra chunks, 317 crops, names of 2,178 dropped species) | 6,012 kB | 1,155 kB | in the background after core; awaited when a question matches nothing in core, or asks what a crop needs and names no curated crop |
+| `public/rag/core.json` (1,522 chunks, 70 crops, index over core) | 4,069 kB | 1,000 kB | on the first question (or `warmUp()`) |
+| `public/rag/full.json` (index over all 2,951 chunks + 1,429 extra chunks, 317 crops, names of 2,178 dropped species) | 6,027 kB | 1,160 kB | in the background after core; awaited when a question matches nothing in core, or asks what a crop needs and names no curated crop |
 
 Before the corpus was cut down to the atlas (13 November 2026): 4,130 kB (1,015 kB gzip) and 16,266 kB (2,962 kB gzip), 6,108 chunks. The first load is 2 % smaller, the lazy file 63 % smaller.
 

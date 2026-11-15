@@ -23,6 +23,7 @@ import { Beacons } from './beacons';
 import { emitMapClick } from './mapClick';
 import {
   angularDistance,
+  centerParcelOutline,
   cssPx,
   descentEase,
   explorePose,
@@ -127,6 +128,8 @@ function fitPadding(p: Padding, view: Viewport): Padding {
 
 const hasInsets = (i: ViewInsets | undefined): i is ViewInsets => !!i && i.top + i.right + i.bottom + i.left > 0;
 
+type ViewInsetsReader = (state: MissionState) => ViewInsets;
+
 let workerConfigured = false;
 let active: GlobeEngine | null = null;
 
@@ -151,6 +154,7 @@ export class GlobeEngine {
   private state: MissionState = useMission.getState();
   private view: View = viewOf(this.state);
   private motion: MotionPref;
+  private readonly systemMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private ready = false;
   private destroyed = false;
 
@@ -166,6 +170,9 @@ export class GlobeEngine {
   private sharpCredited = false;
   private labelsCredit: string | null = null;
   private flightId = 0;
+  private transitionInsets: ViewInsets | undefined;
+  private flightDestination: CameraPose | null = null;
+  private parcelName: Marker | null = null;
   private flying = false;
   private rotateRaf = 0;
   private rotateLast = 0;
@@ -187,9 +194,10 @@ export class GlobeEngine {
   private promptMarkers: Marker[] = [];
   private readonly warned = new Set<string>();
 
-  constructor(host: HTMLElement, opts: { motion?: MotionPref } = {}) {
+  constructor(host: HTMLElement, opts: { motion?: MotionPref; readViewInsets?: ViewInsetsReader } = {}) {
     this.host = host;
     this.motion = opts.motion ?? 'auto';
+    this.readViewInsets = opts.readViewInsets;
     if (!workerConfigured) {
       workerConfigured = true;
       setWorkerUrl(workerUrl);
@@ -355,6 +363,7 @@ export class GlobeEngine {
     cancelAnimationFrame(this.rotateRaf);
     cancelAnimationFrame(this.viewRaf);
     cancelAnimationFrame(this.rasterRaf);
+    this.parcelName?.remove();
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
     if (this.ratioTimer) clearTimeout(this.ratioTimer);
     if (this.frameTimer) clearTimeout(this.frameTimer);
@@ -555,6 +564,8 @@ export class GlobeEngine {
       useMission.subscribe((s, prev) => this.onStore(s, prev)),
     );
 
+    this.systemMotion.addEventListener('change', this.onMotionChange);
+    this.cleanups.push(() => this.systemMotion.removeEventListener('change', this.onMotionChange));
     this.ready = true;
     this.state = useMission.getState();
     this.view = viewOf(this.state);
@@ -677,15 +688,15 @@ export class GlobeEngine {
   }
 
   private get reduced(): boolean {
-    // The system setting is not followed on purpose: the user asked for smooth globe movement and
-    // their system reports reduce. `?motion=reduced` and setMotion('reduced') turn it down.
-    return this.motion === 'reduced';
+    return this.motion === 'reduced' || (this.motion === 'auto' && this.systemMotion.matches);
   }
 
-  private poseFor(view: View, viewport: Viewport): CameraPose {
+  private readonly readViewInsets?: ViewInsetsReader;
+
+  private poseFor(view: View, viewport: Viewport, insets = this.readViewInsets?.(this.state) ?? this.state.insets): CameraPose {
     const { parcel } = this.state;
-    if (view === 'parcel' && parcel) return this.parcelPose(parcel, viewport);
-    return view === 'hero' ? heroPose(viewport, HERO_CENTER) : this.explore(viewport, HERO_CENTER);
+    if (view === 'parcel' && parcel) return this.parcelPose(parcel, viewport, insets);
+    return view === 'hero' ? heroPose(viewport, HERO_CENTER) : this.explore(viewport, HERO_CENTER, insets);
   }
 
   /**
@@ -693,23 +704,23 @@ export class GlobeEngine {
    * HUD columns), read from the design tokens so the parcel lands in the free area whatever the
    * breakpoint; MapLibre then centres the look-at point in what is left, a little above the middle.
    */
-  private parcelPose(parcel: Parcel, viewport: Viewport = this.viewport()): CameraPose {
-    const padding = this.parcelPadding(viewport);
+  private parcelPose(parcel: Parcel, viewport: Viewport = this.viewport(), insets = this.state.insets): CameraPose {
+    const padding = this.parcelPadding(viewport, insets);
     const ring = openRing(parcel.polygon.coordinates[0]);
     // Lay the long side across the screen; a compact shape gets a slight turn so the scene
     // reads as 3D rather than as a tilted map.
     const bearing = framingBearing(ring, -16);
-    const fill = hasInsets(this.state.insets) ? 0.62 : LOCK_FILL;
+    const fill = hasInsets(insets) ? (viewport.height <= 800 && viewport.width >= 1100 ? 0.55 : 0.62) : LOCK_FILL;
     const zoom = clamp(fitZoom(ring, parcel.centroid[1], viewport, padding, LOCK_PITCH, bearing, fill), ...LOCK_ZOOM_RANGE);
-    return { center: parcel.centroid, zoom, pitch: LOCK_PITCH, bearing, padding };
+    const pose = { center: parcel.centroid, zoom, pitch: LOCK_PITCH, bearing, padding };
+    return { ...pose, center: centerParcelOutline(ring, pose, viewport.height) };
   }
 
   /**
    * Camera padding around the parcel: the panel insets the UI publishes, plus a margin. Before
    * the UI has published any, the earlier estimate of the HUD layout from the design tokens.
    */
-  private parcelPadding(viewport: Viewport): Padding {
-    const ins = this.state.insets;
+  private parcelPadding(viewport: Viewport, ins: ViewInsets | undefined): Padding {
     if (hasInsets(ins)) {
       const m = 12;
       return fitPadding({ top: ins.top + m, bottom: ins.bottom + m, left: ins.left + m, right: ins.right + m }, viewport);
@@ -724,8 +735,7 @@ export class GlobeEngine {
    * margin and nothing else, so a place the camera flies to lands in the middle of the visible map
    * (an extra bottom allowance for a dock that no longer exists used to push it up to the top edge).
    */
-  private explore(viewport: Viewport, center: LngLat): CameraPose {
-    const ins = this.state.insets;
+  private explore(viewport: Viewport, center: LngLat, ins = this.state.insets): CameraPose {
     if (!hasInsets(ins)) return explorePose(viewport, center);
     const m = 12;
     return explorePose(viewport, center, fitPadding({ top: ins.top + m, bottom: ins.bottom + m, left: ins.left + m, right: ins.right + m }, viewport));
@@ -741,7 +751,10 @@ export class GlobeEngine {
    * the camera is then where the old insets put it, so the whole framing is redone, however far that is.
    */
   private onInsets(landed = false): void {
-    const { parcel } = this.state;
+    const { parcel, insets } = this.state;
+    const target = this.transitionInsets;
+    if (target && insets && target.top === insets.top && target.right === insets.right && target.bottom === insets.bottom && target.left === insets.left) return;
+    this.transitionInsets = undefined;
     if (this.flying) {
       this.insetsPending = true;
       return;
@@ -788,6 +801,10 @@ export class GlobeEngine {
     this.host.dataset.view = view;
     this.syncBeacons();
     this.lockedParcelId = view === 'parcel' && parcel ? parcel.id : null;
+    this.transitionInsets = this.readViewInsets?.(this.state);
+    this.insetsPending = false;
+    this.parcelName?.remove();
+    this.parcelName = null;
 
     if (view === 'parcel' && parcel) {
       this.parcelLayer.setParcel(parcel);
@@ -799,29 +816,39 @@ export class GlobeEngine {
       this.setDimMask(null);
     }
     // Leaving the hero, the globe comes up to full contrast while the camera steps in.
-    this.imagery.set(this.imageryLook(), from === null ? 0 : 1200);
+    this.imagery.set(this.imageryLook(), from === null || this.reduced ? 0 : 1200);
 
     const viewport = this.viewport();
     if (from === null) {
       // First frame (page load or deep link): start where the state says, without a show.
-      map.jumpTo(this.poseFor(view, viewport));
+      map.jumpTo(this.poseFor(view, viewport, this.transitionInsets ?? this.state.insets));
       this.syncTerrain();
+      if (view === 'parcel' && parcel) this.showParcelName(parcel);
     } else if (view === 'parcel' && parcel) {
-      const pose = this.parcelPose(parcel, viewport);
+      const pose = this.parcelPose(parcel, viewport, this.transitionInsets ?? this.state.insets);
       this.prefetch(pose.center, pose.zoom);
-      this.fly(pose, 'descend', () => this.parcelLayer.flash());
+      this.fly(pose, 'descend', () => { if (!this.reduced) this.parcelLayer.flash(); });
+      this.showParcelName(parcel);
     } else {
       // Keep looking at the same part of the world: back out above the parcel that was locked,
       // or step in or out over wherever the user had turned the globe.
       const c = map.getCenter();
       const here: LngLat = [c.lng, c.lat];
-      const pose = view === 'hero' ? heroPose(viewport, here) : this.explore(viewport, here);
+      const pose = view === 'hero' ? heroPose(viewport, here) : this.explore(viewport, here, this.transitionInsets ?? this.state.insets);
       // A visitor who zoomed in on the landing keeps that view when they enter: only the padding follows the panels.
       if (from === 'hero' && map.getZoom() > pose.zoom) pose.zoom = map.getZoom();
       this.fly(pose, from === 'parcel' ? 'ascend' : 'level');
     }
     if (view === 'hero') this.startRotation();
     else this.stopRotation();
+  }
+
+  private showParcelName(parcel: Parcel): void {
+    const label = document.createElement('span');
+    label.className = 'locked-parcel-name';
+    label.textContent = parcel.name;
+    label.setAttribute('aria-hidden', 'true');
+    this.parcelName = new Marker({ element: label }).setLngLat(parcel.centroid).addTo(this.map);
   }
 
   private setDimMask(parcel: Parcel | null): void {
@@ -915,6 +942,7 @@ export class GlobeEngine {
     const from = map.getCenter();
     const duration = flightDurationMs(pose.zoom - map.getZoom(), angularDistance([from.lng, from.lat], pose.center));
     const id = ++this.flightId;
+    this.flightDestination = pose;
     const pitch0 = map.getPitch();
     const bearing0 = map.getBearing();
     const dPitch = pose.pitch - pitch0;
@@ -923,7 +951,7 @@ export class GlobeEngine {
       map.setTransformCameraUpdate((next) => {
         // flyTo interpolates pitch linearly with its progress, so the pitch it proposes tells us how far along it is.
         const k = clamp((next.pitch - pitch0) / dPitch, 0, 1);
-        const shaped = shape === 'descend' ? smoothstep(0.5, 1, k) : smoothstep(0, 0.5, k);
+        const shaped = shape === 'descend' ? smoothstep(0.45, 0.88, k) : smoothstep(0, 0.5, k);
         return { pitch: pitch0 + dPitch * shaped, bearing: bearing0 + dBearing * shaped };
       });
     } else {
@@ -938,6 +966,7 @@ export class GlobeEngine {
       if (this.flightId !== id || this.destroyed) return;
       map.setTransformCameraUpdate(null);
       this.flying = false;
+      this.flightDestination = null;
       if (this.state.parcel) this.parcelLayer.update(this.vw, this.vh, true);
       setGlobeStatus({ flying: false });
       this.rotateResumeAt = performance.now() + 600;
@@ -964,31 +993,32 @@ export class GlobeEngine {
     );
   }
 
-  /** Reduced motion: no travel. The view changes in place under a short opacity fade. */
+  /** Reduced motion goes straight to the destination. */
   private cut(pose: CameraPose): void {
-    const { map, mapEl } = this;
+    const { map } = this;
     // Any flight still running is abandoned: its end handler will see a newer id and stand down.
     this.flightId++;
     this.flying = false;
-    setGlobeStatus({ flying: false });
+    this.flightDestination = null;
     map.setTransformCameraUpdate(null);
-    mapEl.classList.add('is-cutting');
     map.jumpTo(pose);
     this.syncTerrain();
-    requestAnimationFrame(() => requestAnimationFrame(() => mapEl.classList.remove('is-cutting')));
+    if (this.state.parcel) this.parcelLayer.update(this.vw, this.vh, true);
+    setGlobeStatus({ flying: false });
   }
 
-  private onMotionChange(): void {
+  private onMotionChange = (): void => {
     setGlobeStatus({ reducedMotion: this.reduced });
     this.queueViewState();
     if (!this.ready) return;
     if (this.reduced) {
       this.stopRotation();
-      if (this.flying) this.map.stop();
+      this.imagery.set(this.imageryLook(), 0);
+      if (this.flightDestination) this.cut(this.flightDestination);
     } else if (this.view === 'hero') {
       this.startRotation();
     }
-  }
+  };
 
   // --- auto-rotation ---------------------------------------------------------------------------
 

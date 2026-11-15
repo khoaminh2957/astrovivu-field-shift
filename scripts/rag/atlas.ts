@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Papa from 'papaparse';
-import type { CropWhere } from '../../src/rag/types';
+import type { CropNational, CropWhere } from '../../src/rag/types';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 export const ATLAS_DIR = path.join(ROOT, 'data/crops/atlas');
@@ -110,6 +110,30 @@ export function countriesOf(cropId: string): CountryArea[] {
   return byCrop.get(cropId) ?? [];
 }
 
+let nationalByCrop: Map<string, CropNational[]> | null = null;
+
+/**
+ * What national statistics say of the crop, for the countries the atlas has a national row with
+ * a figure (`match = national`): area, production, year and the publication. A national row
+ * without a figure says only that the publication has none, and is not given.
+ */
+export function nationalOf(cropId: string): CropNational[] {
+  if (!nationalByCrop) {
+    nationalByCrop = new Map();
+    for (const r of readCsv('crop_country.csv')) {
+      const areaHa = num(r.area_ha);
+      if (r.match !== 'national' || areaHa == null || areaHa <= 0) continue;
+      const years = r.year_from && r.year_to ? (r.year_from === r.year_to ? r.year_from : `${r.year_from}-${r.year_to}`) : undefined;
+      const productionT = num(r.production_t);
+      const list = nationalByCrop.get(r.crop_id) ?? [];
+      list.push({ iso3: r.iso3, name: r.country, areaHa, ...(productionT != null ? { productionT } : {}), ...(years ? { years } : {}), source: r.source.trim() });
+      nationalByCrop.set(r.crop_id, list);
+    }
+    for (const list of nationalByCrop.values()) list.sort((a, b) => HOME_COUNTRIES.indexOf(a.iso3) - HOME_COUNTRIES.indexOf(b.iso3) || a.iso3.localeCompare(b.iso3));
+  }
+  return nationalByCrop.get(cropId) ?? [];
+}
+
 export function topCountries(cropId: string, n: number): CountryArea[] {
   return countriesOf(cropId).slice(0, n);
 }
@@ -121,6 +145,8 @@ export const HOME_COUNTRIES = ['VNM', 'USA'];
 export function whereOf(crop: AtlasCrop): CropWhere {
   const r = crop.row;
   const where: CropWhere = { match: crop.match };
+  const national = nationalOf(crop.cropId);
+  if (national.length) where.national = national;
   if (crop.match === 'none') return where;
   where.faostatItem = text(r.faostat_item);
   where.sharedBy = num(r.item_shared_by_n_crops);

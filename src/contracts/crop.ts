@@ -5,6 +5,7 @@ export type DrainageClass = 'poor' | 'well' | 'excessive';
 export type DepthClass = 'very-shallow' | 'shallow' | 'medium' | 'deep';
 export type SalinityClass = 'none' | 'low' | 'medium' | 'high';
 export type FertilityClass = 'low' | 'moderate' | 'high';
+export type AlToxicityClass = 'none' | 'low' | 'medium' | 'high';
 
 export type CropCategory =
   | 'cereal'
@@ -32,6 +33,8 @@ export interface CropRequirements {
   drainage?: { opt: DrainageClass[]; abs: DrainageClass[] };
   salinity?: { opt: SalinityClass; abs: SalinityClass };
   fertility?: { opt: FertilityClass; abs: FertilityClass };
+  /** Aluminium saturation tolerance class from FAO EcoCrop (`eco_soil_al_tox_opt` / `eco_soil_al_tox_abs`). */
+  alToxicity?: { opt: AlToxicityClass; abs: AlToxicityClass };
   /** Temperature that kills the plant in early growth, °C. */
   killTempC?: number | null;
   /** Temperature that kills the plant while it rests (winter dormancy), °C. Used for perennials. */

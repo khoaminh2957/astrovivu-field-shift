@@ -26,6 +26,18 @@ export interface CropCountry {
  * `group`: FAOSTAT counts the crop inside an item of several crops; no figure is the crop's own.
  * `none`: no FAOSTAT crop item covers it.
  */
+/** What a country's own statistics say of a crop, where the atlas has such a row (`match = national` in crop_country.csv). */
+export interface CropNational {
+  iso3: string;
+  name: string;
+  areaHa: number;
+  productionT?: number;
+  /** The year, or years, of the figure. */
+  years?: string;
+  /** The publication, as the atlas names it. */
+  source: string;
+}
+
 export interface CropWhere {
   match: 'exact' | 'group' | 'none';
   faostatItem?: string;
@@ -42,6 +54,11 @@ export interface CropWhere {
   top?: CropCountry[];
   /** Viet Nam and the United States when they report the crop and are not among the five. */
   also?: CropCountry[];
+  /**
+   * Figures of national statistics, for the countries the atlas has them for (Viet Nam and the
+   * United States). They are not FAOSTAT's and are not ranked among FAOSTAT's countries.
+   */
+  national?: CropNational[];
 }
 
 /** Structured requirements of one species, cleaned from FAO EcoCrop (see scripts/rag/ecocrop.ts). */

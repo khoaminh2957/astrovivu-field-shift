@@ -13,6 +13,7 @@
 import fs from 'node:fs';
 import Papa from 'papaparse';
 import type {
+  AlToxicityClass,
   CropCategory,
   CropProfile,
   CropRequirements,
@@ -197,6 +198,15 @@ function fertilityClass(s: string): FertilityClass | null {
   return t === 'low' || t === 'moderate' || t === 'high' ? t : null;
 }
 
+function alToxicityClass(s: string): AlToxicityClass | null {
+  const t = s.trim().toLowerCase();
+  if (t.startsWith('none')) return 'none';
+  if (t.startsWith('low')) return 'low';
+  if (t.startsWith('medium')) return 'medium';
+  if (t.startsWith('high')) return 'high';
+  return null;
+}
+
 /** `tropical wet & dry (Aw), steppe or semiarid (Bs)` -> ['Aw', 'Bs'] (Köppen-Trewartha codes). */
 function zoneCodes(s: string): string[] {
   return [...s.matchAll(/\(([A-Z][a-z]?)\)/g)].map((m) => m[1]);
@@ -352,6 +362,9 @@ export function cleanEcoCrop(rows: Raw[]): CleanResult {
     const fOpt = fertilityClass(r.eco_soil_fertility_opt);
     const fAbs = fertilityClass(r.eco_soil_fertility_abs);
     if (fOpt || fAbs) req.fertility = { opt: (fOpt ?? fAbs)!, abs: (fAbs ?? fOpt)! };
+    const alOpt = alToxicityClass(r.eco_soil_al_tox_opt);
+    const alAbs = alToxicityClass(r.eco_soil_al_tox_abs);
+    if (alOpt || alAbs) req.alToxicity = { opt: (alOpt ?? alAbs)!, abs: (alAbs ?? alOpt)! };
 
     const kill = num(r.clim_killing_temp_early_growth);
     const killRest = num(r.clim_killing_temp_during_rest);
@@ -454,7 +467,7 @@ function mergeVariants(
       if (v === base) continue;
       if (!sameQuad(v.req.tempC, base.req.tempC) || !sameQuad(v.req.rainMm, base.req.rainMm) || !sameQuad(v.req.ph, base.req.ph)) continue;
       const filled: string[] = [];
-      for (const key of ['texture', 'depth', 'drainage', 'salinity', 'fertility', 'photoperiod', 'climateZones', 'latitudeAbs', 'altitudeMaxM', 'killTempC', 'killTempRestC'] as const) {
+      for (const key of ['texture', 'depth', 'drainage', 'salinity', 'fertility', 'alToxicity', 'photoperiod', 'climateZones', 'latitudeAbs', 'altitudeMaxM', 'killTempC', 'killTempRestC'] as const) {
         if (base.req[key] == null && v.req[key] != null) {
           // Same key on both sides, so the value types line up; TypeScript cannot see that through the union.
           (base.req as unknown as Record<string, unknown>)[key] = v.req[key];

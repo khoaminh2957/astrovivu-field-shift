@@ -143,15 +143,24 @@ export function whereLines(f: CropFacts, lang: Lang): string[] {
   const vi = lang === 'vi';
   const name = cropLabel(f, lang);
   const country = (c: { iso3: string; name: string }) => (vi ? (VI_COUNTRY[c.iso3] ?? c.name) : c.name);
+  // What a country's own statistics say, where the atlas has it: not FAOSTAT's figure, and said with its publication.
+  const national = (w.national ?? []).map((c) => {
+    const when = c.years ? (vi ? ` năm ${c.years}` : ` in ${c.years}`) : '';
+    const made = c.productionT != null ? (vi ? ` và sản lượng ${groupDigits(c.productionT, 'vi')} tấn` : ` and ${groupDigits(c.productionT, 'en')} t produced`) : '';
+    return vi
+      ? `${country(c)}, theo thống kê quốc gia: ${groupDigits(c.areaHa, 'vi')} ha thu hoạch${made}${when} (${c.source}).`
+      : `${country(c)}, from its national statistics: ${groupDigits(c.areaHa, 'en')} ha harvested${made}${when} (${c.source}).`;
+  });
   // `none` says what the atlas did, not what FAOSTAT has: FAOSTAT has an item "Bananas", and the atlas ties it to another Musa.
   if (w.match === 'none')
-    return [vi ? `Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với ${name}, nên không có số liệu theo nước cho cây này.` : `The crop atlas ties no FAOSTAT item to ${name}, so it has no figures by country for it.`];
+    return [vi ? `Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với ${name}, nên không có số liệu FAOSTAT theo nước cho cây này.` : `The crop atlas ties no FAOSTAT item to ${name}, so it has no FAOSTAT figures by country for it.`, ...national];
   if (w.match === 'group') {
     const others = (w.sharedBy ?? 1) - 1;
     return [
       vi
-        ? `FAOSTAT không có số liệu riêng cho ${name}: cây này được tính gộp trong mặt hàng ${w.faostatItem ?? 'gộp'}${others > 0 ? `, cùng ${others} cây khác của atlas` : ''}. Vì vậy không nêu được diện tích ở nước nào.`
-        : `FAOSTAT has no figures for ${name} alone: it is counted inside the item ${w.faostatItem ?? 'of a group'}${others > 0 ? `, with ${others} other crops of the atlas` : ''}. No area can be given for any country.`,
+        ? `FAOSTAT không có số liệu riêng cho ${name}: cây này được tính gộp trong mặt hàng ${w.faostatItem ?? 'gộp'}${others > 0 ? `, cùng ${others} cây khác của atlas` : ''}. Vì vậy FAOSTAT không cho diện tích ở nước nào.`
+        : `FAOSTAT has no figures for ${name} alone: it is counted inside the item ${w.faostatItem ?? 'of a group'}${others > 0 ? `, with ${others} other crops of the atlas` : ''}. FAOSTAT gives no area for any country.`,
+      ...national,
     ];
   }
   const out: string[] = [];
@@ -183,11 +192,18 @@ export function whereLines(f: CropFacts, lang: Lang): string[] {
           ? `Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}.`
           : `These are the figures of the FAOSTAT item ${w.faostatItem}.`,
     );
+  out.push(...national);
   return out;
 }
 
 export function renderWhere(f: CropFacts, lang: Lang): string {
-  const tail = lang === 'vi' ? ' Nguồn: FAOSTAT (QCL), qua atlas cây trồng của Astrovivu.' : ' Source: FAOSTAT (QCL), through the Astrovivu crop atlas.';
+  const tail = f.prevalence?.national?.length
+    ? lang === 'vi'
+      ? ' Nguồn: FAOSTAT (QCL) và thống kê quốc gia nêu ở trên, qua atlas cây trồng của Astrovivu.'
+      : ' Sources: FAOSTAT (QCL) and the national statistics named above, through the Astrovivu crop atlas.'
+    : lang === 'vi'
+      ? ' Nguồn: FAOSTAT (QCL), qua atlas cây trồng của Astrovivu.'
+      : ' Source: FAOSTAT (QCL), through the Astrovivu crop atlas.';
   return `${whereLines(f, lang).join(' ')}${tail}`;
 }
 

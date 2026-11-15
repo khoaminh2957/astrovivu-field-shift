@@ -45,7 +45,7 @@ export function PlantDetail({ rec, month, onClose }: { rec: UrbanRecommendation 
       modal
       side={narrow ? 'bottom' : 'right'}
       width="460px"
-      className={narrow ? undefined : 'top-0'}
+      className={cn('workspace-theme workspace-urban-guide', !narrow && 'top-0')}
       title={name}
       description={crop ? <span className="italic">{crop.scientificName}</span> : undefined}
       footer={

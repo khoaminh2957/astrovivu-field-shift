@@ -11,6 +11,8 @@ The index in `public/rag/` is built from the sources below. Every chunk carries 
 
 Wikipedia snapshots were fetched on 2026-11-14 through the MediaWiki Action API (`prop=extracts`), one request per second with `maxlag=5` (Wikimedia answered HTTP 429 at four requests per second). Raw API responses are cached in `.cache/rag/wikipedia/` (git-ignored).
 
+National statistics, read through the same atlas: for 17 crop and country pairs of Viet Nam and the United States a sheet gives the figure of a national publication, named in the sentence that gives it (the Statistical Yearbook of Viet Nam 2025 and the annual fruit and vegetable market report 2025 of the Ministry of Agriculture and Environment; USDA NASS Crop Production 2025 Summary, Vegetables 2025 Summary and the 2022 Census of Agriculture). Title, publisher, address, terms and day of access of each: the `national-*` rows of `data/crops/atlas/sources.csv`.
+
 Attribution line for FAOSTAT figures: "FAO. FAOSTAT, Crops and livestock products. Licence: CC BY 4.0. Figures are means over the years stated, computed for the Astrovivu crop atlas; FAO does not endorse this use."
 
 The Wikipedia snapshots of four articles (Lablab, Macadamia integrifolia, Stylosanthes guianensis, Trifolium repens) are still in `data/rag/raw/wikipedia/` and are no longer indexed: their species are not crops of the atlas.
