@@ -6,8 +6,9 @@ Mỗi bước dưới đây có một issue trên GitHub với hiện trạng đ
 
 | Người | Phần việc |
 |---|---|
-| Bảo | UI/UX toàn bộ, bản đồ, hợp đồng dữ liệu, gộp nhánh |
-| Uyên | Mascot |
+| Bảo | UI/UX toàn bộ, chốt nội dung hiện ở từng bước (issue #84), bản đồ, hợp đồng dữ liệu, gộp nhánh |
+| Ngọc | Tái cấu trúc giao diện: bố cục, chuyển cảnh, chỗ camera dừng (issue #85 đến #88) |
+| Uyên | Mascot: ba nhân vật Vũ trụ, Đất, Lúa |
 | Thái | Dữ liệu cây trồng (mục 2), giá và chi phí, công cụ trồng rau đô thị (mục 7) |
 | Khoa | Mô hình độ phù hợp và lợi nhuận (mục 3), chatbot (mục 6) |
 | Duy | Cải tạo đất từ dữ liệu đất (mục 8) |
@@ -168,6 +169,8 @@ K1 làm ngay được. K3 trở đi cần T3 và T4 của Thái; trong lúc ch�
 
 ## 4. Mascot (Uyên)
 
+**Đổi hướng ngày 15/11/2026.** Không còn chọn một nhân vật: Uyên làm ba nhân vật Vũ trụ, Đất và Lúa, xuất hiện luân phiên theo bước của người dùng (ở trang đầu là Vũ trụ; hạ xuống cánh đồng thì tới Đất và Lúa). Bảng dưới là bản cũ, giữ lại để đối chiếu; nội dung hiện hành nằm ở các issue #37 đến #41, kịch bản tương tác gợi ý ở #40, phần gắn vào giao diện ở #58.
+
 | Bước | Việc | Xong khi |
 |---|---|---|
 | U1 | Ba phác thảo nhân vật, cả nhóm chọn một | một hướng được chọn, ghi trong `docs/MASCOT.md` |
@@ -176,9 +179,11 @@ K1 làm ngay được. K3 trở đi cần T3 và T4 của Thái; trong lúc ch�
 | U4 | Đề xuất chỗ xuất hiện: màn hình đầu, trạng thái trống, trợ lý hỏi đáp, công cụ trồng rau đô thị, lúc đang tải | danh sách trong pull request; Bảo gắn vào |
 | U5 | Ghi cách làm ra từng tệp tranh | `docs/MASCOT.md` |
 
-## 5. UI/UX (Bảo)
+## 5. UI/UX (Bảo, Ngọc)
 
 Kế hoạch chi tiết, từng hạng mục có vấn đề, thay đổi và tiêu chí xong: `docs/UX_PLAN.md`. Bảng dưới là các việc nối với phần của người khác.
+
+**Chia lại ngày 15/11/2026.** Bảo chốt **nội dung** hiện ở từng bước (issue #84). Ngọc lo **bố cục và chuyển động**: camera bay tới đúng giữa phần bản đồ còn trống, không còn bước chỉnh lại ở cuối (#85); bố cục khi đã có ruộng (#86); chuyển cảnh giữa các bước (#87); và một phần việc mở để tự rà, tự đề xuất, tự làm (#88).
 
 | Bước | Việc | Cần |
 |---|---|---|
@@ -191,6 +196,8 @@ Kế hoạch chi tiết, từng hạng mục có vấn đề, thay đổi và ti
 | B7 | Cập nhật README, kịch bản demo, JUDGING cho khớp giao diện mới | không |
 
 ## 6. Chatbot (Khoa)
+
+**Bổ sung ngày 15/11/2026.** Phạm vi câu hỏi được mở rộng bằng hai việc: C9 (issue #89), trợ lý trả lời đúng mọi số liệu đã có của thửa ruộng (đất, địa hình, khí hậu theo tháng, rủi ro, nguồn); và C10 (#90), trợ lý trả lời câu hỏi cải tạo đất bằng mô-đun đất của Duy. Căn cứ: chạy thử trợ lý với bảy câu hỏi về đất và thửa ruộng, năm câu lạc đề (bảng trong #89). Thứ tự Khoa làm xen kẽ giữa mô hình và chatbot: issue #91.
 
 ### 6.1 Chatbot hiện tại yếu ở đâu
 

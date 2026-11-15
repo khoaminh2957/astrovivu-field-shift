@@ -4,12 +4,13 @@ Astrovivu is built by several agents in parallel in **one working tree**. These 
 
 ## People
 
-Five people also work on this repository, each on their own branch through pull requests: `CONTRIBUTING.md` describes that workflow and `.github/CODEOWNERS` records who reviews which paths.
+Six people also work on this repository, each on their own branch through pull requests: `CONTRIBUTING.md` describes that workflow and `.github/CODEOWNERS` records who reviews which paths.
 
 | Person | Area | Paths |
 |---|---|---|
-| `quocbao271207` | UI/UX end to end, map, contracts, merges | `src/ui/**` (not `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
-| `thuyyen03052008` | Mascot | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
+| `quocbao271207` | UI/UX end to end and what each step of the product shows; map, contracts, merges | `src/ui/**` (not `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
+| `nguyennhatngoc1506` | Interface restructuring: layout, transitions between steps, where the camera lands. Works inside the interface paths; `quocbao271207` decides the content of each step and reviews every pull request | `src/ui/**` (not `mascot`), `src/globe/**`, `src/styles/**` (reviewed by `quocbao271207`, who stays the code owner) |
+| `thuyyen03052008` | Mascot: three characters (Space, Soil, Rice) that take turns as the visitor moves through the product | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
 | `quocthai2711` | Crop data (catalogue, regional prevalence, costs and prices per country) and the urban grower logic | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `src/core/urban/**`, `docs/CROP_DATA.md` |
 | `khoaminh2957` | Model (suitability scoring, profit optimisation) and the chatbot | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `src/rag/**`, `server/**`, `scripts/rag/**`, `data/rag/**`, `public/rag/**`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md`, `docs/RAG.md` |
 | `MinDuy314` | Soil improvement from soil data | `src/core/soil/**`, `docs/SOIL.md` |

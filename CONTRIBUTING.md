@@ -6,8 +6,9 @@ Nhóm Astrovivu làm trên một repo: <https://github.com/quocbao271207/astrovi
 
 | Người | Tài khoản | Phần phụ trách | Thư mục của mình |
 |---|---|---|---|
-| Bảo | `quocbao271207` | UI/UX toàn bộ, bản đồ, hợp đồng dữ liệu, gộp nhánh | `src/ui/**` (trừ `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
-| Uyên | `thuyyen03052008` | Mascot | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
+| Bảo | `quocbao271207` | UI/UX toàn bộ và chốt nội dung hiện ở từng bước; bản đồ, hợp đồng dữ liệu, gộp nhánh | `src/ui/**` (trừ `mascot`), `src/globe/**`, `src/styles/**`, `src/contracts/**`, `src/state/**` |
+| Ngọc | `nguyennhatngoc1506` | Tái cấu trúc giao diện: bố cục, chuyển cảnh giữa các bước, chỗ camera dừng. Làm trong các thư mục giao diện; Bảo chốt nội dung và duyệt mọi pull request | `src/ui/**` (trừ `mascot`), `src/globe/**`, `src/styles/**` (Bảo vẫn là người giữ thư mục và là người duyệt) |
+| Uyên | `thuyyen03052008` | Mascot: ba nhân vật Vũ trụ, Đất, Lúa xuất hiện luân phiên theo bước | `src/ui/mascot/**`, `public/mascot/**`, `docs/MASCOT.md` |
 | Thái | `quocthai2711` | Dữ liệu cây trồng, giá và chi phí; công cụ trồng rau đô thị | `data/crops/**`, `scripts/crops/**`, `scripts/build-crop-catalog.ts`, `src/core/crops/**`, `public/data/crops/**`, `src/core/urban/**`, `docs/CROP_DATA.md` |
 | Khoa | `khoaminh2957` | Mô hình: độ phù hợp và tối ưu lợi nhuận; chatbot | `src/core/scoring/**`, `src/core/economics/**`, `src/core/advisory/rotation.ts`, `src/rag/**`, `server/**`, `scripts/rag/**`, `data/rag/**`, `public/rag/**`, `docs/SCORING.md`, `docs/SCORING_PAPER.md`, `docs/ECONOMICS.md`, `docs/RAG.md` |
 | Duy | `MinDuy314` | Cải tạo đất từ dữ liệu đất | `src/core/soil/**`, `docs/SOIL.md` |
