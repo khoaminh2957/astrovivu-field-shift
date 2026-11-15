@@ -106,6 +106,8 @@ The floor is what the grower does now, not a fixed number: a plan may earn more,
 | Mekong Delta paddy | 1,278 | 11,676 | 1,616 (rice three times) | soybean in January, sweet potato in May, rice in September | 2,284 | 0 | 31 |
 | Story County corn-soybean field | 23 | 204 | 407 (maize, then soybean) | maize in June; the next year common bean in May and canola in August | 613 | 56 (soil health 54, water fit 54) | 13 |
 
+The table is the search without the country's crop table. With it, as the app runs since the builder reads that table (docs/SCORING.md, 12.5), the same sequences are compared and the same one is chosen on both fields; only the last column of the paddy field changes, from 31 to 20, because 11 of the 31 crops are ones Viet Nam's statistics report none of and are no longer candidates.
+
 In Iowa the sequence with the highest margin outright would earn 8,710 USD/ha/year; it and 55 others lower the soil-health index or the water fit below the maize-soybean rotation. On the two other demo fields the main crop is a perennial stand (robusta coffee, alfalfa): the search is not run there, and the report keeps its own alternatives for stands.
 
 **Time.** First call of the advisory report, three fresh runs each, in milliseconds, before and after: Mekong Delta paddy 37-43 and 67-68; Story County 33-35 and 37-38; the two perennial fields unchanged (55-97 and 25-27).
@@ -147,7 +149,7 @@ Revenue is yield x price, and the operating cost per hectare does not depend on 
 
 ### 6.2 Five crops on the demo fields, 20 % up and down
 
-One hectare, one season, reference values, the fields as the app opens them (15 November 2026). USD per hectare.
+One hectare, one season, reference values, the fields as the app opens them (15 November 2026). USD per hectare. The country's crop table does not enter these: a season's margin does not depend on it.
 
 | Crop, field | Margin | Price or yield -20 % | +20 % | Cost +20 % | -20 % | All three against the grower | All three in favour | Break-even price, USD/t (assumed) | Break-even yield, t/ha (expected) | Source of yield, price, cost |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -181,7 +183,7 @@ The margin range the season card can show, from the yield range of 6.1. Yields i
 
 ### 6.4 The rotations of the demo fields
 
-Margin per hectare and year, with the range of 6.1. Every season of a rotation uses the default of 20 %, the field's own crop included, so the same crop can have another range here than on the season card (6.5).
+Margin per hectare and year, with the range of 6.1. Every season of a rotation uses the default of 20 %, the field's own crop included, so the same crop can have another range here than on the season card (6.5). The rotations are built as the app builds them, with the crop table of the field's country (docs/SCORING.md, 12.5): since the builder reads that table, the water-saver rotation of the paddy field is common bean and daikon radish (283; 66 to 499) and no longer common bean and buckwheat (223; 6 to 439), which Viet Nam's statistics report none of. No other row changed.
 
 | Field | Rotation | Margin | Low | High |
 |---|---|---:|---:|---:|
@@ -193,7 +195,7 @@ Margin per hectare and year, with the range of 6.1. Every season of a rotation u
 | Mekong Delta paddy | Current practice | 1,616 | 773 | 1,616 |
 | Mekong Delta paddy | Soil-health rotation | 1,453 | 294 | 1,645 |
 | Mekong Delta paddy | Resilience rotation | 761 | 190 | 802 |
-| Mekong Delta paddy | Water-saver rotation | 223 | 6 | 439 |
+| Mekong Delta paddy | Water-saver rotation | 283 | 66 | 499 |
 | Story County corn-soybean field | Resilience rotation | 3,290 | 2,238 | 3,454 |
 | Story County corn-soybean field | Water-saver rotation | 2,011 | 366 | 2,178 |
 | Story County corn-soybean field | Soil-health rotation | 631 | 314 | 865 |

@@ -40,7 +40,8 @@ function pendingFrom(s: ReturnType<typeof useMission.getState>): ISODate | null 
   return earliest && earliest < tel.window.today ? earliest : null;
 }
 
-function usePlayback() {
+/** Advances the cursor while `playing` is on. Mount it once per screen: the strip under the map does, and so does the farm on the rotation page. */
+export function usePlayback() {
   const playing = useMissionUi((s) => s.playing);
   const speed = useMissionUi((s) => s.speed);
   const setPlaying = useMissionUi((s) => s.setPlaying);
