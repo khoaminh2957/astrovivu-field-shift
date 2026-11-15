@@ -100,6 +100,8 @@ add(T, 'world_area_ha', 'Sum of the countries\' harvested area (exact matches on
 add(T, 'world_production_t', 'Sum of the countries\' production (exact matches only). Tonnes of different products are added when the crop has several items.', 'Tổng sản lượng của các nước (chỉ cho khớp chính xác). Nếu cây có nhiều mặt hàng thì cộng tấn của các sản phẩm khác nhau.', 't', FAO, 'sum of country means');
 add(T, 'data_years', 'Years the FAOSTAT means cover.', 'Các năm mà số trung bình FAOSTAT bao phủ.', 'years', FAO, 'earliest and latest year used in any country');
 add(T, 'curated', 'yes when the crop is in our curated list of 73.', 'yes nếu cây thuộc danh sách 73 cây chọn lọc của dự án.', '', CUR, 'join on ecocrop_id');
+add(T, 'urban_candidate', 'yes when the crop qualifies as an urban/container candidate by the EcoCrop rule (scripts/crops/atlas/urban.ts); empty otherwise.', 'yes nếu cây đạt điều kiện ứng viên trồng chậu/đô thị theo quy tắc EcoCrop (scripts/crops/atlas/urban.ts); để trống nếu không.', '', `${ECO}; ${BUILD}`, 'urbanCandidate(s) in scripts/crops/atlas/urban.ts');
+add(T, 'urban_candidate_rule', 'Clause(s) of the urban candidate rule that matched: short-cycle, perennial-aromatic-herb, or both separated by ";".', 'Vế của quy tắc ứng viên đô thị đã khớp: short-cycle (chu kỳ ngắn), perennial-aromatic-herb (cây thơm lâu năm), hoặc cả hai cách nhau bởi ";".', '', BUILD, 'urbanCandidate(s).rule');
 
 // ------------------------------------------------------------------------------------------------ crop_country / item_country
 const quantities = (table: string, unitOf: string) => {
@@ -254,5 +256,17 @@ add(EC, 'source', 'Source of the figures.', 'Nguồn số liệu.', '', 'to be f
 add(EC, 'url', 'Link to the source.', 'Đường dẫn tới nguồn.', '', 'to be filled', '');
 add(EC, 'accessed', 'Date the source was read.', 'Ngày tra cứu nguồn.', 'date', 'to be filled', '');
 
+// Long-format urban container table (`data/crops/atlas/urban.csv`), one row per crop and attribute.
+const UR = 'urban';
+add(UR, 'crop_id', 'Crop identifier (must exist in crops.csv).', 'Mã cây trồng (phải tồn tại trong crops.csv).', '', 'extension guides', 'join key');
+add(UR, 'attribute', 'Container attribute: pot_depth_min, pot_volume_min, spacing, sun_hours_min, first_harvest_min, first_harvest_max, harvest_type, needs_trellis, difficulty.', 'Thuộc tính trồng chậu: pot_depth_min, pot_volume_min, spacing, sun_hours_min, first_harvest_min, first_harvest_max, harvest_type, needs_trellis, difficulty.', '', 'extension guides', 'validated in scripts/crops/urban-table.ts');
+add(UR, 'value', 'Sourced value of the attribute (omitted when no source exists).', 'Giá trị có nguồn của thuộc tính (không ghi dòng nếu không có nguồn).', '', 'extension guides', 'when two sources differ, the more conservative figure is chosen');
+add(UR, 'unit', 'Unit of value (cm, L, h, days, or empty for categorical attributes).', 'Đơn vị của giá trị (cm, L, h, days, hoặc để trống với thuộc tính phân loại).', '', 'extension guides', 'validated per attribute');
+add(UR, 'source', 'Extension or national horticultural publication title and author.', 'Tên tài liệu khuyến nông đại học hoặc cấp quốc gia và tác giả.', '', 'extension guides', 'required on every row');
+add(UR, 'url', 'Direct URL to the publication.', 'Đường dẫn trực tiếp tới tài liệu.', '', 'extension guides', 'required on every row');
+add(UR, 'accessed', 'Date the source was read (YYYY-MM-DD).', 'Ngày truy cập nguồn (YYYY-MM-DD).', 'date', 'extension guides', 'required on every row');
+add(UR, 'note', 'Conversion note, source wording for difficulty (1..3), or multi-source comparison note.', 'Ghi chú quy đổi đơn vị, câu chữ gốc của nguồn cho độ khó (1..3), hoặc đối chiếu nhiều nguồn.', '', 'extension guides', 'required on difficulty rows');
+
 export const COLUMNS: readonly ColumnDoc[] = out;
 export const ECONOMICS_COLUMNS = out.filter((c) => c.table === EC).map((c) => c.column);
+export const URBAN_COLUMNS = out.filter((c) => c.table === UR).map((c) => c.column);

@@ -12,19 +12,29 @@
  */
 import type { CropProfile, Lang } from '@/contracts';
 import { decodeCatalog, type CatalogFile } from './codec';
-import { CATALOG_META, CURATED_CROPS, CURATION_NOTES } from './curated.generated';
+import { CATALOG_META, CURATED_CROPS, CURATION_NOTES, URBAN_CANDIDATE_CROPS } from './curated.generated';
 import { fold } from './text';
 
 export { fold, slugify } from './text';
 export { CATALOG_META } from './curated.generated';
 
-const byId = new Map<string, CropProfile>(CURATED_CROPS.map((c) => [c.id, c]));
+const URBAN_CROPS: CropProfile[] = [...CURATED_CROPS.filter((c) => c.urban?.suitable), ...URBAN_CANDIDATE_CROPS];
+const byId = new Map<string, CropProfile>([...CURATED_CROPS, ...URBAN_CANDIDATE_CROPS].map((c) => [c.id, c]));
 let full: CropProfile[] | null = null;
 let loading: Promise<CropProfile[]> | null = null;
 
 /** Curated crops, in catalogue order (cereals, pulses, oilseeds, roots, perennials, forages, covers, garden). */
 export function listCrops(): CropProfile[] {
   return CURATED_CROPS;
+}
+
+/**
+ * All crops eligible for the Urban Grower Companion (`urban.suitable === true`): the 32 curated
+ * urban crops plus uncurated `urban_candidate = yes` atlas crops that have complete sourced
+ * container data (`sun_hours_min`, `pot_depth_min`, `difficulty`) in `data/crops/atlas/urban.csv`.
+ */
+export function listUrbanCrops(): CropProfile[] {
+  return URBAN_CROPS;
 }
 
 /** A curated crop, or any EcoCrop species once `loadFullCatalog()` has resolved. */

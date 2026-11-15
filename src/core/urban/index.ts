@@ -1,13 +1,23 @@
 /**
- * Urban Grower Companion: match balcony/rooftop conditions and preferences to the curated crops
- * marked suitable for urban growing. Rules in docs/ADVISORY.md §6.
+ * Urban Grower Companion: match balcony/rooftop conditions and preferences to the crops
+ * marked suitable for urban growing. Rules in docs/ADVISORY.md §4.
  */
-import type { I18nText, UrbanClimate, UrbanPreference, UrbanRecommendation, UrbanSite } from '@/contracts';
+import type { CropProfile, I18nText, UrbanClimate, UrbanPreference, UrbanRecommendation, UrbanSite } from '@/contracts';
 import { tx } from '@/contracts';
 import { monthEn, monthVi, monthsFrom, wrapMonth } from '@/core/advisory/util';
-import { listCrops } from '@/core/crops';
+import { listUrbanCrops } from '@/core/crops';
 import { SOW_FIT } from './calendar';
-import { COLD_MARGIN_C, HEAT_MARGIN_C, KILL_MARGIN_C, PHOTOPERIOD_MIN, climateLimitingReason, photoperiodClass, windowFit, type ClimateLimitingFactor, type WindowFitDetail } from './climateFit';
+import {
+  COLD_MARGIN_C,
+  HEAT_MARGIN_C,
+  KILL_MARGIN_C,
+  PHOTOPERIOD_MIN,
+  climateLimitingReason,
+  photoperiodClass,
+  windowFit,
+  type ClimateLimitingFactor,
+  type WindowFitDetail,
+} from './climateFit';
 import { canopyFromPot, potWater } from './water';
 import { lightClass, sunHoursByMonth } from './sun';
 
@@ -21,6 +31,8 @@ export { canopyFromPot, potWater } from './water';
 export type { PotWaterMonth } from './water';
 export { MID_DOY, lightClass, solarPosition, sunHours, sunHoursByMonth } from './sun';
 export type { SolarPosition, SunHoursOptions } from './sun';
+export { MAX_SUCCESSION_BATCHES, MIN_BATCH_INTERVAL_DAYS, planBalcony, plantCanopyM2 } from './plan';
+export type { PlanBalconyInput } from './plan';
 
 const LIGHT_RANK = { shade: 0, partial: 1, full: 2 } as const;
 const TAG_TIPS: Record<string, I18nText> = {
@@ -58,107 +70,149 @@ export function recommendUrbanAhead(site: UrbanSite, climate: UrbanClimate, pref
   return first;
 }
 
-/** `ahead` only changes the wording: the month being scored is then a future one, not "now". */
-function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], now: number, ahead: boolean): UrbanRecommendation[] {
-  if (!climate.months.length) return [];
+/**
+ * Scores a single crop for a balcony/rooftop site and calendar month (`1..12`), returning its
+ * `UrbanRecommendation` or `null` when unsuitable or below the minimum score threshold (`20`).
+ */
+export function evaluateUrbanCrop(
+  c: CropProfile,
+  site: UrbanSite,
+  climate: UrbanClimate,
+  prefs: UrbanPreference[],
+  month = 1,
+  ahead = false,
+): UrbanRecommendation | null {
+  if (!climate.months.length) return null;
+  const now = month;
+  const u = c.urban;
+  if (!u?.suitable) return null;
+  if ((site.space === 'windowsill' || site.space === 'balcony') && !u.container) return null;
+  if (site.space === 'windowsill' && (u.tags.includes('climber') || u.difficulty === 3 || c.category === 'fruit')) return null;
+
   const monthlySun =
     site.facingDeg != null
       ? sunHoursByMonth(site.location[1], site.facingDeg, { horizonDeg: site.horizonDeg, overhangDeg: site.overhangDeg })
       : null;
   const sunHoursNow = monthlySun ? (monthlySun[now - 1] ?? 0) : null;
   const effectiveLight = sunHoursNow != null ? lightClass(sunHoursNow) : site.light;
-  const out: UrbanRecommendation[] = [];
-  for (const c of listCrops()) {
-    const u = c.urban;
-    if (!u?.suitable) continue;
-    if ((site.space === 'windowsill' || site.space === 'balcony') && !u.container) continue;
-    if (site.space === 'windowsill' && (u.tags.includes('climber') || u.difficulty === 3 || c.category === 'fruit')) continue;
-    const details = Array.from({ length: 12 }, (_, i) => windowFit(c, climate, i + 1));
-    const fits = details.map((d) => d.fit);
-    const sowMonths = fits.map((f, i) => (f >= SOW_FIT ? i + 1 : 0)).filter((m) => m > 0);
-    if (!sowMonths.length) continue;
-    const soon = Math.max(fits[now - 1], 0.85 * fits[wrapMonth(now + 1) - 1]);
-    const gap = LIGHT_RANK[u.light] - LIGHT_RANK[effectiveLight];
-    const light = gap <= 0 ? 1 : gap === 1 ? 0.5 : 0.1;
-    const pref = prefs.length ? (prefs.some((p) => u.tags.includes(PREF_TAG[p])) ? 1 : 0.55) : 0.8;
-    const par = climate.months.find((m) => m.month === now)?.par;
-    const lowLight = u.light === 'full' && par != null && par < 6 ? 0.8 : 1;
-    const score = Math.round(100 * (0.45 * soon + 0.15 * (sowMonths.length / 12)) / 0.6 * light * pref * lowLight * (1 - 0.06 * (u.difficulty - 1)));
-    if (score < 20) continue;
-    const name = tx(c.names.en, c.names.vi ?? c.names.en);
-    const why: I18nText[] = [];
-    const tNow = Math.round(climate.months[now - 1]?.tMean ?? 0);
-    if (ahead && fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown from ${monthEn(now)}: that month's mean ${tNow} °C suits it.`, `Có thể gieo từ ${monthVi(now)}: nhiệt độ trung bình tháng đó ${tNow} °C phù hợp.`));
-    else if (fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown now: this month's mean ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C suits it.`, `Có thể gieo ngay: nhiệt độ trung bình tháng này ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C phù hợp.`));
-    else {
-      why.push(tx(`Best sown in ${sowMonths.map(monthEn).join(', ')}.`, `Nên gieo vào ${sowMonths.map(monthVi).join(', ')}.`));
-      const limitWhy = climateLimitingReason(details[now - 1]);
-      if (limitWhy) why.push(limitWhy);
-    }
-    if (sunHoursNow != null) {
-      const hStr = sunHoursNow.toFixed(1).replace(/\.0$/, '');
-      why.push(
-        gap <= 0
-          ? tx(
-              `Your balcony gets about ${hStr} hours of direct sun this month under clear skies, which is enough (needs ${u.light}).`,
-              `Ban công của bạn có khoảng ${hStr} giờ nắng trực tiếp trong tháng này, khi trời quang (đủ mức ${u.light === 'full' ? 'nắng đủ' : u.light === 'partial' ? 'nắng một phần' : 'râm'}).`,
-            )
-          : tx(
-              `Your balcony gets about ${hStr} hours of direct sun this month under clear skies; needs ${u.light} sun, so expect a smaller harvest.`,
-              `Ban công của bạn có khoảng ${hStr} giờ nắng trực tiếp trong tháng này, khi trời quang; cây cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'} nên thu hoạch sẽ ít hơn.`,
-            ),
-      );
-    } else {
-      why.push(gap <= 0 ? tx(`Your ${site.light} light is enough (needs ${u.light}).`, `Ánh sáng ${site.light === 'full' ? 'nắng đủ' : site.light === 'partial' ? 'nắng một phần' : 'râm'} của bạn là đủ.`) : tx(`Needs ${u.light} sun; expect a smaller harvest with ${site.light} light.`, `Cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'}; thiếu sáng sẽ cho thu hoạch ít hơn.`));
-    }
-    if (prefs.some((p) => u.tags.includes(PREF_TAG[p]))) why.push(tx('Matches what you want to grow.', 'Phù hợp với thứ bạn muốn trồng.'));
-    if (u.difficulty === 1) why.push(tx('Easy for beginners.', 'Dễ trồng cho người mới.'));
-    const harvestDays: [number, number] = [c.cycleDays[0], c.cycleDays[1]];
-    const wu = c.rotation?.waterUse ?? 'medium';
-    const hot = Math.max(...climate.months.map((m) => m.tMax)) >= 32;
-    const water = wu === 'high' ? tx(`Keep the mix evenly moist: water daily in hot weather${hot ? ', twice on the hottest days' : ''}.`, `Giữ đất luôn ẩm: tưới hằng ngày khi trời nóng${hot ? ', ngày nắng gắt tưới hai lần' : ''}.`) : wu === 'low' ? tx('Water when the top 2-3 cm of mix are dry; avoid soggy pots.', 'Tưới khi lớp đất mặt 2-3 cm đã khô; tránh để chậu úng.') : tx('Water when the top 1-2 cm are dry, usually every 1-3 days.', 'Tưới khi lớp mặt 1-2 cm khô, thường 1-3 ngày một lần.');
-    const canopyM2 = site.potDiameterCm != null ? canopyFromPot(site.potDiameterCm) : 0;
-    const pw = canopyM2 > 0 ? potWater(c, climate, { canopyM2 }) : [];
-    const waterLitres = pw.length ? pw.map((p) => ({ month: p.month, min: p.litresMin, max: p.litresMax })) : undefined;
-    const assumedWater = c.flags?.includes('water-model-assumed') ?? false;
-    const usesEra5 = pw.length > 0 && pw.every((p) => p.et0From === 'era5');
-    const waterBasis =
-      pw.length && c.water
+
+  const details = Array.from({ length: 12 }, (_, i) => windowFit(c, climate, i + 1));
+  const fits = details.map((d) => d.fit);
+  const sowMonths = fits.map((f, i) => (f >= SOW_FIT ? i + 1 : 0)).filter((m) => m > 0);
+  if (!sowMonths.length) return null;
+  const soon = Math.max(fits[now - 1], 0.85 * fits[wrapMonth(now + 1) - 1]);
+  const gap = LIGHT_RANK[u.light] - LIGHT_RANK[effectiveLight];
+  const light = gap <= 0 ? 1 : gap === 1 ? 0.5 : 0.1;
+  const pref = prefs.length ? (prefs.some((p) => u.tags.includes(PREF_TAG[p])) ? 1 : 0.55) : 0.8;
+  const par = climate.months.find((m) => m.month === now)?.par;
+  const lowLight = u.light === 'full' && par != null && par < 6 ? 0.8 : 1;
+  const score = Math.round(100 * (0.45 * soon + 0.15 * (sowMonths.length / 12)) / 0.6 * light * pref * lowLight * (1 - 0.06 * (u.difficulty - 1)));
+  if (score < 20) return null;
+  const name = tx(c.names.en, c.names.vi ?? c.names.en);
+  const why: I18nText[] = [];
+  const tNow = Math.round(climate.months[now - 1]?.tMean ?? 0);
+  if (ahead && fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown from ${monthEn(now)}: that month's mean ${tNow} °C suits it.`, `Có thể gieo từ ${monthVi(now)}: nhiệt độ trung bình tháng đó ${tNow} °C phù hợp.`));
+  else if (fits[now - 1] >= SOW_FIT) why.push(tx(`Can be sown now: this month's mean ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C suits it.`, `Có thể gieo ngay: nhiệt độ trung bình tháng này ${Math.round(climate.months[now - 1]?.tMean ?? 0)} °C phù hợp.`));
+  else {
+    why.push(tx(`Best sown in ${sowMonths.map(monthEn).join(', ')}.`, `Nên gieo vào ${sowMonths.map(monthVi).join(', ')}.`));
+    const limitWhy = climateLimitingReason(details[now - 1]);
+    if (limitWhy) why.push(limitWhy);
+  }
+  if (sunHoursNow != null) {
+    const hStr = sunHoursNow.toFixed(1).replace(/\.0$/, '');
+    why.push(
+      gap <= 0
         ? tx(
-            `Estimated for a ${site.potDiameterCm} cm round pot (${canopyM2.toFixed(3)} m² surface); ET0 from ${usesEra5 ? 'ERA5-Land (Open-Meteo, CC BY 4.0)' : 'FAO-56 Eq. 52 Hargreaves temperature estimate'}; crop coefficients Kc = ${c.water.kc.ini}–${c.water.kc.mid} from ${c.water.source}${assumedWater ? ' (water-model-assumed: proxy Kc borrowed from a similar crop)' : ''}. Rain is not subtracted; water less when outdoor pots receive rain.`,
-            `Ước tính cho chậu tròn đường kính ${site.potDiameterCm} cm (diện tích mặt ${canopyM2.toFixed(3)} m²); ET0 từ ${usesEra5 ? 'ERA5-Land (Open-Meteo, CC BY 4.0)' : 'ước lượng nhiệt độ Hargreaves (FAO-56 công thức 52)'}; hệ số cây trồng Kc = ${c.water.kc.ini}–${c.water.kc.mid} theo ${c.water.source}${assumedWater ? ' (hệ số mượn của cây khác — water-model-assumed)' : ''}. Chưa trừ mưa; chậu ngoài trời gặp mưa thì bớt tưới.`,
+            `Your balcony gets about ${hStr} hours of direct sun this month under clear skies, which is enough (needs ${u.light}).`,
+            `Ban công của bạn có khoảng ${hStr} giờ nắng trực tiếp trong tháng này, khi trời quang (đủ mức ${u.light === 'full' ? 'nắng đủ' : u.light === 'partial' ? 'nắng một phần' : 'râm'}).`,
           )
-        : undefined;
-    const lightTxt = u.light === 'full' ? tx('6 or more hours of direct sun a day.', 'Từ 6 giờ nắng trực tiếp mỗi ngày.') : u.light === 'partial' ? tx('3-6 hours of sun; shade at midday in hot months.', '3-6 giờ nắng; che nắng buổi trưa vào tháng nóng.') : tx('Bright shade or 2-3 hours of morning sun.', 'Bóng râm sáng hoặc 2-3 giờ nắng sáng.');
-    const tips = u.tags.map((t) => TAG_TIPS[t]).filter((x): x is I18nText => !!x).slice(0, 3);
-    tips.push(tx(site.space === 'windowsill' ? 'Use a pot at least 15 cm deep with drainage holes.' : 'Use containers at least 20-30 cm deep with drainage holes and a light potting mix.', site.space === 'windowsill' ? 'Dùng chậu sâu ít nhất 15 cm có lỗ thoát nước.' : 'Dùng chậu sâu ít nhất 20-30 cm có lỗ thoát nước và giá thể nhẹ.'));
-    const harvestOffset = Math.max(1, Math.round((harvestDays[0] + harvestDays[1]) / 2 / 30.4));
-    const calendar = Array.from({ length: 12 }, (_, i) => {
-      const m = i + 1;
-      const tasks: I18nText[] = [];
-      if (sowMonths.includes(m)) tasks.push(tx(`Sow ${c.names.en}`, `Gieo ${name.vi}`));
-      if (sowMonths.includes(wrapMonth(m - harvestOffset))) tasks.push(tx('Harvest', 'Thu hoạch'));
-      if (sowMonths.some((s) => monthsFrom(s, harvestOffset).includes(m)) && !tasks.length) tasks.push(tx('Water, feed every 2 weeks, check for pests', 'Tưới, bón phân 2 tuần một lần, kiểm tra sâu bệnh'));
-      return { month: m, tasks };
-    });
-    out.push({
-      cropId: c.id,
-      name,
-      score: Math.min(100, score),
-      why,
-      difficulty: u.difficulty,
-      care: {
-        water,
-        ...(waterLitres ? { waterLitres } : {}),
-        ...(waterBasis ? { waterBasis } : {}),
-        light: lightTxt,
-        sowMonths,
-        sowFit: fits.map((f) => Math.round(f * 100) / 100),
-        harvestDays,
-        tips,
-      },
-      calendar,
-    });
+        : tx(
+            `Your balcony gets about ${hStr} hours of direct sun this month under clear skies; needs ${u.light} sun, so expect a smaller harvest.`,
+            `Ban công của bạn có khoảng ${hStr} giờ nắng trực tiếp trong tháng này, khi trời quang; cây cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'} nên thu hoạch sẽ ít hơn.`,
+          ),
+    );
+  } else {
+    why.push(gap <= 0 ? tx(`Your ${site.light} light is enough (needs ${u.light}).`, `Ánh sáng ${site.light === 'full' ? 'nắng đủ' : site.light === 'partial' ? 'nắng một phần' : 'râm'} của bạn là đủ.`) : tx(`Needs ${u.light} sun; expect a smaller harvest with ${site.light} light.`, `Cần ${u.light === 'full' ? 'nắng đủ' : 'nắng một phần'}; thiếu sáng sẽ cho thu hoạch ít hơn.`));
+  }
+  if (prefs.some((p) => u.tags.includes(PREF_TAG[p]))) why.push(tx('Matches what you want to grow.', 'Phù hợp với thứ bạn muốn trồng.'));
+  if (u.difficulty === 1) why.push(tx('Easy for beginners.', 'Dễ trồng cho người mới.'));
+  const harvestDays: [number, number] = [c.cycleDays[0], c.cycleDays[1]];
+  const wu = c.rotation?.waterUse ?? 'medium';
+  const hot = Math.max(...climate.months.map((m) => m.tMax)) >= 32;
+  const water = wu === 'high' ? tx(`Keep the mix evenly moist: water daily in hot weather${hot ? ', twice on the hottest days' : ''}.`, `Giữ đất luôn ẩm: tưới hằng ngày khi trời nóng${hot ? ', ngày nắng gắt tưới hai lần' : ''}.`) : wu === 'low' ? tx('Water when the top 2-3 cm of mix are dry; avoid soggy pots.', 'Tưới khi lớp đất mặt 2-3 cm đã khô; tránh để chậu úng.') : tx('Water when the top 1-2 cm are dry, usually every 1-3 days.', 'Tưới khi lớp mặt 1-2 cm khô, thường 1-3 ngày một lần.');
+  const canopyM2 = site.potDiameterCm != null ? canopyFromPot(site.potDiameterCm) : 0;
+  const pw = canopyM2 > 0 ? potWater(c, climate, { canopyM2 }) : [];
+  const waterLitres = pw.length ? pw.map((p) => ({ month: p.month, min: p.litresMin, max: p.litresMax })) : undefined;
+  const assumedWater = c.flags?.includes('water-model-assumed') ?? false;
+  const usesEra5 = pw.length > 0 && pw.every((p) => p.et0From === 'era5');
+  const waterBasis =
+    pw.length && c.water
+      ? tx(
+          `Estimated for a ${site.potDiameterCm} cm round pot (${canopyM2.toFixed(3)} m² surface); ET0 from ${usesEra5 ? 'ERA5-Land (Open-Meteo, CC BY 4.0)' : 'FAO-56 Eq. 52 Hargreaves temperature estimate'}; crop coefficients Kc = ${c.water.kc.ini}–${c.water.kc.mid} from ${c.water.source}${assumedWater ? ' (water-model-assumed: proxy Kc borrowed from a similar crop)' : ''}. Rain is not subtracted; water less when outdoor pots receive rain.`,
+          `Ước tính cho chậu tròn đường kính ${site.potDiameterCm} cm (diện tích mặt ${canopyM2.toFixed(3)} m²); ET0 từ ${usesEra5 ? 'ERA5-Land (Open-Meteo, CC BY 4.0)' : 'ước lượng nhiệt độ Hargreaves (FAO-56 công thức 52)'}; hệ số cây trồng Kc = ${c.water.kc.ini}–${c.water.kc.mid} theo ${c.water.source}${assumedWater ? ' (hệ số mượn của cây khác — water-model-assumed)' : ''}. Chưa trừ mưa; chậu ngoài trời gặp mưa thì bớt tưới.`,
+        )
+      : undefined;
+  const lightTxt = u.light === 'full' ? tx('6 or more hours of direct sun a day.', 'Từ 6 giờ nắng trực tiếp mỗi ngày.') : u.light === 'partial' ? tx('3-6 hours of sun; shade at midday in hot months.', '3-6 giờ nắng; che nắng buổi trưa vào tháng nóng.') : tx('Bright shade or 2-3 hours of morning sun.', 'Bóng râm sáng hoặc 2-3 giờ nắng sáng.');
+  const tips = u.tags.map((t) => TAG_TIPS[t]).filter((x): x is I18nText => !!x).slice(0, 3);
+  if (u.potDepthCm != null) {
+    const volEn = u.potVolumeL != null ? ` (at least ${u.potVolumeL} L)` : '';
+    const volVi = u.potVolumeL != null ? ` (ít nhất ${u.potVolumeL} lít)` : '';
+    const spEn = u.spacingCm != null ? `, spaced ${u.spacingCm} cm apart` : '';
+    const spVi = u.spacingCm != null ? `, cây cách cây ${u.spacingCm} cm` : '';
+    tips.push(
+      tx(
+        `Use a pot at least ${u.potDepthCm} cm deep${volEn}${spEn} with drainage holes and a light potting mix.`,
+        `Dùng chậu sâu ít nhất ${u.potDepthCm} cm${volVi}${spVi}, có lỗ thoát nước và giá thể nhẹ.`,
+      ),
+    );
+  } else {
+    tips.push(
+      tx(
+        site.space === 'windowsill'
+          ? 'Use a pot at least 15 cm deep with drainage holes.'
+          : 'Use containers at least 20-30 cm deep with drainage holes and a light potting mix.',
+        site.space === 'windowsill'
+          ? 'Dùng chậu sâu ít nhất 15 cm có lỗ thoát nước.'
+          : 'Dùng chậu sâu ít nhất 20-30 cm có lỗ thoát nước và giá thể nhẹ.',
+      ),
+    );
+  }
+  const harvestOffset = Math.max(1, Math.round((harvestDays[0] + harvestDays[1]) / 2 / 30.4));
+  const calendar = Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1;
+    const tasks: I18nText[] = [];
+    if (sowMonths.includes(m)) tasks.push(tx(`Sow ${c.names.en}`, `Gieo ${name.vi}`));
+    if (sowMonths.includes(wrapMonth(m - harvestOffset))) tasks.push(tx('Harvest', 'Thu hoạch'));
+    if (sowMonths.some((s) => monthsFrom(s, harvestOffset).includes(m)) && !tasks.length) tasks.push(tx('Water, feed every 2 weeks, check for pests', 'Tưới, bón phân 2 tuần một lần, kiểm tra sâu bệnh'));
+    return { month: m, tasks };
+  });
+  return {
+    cropId: c.id,
+    name,
+    score: Math.min(100, score),
+    why,
+    difficulty: u.difficulty,
+    care: {
+      water,
+      ...(waterLitres ? { waterLitres } : {}),
+      ...(waterBasis ? { waterBasis } : {}),
+      light: lightTxt,
+      sowMonths,
+      sowFit: fits.map((f) => Math.round(f * 100) / 100),
+      harvestDays,
+      tips,
+    },
+    calendar,
+  };
+}
+
+/** `ahead` only changes the wording: the month being scored is then a future one, not "now". */
+function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], now: number, ahead: boolean): UrbanRecommendation[] {
+  if (!climate.months.length) return [];
+  const out: UrbanRecommendation[] = [];
+  for (const c of listUrbanCrops()) {
+    const rec = evaluateUrbanCrop(c, site, climate, prefs, now, ahead);
+    if (rec) out.push(rec);
   }
   return out.sort((a, b) => b.score - a.score || a.difficulty - b.difficulty).slice(0, 10);
 }
