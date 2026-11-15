@@ -106,6 +106,8 @@ export interface UrbanSite {
   place?: PlaceInfo;
   light: 'full' | 'partial' | 'shade';
   space: 'windowsill' | 'balcony' | 'rooftop' | 'yard';
+  /** Circular container diameter in centimetres, used to compute daily pot water in litres (D6, #19). */
+  potDiameterCm?: number;
 }
 
 export interface UrbanClimateMonth {
@@ -114,6 +116,8 @@ export interface UrbanClimateMonth {
   tMin: number;
   tMax: number;
   rainMm: number;
+  /** Monthly reference evapotranspiration total, mm/month (ERA5-Land via Open-Meteo when available). */
+  et0Mm?: number | null;
   /** Photosynthetically active radiation, MJ/m²/day. */
   par: number | null;
   rh: number | null;
@@ -135,6 +139,10 @@ export interface UrbanRecommendation {
   difficulty: 1 | 2 | 3;
   care: {
     water: I18nText;
+    /** Daily irrigation range in litres per pot for each calendar month (min = initial stage Kc.ini, max = mid-season Kc.mid). */
+    waterLitres?: { month: number; min: number; max: number }[];
+    /** Provenance and assumptions behind `waterLitres` (pot diameter, ET0 source, FAO-56 row, proxy flag, rain caveat). */
+    waterBasis?: I18nText;
     light: I18nText;
     sowMonths: number[];
     /**
