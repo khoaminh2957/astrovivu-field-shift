@@ -42,7 +42,7 @@ export interface FarmWeather {
 }
 
 /** How the crop is drawn. */
-export type CropLook = 'paddy' | 'cereal' | 'tall-cereal' | 'row' | 'root' | 'grass' | 'bush' | 'tree' | 'none';
+export type CropLook = 'paddy' | 'cereal' | 'tall-cereal' | 'legume' | 'oilseed' | 'root' | 'leafy' | 'vine' | 'bush' | 'tree' | 'palm' | 'grass' | 'row' | 'none';
 
 export interface FarmCrop {
   cropId: string | null;
@@ -100,7 +100,7 @@ export interface FarmScene {
 // Reading the telemetry
 // ------------------------------------------------------------------------------------------------
 
-function seriesOf(t: FieldTelemetry, key: string): Series | undefined {
+export function seriesOf(t: FieldTelemetry, key: string): Series | undefined {
   for (const b of Object.values(t.branches)) {
     const s = b.series.find((x) => x.key === key);
     if (s) return s;
@@ -212,14 +212,22 @@ export function nextRisk(t: FieldTelemetry, day: ISODate): RiskEvent | null {
 // Crop and soil
 // ------------------------------------------------------------------------------------------------
 
+/** The silhouette a crop is drawn with: thirteen kinds of plant, chosen from the genus, the category and the life span. */
 export function cropLook(crop: CropProfile | null | undefined): CropLook {
   if (!crop) return 'none';
+  const perennial = crop.lifeSpan === 'perennial';
   if (crop.id.startsWith('oryza-')) return 'paddy';
-  if (/^(coffea|camellia|piper|vaccinium|rubus|ribes)-/.test(crop.id)) return 'bush';
-  if (crop.lifeSpan === 'perennial' && (crop.category === 'fruit' || crop.category === 'industrial' || crop.category === 'spice' || crop.category === 'other')) return 'tree';
+  if (/^(cocos|elaeis|musa|areca|phoenix|ananas|carica)-/.test(crop.id)) return 'palm';
+  if (/^(piper|vitis|passiflora|humulus|vanilla|actinidia)-/.test(crop.id)) return 'vine';
+  if (/^(coffea|camellia|vaccinium|rubus|ribes)-/.test(crop.id)) return 'bush';
+  if (/^saccharum-/.test(crop.id)) return 'tall-cereal';
+  if (perennial && (crop.category === 'fruit' || crop.category === 'industrial' || crop.category === 'spice' || crop.category === 'oilseed' || crop.category === 'other')) return 'tree';
   if (crop.category === 'cereal') return /^(zea|sorghum|pennisetum)-/.test(crop.id) ? 'tall-cereal' : 'cereal';
+  if (crop.category === 'pulse') return 'legume';
+  if (crop.category === 'oilseed') return 'oilseed';
   if (crop.category === 'forage' || crop.category === 'cover') return 'grass';
   if (crop.category === 'root') return 'root';
+  if (crop.category === 'vegetable' || crop.category === 'herb') return 'leafy';
   return 'row';
 }
 
@@ -537,3 +545,7 @@ export function runTrial(input: ModelInput, option: FarmOption): FarmTrial {
   const next = withChange(input, option.change);
   return { option, input: next, score: computeScoreTimeline(next) };
 }
+
+export * from './period';
+export * from './rotation';
+export * from './notes';

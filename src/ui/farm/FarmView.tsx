@@ -1,89 +1,62 @@
 /**
- * The living farm (docs/FARM.md), at the head of the rotation page: the field drawn as a farm for the date shown, three characters
- * who each report their part (weather, ground, crop), trials the grower can run from what the
- * characters propose, and the weather now and ahead. All of it comes from `src/core/farm`.
+ * The farm stage (docs/FARM.md): the first screen of the rotation page. The field is drawn as a
+ * farm that fills the screen, for today by default. Over it: where the field is, the rotation
+ * being shown (one line that opens into the strategies), the three characters with their bubbles,
+ * and a time bar that rewinds a year and steps forward by month or by quarter.
+ *
+ * Everything shown comes from `src/core/farm`. A strategy other than the current practice is a
+ * simulation (the same year of weather, the strategy's crops) and is labelled so.
  */
-import { useEffect, useMemo, useState } from 'react';
-import { Pause, Play, Undo2 } from 'lucide-react';
-import { type ISODate, pick } from '@/contracts';
-import { type FarmOption, type FarmVoice, type FarmWeather, type SkyKind, farmLines, farmOptions, farmSceneAt, forecastDays, runTrial, seasonOutcome } from '@/core/farm';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronsDown, FlaskConical, MapPin } from 'lucide-react';
+import { type AdvisoryReport, type RotationStrategy, pick } from '@/contracts';
+import { getCrop } from '@/core/crops';
+import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
-import { addDays, diffDays } from '@/lib/time';
 import { toModelInput, useMission } from '@/state/mission';
-import { useMissionUi } from '@/ui/chrome/uiState';
-import { Button, IconButton, Slider, cn } from '@/ui/design';
+import { Button, Dialog, cn, usePrefersReducedMotion } from '@/ui/design';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
-import { usePlayback } from '@/ui/timeline';
-import '@/ui/timeline/strings';
-import { FarmSceneView } from './FarmScene';
-import { MascotFigure } from './Mascots';
+import { DeepSheet } from './DeepSheet';
+import { VOICES, frameOf } from './direct';
+
+/** A crop's name in the reader's language. */
+const cropLabel = (id: string, lang: string): string => {
+  const c = getCrop(id);
+  return c ? (lang === 'vi' && c.names.vi ? c.names.vi : c.names.en) : id;
+};
+import { FarmSceneView, sunOf } from './FarmScene';
+import { MascotSpot, NoteCard, RotationPicker, StageLinks, TimeBar, periodLabel } from './StageParts';
+import { useStageDirector } from './useStageDirector';
+import { useFarmYear } from './year';
 import './strings';
 
-const VOICES: FarmVoice[] = ['space', 'soil', 'rice'];
-/** Seconds each character speaks before the next takes over, while the reader has not picked one. */
-const TURN_S = 8;
+/** How long the stage holds on a month or on a quarter during playback. */
+const HOLD_MS: Record<FarmStep, number> = { month: 2400, quarter: 3400 };
 
-/** A small drawing of the day's sky for the forecast strip. */
-function SkyIcon({ kind }: { kind: SkyKind }) {
-  const cloud = <path d="M 6 16 a 4 4 0 0 1 1 -7.8 a 5 5 0 0 1 9.4 1 a 3.4 3.4 0 0 1 0.6 6.8 Z" fill={kind === 'heavy-rain' ? '#8d99a8' : '#c3ccd6'} />;
-  return (
-    <svg viewBox="0 0 24 24" width={24} height={24} aria-hidden>
-      {(kind === 'clear' || kind === 'hot' || kind === 'frost') && <circle cx={12} cy={11} r={5.5} fill={kind === 'hot' ? '#ffb02e' : kind === 'frost' ? '#bfe0ff' : '#ffd24a'} />}
-      {kind === 'hot' && <path d="M 12 2 v 2.4 M 12 17.6 V 20 M 3 11 h 2.4 M 18.6 11 H 21 M 5.6 4.6 l 1.7 1.7 M 16.7 15.7 l 1.7 1.7 M 5.6 17.4 l 1.7 -1.7 M 16.7 6.3 l 1.7 -1.7" stroke="#ffb02e" strokeWidth={1.6} strokeLinecap="round" />}
-      {kind === 'frost' && <path d="M 12 3 v 16 M 5 7 l 14 8 M 19 7 l -14 8" stroke="#7fb8ee" strokeWidth={1.4} strokeLinecap="round" />}
-      {(kind === 'cloudy' || kind === 'rain' || kind === 'heavy-rain' || kind === 'unknown') && cloud}
-      {kind === 'rain' && <path d="M 9 18 l -1 3 M 14 18 l -1 3" stroke="#5aa9e6" strokeWidth={1.6} strokeLinecap="round" />}
-      {kind === 'heavy-rain' && <path d="M 7 18 l -1.2 3.4 M 11.5 18 l -1.2 3.4 M 16 18 l -1.2 3.4" stroke="#3f8fd0" strokeWidth={1.8} strokeLinecap="round" />}
-    </svg>
-  );
+/** Where each character stands over the scene, and where its note opens beside it. */
+const SPOT: Record<FarmVoice, { at: string; note: string }> = {
+  space: { at: 'top-[16%] right-[11%] narrow:top-[24%] narrow:right-1', note: 'top-[18%] right-[calc(11%+10.5rem)] narrow:inset-x-3 narrow:top-auto narrow:right-auto narrow:bottom-[5.25rem] narrow:w-auto' },
+  soil: { at: 'bottom-[7.25rem] left-[9%] narrow:bottom-[5.5rem] narrow:left-1', note: 'bottom-[9.5rem] left-[calc(9%+10.5rem)] narrow:inset-x-3 narrow:bottom-[5.25rem] narrow:left-auto narrow:w-auto' },
+  rice: { at: 'bottom-[7.25rem] right-[10%] narrow:bottom-[5.5rem] narrow:right-1', note: 'bottom-[9.5rem] right-[calc(10%+10.5rem)] narrow:inset-x-3 narrow:bottom-[5.25rem] narrow:right-auto narrow:w-auto' },
+};
+
+export interface FarmStageProps {
+  /** Ordered as on the page: the current practice first. Empty when the report has no strategy. */
+  rotations: RotationStrategy[];
+  current: RotationStrategy | null;
+  bestId: string | null;
+  selected: RotationStrategy | null;
+  onSelect: (id: string) => void;
+  report: AdvisoryReport | null;
+  /** Scrolls to the analysis under the stage, and to the dossier at the end of the page. */
+  onAnalysis: () => void;
+  onDossier: () => void;
 }
 
-/** The score through the year, as it is and in the trial, with the date shown. */
-function TrialChart({ base, trial, cursor, label }: { base: { t: ISODate; v: number }[]; trial: { t: ISODate; v: number }[]; cursor: ISODate; label: string }) {
-  const t = useT();
-  if (base.length < 2) return null;
-  const W = 520;
-  const H = 72;
-  const start = base[0].t;
-  const span = Math.max(1, diffDays(base.at(-1)!.t, start));
-  const x = (d: ISODate) => (diffDays(d, start) / span) * W;
-  const y = (v: number) => H - 4 - (v / 100) * (H - 8);
-  const line = (pts: { t: ISODate; v: number }[]) => pts.map((p, i) => `${i ? 'L' : 'M'} ${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
-  return (
-    <figure className="flex flex-col gap-1.5">
-      <svg viewBox={`0 0 ${W} ${H}`} className="block h-[72px] w-full" role="img" aria-label={label} preserveAspectRatio="none">
-        <line x1={0} y1={y(50)} x2={W} y2={y(50)} stroke="var(--color-line-1)" strokeDasharray="3 4" />
-        <path d={line(base)} fill="none" stroke="var(--color-ink-3)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
-        <path d={line(trial)} fill="none" stroke="var(--color-signal)" strokeWidth={2.2} vectorEffect="non-scaling-stroke" />
-        <line x1={x(cursor)} y1={0} x2={x(cursor)} y2={H} stroke="var(--color-ink-1)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-      </svg>
-      <figcaption className="flex items-center gap-4 text-xs text-ink-3">
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden className="h-0.5 w-4 bg-ink-3" />
-          {t('farm.trial.now')}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden className="h-0.5 w-4 bg-signal" />
-          {t('farm.trial.then')}
-        </span>
-      </figcaption>
-    </figure>
-  );
-}
-
-function Cond({ label, value, note }: { label: string; value: string; note?: string }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5 rounded-sm border border-line-1 px-3 py-2.5">
-      <span className="truncate text-xs text-ink-3">{label}</span>
-      <span className="t-value truncate text-lg leading-6 text-ink-1">{value}</span>
-      {note && <span className="t-caption line-clamp-2">{note}</span>}
-    </div>
-  );
-}
-
-export function FarmView() {
+export function FarmView({ rotations, current, bestId, selected, onSelect, report, onAnalysis, onDossier }: FarmStageProps) {
   const t = useT();
   const lang = useLang();
+  const reduced = usePrefersReducedMotion();
   const parcel = useMission((s) => s.parcel);
   const telemetry = useMission((s) => s.telemetry);
   const cropId = useMission((s) => s.cropId);
@@ -91,55 +64,68 @@ export function FarmView() {
   const priorities = useMission((s) => s.priorities);
   const countryTable = useMission((s) => s.countryTable);
   const score = useMission((s) => s.score);
-  const start = useMission((s) => s.timeline.start);
-  const end = useMission((s) => s.timeline.end);
-  const cursor = useMission((s) => s.timeline.cursor);
-  const setCursor = useMission((s) => s.setCursor);
   const setCrop = useMission((s) => s.setCrop);
-  const playing = useMissionUi((s) => s.playing);
-  const setPlaying = useMissionUi((s) => s.setPlaying);
+  const setPhase = useMission((s) => s.setPhase);
+  const setCursor = useMission((s) => s.setCursor);
 
-  // The strip under the map drives playback on the field screen; this page has no strip, so the farm does.
-  usePlayback();
+  const input = useMemo(() => toModelInput({ parcel, telemetry, cropId, groundTruth, priorities, countryTable }), [parcel, telemetry, cropId, groundTruth, priorities, countryTable]);
 
-  const input = useMemo(
-    () =>
-      toModelInput({
-        parcel,
-        telemetry,
-        cropId,
-        groundTruth,
-        priorities,
-        countryTable,
-      }),
-    [parcel, telemetry, cropId, groundTruth, priorities, countryTable],
-  );
-
-  const [picked, setPicked] = useState<FarmVoice | null>(null);
-  const [turn, setTurn] = useState(0);
+  const [step, setStep] = useState<FarmStep>('month');
+  const [idx, setIdx] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [open, setOpen] = useState<FarmVoice | null>(null);
+  const [deep, setDeep] = useState<FarmVoice | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [trialId, setTrialId] = useState<string | null>(null);
-  const [weatherDay, setWeatherDay] = useState<ISODate | null>(null);
   const [options, setOptions] = useState<FarmOption[] | null>(null);
+  /** A crop the grower asked to adopt from a trial, waiting for their yes: it changes the field everywhere. */
+  const [adopting, setAdopting] = useState<string | null>(null);
+  const stageRef = useRef<HTMLElement | null>(null);
 
-  // Another field: nobody is picked, no trial runs, the sky is the day's own.
+  const periods = useMemo(() => (telemetry ? farmPeriods(telemetry.window, step) : []), [telemetry, step]);
+  const period = idx == null ? null : (periods[idx] ?? null);
+
+  // Another field or another strategy: back to today, nothing open, no trial.
   const parcelId = parcel?.id;
+  const strategyId = selected?.id;
   useEffect(() => {
-    setPicked(null);
+    setIdx(null);
+    setPlaying(false);
+    setOpen(null);
     setTrialId(null);
-    setWeatherDay(null);
   }, [parcelId]);
+  useEffect(() => setTrialId(null), [strategyId]);
 
-  // The characters take turns until the reader picks one. No turns for readers who asked for less motion.
+  // The date of the stage is the date of the whole app: back on the field (step 1) the map, the timeline and the
+  // panel stand on the last day of the month or quarter shown here, and on today when the stage shows today.
+  const periodEnd = period?.to ?? null;
+  const today = telemetry?.window.today ?? null;
   useEffect(() => {
-    if (picked || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    const id = setInterval(() => setTurn((n) => n + 1), TURN_S * 1000);
-    return () => clearInterval(id);
-  }, [picked]);
+    const day = periodEnd ?? today;
+    if (day) setCursor(day);
+  }, [periodEnd, today, setCursor]);
+
+  // Playback: rewind to the first period, hold on each, end on today.
+  useEffect(() => {
+    if (!playing) return;
+    if (idx == null) {
+      setIdx(0);
+      return;
+    }
+    const id = setTimeout(() => {
+      if (idx >= periods.length - 1) {
+        setIdx(null);
+        setPlaying(false);
+      } else setIdx(idx + 1);
+    }, HOLD_MS[step]);
+    return () => clearTimeout(id);
+  }, [playing, idx, periods.length, step]);
 
   // The proposals re-score the year several times: worked out after the scene is on screen.
   useEffect(() => {
+    setOptions(null);
     if (!input || !score) return;
-    const id = setTimeout(() => setOptions(farmOptions(input, score)), 250);
+    const id = setTimeout(() => setOptions(farmOptions(input, score)), 300);
     return () => clearTimeout(id);
   }, [input, score]);
 
@@ -148,277 +134,187 @@ export function FarmView() {
     return option && input ? runTrial(input, option) : null;
   }, [options, trialId, input]);
 
-  const shownInput = trial?.input ?? input;
-  const shownScore = trial?.score ?? score;
-  const scene = useMemo(() => (shownInput && shownScore ? farmSceneAt(shownInput, shownScore, cursor, weatherDay ?? cursor) : null), [shownInput, shownScore, cursor, weatherDay]);
-  const lines = useMemo(() => (shownInput && scene ? farmLines(shownInput, scene) : null), [shownInput, scene]);
-  const days = useMemo(() => (telemetry ? forecastDays(telemetry) : []), [telemetry]);
+  // A strategy other than the current practice is played on the stage with its own crops.
+  const runs = useMemo(() => (input && selected && selected.kind !== 'current' ? seasonRuns(input, selected) : null), [input, selected]);
+  const bare = useMemo(() => (input && runs ? bareRun(input) : null), [input, runs]);
+  const simulated = !!runs && !trial;
 
-  // No field is open (the page is showing a fixture): there is no farm to draw.
+  const day = period?.to ?? telemetry?.window.today ?? null;
+  const shown = useMemo(() => {
+    if (!input || !score || !day) return null;
+    if (trial) return { input: trial.input, score: trial.score };
+    if (runs) return runOn(runs, day) ?? bare ?? { input, score };
+    return { input, score };
+  }, [input, score, day, trial, runs, bare]);
+
+  const view = useMemo(() => {
+    if (!shown || !day) return null;
+    if (period) return farmSceneOfPeriod(shown.input, shown.score, period);
+    return { scene: farmSceneAt(shown.input, shown.score, day), summary: null };
+  }, [shown, period, day]);
+  // The soil plan of the report is for the field's own crop: it is not quoted over a simulated one.
+  const notes = useMemo(() => (shown && view ? farmNotes(shown.input, view.scene, { summary: view.summary, report: simulated ? null : report }) : null), [shown, view, simulated, report]);
+  const year = useFarmYear(shown?.input ?? null, shown?.score ?? null);
+  const frame = useMemo(() => (view && notes ? frameOf(view.scene, notes) : null), [view, notes]);
+  const { beats, looks, act } = useStageDirector({ root: stageRef, open, frame, reduced });
+
   if (!parcel) return null;
-  if (!input || !score || !scene || !lines || !telemetry) {
-    return <div aria-busy aria-label={t('farm.loading')} className="skeleton aspect-[560/330] w-full rounded-md" />;
+  if (!input || !score || !telemetry || !shown || !view || !notes) {
+    return <div aria-busy aria-label={t('farm.loading')} className="skeleton h-full min-h-[560px] w-full" />;
   }
 
-  const speaker = picked ?? VOICES[turn % VOICES.length];
-  const line = lines[speaker];
-  const today = telemetry.window.today;
+  const { scene, summary } = view;
   const w = scene.weather;
-  const skyWord = t(`farm.sky.${w.kind}`);
-  const sourceNames = (ids: string[]) => [...new Set(ids.map((id) => telemetry.sources[id]?.name ?? id))].join(', ');
-  const names = {
-    space: t('farm.speak.space'),
-    soil: t('farm.speak.soil'),
-    rice: t('farm.speak.rice'),
-  } satisfies Record<FarmVoice, string>;
-  const mine = (options ?? []).filter((o) => o.by === speaker).slice(0, 3);
-  const baseOutcome = seasonOutcome(score);
-  const forecastSource = days.find((d) => d.forecast)?.sourceIds[0];
-  const risks = (telemetry.branches.risk.events ?? []).filter((e) => e.severity > 0 && e.end >= today).sort((a, b) => a.start.localeCompare(b.start));
+  const when = period ? periodLabel(period, lang, true) : `${t('farm.today')}, ${fmtDate(telemetry.window.today, lang)}`;
+  const shownCrop = getCrop(shown.input.cropId);
+  const cropName = shownCrop ? (lang === 'vi' && shownCrop.names.vi ? shownCrop.names.vi : shownCrop.names.en) : t('farm.bare');
+  const place = [parcel.place?.admin1, parcel.place?.country].filter(Boolean).join(', ') || parcel.place?.label || `${fmtNum(parcel.centroid[1], 3)}°, ${fmtNum(parcel.centroid[0], 3)}°`;
+  const activeMonthId = period ? (period.step === 'month' ? period.id : period.id.split('_').at(-1)!) : (year.at(-1)?.id ?? null);
 
-  const showDay = (d: FarmWeather) => {
-    setPlaying(false);
-    setCursor(today);
-    setWeatherDay(d.t === today ? null : d.t);
+  // The speaker's Talk and the others' turn toward it come from the stage director.
+  const toggle = (who: FarmVoice) => setOpen(open === who ? null : who);
+  const play = () => {
+    if (!playing) act('space', 'Scan');
+    setPlaying(!playing);
   };
-  const scrub = (v: number) => {
-    setWeatherDay(null);
-    setCursor(addDays(start, v));
+  const pickStep = (i: number | null) => {
+    setPlaying(false);
+    setIdx(i);
+  };
+  const startTrial = (id: string | null) => {
+    setTrialId(id);
+    const by = options?.find((o) => o.id === id)?.by;
+    if (by) act(by, 'Jump');
   };
 
   return (
-    <section aria-label={t('farm.page')} className="mb-4 flex flex-col gap-4" data-farm-tab>
-      {/* Wide pages: the scene on the left, the character speaking beside it. */}
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-3">
-          <div className="relative overflow-hidden rounded-md border border-line-1">
-            <FarmSceneView scene={scene} lines={lines} speaker={speaker} onSpeak={(who) => setPicked(picked === who ? null : who)} title={t('farm.title', { d: fmtDate(w.t, lang), sky: skyWord })} names={names} />
-            {/* The day in figures, over the sky. White plates keep the text readable under every sky. */}
-            <div className="pointer-events-none absolute top-2 left-2 flex flex-col items-start gap-1 rounded-sm bg-white/80 px-2.5 py-1.5 text-[#17231c] backdrop-blur-sm">
-              <span className="flex items-center gap-1.5 text-xs">
-                {fmtDate(w.t, lang)}
-                {w.forecast && <span className="rounded-xs bg-[#17231c] px-1 py-px text-[10px] font-medium tracking-wide text-white uppercase">{t('farm.forecast')}</span>}
-              </span>
-              <span className="flex items-baseline gap-1.5">
-                <span className="t-value text-3xl leading-8" data-farm-temp>
-                  {w.tMaxC == null ? '--' : `${Math.round(w.tMaxC)}°`}
-                </span>
-                <span className="text-sm font-medium">{skyWord}</span>
+    <section ref={stageRef} aria-label={t('farm.page')} className="relative h-full min-h-[560px] w-full overflow-hidden bg-[#74a57b]" data-farm-stage data-farm-when={period?.id ?? 'today'}>
+      <FarmSceneView scene={scene} beat={`${period?.id ?? 'today'}|${shown.input.cropId ?? 'none'}|${trialId ?? ''}`} title={t('farm.title', { d: when, sky: t(`farm.sky.${w.kind}`) })} className="absolute inset-0 h-full w-full" />
+      {/* Daylight breathing over the land, as strong as the sun shows in the sky drawn. Decoration only. */}
+      <div aria-hidden className="farm-daylight pointer-events-none absolute inset-0" style={{ '--farm-sun': sunOf(w.kind) } as React.CSSProperties} />
+      {/* A little shade under the plates at the top and the bar at the bottom, so the drawing never fights them. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-linear-to-b from-[#0c1f16]/30 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-[#0c1f16]/35 to-transparent" />
+
+      <div className="absolute inset-x-3 top-3 z-30 flex flex-wrap items-start justify-between gap-2 md:inset-x-4 md:top-4">
+        <div className="flex min-w-0 flex-col gap-2">
+          {/* Which field this is. */}
+          <div className="farm-plate flex max-w-[26rem] items-center gap-3 rounded-md py-2 pr-2 pl-3" data-farm-field>
+            <MapPin size={18} strokeWidth={2} aria-hidden className="shrink-0 text-signal-strong" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-semibold text-ink-1">{parcel.name}</span>
+              <span className="truncate text-xs text-ink-2">
+                {place} · {fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha · {cropName}
               </span>
             </div>
-            <div className="pointer-events-none absolute top-2 right-2 flex flex-col items-end gap-1">
-              {scene.score != null && (
-                <span className="rounded-sm bg-white/80 px-2.5 py-1.5 text-xs text-[#17231c] backdrop-blur-sm" title={t('farm.scoreOf', { n: scene.score })}>
-                  {t('farm.score')}{' '}
-                  <span className="t-value text-base" data-farm-score>
-                    {scene.score}
-                  </span>
-                  <span className="text-[#17231c]/60">/100</span>
-                </span>
-              )}
-            </div>
-            {trial && (
-              <span className="pointer-events-none absolute top-2 left-1/2 max-w-[46%] -translate-x-1/2 truncate rounded-sm bg-signal px-2.5 py-1 text-xs font-medium text-white" data-farm-trial-pill>
-                {t('farm.trial')}: {pick(trial.option.label, lang)}
+            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => setPhase('locked')}>
+              {t('farm.field.map')}
+            </Button>
+          </div>
+          {selected && <RotationPicker rotations={rotations} current={current} bestId={bestId} selected={selected} open={pickerOpen} onOpen={setPickerOpen} onSelect={onSelect} />}
+        </div>
+
+        {/* What the stage shows now: the day or the period, in three figures. */}
+        <div className="farm-plate flex flex-col gap-1 rounded-md px-3 py-2" data-farm-when-plate>
+          <span className="flex items-center gap-2 text-xs text-ink-2">
+            {when}
+            {simulated && (
+              <span className="rounded-xs bg-ink-1 px-1.5 py-px text-[10px] font-semibold tracking-wide text-surface-0 uppercase" title={t('farm.simulated.hint')}>
+                {t('farm.simulated')}
               </span>
             )}
-          </div>
-
-          {/* The date: the same cursor as the strip under the map. */}
-          <div className="flex items-center gap-3">
-            <IconButton label={playing ? t('tl.pause') : t('tl.play')} icon={playing ? <Pause /> : <Play />} variant="primary" size="md" className="shrink-0 rounded-full [&_svg]:size-4 [&_svg]:fill-current" onClick={() => setPlaying(!playing)} />
-            <div className="min-w-0 flex-1">
-              <Slider ariaLabel={t('farm.scrub')} size="md" value={diffDays(cursor, start)} onValueChange={scrub} min={0} max={Math.max(1, diffDays(end, start))} step={1} formatValue={(v) => fmtDate(addDays(start, v), lang)} />
-            </div>
-            <span className="t-value w-[5.5rem] shrink-0 text-right text-sm text-ink-1">{fmtDate(cursor, lang)}</span>
-          </div>
-        </div>
-        <div className="flex min-w-0 flex-col gap-3">
-          {/* The character speaking, its sentence, where the figures come from, and what it would try. */}
-          <section aria-live="polite" className="flex flex-col gap-3 rounded-md border border-line-1 bg-surface-1 p-3" data-farm-speaker={speaker}>
-            <div role="radiogroup" aria-label={t('farm.pick')} className="flex flex-wrap gap-1.5">
-              {VOICES.map((who) => (
-                <button key={who} type="button" role="radio" aria-checked={speaker === who} onClick={() => setPicked(who)} className={cn('rounded-full border px-3 py-1 text-sm', speaker === who ? 'border-signal bg-surface-0 font-medium text-ink-1' : 'border-line-1 text-ink-2 hover:bg-surface-2')}>
-                  {t(`farm.name.${who}`)} <span className="text-ink-3">· {t(`farm.role.${who}`)}</span>
-                </button>
-              ))}
-            </div>
-            <div className="flex items-start gap-3">
-              <svg viewBox="-34 -42 68 70" className="farm-scene shrink-0" style={{ width: 52, height: 54 }} aria-hidden>
-                <MascotFigure who={speaker} mood={line.mood} talking={false} />
-              </svg>
-              <div className="flex min-w-0 flex-col gap-1">
-                <p className="text-base text-ink-1" data-farm-line>
-                  {pick(line.text, lang)}
-                </p>
-                {line.sourceIds.length > 0 && <p className="t-caption">{t('farm.source', { s: sourceNames(line.sourceIds) })}</p>}
-              </div>
-            </div>
-            {speaker !== 'space' && (
-              <div className="flex flex-col gap-2 border-t border-line-1 pt-3">
-                <span className="text-xs font-medium text-ink-2">{t('farm.suggest')}</span>
-                {options == null ? (
-                  <p className="t-caption">{t('farm.suggest.loading')}</p>
-                ) : mine.length === 0 ? (
-                  <p className="t-caption">{t('farm.suggest.none')}</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {mine.map((o) => (
-                      <Button key={o.id} variant={trialId === o.id ? 'primary' : 'secondary'} size="md" aria-pressed={trialId === o.id} onClick={() => setTrialId(trialId === o.id ? null : o.id)} data-farm-option={o.kind}>
-                        {pick(o.label, lang)}
-                        <span className={cn('t-value ml-1.5', trialId === o.id ? '' : 'text-signal-strong')} title={t('farm.suggest.gainLabel', { n: o.delta })}>
-                          {t('farm.suggest.gain', { n: o.delta })}
-                        </span>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
+          </span>
+          <span className="flex items-baseline gap-2">
+            <span className="t-value text-3xl leading-8 text-ink-1" data-farm-temp>
+              {w.tMaxC == null ? '--' : `${Math.round(w.tMaxC)}°`}
+            </span>
+            <span className="text-sm font-medium text-ink-1">{t(`farm.sky.${w.kind}`)}</span>
+          </span>
+          <span className="flex items-center gap-3 text-xs text-ink-2">
+            <span>
+              {summary ? t('farm.when.rainTotal') : t('farm.when.rain')} <span className="t-value text-ink-1">{w.rainMm == null ? '--' : `${fmtNum(w.rainMm, summary ? 0 : 1)} mm`}</span>
+            </span>
+            {scene.score != null && (
+              <span title={t('farm.scoreHint')}>
+                {t('farm.score')}{' '}
+                <span className="t-value text-ink-1" data-farm-score>
+                  {scene.score}
+                </span>
+                /100
+              </span>
             )}
-          </section>
-
-          {trial && (
-            <section className="flex flex-col gap-3 rounded-md border border-signal p-3" data-farm-trial={trial.option.kind}>
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base font-medium text-ink-1">
-                  {t('farm.trial.title', {
-                    label: pick(trial.option.label, lang),
-                  })}
-                </h3>
-                <p className="text-sm text-ink-1">
-                  {t('farm.trial.outcome', {
-                    a: baseOutcome,
-                    b: seasonOutcome(trial.score),
-                  })}{' '}
-                  <span className="t-value text-signal-strong">
-                    (
-                    {t('farm.suggest.gain', {
-                      n: seasonOutcome(trial.score) - baseOutcome,
-                    })}
-                    )
-                  </span>
-                </p>
-                <p className="t-caption">{t('farm.trial.same')}</p>
-                <p className="t-caption">{pick(trial.option.caveat, lang)}</p>
-              </div>
-              <TrialChart
-                base={score.snapshots.map((s) => ({
-                  t: s.t,
-                  v: s.productivity,
-                }))}
-                trial={trial.score.snapshots.map((s) => ({
-                  t: s.t,
-                  v: s.productivity,
-                }))}
-                cursor={cursor}
-                label={t('farm.trial.chart')}
-              />
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" size="md" icon={<Undo2 />} onClick={() => setTrialId(null)}>
-                  {t('farm.trial.back')}
-                </Button>
-                {trial.option.kind === 'crop' && trial.option.change.cropId && (
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => {
-                      setCrop(trial.option.change.cropId ?? null);
-                      setTrialId(null);
-                    }}
-                  >
-                    {t('farm.trial.adopt')}
-                  </Button>
-                )}
-              </div>
-            </section>
-          )}
+          </span>
         </div>
       </div>
-      <div className="grid items-start gap-x-6 gap-y-4 xl:grid-cols-2">
-        <section className="flex flex-col gap-2" aria-labelledby="farm-cond">
-          <h3 id="farm-cond" className="text-lg font-medium text-ink-1">
-            {t('farm.cond', { d: fmtDate(w.t, lang) })}
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            <Cond label={t('farm.cond.temp')} value={w.tMaxC != null && w.tMinC != null ? `${fmtNum(w.tMaxC, 0)}° / ${fmtNum(w.tMinC, 0)}°` : '--'} note={w.tMaxC != null ? t('farm.cond.tempNote') : t('farm.cond.none')} />
-            <Cond label={t('farm.cond.rain')} value={w.rainMm != null ? `${fmtNum(w.rainMm, 1)} mm` : '--'} note={w.rain7Mm != null ? t('farm.cond.rain7', { n: fmtNum(w.rain7Mm, 0) }) : w.rainMm == null ? t('farm.cond.none') : undefined} />
-            <Cond label={t('farm.cond.soil')} value={scene.soil.moisture != null ? `${fmtNum(scene.soil.moisture, 2)} m³/m³` : '--'} note={scene.soil.state ? t(`farm.cond.soil.${scene.soil.state}`) : scene.soil.moisture == null ? t('farm.cond.none') : undefined} />
-            <Cond
-              label={t('farm.cond.ndvi')}
-              value={scene.crop.ndvi != null ? fmtNum(scene.crop.ndvi, 2) : '--'}
-              note={
-                scene.crop.ndviDate
-                  ? t('farm.cond.ndviOn', {
-                      d: fmtDate(scene.crop.ndviDate, lang),
-                    })
-                  : t('farm.cond.none')
-              }
-            />
-          </div>
-        </section>
 
-        <section className="flex flex-col gap-2" aria-labelledby="farm-weather">
-          <h3 id="farm-weather" className="text-lg font-medium text-ink-1">
-            {t('farm.weather')}
-          </h3>
-          {days.length <= 1 ? (
-            <p className="t-caption">{t('farm.weather.none')}</p>
-          ) : (
-            <>
-              <p className="t-caption">
-                {t('farm.weather.note', {
-                  s: forecastSource ? sourceNames([forecastSource]) : '',
-                })}
-              </p>
-              <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" data-farm-forecast>
-                {days.map((d) => {
-                  const on = (weatherDay ?? (cursor === today ? today : null)) === d.t;
-                  return (
-                    <button
-                      key={d.t}
-                      type="button"
-                      aria-pressed={on}
-                      aria-label={t('farm.weather.day', {
-                        d: fmtDate(d.t, lang, false),
-                        sky: t(`farm.sky.${d.kind}`),
-                        hi: d.tMaxC == null ? '--' : Math.round(d.tMaxC),
-                        lo: d.tMinC == null ? '--' : Math.round(d.tMinC),
-                        r: d.rainMm == null ? '--' : fmtNum(d.rainMm, 1),
-                      })}
-                      onClick={() => showDay(d)}
-                      className={cn('flex w-[4.25rem] shrink-0 flex-col items-center gap-0.5 rounded-sm border px-1.5 py-2 text-xs', on ? 'border-signal bg-surface-1' : 'border-line-1 hover:bg-surface-2')}
-                    >
-                      <span className="text-ink-3">{d.t === today ? t('farm.today') : fmtDate(d.t, lang, false)}</span>
-                      <SkyIcon kind={d.kind} />
-                      <span className="t-value text-sm text-ink-1">{d.tMaxC == null ? '--' : `${Math.round(d.tMaxC)}°`}</span>
-                      <span className="t-value text-ink-3">{d.tMinC == null ? '--' : `${Math.round(d.tMinC)}°`}</span>
-                      <span className="t-value text-[var(--color-branch-rainfall)]">{d.rainMm == null ? '--' : fmtNum(d.rainMm, d.rainMm < 10 ? 1 : 0)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-ink-2">{t('farm.warn')}</span>
-                {risks.length === 0 ? (
-                  <p className="t-caption">{t('farm.warn.none')}</p>
-                ) : (
-                  <ul className="flex flex-col gap-1 text-sm text-ink-1">
-                    {risks.slice(0, 4).map((e) => (
-                      <li key={e.id}>
-                        <span className="t-value">
-                          {fmtDate(e.start, lang, false)}
-                          {e.end !== e.start ? ` – ${fmtDate(e.end, lang, false)}` : ''}
-                        </span>
-                        : {pick(e.title, lang)}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </>
-          )}
-        </section>
+      {trial && (
+        <div className="farm-plate absolute top-[5.5rem] left-1/2 z-20 flex max-w-[min(30rem,calc(100%-2rem))] -translate-x-1/2 items-center gap-2 rounded-full py-1 pr-1 pl-3 text-sm narrow:top-auto narrow:bottom-[5.25rem]" data-farm-trial-pill>
+          <FlaskConical size={15} aria-hidden className="shrink-0 text-signal-strong" />
+          <span className="truncate text-ink-1">
+            {t('farm.trial')}: {pick(trial.option.label, lang)}
+          </span>
+          <span className="t-value shrink-0 text-signal-strong">
+            {seasonOutcome(score)} → {seasonOutcome(trial.score)}
+          </span>
+          <Button size="sm" variant="ghost" className="shrink-0 rounded-full" onClick={() => startTrial(null)}>
+            {t('farm.trial.end')}
+          </Button>
+        </div>
+      )}
+
+      {VOICES.map((who, k) => (
+        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} className={cn('z-10', SPOT[who].at)} />
+      ))}
+      {open && (
+        <NoteCard
+          key={open}
+          who={open}
+          note={notes[open]}
+          options={simulated ? [] : (options ?? []).filter((o) => o.by === open)}
+          optionsLoading={options == null && !simulated}
+          trial={trial}
+          baseOutcome={seasonOutcome(score)}
+          onTrial={startTrial}
+          onAdopt={setAdopting}
+          onDeep={() => setDeep(open)}
+          onClose={() => setOpen(null)}
+          className={SPOT[open].note}
+        />
+      )}
+
+      <div className="absolute inset-x-3 bottom-3 z-30 flex flex-col gap-2 md:inset-x-4 md:bottom-4">
+        <TimeBar periods={periods} idx={idx} step={step} playing={playing} holdMs={reduced ? 0 : HOLD_MS[step]} onStep={(s) => { setPlaying(false); setIdx(null); setStep(s); }} onPlay={play} onPick={pickStep} trailing={<StageLinks onDossier={onDossier} />} />
+        <button type="button" onClick={onAnalysis} className="mx-auto flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-medium text-white [text-shadow:0_1px_3px_rgb(8_20_14/0.7)] hover:bg-white/15" data-farm-analysis>
+          <ChevronsDown size={14} aria-hidden />
+          {t('farm.analysis')}
+        </button>
       </div>
+
+      <Dialog
+        open={adopting != null}
+        onOpenChange={(o) => !o && setAdopting(null)}
+        size="sm"
+        title={t('farm.adopt.title', { crop: adopting ? cropLabel(adopting, lang) : '' })}
+        description={t('farm.adopt.body')}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setAdopting(null)}>
+              {t('farm.adopt.keep')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (adopting) setCrop(adopting);
+                setAdopting(null);
+                setTrialId(null);
+              }}
+            >
+              {t('farm.adopt.go')}
+            </Button>
+          </>
+        }
+      />
+      <DeepSheet who={deep} onClose={() => setDeep(null)} input={shown.input} score={shown.score} scene={scene} summary={summary} when={when} report={report} options={options} months={year} activeMonthId={activeMonthId} simulated={simulated} />
     </section>
   );
 }
