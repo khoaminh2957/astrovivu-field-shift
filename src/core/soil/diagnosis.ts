@@ -3,7 +3,8 @@ import { tx } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { MAAS_HOFFMAN_PARAMS } from '@/core/scoring/literature';
 import { soilFacts } from './facts';
-import type { SoilDiagnosis, SoilFact, SoilGap, SoilGapAmount, SoilGapKey, SoilGapStatus } from './types';
+import { computeScoreTimeline } from '@/core/scoring';
+import type { SoilDiagnosis, SoilFact, SoilGap, SoilGapAmount, SoilGapKey, SoilGapStatus, SoilMetricDiagnosis } from './types';
 
 const KEYS: SoilGapKey[] = ['ph', 'texture', 'drainage', 'depth', 'salinity', 'fertility'];
 const LABELS: Record<SoilGapKey, I18nText> = {
@@ -42,9 +43,19 @@ function statusForClass(actual: string | null, opt: string[], abs: string[]): So
 }
 
 /** Returns the six-factor diagnosis using the scoring model's actual values and limiting factor. */
-export function diagnoseSoil(input: ModelInput, score: ScoreTimeline): SoilDiagnosis | null {
+export function diagnoseSoil(input: ModelInput, score = computeScoreTimeline(input)): SoilDiagnosis {
   const crop = getCrop(input.cropId);
-  if (!crop || !input.cropId) return null;
+  if (!crop || !input.cropId) {
+    return {
+      cropId: input.cropId ?? '',
+      gaps: [],
+      limitingKey: null,
+      conflicts: [],
+      metrics: [],
+      mostLimitingFactor: null,
+      summary: tx('Select a crop before diagnosing soil suitability.', 'Hãy chọn cây trồng trước khi chẩn đoán độ phù hợp của đất.'),
+    };
+  }
 
   const facts = soilFacts(input);
   const gaps: SoilGap[] = [];
@@ -92,5 +103,26 @@ export function diagnoseSoil(input: ModelInput, score: ScoreTimeline): SoilDiagn
     const converted = soc * 0.1724;
     if ((om < 2) !== (converted < 2)) conflicts.push(tx(`Organic matter sources disagree: ${om}% versus ${r1(converted)}% converted from SOC (${soc} g/kg).`, `Các nguồn chất hữu cơ mâu thuẫn: ${om}% so với ${r1(converted)}% quy đổi từ SOC (${soc} g/kg).`));
   }
-  return { cropId: input.cropId, gaps, limitingKey: limitingKey && KEYS.includes(limitingKey) ? limitingKey : null, conflicts };
+  const metrics: SoilMetricDiagnosis[] = gaps.map((gap) => {
+    const fact = gap.facts[0];
+    const status = gap.status === 'unknown' ? 'no_data' : gap.status === 'tolerated' ? 'tolerable' : gap.status;
+    return {
+      key: gap.key,
+      label: gap.label,
+      currentValue: fact?.value ?? null,
+      unit: fact?.unit,
+      sourceId: fact?.sourceId,
+      uncertainty: fact?.uncertainty,
+      status,
+      deficit: gap.gap?.amount ?? 0,
+      note: gap.note ?? tx(`Compared with the selected crop requirement for ${gap.label.en}.`, `Đã so sánh với yêu cầu cây trồng đã chọn cho ${gap.label.vi}.`),
+      isLimiting: gap.limiting,
+    };
+  });
+  const mostLimitingFactor = metrics.find((metric) => metric.isLimiting) ?? null;
+  const summary = tx(
+    mostLimitingFactor ? `Most limiting soil factor: ${mostLimitingFactor.label.en}.` : 'No soil factor is the overall limiting factor.',
+    mostLimitingFactor ? `Yếu tố đất hạn chế nhất: ${mostLimitingFactor.label.vi}.` : 'Không có yếu tố đất nào là yếu tố hạn chế tổng thể.',
+  );
+  return { cropId: input.cropId, gaps, limitingKey: limitingKey && KEYS.includes(limitingKey) ? limitingKey : null, conflicts, metrics, mostLimitingFactor, summary };
 }

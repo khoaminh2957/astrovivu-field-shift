@@ -1,4 +1,6 @@
-import type { FactorKind, I18nText } from '@/contracts';
+import type { FactorKind, I18nText, SoilPlan, SoilPlanItem } from '@/contracts';
+
+export type { SoilPlan, SoilPlanItem };
 
 export type SoilStatus = 'optimal' | 'tolerable' | 'outside' | 'uncertain' | 'no_data';
 
@@ -63,6 +65,10 @@ export interface SoilDiagnosis {
   gaps: SoilGap[];
   limitingKey: SoilGapKey | null;
   conflicts: I18nText[];
+  /** Compatibility projection consumed by the existing advisory remediation plan. */
+  metrics: SoilMetricDiagnosis[];
+  mostLimitingFactor: SoilMetricDiagnosis | null;
+  summary: I18nText;
 }
 
 export interface SoilFact {
@@ -75,4 +81,25 @@ export interface SoilFact {
   uncertainty?: [lo: number, hi: number];
   fromGrower: boolean;
   estimate?: number | string | null;
+}
+
+export type SoilMetricStatus = SoilStatus | 'reading_only';
+
+export interface SoilMetricDiagnosis {
+  key: string;
+  label: I18nText;
+  currentValue: number | string | null;
+  unit?: string;
+  sourceId?: string;
+  uncertainty?: [number, number] | null;
+  targetRange?: {
+    optLo?: number | string;
+    optHi?: number | string;
+    absLo?: number | string;
+    absHi?: number | string;
+  };
+  status: SoilMetricStatus;
+  deficit?: number | null;
+  note: I18nText;
+  isLimiting: boolean;
 }

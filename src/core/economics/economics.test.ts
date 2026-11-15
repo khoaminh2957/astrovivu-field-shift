@@ -5,6 +5,7 @@ import { buildRotations } from '@/core/advisory/rotation';
 import { getCrop } from '@/core/crops';
 import { computeScoreTimeline } from '@/core/scoring';
 import { getSampleParcel } from '@/data/samples';
+import { countryCropsFromAtlas } from '../../../scripts/crops/country-crops';
 import { estimateSeasonEconomics, marginSensitivity, rankFlips, referenceEconomics, seasonEconomics, seasonSensitivity, SENSITIVITY_PCT, strategyEconomics } from './index';
 
 const FIELDS = ['daklak-coffee', 'cantho-rice', 'iowa-corn-soy', 'nevada-alfalfa'] as const;
@@ -17,12 +18,16 @@ const PAIRS = [
   ['medicago-sativa', 'nevada-alfalfa'],
 ] as const;
 
-/** A demo field as the app opens it, with the grower's own numbers on top when given. */
+/**
+ * A demo field as the app opens it, with the grower's own numbers on top when given. The app gives
+ * the model the crop table of the field's country (the atlas rows; `src/data/country.ts`), and the
+ * rotation builder reads it (docs/SCORING.md, 12.5), so the tables of section 6 are built with it.
+ */
 function demo(id: string, own: Partial<GroundTruth> = {}): ModelInput {
   const parcel = getSampleParcel(id)!;
   const defaults = (parcel as { defaultGroundTruth?: GroundTruth }).defaultGroundTruth ?? {};
   const telemetry = JSON.parse(readFileSync(`public/data/samples/${id}.json`, 'utf8')) as FieldTelemetry;
-  return { parcel, telemetry, cropId: parcel.defaultCropId, groundTruth: { ...defaults, ...own }, priorities: ['profit', 'water', 'soil'], today: '2026-11-14' };
+  return { parcel, telemetry, cropId: parcel.defaultCropId, groundTruth: { ...defaults, ...own }, priorities: ['profit', 'water', 'soil'], today: '2026-11-14', country: countryCropsFromAtlas(parcel.place!.iso3!) };
 }
 
 /** One hectare of a crop on a demo field, as the season card computes it. */
@@ -174,7 +179,8 @@ describe('source quality of the reference record', () => {
     const e = season('phaseolus-vulgaris', 'cantho-rice');
     expect(e.reference).toMatchObject({ iso3: 'USA', sameCountry: false });
     const borrowed = rotationsOf('cantho-rice').flatMap((r) => r.economics.seasons).filter((s) => s.reference && !s.reference.sameCountry);
-    expect(new Set(borrowed.map((s) => s.cropId))).toEqual(new Set(['phaseolus-vulgaris', 'fagopyrum-esculentum']));
+    // Common bean and daikon radish, the two crops of the water-saver rotation (buckwheat was the second until the builder read the country table).
+    expect(new Set(borrowed.map((s) => s.cropId))).toEqual(new Set(['phaseolus-vulgaris', 'raphanus-sativus']));
   });
 
   it('is left out when yield, price and cost are all the grower\'s own', () => {

@@ -14,12 +14,10 @@ import { useMissionUi } from '@/ui/chrome/uiState';
 import { AnomalyMarker, StatusTag, cn } from '@/ui/design';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
 import { rainSum, readBranch } from '@/ui/hud/readings';
-import { FarmTab } from '@/ui/farm/FarmTab';
 import { QuickFacts } from '@/ui/override';
 import { LiveFieldCanvas } from './FieldCanvas';
 import { usePictureState, useSelectBranch } from './MetricCards';
 import { rasterFor } from './picture';
-import { RotationTab } from './RotationTab';
 import { SatelliteCanvas } from './SatelliteCanvas';
 import { TileLegend } from './ScaleLegend';
 import { AccumChart, NdviChart, s2Points } from './StatusCharts';
@@ -298,11 +296,15 @@ function StatusCharts() {
   );
 }
 
-/** The field in figures: the model's sentence, three numbers, the picture by date, the two charts. Shown on the Data tab. */
-export function OverviewData() {
+export function OverviewTab() {
   const t = useT();
+  const parcelId = useMission((s) => s.parcel?.id);
+  const closed = useMissionUi((s) => (parcelId ? !!s.quickClosed[parcelId] : true));
+  const closeQuick = useMissionUi((s) => s.closeQuick);
+  const setTab = useMissionUi((s) => s.setFieldTab);
   return (
     <div className="flex flex-col gap-6">
+      {!closed && parcelId && <QuickFacts onClose={() => closeQuick(parcelId)} onMore={() => setTab('soil')} />}
       <Summary />
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
@@ -315,30 +317,6 @@ export function OverviewData() {
         </div>
         <PeriodNote />
         <StatusCharts />
-      </section>
-    </div>
-  );
-}
-
-/**
- * The first tab: the living farm, the three questions that sharpen the model while they are still
- * unanswered, and what to grow. It took the place of the overview and of the rotation tab.
- */
-export function OverviewTab() {
-  const t = useT();
-  const parcelId = useMission((s) => s.parcel?.id);
-  const closed = useMissionUi((s) => (parcelId ? !!s.quickClosed[parcelId] : true));
-  const closeQuick = useMissionUi((s) => s.closeQuick);
-  const setTab = useMissionUi((s) => s.setFieldTab);
-  return (
-    <div className="flex flex-col gap-6">
-      <FarmTab />
-      {!closed && parcelId && <QuickFacts onClose={() => closeQuick(parcelId)} onMore={() => setTab('soil')} />}
-      <section className="flex flex-col gap-3 border-t border-line-1 pt-4" aria-labelledby="farm-grow">
-        <h3 id="farm-grow" className="text-lg font-medium text-ink-1">
-          {t('farm.grow')}
-        </h3>
-        <RotationTab />
       </section>
     </div>
   );

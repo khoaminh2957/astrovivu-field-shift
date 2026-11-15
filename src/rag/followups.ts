@@ -62,6 +62,16 @@ export function followUps(store: KnowledgeStore, a: Analysis, ctx?: FieldContext
       if (name) c.push(vi ? `Có thể luân canh gì với ${name}?` : `What can I rotate with ${name}?`);
       c.push(vi ? 'Dữ liệu vệ tinh khác số đo tại ruộng thế nào?' : 'How is satellite data different from ground measurements?');
       break;
+    case 'field-fact':
+      if (ctx) {
+        c.push(vi ? 'Tháng nào mưa nhiều nhất ở ruộng tôi?' : 'Which month is the wettest on my field?');
+        c.push(vi ? 'Tuần tới ruộng tôi có rủi ro thời tiết nào không?' : 'Is there any weather risk on my field next week?');
+        c.push(vi ? 'Đất của tôi có bao nhiêu chất hữu cơ?' : 'How much organic matter does my soil have?');
+        if (name) c.push(vi ? `Ruộng của tôi có phù hợp với ${name} không?` : `Is my field suitable for ${name}?`);
+      } else {
+        c.push(...starterQuestions(name, ctx, a.lang));
+      }
+      break;
     case 'score-change':
       c.push(vi ? 'Độ ẩm vùng rễ ở đây nghĩa là gì?' : 'What does root-zone moisture mean here?');
       c.push(vi ? 'Huy hiệu Độ tin cậy nghĩa là gì?' : 'What does the Confidence Badge mean?');
