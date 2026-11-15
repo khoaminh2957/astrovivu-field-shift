@@ -207,20 +207,31 @@ describe('the short notes of the three characters', () => {
 });
 
 describe('the land month by month', () => {
-  it('lets a herbaceous perennial die back while dormant and grow again: alfalfa in Nevada', () => {
+  it('draws a herbaceous perennial as tall as its observed canopy: alfalfa in Nevada', () => {
     const alfalfa = demo('nevada-alfalfa');
     const score = computeScoreTimeline(alfalfa);
     const land = farmPeriods(alfalfa.telemetry.window, 'month').map((p) => ({ id: p.id, ...periodLand(alfalfa, score, p) }));
     const growth = land.map((l) => l.growth);
-    // Dormant from November to May: its crown only; full height from mid-season.
+    // Its crown in winter, full height under a closed canopy (MODIS NDVI above 0.75 in June and July).
     expect(Math.min(...growth)).toBe(CROWN);
     expect(Math.max(...growth)).toBe(1);
     expect(land.every((l) => !l.bare && l.look === 'grass')).toBe(true);
-    // It rises from the crown to full height without stepping down on the way.
-    const start = growth.findIndex((g) => g > CROWN);
+    // After the summer peak a cut shows: lower than full height, still above the crown.
     const top = growth.indexOf(1);
-    expect(start).toBeGreaterThan(-1);
-    for (let i = start; i <= top; i++) expect(growth[i]).toBeGreaterThanOrEqual(growth[i - 1]);
+    expect(growth.slice(top).some((g) => g < 0.9 && g > CROWN)).toBe(true);
+    // At least five heights through the year, where the stage calendar drew three.
+    expect(new Set(growth.map((g) => g.toFixed(2))).size).toBeGreaterThanOrEqual(5);
+  });
+
+  it('keeps the stage calendar for a herbaceous perennial that is not the field\'s own crop', () => {
+    const alfalfa = demo('nevada-alfalfa');
+    const other = { ...alfalfa, parcel: { ...alfalfa.parcel, defaultCropId: 'zea-mays' } };
+    const score = computeScoreTimeline(other);
+    const growth = farmPeriods(other.telemetry.window, 'month').map((p) => periodLand(other, score, p).growth);
+    // Without the canopy it stands at its crown or climbs through its stages, never dipping after the top.
+    const top = growth.indexOf(1);
+    expect(top).toBeGreaterThan(-1);
+    expect(growth.slice(top).every((g) => g === 1 || g === CROWN)).toBe(true);
   });
 
   it('keeps a woody perennial at full height: coffee in Dak Lak', () => {

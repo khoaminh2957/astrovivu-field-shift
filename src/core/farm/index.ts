@@ -6,7 +6,7 @@
  * A value that is missing stays null and the scene and the sentence say so. The classes of the sky
  * (`SkyKind`) are a way of drawing the day's readings, not a weather observation of their own.
  */
-import type { BaselinePoint, CropProfile, FieldTelemetry, GroundTruth, I18nText, ISODate, ModelInput, RiskEvent, ScoreTimeline, Series, StageId, WhatIfResult } from '@/contracts';
+import type { BaselinePoint, CropProfile, FieldTelemetry, GroundTruth, I18nText, ISODate, ModelInput, RiskEvent, SampleParcel, ScoreTimeline, Series, StageId, WhatIfResult } from '@/contracts';
 import { tx } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { computeScoreTimeline, rankCrops, whatIf } from '@/core/scoring';
@@ -237,6 +237,13 @@ export function cropLook(crop: CropProfile | null | undefined): CropLook {
 const WOODY = new Set<CropLook>(['tree', 'bush', 'palm', 'vine']);
 /** Height drawn for a herbaceous perennial while dormant or between seasons: its crown and stubble. A drawing rule. */
 export const CROWN = 0.3;
+/**
+ * NDVI of bare soil and of a closed green canopy, for drawing a herbaceous perennial's height from
+ * the observed canopy. Bare soil sits near 0.1 to 0.2 and dense green crops near 0.8 (Tucker 1979;
+ * the usual reading of MODIS NDVI); the two ends are a drawing rule.
+ */
+export const NDVI_BARE = 0.2;
+export const NDVI_FULL = 0.75;
 
 /** Stages after which an annual crop is no longer on the field. */
 const OFF_FIELD = new Set<string>(['initial', 'fallow', 'pre-sowing', 'dormant']);
@@ -280,13 +287,20 @@ function cropAt(input: ModelInput, score: ScoreTimeline, day: ISODate): FarmCrop
   // pasture) dies back to its crown while dormant and grows again through its stages, as an annual does.
   const woody = WOODY.has(cropLook(crop));
   const growing = id === 'initial' || id === 'development' ? Math.min(0.95, 0.12 + progress / 0.5) : 1;
-  const growth = !crop ? 0 : perennial && woody ? 1 : perennial ? (standing && id !== 'dormant' ? Math.max(CROWN, growing) : CROWN) : !standing ? 0 : growing;
-  const ripeness = !standing ? 0 : id === 'harvest' ? 1 : clamp01((progress - 0.75) / 0.25);
 
   const ndviSeries = seriesOf(input.telemetry, 'ndvi');
   const at = ndviSeries ? sampleAt(ndviSeries, day, input.telemetry.sources[ndviSeries.sourceId]?.latencyDays) : null;
   const ndvi = at?.sample?.v != null && !at.stale ? at.sample.v : null;
   const usual = ndvi != null ? baselineOf(ndviSeries?.baseline, day) : null;
+
+  // A herbaceous perennial (alfalfa, pasture) is cut several times a year and grows back each time.
+  // On the field's own crop the observed canopy says so better than the stage calendar: its height
+  // follows NDVI between bare soil and a closed canopy, never below its crown.
+  // The field's own crop is known on a demo field (its `defaultCropId`); a drawn field keeps the calendar.
+  const ownCrop = !!crop && 'defaultCropId' in input.parcel && crop.id === (input.parcel as SampleParcel).defaultCropId;
+  const canopy = perennial && !woody && ownCrop && ndvi != null ? Math.max(CROWN, clamp01((ndvi - NDVI_BARE) / (NDVI_FULL - NDVI_BARE))) : null;
+  const growth = !crop ? 0 : perennial && woody ? 1 : canopy != null ? canopy : perennial ? (standing && id !== 'dormant' ? Math.max(CROWN, growing) : CROWN) : !standing ? 0 : growing;
+  const ripeness = !standing ? 0 : id === 'harvest' ? 1 : clamp01((progress - 0.75) / 0.25);
 
   // Days left to the harvest stage, from the day in the season and the share of the cycle it stands for.
   const len = stage?.dayInSeason != null && progress > 0.02 ? stage.dayInSeason / progress : null;
