@@ -417,7 +417,7 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       // Wide: a card on the left edge (ADD_CARD in uiState: 360 px, 16 px margins), clear of the credits under it. Narrow: a sheet in the finder's stack.
       // Between 1100 and 1362 px the centred finder box (594 px) reaches under the card's right edge, so there the card ends above the box.
       style={{ '--finder-h': `${finderH || 150}px` } as CSSProperties}
-      className="pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg min-[1100px]:max-[1362px]:max-h-[calc(100dvh-var(--finder-h)-44px)] narrow:static narrow:max-h-[45dvh] narrow:w-auto"
+      className="workspace-add-card pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg min-[1100px]:max-[1362px]:max-h-[calc(100dvh-var(--finder-h)-44px)] narrow:static narrow:max-h-[45dvh] narrow:w-auto"
     >
       {step}
     </section>
