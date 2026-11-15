@@ -360,6 +360,7 @@ The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts
 ### 13.3 Limitations
 
 - **The thresholds are a choice of the project.** The 120-day limit of the short-cycle clause (`maxCycleMinDays`) and the 60-day limit for staple categories (`maxStapleVegetableCycleMinDays`) are a choice of the project, not taken from a publication.
+- **The rule selects more than a balcony can hold.** It reads only EcoCrop's life form, category, life span and shortest cycle, so `yes` also falls on crops that are not pot crops: papaya (`carica-papaya`: life form `herb`, `perennial`, `medicinals & aromatic`), vanilla (`vanilla-planifolia`: `herb, vine`, `perennial`, `medicinals & aromatic`), jojoba and myrtle (`simmondsia-chinensis`, `myrtus-communis`: `shrub`, shortest cycle 120 days), pigeon pea (`cajanus-cajan`: `shrub`, 90 days) and rapeseed (`brassica-napus`: 85 days). `yes` means the crop passes this filter, not that it is recommended: a crop may be offered to a balcony grower only when it also has container figures with a source.
 - **Empty EcoCrop cells.** Missing `life_form`, `category`, or `cycle_min_days` evaluates to `false` rather than guessing.
 - **Dropped species.** 676 cultivated EcoCrop species with no FAOSTAT crop item are in `dropped.csv` (section 10), including many ornamentals and culinary herbs; the rule is evaluated on the 387 kept atlas crops only.
 
