@@ -4,7 +4,7 @@
  * rows back into `CropProfile`s. The build script and the app share this file so the two cannot
  * drift apart.
  */
-import type { CropCategory, CropProfile, CropRequirements, DepthClass, DrainageClass, FertilityClass, Quad, SalinityClass, TextureClass } from '@/contracts';
+import type { AlToxicityClass, CropCategory, CropProfile, CropRequirements, DepthClass, DrainageClass, FertilityClass, Quad, SalinityClass, TextureClass } from '@/contracts';
 
 const CATEGORIES: CropCategory[] = ['cereal', 'pulse', 'oilseed', 'root', 'vegetable', 'fruit', 'forage', 'cover', 'industrial', 'spice', 'herb', 'ornamental', 'other'];
 const TEXTURE: Record<string, TextureClass> = { h: 'heavy', m: 'medium', l: 'light', o: 'organic' };
@@ -12,6 +12,7 @@ const DRAINAGE: Record<string, DrainageClass> = { p: 'poor', w: 'well', e: 'exce
 const DEPTH: DepthClass[] = ['very-shallow', 'shallow', 'medium', 'deep'];
 const SALINITY: SalinityClass[] = ['none', 'low', 'medium', 'high'];
 const FERTILITY: FertilityClass[] = ['low', 'moderate', 'high'];
+const AL_TOXICITY: AlToxicityClass[] = ['none', 'low', 'medium', 'high'];
 const PHOTO: Record<string, string> = { s: 'short', n: 'neutral', l: 'long' };
 const LIFE: Record<string, CropProfile['lifeSpan']> = { a: 'annual', b: 'biennial', p: 'perennial' };
 
@@ -45,6 +46,7 @@ export type CatalogRow = [
   climateZones: string | null,
   cycleDays: [number, number],
   flags: string[] | 0,
+  alToxicity?: Pair<number>,
 ];
 
 export interface CatalogFile {
@@ -82,6 +84,7 @@ const FIELDS = [
   'Köppen-Trewartha climate zones, space separated',
   'growing cycle [min, max], days',
   'data-quality flags, or 0',
+  `aluminium toxicity [optimal, tolerated] as index into [${AL_TOXICITY.join(', ')}]`,
 ];
 
 export interface EncodeOptions {
@@ -119,6 +122,7 @@ export function encodeCatalog(profiles: CropProfile[], opts: EncodeOptions): Cat
       r.climateZones ? r.climateZones.join(' ') : null,
       p.cycleDays,
       p.flags?.length ? p.flags : 0,
+      r.alToxicity ? [AL_TOXICITY.indexOf(r.alToxicity.opt), AL_TOXICITY.indexOf(r.alToxicity.abs)] : null,
     ];
   });
   return { version: 1, source: opts.source, generated: opts.generated, count: rows.length, fields: FIELDS, rows };
@@ -130,13 +134,14 @@ const NEUTRAL_PH: Quad = [3, 5, 7.5, 9.5];
 export function decodeCatalog(file: CatalogFile): CropProfile[] {
   if (file.version !== 1) throw new Error(`Unsupported crop catalogue version ${String(file.version)}`);
   return file.rows.map((row) => {
-    const [id, ecocropId, scientificName, en, commonNames, , category, life, tempC, rainMm, ph, texture, depth, drainage, salinity, fertility, kill, killRest, altMax, lat, photo, zones, cycleDays, flags] = row;
+    const [id, ecocropId, scientificName, en, commonNames, , category, life, tempC, rainMm, ph, texture, depth, drainage, salinity, fertility, kill, killRest, altMax, lat, photo, zones, cycleDays, flags, alToxicity] = row;
     const req: CropRequirements = { tempC, rainMm, ph: ph ?? NEUTRAL_PH };
     if (texture) req.texture = { opt: unletters(TEXTURE, texture[0]), abs: unletters(TEXTURE, texture[1]) };
     if (depth) req.depth = { opt: DEPTH[depth[0]], abs: DEPTH[depth[1]] };
     if (drainage) req.drainage = { opt: unletters(DRAINAGE, drainage[0]), abs: unletters(DRAINAGE, drainage[1]) };
     if (salinity) req.salinity = { opt: SALINITY[salinity[0]], abs: SALINITY[salinity[1]] };
     if (fertility) req.fertility = { opt: FERTILITY[fertility[0]], abs: FERTILITY[fertility[1]] };
+    if (alToxicity) req.alToxicity = { opt: AL_TOXICITY[alToxicity[0]], abs: AL_TOXICITY[alToxicity[1]] };
     if (kill != null) req.killTempC = kill;
     if (killRest != null) req.killTempRestC = killRest;
     if (altMax != null) req.altitudeMaxM = altMax;

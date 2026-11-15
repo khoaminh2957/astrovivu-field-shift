@@ -67,6 +67,19 @@ EcoCrop's latitude "min" and "max" are the southern and northern limits in degre
 
 `crop_id` is the slug of the EcoCrop scientific name, the rule of the app catalogue (`src/core/crops/text.ts`), with the EcoCrop id appended when two rows share a name; a curated crop keeps its curated id. `name_vi` comes from the curated list only. `name_en` is the curated name, else the FAOSTAT item name when the item is that one species, else the vernacular name the FAO definition prints before the scientific name ("durian (Durio zibethinus)"), else empty: EcoCrop's common names carry no language, so none can be called English by rule. `name_ecocrop_first` gives the first common name in plain Latin letters, which is what the app shows today (often Portuguese or Spanish). 138 kept crops have no `name_en`.
 
+### 3.1 Aluminium toxicity (`eco_soil_al_tox_opt`, `eco_soil_al_tox_abs`)
+
+FAO EcoCrop records aluminium saturation tolerance (% of effective CEC occupied by exchangeable $\text{Al}^{3+}$) in two text columns, `eco_soil_al_tox_opt` (optimal) and `eco_soil_al_tox_abs` (tolerated), on 62 of the 2,568 EcoCrop rows (8 of the 387 kept atlas crops, and 1 of the 73 curated crops: `arachis-pintoi`). `scripts/crops/parse.ts` maps these strings to `CropRequirements.alToxicity?: { opt: AlToxicityClass; abs: AlToxicityClass }` (`AlToxicityClass = 'none' | 'low' | 'medium' | 'high'` in `src/contracts/crop.ts`), and `src/core/crops/codec.ts` preserves them in `public/data/crops/ecocrop.json`. Crops without an EcoCrop value omit `req.alToxicity` (`undefined`).
+
+| Raw EcoCrop string | `AlToxicityClass` | Aluminium saturation (% of CEC) | Rows in EcoCrop (`opt` / `abs`) | Notes |
+|---|---|---|---:|---|
+| `none (<5% of CEC)` | `none` | $< 5\%$ | 4 / 1 | Sensitive to exchangeable $\text{Al}^{3+}$ |
+| `low (6-15% of CEC)` | `low` | $6\text{–}15\%$ | 54 / 14 | Low aluminium saturation |
+| `medium (16-25% of CEC` | `medium` | $16\text{–}25\%$ | 4 / 25 | Raw EcoCrop string is missing the closing parenthesis `)` |
+| `high (<5% of CEC)` | `high` | $> 25\%$ | 0 / 22 | Raw EcoCrop string misprints `<5% of CEC` inside the `high` label (e.g. `beta-vulgaris-var-saccharifera` has `opt = medium (16-25% of CEC` and `abs = high (<5% of CEC)`); the class prefix `high` is authoritative |
+
+The 8 kept atlas crops with `alToxicity` values are: `arachis-pintoi` (`opt: 'low'`, `abs: 'medium'`, curated), `amaranthus-caudatus` (`none` / `low`), `beta-vulgaris-var-saccharifera` (`medium` / `high`), `sorbus-domestica` (`low` / `low`), `vigna-parkeri` (`low` / `medium`), `vigna-parkeri-sp-acutifolia` (`low` / `medium`), `vigna-parkeri-sp-maranguensis` (`low` / `medium`), and `vigna-vexillata` (`low` / `medium`). The five sample-parcel crops (`coffea-canephora`, `oryza-sativa`, `zea-mays`, `glycine-max`, `medicago-sativa`) have empty cells in EcoCrop and therefore `req.alToxicity === undefined`.
+
 ## 4. FAOSTAT
 
 - **Elements.** 5312 area harvested (ha), 5510 production (t), 5412 yield (kg/ha, divided by 1,000). The build stops if a unit differs.
