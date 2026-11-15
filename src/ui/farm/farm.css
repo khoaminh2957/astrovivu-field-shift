@@ -292,6 +292,526 @@
   transform-box: fill-box;
 }
 
+/* ---------------------------------------------------------------------------------------------
+ * Ambient life in the drawing (Ambient.tsx). Decoration: switched by the sky, the wind and the
+ * crop's stage, never a reading of its own.
+ * ------------------------------------------------------------------------------------------- */
+
+/* A slow drift of the whole picture, as if the eye wandered; scaled so the edges never show. */
+.farm-scene {
+  transform-origin: 50% 75%;
+  animation: farm-camera 46s ease-in-out infinite alternate;
+}
+@keyframes farm-camera {
+  from {
+    transform: scale(1.03) translate(-0.7%, 0.2%);
+  }
+  to {
+    transform: scale(1.03) translate(0.7%, -0.3%);
+  }
+}
+/* The far ranges move against it a little: depth. */
+.farm-scene .farm-parallax-far {
+  animation: farm-parallax 46s ease-in-out infinite alternate;
+}
+.farm-scene .farm-parallax-mid {
+  animation: farm-parallax 46s ease-in-out infinite alternate;
+  animation-name: farm-parallax-mid;
+}
+@keyframes farm-parallax {
+  from {
+    transform: translateX(14px);
+  }
+  to {
+    transform: translateX(-14px);
+  }
+}
+@keyframes farm-parallax-mid {
+  from {
+    transform: translateX(7px);
+  }
+  to {
+    transform: translateX(-7px);
+  }
+}
+
+.farm-scene .farm-sun-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: farm-sun-pulse 7s ease-in-out infinite alternate;
+}
+@keyframes farm-sun-pulse {
+  from {
+    transform: scale(0.94);
+    opacity: 0.85;
+  }
+  to {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+.farm-scene .farm-rays {
+  animation: farm-spin 140s linear infinite;
+}
+
+/* Birds cross from left to right, then come round again. */
+.farm-scene .farm-flock {
+  animation: farm-flock 38s linear infinite;
+}
+.farm-scene .farm-flock-slow {
+  animation-duration: 54s;
+}
+@keyframes farm-flock {
+  from {
+    transform: translate(-80px, 0);
+  }
+  50% {
+    transform: translate(800px, -26px);
+  }
+  to {
+    transform: translate(1700px, 8px);
+  }
+}
+.farm-scene .farm-flap {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: farm-flap 0.42s ease-in-out infinite alternate;
+}
+@keyframes farm-flap {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(-0.5);
+  }
+}
+
+/* Smoke from the farmstead chimney: rises, swells and thins; leans over in a strong wind. */
+.farm-scene .farm-smoke circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: farm-smoke 6s ease-out infinite;
+}
+.farm-scene .farm-smoke-windy circle {
+  animation-name: farm-smoke-windy;
+  animation-duration: 4s;
+}
+@keyframes farm-smoke {
+  from {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.75;
+  }
+  to {
+    transform: translate(14px, -70px) scale(2.2);
+    opacity: 0;
+  }
+}
+@keyframes farm-smoke-windy {
+  from {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  to {
+    transform: translate(70px, -26px) scale(2);
+    opacity: 0;
+  }
+}
+
+/* Tree crowns stir; harder in a wind of 6 m/s or more. */
+.farm-scene .farm-rustle {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: farm-rustle 5s ease-in-out infinite alternate;
+}
+.farm-scene[data-wind='strong'] .farm-rustle {
+  animation-name: farm-rustle-strong;
+  animation-duration: 1.4s;
+}
+@keyframes farm-rustle {
+  from {
+    transform: rotate(-0.8deg);
+  }
+  to {
+    transform: rotate(1deg);
+  }
+}
+@keyframes farm-rustle-strong {
+  from {
+    transform: rotate(-1.5deg) skewX(-1deg);
+  }
+  to {
+    transform: rotate(3deg) skewX(2deg);
+  }
+}
+
+/* Hens peck; the dog trots along the bank and back. */
+.farm-scene .farm-peck {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: farm-peck 3.2s ease-in-out infinite;
+}
+@keyframes farm-peck {
+  0%,
+  55%,
+  100% {
+    transform: rotate(0deg);
+  }
+  65%,
+  75% {
+    transform: translate(1px, 5px) rotate(40deg);
+  }
+  70% {
+    transform: translate(1px, 4px) rotate(34deg);
+  }
+}
+.farm-scene .farm-trot {
+  animation: farm-trot 18s linear infinite;
+}
+@keyframes farm-trot {
+  0% {
+    transform: translateX(0) scaleX(1);
+  }
+  40% {
+    transform: translateX(96px) scaleX(1);
+  }
+  41% {
+    transform: translateX(96px) scaleX(-1);
+  }
+  50% {
+    transform: translateX(96px) scaleX(-1);
+  }
+  90% {
+    transform: translateX(0) scaleX(-1);
+  }
+  91%,
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+}
+.farm-scene .farm-wag {
+  transform-box: fill-box;
+  transform-origin: 100% 100%;
+  animation: farm-wag 0.32s ease-in-out infinite alternate;
+}
+@keyframes farm-wag {
+  from {
+    transform: rotate(-14deg);
+  }
+  to {
+    transform: rotate(14deg);
+  }
+}
+.farm-scene .farm-step-bob {
+  animation: farm-step-bob 0.5s ease-in-out infinite alternate;
+}
+@keyframes farm-step-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-1.4px);
+  }
+}
+
+/* The grower walks the row and back, turning at each end. */
+.farm-scene .farm-walk {
+  animation: farm-walk 40s linear infinite;
+}
+@keyframes farm-walk {
+  0% {
+    transform: translateX(0) scaleX(1);
+  }
+  48% {
+    transform: translateX(660px) scaleX(1);
+  }
+  49% {
+    transform: translateX(660px) scaleX(-1);
+  }
+  98% {
+    transform: translateX(0) scaleX(-1);
+  }
+  99%,
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+}
+.farm-scene .farm-leg {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: farm-stride 0.5s ease-in-out infinite alternate;
+}
+.farm-scene .farm-leg-b {
+  animation-direction: alternate-reverse;
+}
+@keyframes farm-stride {
+  from {
+    transform: rotate(-16deg);
+  }
+  to {
+    transform: rotate(16deg);
+  }
+}
+.farm-scene .farm-sow-arm {
+  transform-box: fill-box;
+  transform-origin: 0% 0%;
+  animation: farm-sow 1s ease-in-out infinite alternate;
+}
+@keyframes farm-sow {
+  from {
+    transform: rotate(-30deg);
+  }
+  to {
+    transform: rotate(24deg);
+  }
+}
+.farm-scene .farm-seeds circle {
+  animation: farm-seed 1.2s ease-in infinite;
+}
+@keyframes farm-seed {
+  from {
+    transform: translate(0, -4px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(4px, 22px);
+    opacity: 0;
+  }
+}
+
+/* Butterflies and bees wander over the crop: two slow swings at odd periods make a loose path. */
+.farm-scene .farm-wander-x {
+  animation: farm-wander-x 10s ease-in-out infinite alternate;
+}
+.farm-scene .farm-wander-y {
+  animation: farm-wander-y 2.4s ease-in-out infinite alternate;
+}
+@keyframes farm-wander-x {
+  from {
+    transform: translateX(-80px);
+  }
+  to {
+    transform: translateX(90px);
+  }
+}
+@keyframes farm-wander-y {
+  from {
+    transform: translateY(-26px);
+  }
+  to {
+    transform: translateY(14px);
+  }
+}
+.farm-scene .farm-flutter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: farm-flutter 0.18s ease-in-out infinite alternate;
+}
+@keyframes farm-flutter {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0.25);
+  }
+}
+.farm-scene .farm-buzz {
+  animation: farm-twinkle 0.08s linear infinite alternate;
+}
+
+/* Light on the water: glints sliding on the canal, sparkles on the paddy. */
+.farm-scene .farm-shimmer {
+  animation: farm-shimmer 4.8s ease-in-out infinite;
+}
+@keyframes farm-shimmer {
+  0%,
+  100% {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(40px);
+    opacity: 0.7;
+  }
+}
+.farm-scene .farm-glint {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: farm-glint 4.2s ease-in-out infinite;
+}
+@keyframes farm-glint {
+  0%,
+  100% {
+    transform: scaleX(0.4);
+    opacity: 0;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 0.75;
+  }
+}
+
+/* Cloud shadows cross the field from left to right. */
+.farm-scene .farm-cloud-shadow {
+  animation: farm-cloud-shadow 64s linear infinite;
+}
+.farm-scene .farm-cloud-shadow-slow {
+  animation-duration: 92s;
+  animation-delay: -40s;
+}
+@keyframes farm-cloud-shadow {
+  from {
+    transform: translateX(-400px);
+  }
+  to {
+    transform: translateX(2000px);
+  }
+}
+
+/* Dust behind the harvester; rings where the rain lands. */
+.farm-scene .farm-dust {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: farm-dust 1.35s ease-out infinite;
+}
+@keyframes farm-dust {
+  from {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0.7;
+  }
+  to {
+    transform: translate(-26px, -12px) scale(1.8);
+    opacity: 0;
+  }
+}
+.farm-scene .farm-splash {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: farm-splash 1.1s ease-out infinite;
+}
+@keyframes farm-splash {
+  from {
+    transform: scale(0.15);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+/* Daylight breathing over the land: a warm light from the sun's side, as strong as the sun shows. */
+.farm-daylight {
+  opacity: var(--farm-sun, 0);
+  transition: opacity 900ms ease;
+  mix-blend-mode: soft-light;
+}
+.farm-daylight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 75% 85% at 74% 14%, rgb(255 222 150 / 0.75), rgb(255 222 150 / 0) 72%);
+  animation: farm-daylight 14s ease-in-out infinite alternate;
+}
+@keyframes farm-daylight {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * The characters on the stage
+ * ------------------------------------------------------------------------------------------- */
+
+/* They hop in, one after the other. */
+.farm-mascot-enter {
+  animation: farm-hop-in 760ms cubic-bezier(0.2, 0.9, 0.3, 1.2) var(--farm-enter-delay, 0ms) both;
+}
+@keyframes farm-hop-in {
+  0% {
+    transform: translateY(28px) scale(0.6);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(-12px) scale(1.04);
+    opacity: 1;
+  }
+  78% {
+    transform: translateY(3px) scale(0.98);
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+/* A gentle float: the two on the ground bob, the Satellite drifts more and tilts. */
+.farm-hover-stand {
+  animation: farm-bob 3.4s ease-in-out infinite alternate;
+}
+.farm-hover-fly {
+  animation: farm-fly 4.6s ease-in-out infinite alternate;
+}
+@keyframes farm-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}
+@keyframes farm-fly {
+  from {
+    transform: translate(-3px, 4px) rotate(-2deg);
+  }
+  to {
+    transform: translate(3px, -10px) rotate(2deg);
+  }
+}
+/* A soft shadow on the ground, shrinking as the figure rises. */
+.farm-ground-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  width: 62%;
+  height: 16px;
+  margin-left: -31%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(14 32 22 / 0.42), rgb(14 32 22 / 0));
+  animation: farm-shadow 3.4s ease-in-out infinite alternate;
+}
+@keyframes farm-shadow {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.82);
+    opacity: 0.7;
+  }
+}
+/* Lifted on hover and while speaking. */
+.farm-lift {
+  transition: transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.group:hover .farm-lift,
+.group:focus-visible .farm-lift {
+  transform: translateY(-8px) scale(1.05);
+}
+[data-farm-speaking] .farm-lift {
+  transform: translateY(-4px) scale(1.06);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .farm-scene *,
   .farm-scene,
@@ -299,9 +819,23 @@
   .farm-bubble,
   .farm-pop,
   .farm-hold,
-  .farm-figure * {
+  .farm-figure *,
+  .farm-daylight,
+  .farm-daylight::before,
+  .farm-mascot-enter,
+  .farm-hover-stand,
+  .farm-hover-fly,
+  .farm-ground-shadow,
+  .farm-lift {
     animation: none !important;
     transition: none !important;
+  }
+  .farm-scene {
+    transform: none !important;
+  }
+  /* What only reads as motion (dust, splash rings) is not drawn at all. */
+  .farm-scene .farm-motion-only {
+    display: none;
   }
 }
 

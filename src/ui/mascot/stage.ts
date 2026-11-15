@@ -35,6 +35,8 @@ export class MascotStage {
   private readonly reduced: boolean;
   private actor: Actor | null = null;
   private gaze = { x: 0, y: 0 };
+  /** A point the character is told to look at; it wins over the pointer while set. */
+  private aim: { x: number; y: number } | null = null;
   private raf = 0;
   private lastFrame = 0;
   private lastTime = performance.now();
@@ -113,6 +115,14 @@ export class MascotStage {
     this.gaze = { x: THREE.MathUtils.clamp(x || 0, -1, 1), y: THREE.MathUtils.clamp(y || 0, -1, 1) };
   }
 
+  /**
+   * Turns the eyes, and the body a little, toward a point (-1..1 on each axis), whatever the
+   * pointer does; null hands the eyes back to the pointer and the body back to facing front.
+   */
+  aimAt(target: { x: number; y: number } | null): void {
+    this.aim = target ? { x: THREE.MathUtils.clamp(target.x || 0, -1, 1), y: THREE.MathUtils.clamp(target.y || 0, -1, 1) } : null;
+  }
+
   dispose(): void {
     this.disposed = true;
     cancelAnimationFrame(this.raf);
@@ -167,10 +177,13 @@ export class MascotStage {
     if (document.hidden || !this.actor) return;
     if (!this.reduced) {
       this.actor.mixer.update(dt);
+      const look = this.aim ?? this.gaze;
       for (const { node, rest } of this.actor.eyes) {
-        node.position.x = THREE.MathUtils.damp(node.position.x, rest.x + this.gaze.x * 0.045, 7, dt);
-        node.position.y = THREE.MathUtils.damp(node.position.y, rest.y - this.gaze.y * 0.025, 7, dt);
+        node.position.x = THREE.MathUtils.damp(node.position.x, rest.x + look.x * 0.045, 7, dt);
+        node.position.y = THREE.MathUtils.damp(node.position.y, rest.y - look.y * 0.025, 7, dt);
       }
+      // The clips animate the nodes inside the model, so the wrapper is free to turn: a slow half-turn at most.
+      this.actor.root.rotation.y = THREE.MathUtils.damp(this.actor.root.rotation.y, this.aim ? this.aim.x * 0.55 : 0, 3.5, dt);
     }
     this.renderer.render(this.scene, this.camera);
   };

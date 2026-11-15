@@ -16,6 +16,11 @@ export interface MascotProps {
   /** A clip to play once; the character returns to its resting clip after it. Change `beat` to replay the same clip. */
   clip?: MascotClip;
   beat?: number;
+  /**
+   * A point to look at, -1..1 on each axis from the character's centre (x to the right, y down).
+   * While set, the eyes and a slight turn of the body follow it instead of the pointer.
+   */
+  look?: { x: number; y: number } | null;
   /** Drawn while the model loads and when it cannot be shown. */
   fallback?: ReactNode;
   className?: string;
@@ -23,7 +28,7 @@ export interface MascotProps {
 
 const ASSET_BASE = `${import.meta.env.BASE_URL}mascot`.replace(/\/\//g, '/');
 
-export function Mascot({ who, clip, beat = 0, fallback, className }: MascotProps) {
+export function Mascot({ who, clip, beat = 0, look = null, fallback, className }: MascotProps) {
   const host = useRef<HTMLDivElement | null>(null);
   const stage = useRef<MascotStage | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading');
@@ -59,6 +64,13 @@ export function Mascot({ who, clip, beat = 0, fallback, className }: MascotProps
   useEffect(() => {
     if (state === 'ready' && clip) stage.current?.play(clip);
   }, [clip, beat, state]);
+
+  const lookX = look?.x;
+  const lookY = look?.y;
+  useEffect(() => {
+    if (state !== 'ready') return;
+    stage.current?.aimAt(lookX == null || lookY == null ? null : { x: lookX, y: lookY });
+  }, [lookX, lookY, state]);
 
   // The eyes follow the pointer across the page.
   useEffect(() => {

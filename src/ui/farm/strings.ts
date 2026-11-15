@@ -53,6 +53,10 @@ registerStrings(
     'trial.back': 'Back to the field as it is',
     'trial.end': 'End',
     'trial.adopt': 'Choose this crop',
+    'adopt.title': 'Grow {crop} on this field?',
+    'adopt.body': 'The crop of the field changes everywhere: in Soil and practice, in the scores and in the rotations, which are worked out again. You can change it back there.',
+    'adopt.keep': 'Keep the current crop',
+    'adopt.go': 'Change the crop',
     analysis: 'Compare the rotations',
 
     'deep.title.space': 'Satellite: the weather in detail',
@@ -212,6 +216,10 @@ registerStrings(
     'trial.back': 'Về ruộng như hiện tại',
     'trial.end': 'Kết thúc',
     'trial.adopt': 'Chọn cây này',
+    'adopt.title': 'Trồng {crop} trên ruộng này?',
+    'adopt.body': 'Cây của ruộng sẽ đổi ở mọi nơi: trong Đất và canh tác, trong điểm và trong các phương án luân canh, vốn sẽ được tính lại. Bạn có thể đổi lại ở Đất và canh tác.',
+    'adopt.keep': 'Giữ cây hiện tại',
+    'adopt.go': 'Đổi cây',
     analysis: 'So sánh các phương án luân canh',
 
     'deep.title.space': 'Vệ tinh: thời tiết chi tiết',

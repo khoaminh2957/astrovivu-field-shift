@@ -17,9 +17,11 @@ The hashes match the kit's `manifest.json`. Each model is an animated node hiera
 ## How they are mounted
 
 - `src/ui/mascot/stage.ts` is a TypeScript port of the kit's `src/mascot-stage.js`, kept to one character per canvas, its clips and the gaze. It draws at 30 frames a second at most and stops moving under `prefers-reduced-motion`.
-- `src/ui/mascot/index.tsx` exports `<Mascot who clip beat fallback />`. three.js and the model are fetched only when a character is first shown (a separate chunk); while it loads, or without WebGL, `fallback` is drawn.
+- `src/ui/mascot/index.tsx` exports `<Mascot who clip beat look fallback />`. three.js and the model are fetched only when a character is first shown (a separate chunk); while it loads, or without WebGL, `fallback` is drawn.
 - The kit's guided tour (`mascot-guide.js`) and its stylesheet are not used.
-- Used on the farm stage (`docs/FARM.md` §4): Satellite scans when asked and when playback starts, Rice and Seed talk when asked, the one who proposed a trial jumps when it starts.
+- `look` (-1..1 from the character's centre, x right, y down) points the eyes and turns the body by up to about 30 degrees (`MascotStage.aimAt`); while it is set, the pointer no longer moves the eyes.
+- Used on the farm stage (`docs/FARM.md` §4): they hop in and wave, play a small clip now and then one at a time, answer the steps of the story (weather, harvest, sowing, dry ground, alerts, mood), and talk when their note is open while the other two turn to them. Satellite scans when playback starts; the one who proposed a trial jumps when it starts.
+- `Point` and `PointLeft` are assumed to point to the viewer's right and left; Seed (left of the field) uses `Point`, Rice and Satellite `PointLeft`. To be checked against the kit by its owner.
 
 ## Not done
 

@@ -8,6 +8,7 @@
  * the field stays in view on a tall phone and on a wide desk alike.
  */
 import type { FarmCrop, FarmScene, SkyKind } from '@/core/farm';
+import { Birds, Chimney, CloudShadows, CanalShimmer, Dust, Grower, type GrowerWork, PaddyGlints, Pollinators, Splashes, SunRays, Yard } from './Ambient';
 import { Plant, RIPENS, Stubble, leafColours } from './plants';
 import './farm.css';
 
@@ -34,6 +35,8 @@ interface Spot {
 const SPOTS: Spot[] = DEPTHS.flatMap((y) => RIDGES_NEAR.map((xn) => ({ x: rowX(xn, y), y, s: depthScale(y) })))
   .filter((p) => p.x > -30 && p.x < W + 30)
   .map((p, i) => ({ ...p, i }));
+/** The row the grower walks: plants behind it are drawn before the grower, plants in front after. */
+const WALK_Y = 598;
 /** Size of a full-grown plant against the row spacing. */
 const PLANT_SIZE = 2.3;
 
@@ -59,6 +62,9 @@ const SKY: Record<SkyKind, Sky> = {
   unknown: { top: '#a3b0ba', low: '#e3e6e6', sun: 0, clouds: 0.4, cloud: '#e6e9ec', shade: '#cdd4da', rain: 0, wash: '#7d8790', washOpacity: 0.12 },
 };
 
+/** How much the sun shows under a sky, 0..1: the stage lays its daylight over the drawing by it. */
+export const sunOf = (kind: SkyKind): number => SKY[kind].sun;
+
 function Cloud({ x, y, s, sky, slow }: { x: number; y: number; s: number; sky: Sky; slow?: boolean }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
@@ -82,10 +88,12 @@ function RoundTree({ x, y, s = 1, tone = 0 }: { x: number; y: number; s?: number
     <g transform={`translate(${x} ${y}) scale(${s})`}>
       <ellipse cx={3} cy={2} rx={22} ry={4.5} fill="#1d3a2a" opacity={0.16} />
       <rect x={-3} y={-20} width={6} height={22} rx={2} fill="#6b5137" />
-      <ellipse cx={-13} cy={-30} rx={16} ry={14} fill={fill} />
-      <ellipse cx={13} cy={-28} rx={15} ry={13} fill={fill} />
-      <ellipse cx={0} cy={-44} rx={19} ry={17} fill={fill} />
-      <ellipse cx={-6} cy={-48} rx={10} ry={8} fill={light} />
+      <g className="farm-rustle" style={{ animationDelay: `${-((x * 7) % 50) / 10}s` }}>
+        <ellipse cx={-13} cy={-30} rx={16} ry={14} fill={fill} />
+        <ellipse cx={13} cy={-28} rx={15} ry={13} fill={fill} />
+        <ellipse cx={0} cy={-44} rx={19} ry={17} fill={fill} />
+        <ellipse cx={-6} cy={-48} rx={10} ry={8} fill={light} />
+      </g>
     </g>
   );
 }
@@ -94,8 +102,10 @@ function Poplar({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
       <rect x={-2} y={-8} width={4} height={10} fill="#6b5137" />
-      <path d="M 0 -78 Q 15 -44 10 -10 Q 0 -2 -10 -10 Q -15 -44 0 -78 Z" fill="#477f5c" />
-      <path d="M 0 -78 Q -15 -44 -10 -10 Q -3 -34 0 -78 Z" fill="#5f9870" />
+      <g className="farm-rustle" style={{ animationDelay: `${-((x * 11) % 40) / 10}s` }}>
+        <path d="M 0 -78 Q 15 -44 10 -10 Q 0 -2 -10 -10 Q -15 -44 0 -78 Z" fill="#477f5c" />
+        <path d="M 0 -78 Q -15 -44 -10 -10 Q -3 -34 0 -78 Z" fill="#5f9870" />
+      </g>
     </g>
   );
 }
@@ -122,7 +132,8 @@ function Landscape({ kind, windy }: { kind: SkyKind; windy: boolean }) {
       </defs>
       <rect x={0} y={-400} width={W} height={900} fill="url(#farm-sky)" />
       <g className="farm-fade" opacity={sky.sun}>
-        <circle cx={1190} cy={150} r={150} fill="url(#farm-sun)" />
+        <SunRays cx={1190} cy={150} />
+        <circle className="farm-sun-pulse" cx={1190} cy={150} r={150} fill="url(#farm-sun)" />
         <circle cx={1190} cy={150} r={44} fill="#fff3c4" />
       </g>
       <g className="farm-fade" opacity={sky.clouds}>
@@ -132,10 +143,11 @@ function Landscape({ kind, windy }: { kind: SkyKind; windy: boolean }) {
         <Cloud x={1330} y={70} s={0.95} sky={sky} />
         <Cloud x={-120} y={210} s={0.7} sky={sky} />
       </g>
+      <Birds show={kind === 'clear'} />
 
       {/* Two far ranges in haze, then the hills. */}
-      <path d="M 0 400 L 120 352 L 250 388 L 400 318 L 520 366 L 660 300 L 790 352 L 930 312 L 1080 372 L 1220 326 L 1380 384 L 1500 348 L 1600 376 V 470 H 0 Z" fill="#a9c0c9" />
-      <path d="M 0 424 L 160 386 L 330 420 L 480 378 L 640 416 L 820 372 L 1000 418 L 1160 384 L 1330 422 L 1480 392 L 1600 414 V 470 H 0 Z" fill="#8fb0ad" />
+      <path className="farm-parallax-far" d="M -40 400 L 0 384 L 120 352 L 250 388 L 400 318 L 520 366 L 660 300 L 790 352 L 930 312 L 1080 372 L 1220 326 L 1380 384 L 1500 348 L 1600 376 L 1640 388 V 470 H -40 Z" fill="#a9c0c9" />
+      <path className="farm-parallax-mid" d="M -40 434 L 0 424 L 160 386 L 330 420 L 480 378 L 640 416 L 820 372 L 1000 418 L 1160 384 L 1330 422 L 1480 392 L 1600 414 L 1640 420 V 470 H -40 Z" fill="#8fb0ad" />
       <rect x={0} y={330} width={W} height={140} fill="url(#farm-haze)" opacity={0.55} />
       <path d="M 0 452 Q 220 404 470 440 Q 700 470 900 438 Q 1150 400 1380 432 Q 1500 448 1600 436 V 480 H 0 Z" fill="#86b28a" />
       <path d="M 0 468 Q 260 438 520 460 Q 800 482 1060 456 Q 1330 432 1600 462 V 640 H 0 Z" fill="#74a57b" />
@@ -150,6 +162,7 @@ function Landscape({ kind, windy }: { kind: SkyKind; windy: boolean }) {
       <g transform="translate(196 548)">
         <ellipse cx={30} cy={6} rx={150} ry={12} fill="#1d3a2a" opacity={0.14} />
         <rect x={-96} y={-54} width={92} height={56} fill="#e8dfcc" />
+        <Chimney windy={windy} />
         <path d="M -106 -54 L -50 -92 L 6 -54 Z" fill="#9a5a45" />
         <rect x={-64} y={-26} width={20} height={28} fill="#7a5a40" />
         <rect x={-90} y={-40} width={16} height={14} fill="#bcd6e2" />
@@ -184,14 +197,15 @@ function Landscape({ kind, windy }: { kind: SkyKind; windy: boolean }) {
   );
 }
 
-function Plants({ crop, beat }: { crop: FarmCrop; beat: string }) {
+/** The plants behind the grower's row (`near` false) or in front of it. */
+function Plants({ crop, beat, near }: { crop: FarmCrop; beat: string; near: boolean }) {
   if (crop.look === 'none') return null;
   const { fill, dark } = leafColours(crop.vigor, crop.ripeness, RIPENS[crop.look]);
   const cut = crop.harvested == null ? 0 : Math.round(crop.harvested * SPOTS.length);
   return (
     // Keyed by the step shown, so that the plants rise into each new stage instead of switching.
-    <g key={beat} data-farm="plants" data-look={crop.look} data-growth={crop.growth.toFixed(2)}>
-      {SPOTS.map((p) => (
+    <g key={beat} data-farm={near ? 'plants-near' : 'plants'} data-look={crop.look} data-growth={crop.growth.toFixed(2)}>
+      {SPOTS.filter((p) => p.y >= WALK_Y === near).map((p) => (
         <g key={p.i} transform={`translate(${p.x.toFixed(1)} ${p.y}) scale(${(p.s * PLANT_SIZE).toFixed(3)})`}>
           {p.i < cut ? (
             <Stubble />
@@ -222,6 +236,7 @@ function Wheel({ cx, cy, r }: { cx: number; cy: number; r: number }) {
 function Harvester() {
   return (
     <g data-farm="harvester">
+      <Dust />
       <g className="farm-vehicle-body">
         <rect x={-30} y={-30} width={46} height={22} rx={4} fill="#c98f2c" />
         <rect x={-2} y={-42} width={20} height={16} rx={3} fill="#dcab45" />
@@ -280,6 +295,10 @@ export function FarmSceneView({ scene, title, beat, className }: FarmSceneViewPr
   const front = SPOTS[Math.min(SPOTS.length - 1, cutN)];
   const farLeft = rowX(ROWS_NEAR[0], FAR_Y);
   const farRight = rowX(ROWS_NEAR[20], FAR_Y);
+  const raining = weather.kind === 'rain' || weather.kind === 'heavy-rain';
+  const standing = crop.look !== 'none' && crop.harvested == null && crop.growth > 0;
+  // The grower's work follows the crop's stage; nobody walks a bare field.
+  const work: GrowerWork | null = crop.sowing ? 'sow' : crop.harvested != null ? 'harvest' : standing ? 'tend' : null;
 
   return (
     <svg className={`farm-scene ${className ?? ''}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" role="img" aria-label={title} data-sky={weather.kind} data-soil={soil.state ?? 'none'} data-wind={windy ? 'strong' : 'calm'}>
@@ -307,6 +326,7 @@ export function FarmSceneView({ scene, title, beat, className }: FarmSceneViewPr
           </g>
         ))}
         <polygon className="farm-fade" points={FIELD} fill="#a9cfe6" opacity={paddyWater} data-farm="paddy-water" />
+        <PaddyGlints opacity={sky.sun > 0 ? paddyWater : 0} />
         <g className="farm-fade" opacity={soil.state === 'dry' ? 0.6 : 0} stroke="#6f4c2e" strokeWidth={2.6} fill="none" strokeLinejoin="round" data-farm="cracks">
           <path d="M 300 800 l 26 -20 l -10 -24 l 32 -16 l -6 -22 M 820 850 l -22 -26 l 24 -20 l -8 -24 M 1130 780 l 24 -24 l -16 -22 l 28 -14 M 560 690 l 22 -16 l -8 -20 l 20 -10 M 980 660 l -16 -18 l 18 -14 M 1340 860 l 20 -22 l -12 -20" />
         </g>
@@ -316,6 +336,8 @@ export function FarmSceneView({ scene, title, beat, className }: FarmSceneViewPr
           <ellipse className="farm-ripple" cx={690} cy={640} rx={46} ry={8} />
           <ellipse className="farm-ripple" cx={1250} cy={860} rx={90} ry={15} />
         </g>
+        <CloudShadows strength={sky.sun * sky.clouds * 0.1} />
+        <Splashes show={raining} heavy={weather.kind === 'heavy-rain'} />
       </g>
       {/* The grass banks beside the field, over the ends of the rows. */}
       <path d={`M 0 ${FAR_Y + 4} H ${farLeft - 6} L 0 624 Z`} fill="#6c9f72" />
@@ -324,8 +346,13 @@ export function FarmSceneView({ scene, title, beat, className }: FarmSceneViewPr
       <path d={`M ${farRight + 6} ${FAR_Y + 4} L ${W} 624 L ${W} 640 L ${farRight - 4} ${FAR_Y + 4} Z`} fill="#4f8459" />
       <rect className="farm-fade" x={farLeft - 10} y={FAR_Y - canal} width={farRight - farLeft + 20} height={canal} rx={3} fill="var(--farm-water)" opacity={soil.state == null ? 0.5 : 1} data-farm="canal" />
       <rect x={farLeft - 10} y={FAR_Y - canal} width={farRight - farLeft + 20} height={2} fill="#fff" opacity={0.35} />
+      <CanalShimmer x0={farLeft} x1={farRight - 46} y={FAR_Y - canal / 2 - 1} />
+      <Yard />
 
-      <Plants crop={crop} beat={beat} />
+      <Plants crop={crop} beat={beat} near={false} />
+      {work && <Grower work={work} x={470} y={WALK_Y} s={depthScale(WALK_Y) * 1.9} />}
+      <Plants crop={crop} beat={beat} near />
+      <Pollinators show={standing && crop.growth >= 0.3 && (weather.kind === 'clear' || weather.kind === 'hot' || weather.kind === 'cloudy')} />
 
       {crop.harvested != null && crop.harvested < 1 && (
         <g className="farm-glide" style={{ transform: `translate(${front.x.toFixed(1)}px, ${front.y}px) scale(${(front.s * 2.6).toFixed(2)})` }}>

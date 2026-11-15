@@ -7,31 +7,37 @@
  * Everything shown comes from `src/core/farm`. A strategy other than the current practice is a
  * simulation (the same year of weather, the strategy's crops) and is labelled so.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronsDown, FlaskConical, MapPin } from 'lucide-react';
 import { type AdvisoryReport, type RotationStrategy, pick } from '@/contracts';
 import { getCrop } from '@/core/crops';
 import { type FarmOption, type FarmStep, type FarmVoice, bareRun, farmNotes, farmOptions, farmPeriods, farmSceneAt, farmSceneOfPeriod, runOn, runTrial, seasonOutcome, seasonRuns } from '@/core/farm';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
-import { Button, cn, usePrefersReducedMotion } from '@/ui/design';
+import { Button, Dialog, cn, usePrefersReducedMotion } from '@/ui/design';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
-import type { MascotClip } from '@/ui/mascot';
 import { DeepSheet } from './DeepSheet';
-import { FarmSceneView } from './FarmScene';
+import { VOICES, frameOf } from './direct';
+
+/** A crop's name in the reader's language. */
+const cropLabel = (id: string, lang: string): string => {
+  const c = getCrop(id);
+  return c ? (lang === 'vi' && c.names.vi ? c.names.vi : c.names.en) : id;
+};
+import { FarmSceneView, sunOf } from './FarmScene';
 import { MascotSpot, NoteCard, RotationPicker, StageLinks, TimeBar, periodLabel } from './StageParts';
+import { useStageDirector } from './useStageDirector';
 import { useFarmYear } from './year';
 import './strings';
 
-const VOICES: FarmVoice[] = ['space', 'soil', 'rice'];
 /** How long the stage holds on a month or on a quarter during playback. */
 const HOLD_MS: Record<FarmStep, number> = { month: 2400, quarter: 3400 };
 
 /** Where each character stands over the scene, and where its note opens beside it. */
 const SPOT: Record<FarmVoice, { at: string; note: string }> = {
-  space: { at: 'top-[15%] right-[5%] narrow:top-[24%] narrow:right-1', note: 'top-[17%] right-[calc(5%+10.5rem)] narrow:inset-x-3 narrow:top-auto narrow:right-auto narrow:bottom-[5.25rem] narrow:w-auto' },
-  soil: { at: 'bottom-[6.75rem] left-[4%] narrow:bottom-[5.5rem] narrow:left-1', note: 'bottom-[9rem] left-[calc(4%+10.5rem)] narrow:inset-x-3 narrow:bottom-[5.25rem] narrow:left-auto narrow:w-auto' },
-  rice: { at: 'bottom-[6.75rem] right-[7%] narrow:bottom-[5.5rem] narrow:right-1', note: 'bottom-[9rem] right-[calc(7%+10.5rem)] narrow:inset-x-3 narrow:bottom-[5.25rem] narrow:right-auto narrow:w-auto' },
+  space: { at: 'top-[16%] right-[11%] narrow:top-[24%] narrow:right-1', note: 'top-[18%] right-[calc(11%+10.5rem)] narrow:inset-x-3 narrow:top-auto narrow:right-auto narrow:bottom-[5.25rem] narrow:w-auto' },
+  soil: { at: 'bottom-[7.25rem] left-[9%] narrow:bottom-[5.5rem] narrow:left-1', note: 'bottom-[9.5rem] left-[calc(9%+10.5rem)] narrow:inset-x-3 narrow:bottom-[5.25rem] narrow:left-auto narrow:w-auto' },
+  rice: { at: 'bottom-[7.25rem] right-[10%] narrow:bottom-[5.5rem] narrow:right-1', note: 'bottom-[9.5rem] right-[calc(10%+10.5rem)] narrow:inset-x-3 narrow:bottom-[5.25rem] narrow:right-auto narrow:w-auto' },
 };
 
 export interface FarmStageProps {
@@ -60,6 +66,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   const score = useMission((s) => s.score);
   const setCrop = useMission((s) => s.setCrop);
   const setPhase = useMission((s) => s.setPhase);
+  const setCursor = useMission((s) => s.setCursor);
 
   const input = useMemo(() => toModelInput({ parcel, telemetry, cropId, groundTruth, priorities, countryTable }), [parcel, telemetry, cropId, groundTruth, priorities, countryTable]);
 
@@ -71,8 +78,9 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trialId, setTrialId] = useState<string | null>(null);
   const [options, setOptions] = useState<FarmOption[] | null>(null);
-  const [beats, setBeats] = useState<Record<FarmVoice, { clip?: MascotClip; n: number }>>({ space: { n: 0 }, soil: { n: 0 }, rice: { n: 0 } });
-  const act = (who: FarmVoice, clip: MascotClip) => setBeats((b) => ({ ...b, [who]: { clip, n: b[who].n + 1 } }));
+  /** A crop the grower asked to adopt from a trial, waiting for their yes: it changes the field everywhere. */
+  const [adopting, setAdopting] = useState<string | null>(null);
+  const stageRef = useRef<HTMLElement | null>(null);
 
   const periods = useMemo(() => (telemetry ? farmPeriods(telemetry.window, step) : []), [telemetry, step]);
   const period = idx == null ? null : (periods[idx] ?? null);
@@ -87,6 +95,15 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
     setTrialId(null);
   }, [parcelId]);
   useEffect(() => setTrialId(null), [strategyId]);
+
+  // The date of the stage is the date of the whole app: back on the field (step 1) the map, the timeline and the
+  // panel stand on the last day of the month or quarter shown here, and on today when the stage shows today.
+  const periodEnd = period?.to ?? null;
+  const today = telemetry?.window.today ?? null;
+  useEffect(() => {
+    const day = periodEnd ?? today;
+    if (day) setCursor(day);
+  }, [periodEnd, today, setCursor]);
 
   // Playback: rewind to the first period, hold on each, end on today.
   useEffect(() => {
@@ -138,6 +155,8 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   // The soil plan of the report is for the field's own crop: it is not quoted over a simulated one.
   const notes = useMemo(() => (shown && view ? farmNotes(shown.input, view.scene, { summary: view.summary, report: simulated ? null : report }) : null), [shown, view, simulated, report]);
   const year = useFarmYear(shown?.input ?? null, shown?.score ?? null);
+  const frame = useMemo(() => (view && notes ? frameOf(view.scene, notes) : null), [view, notes]);
+  const { beats, looks, act } = useStageDirector({ root: stageRef, open, frame, reduced });
 
   if (!parcel) return null;
   if (!input || !score || !telemetry || !shown || !view || !notes) {
@@ -152,10 +171,8 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   const place = [parcel.place?.admin1, parcel.place?.country].filter(Boolean).join(', ') || parcel.place?.label || `${fmtNum(parcel.centroid[1], 3)}°, ${fmtNum(parcel.centroid[0], 3)}°`;
   const activeMonthId = period ? (period.step === 'month' ? period.id : period.id.split('_').at(-1)!) : (year.at(-1)?.id ?? null);
 
-  const toggle = (who: FarmVoice) => {
-    setOpen(open === who ? null : who);
-    if (open !== who) act(who, who === 'space' ? 'Scan' : 'Talk');
-  };
+  // The speaker's Talk and the others' turn toward it come from the stage director.
+  const toggle = (who: FarmVoice) => setOpen(open === who ? null : who);
   const play = () => {
     if (!playing) act('space', 'Scan');
     setPlaying(!playing);
@@ -171,8 +188,10 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
   };
 
   return (
-    <section aria-label={t('farm.page')} className="relative h-full min-h-[560px] w-full overflow-hidden bg-[#74a57b]" data-farm-stage data-farm-when={period?.id ?? 'today'}>
+    <section ref={stageRef} aria-label={t('farm.page')} className="relative h-full min-h-[560px] w-full overflow-hidden bg-[#74a57b]" data-farm-stage data-farm-when={period?.id ?? 'today'}>
       <FarmSceneView scene={scene} beat={`${period?.id ?? 'today'}|${shown.input.cropId ?? 'none'}|${trialId ?? ''}`} title={t('farm.title', { d: when, sky: t(`farm.sky.${w.kind}`) })} className="absolute inset-0 h-full w-full" />
+      {/* Daylight breathing over the land, as strong as the sun shows in the sky drawn. Decoration only. */}
+      <div aria-hidden className="farm-daylight pointer-events-none absolute inset-0" style={{ '--farm-sun': sunOf(w.kind) } as React.CSSProperties} />
       {/* A little shade under the plates at the top and the bar at the bottom, so the drawing never fights them. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-linear-to-b from-[#0c1f16]/30 to-transparent" />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-[#0c1f16]/35 to-transparent" />
@@ -243,8 +262,8 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
         </div>
       )}
 
-      {VOICES.map((who) => (
-        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} className={cn('z-10', SPOT[who].at)} />
+      {VOICES.map((who, k) => (
+        <MascotSpot key={who} who={who} note={notes[who]} open={open === who} onToggle={() => toggle(who)} clip={beats[who].clip} beat={beats[who].n} look={looks[who]} order={k} className={cn('z-10', SPOT[who].at)} />
       ))}
       {open && (
         <NoteCard
@@ -256,10 +275,7 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
           trial={trial}
           baseOutcome={seasonOutcome(score)}
           onTrial={startTrial}
-          onAdopt={(id) => {
-            setCrop(id);
-            setTrialId(null);
-          }}
+          onAdopt={setAdopting}
           onDeep={() => setDeep(open)}
           onClose={() => setOpen(null)}
           className={SPOT[open].note}
@@ -274,6 +290,30 @@ export function FarmView({ rotations, current, bestId, selected, onSelect, repor
         </button>
       </div>
 
+      <Dialog
+        open={adopting != null}
+        onOpenChange={(o) => !o && setAdopting(null)}
+        size="sm"
+        title={t('farm.adopt.title', { crop: adopting ? cropLabel(adopting, lang) : '' })}
+        description={t('farm.adopt.body')}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setAdopting(null)}>
+              {t('farm.adopt.keep')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (adopting) setCrop(adopting);
+                setAdopting(null);
+                setTrialId(null);
+              }}
+            >
+              {t('farm.adopt.go')}
+            </Button>
+          </>
+        }
+      />
       <DeepSheet who={deep} onClose={() => setDeep(null)} input={shown.input} score={shown.score} scene={scene} summary={summary} when={when} report={report} options={options} months={year} activeMonthId={activeMonthId} simulated={simulated} />
     </section>
   );

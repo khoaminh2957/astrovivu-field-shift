@@ -189,14 +189,19 @@ export interface MascotSpotProps {
   onToggle: () => void;
   clip?: MascotClip;
   beat: number;
+  /** Where the character looks, from the stage director; null to follow the pointer. */
+  look?: { x: number; y: number } | null;
+  /** Order of the entrance, so the three come on one after the other. */
+  order?: number;
   className?: string;
 }
 
-export function MascotSpot({ who, note, open, onToggle, clip, beat, className }: MascotSpotProps) {
+export function MascotSpot({ who, note, open, onToggle, clip, beat, look = null, order = 0, className }: MascotSpotProps) {
   const t = useT();
   const lang = useLang();
+  const flying = who === 'space';
   return (
-    <div className={cn('absolute flex flex-col items-center', className)} data-farm-mascot={who}>
+    <div className={cn('farm-mascot-enter absolute flex flex-col items-center', className)} style={{ '--farm-enter-delay': `${150 + order * 220}ms` } as React.CSSProperties} data-farm-mascot={who} data-farm-speaking={open || undefined}>
       <button
         type="button"
         aria-expanded={open}
@@ -222,7 +227,15 @@ export function MascotSpot({ who, note, open, onToggle, clip, beat, className }:
           {note.alert && <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-watch text-[10px] font-bold text-surface-0">!</span>}
           <span className="absolute top-full left-1/2 size-2 -translate-x-1/2 -translate-y-1 rotate-45 border-r border-b border-line-2/70 bg-surface-0/90" />
         </span>
-        <Mascot who={MASCOT_OF[who]} clip={clip} beat={beat} className="h-[8.5rem] w-28 transition-transform duration-200 group-hover:scale-105 md:h-[11.5rem] md:w-[9.25rem]" fallback={<MascotFigure who={who} mood={note.mood} />} />
+        {/* The figure floats over a soft shadow on the ground (the Satellite's falls far below: none); it lifts on hover. */}
+        <span className="relative block">
+          {!flying && <span aria-hidden className="farm-ground-shadow" />}
+          <span className={cn('block', flying ? 'farm-hover-fly' : 'farm-hover-stand')}>
+            <span className="farm-lift block">
+              <Mascot who={MASCOT_OF[who]} clip={clip} beat={beat} look={look} className="h-[8.5rem] w-28 md:h-[11.5rem] md:w-[9.25rem]" fallback={<MascotFigure who={who} mood={note.mood} />} />
+            </span>
+          </span>
+        </span>
         <span className="farm-plate -mt-2 rounded-full px-2.5 py-0.5 text-xs font-medium text-ink-1">
           {t(`farm.name.${who}`)} <span className="font-normal text-ink-3">· {t(`farm.role.${who}`)}</span>
         </span>

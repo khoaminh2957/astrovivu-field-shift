@@ -27,7 +27,30 @@ Thresholds of the sky are those of the risk events (`src/data/harmonize/risk.ts`
 
 The land around the field (the ranges, the hills, the farmstead, the trees, the wind pump) is decoration and stands for nothing. Only the sky follows the readings, and the wheel of the wind pump turns faster from a wind of 6 m/s.
 
+### Ambient life
+
+Small moving things keep the drawing alive (`src/ui/farm/Ambient.tsx`, motion in `farm.css`). They are decoration: each is only switched on or off, or sped up, by a reading the scene already carries, and none stands for a reading of its own. No irrigation, spraying or other farm work is drawn that the data does not show.
+
+| What moves | Shown when | Driven by |
+|---|---|---|
+| A slow drift of the whole picture, the far ranges moving against it | always | nothing |
+| Sun rays turning, the sun's glow breathing, a warm daylight over the land | as strongly as the sun shows in the sky drawn | the sky |
+| Two small flocks of birds crossing | clear sky | the sky |
+| Shadows of clouds sliding over the field | sun between clouds (clear, frost) | the sky |
+| Smoke from the farmstead chimney | always; it leans over from a wind of 6 m/s | the wind |
+| Tree crowns stirring | always; harder from 6 m/s | the wind |
+| Three hens pecking, a dog trotting on the bank | always | nothing |
+| A grower walking a row | seed bag while sowing, hoe over the shoulder while a crop stands, a sheaf during the harvest stage; nobody on a bare field | the crop's stage (`sowing`, `harvested`, `growth`) |
+| Butterflies and bees over the crop | a standing crop past 30 % of its growth, under a clear, hot or overcast sky | the crop and the sky |
+| Glints on the canal; sparkles on the paddy | the canal always; the paddy as deep as its water is drawn, and only under some sun | the paddy water |
+| Dust behind the harvester | while the harvester is drawn | the harvest stage |
+| Rings where the rain lands | rain, stronger in heavy rain | the sky |
+
+About 60 animated nodes in all, CSS transforms and opacity only; the daylight and the drift are on HTML layers that the compositor carries. Under `prefers-reduced-motion` everything stands still, and what only reads as motion (birds, smoke, glints, dust, splash rings) is not drawn.
+
 ## 2. Time: today, then months or quarters
+
+The stage sets the app's one date (`timeline.cursor`): the last day of the month or quarter shown, or today. Back on the field (step 1) the map, its timeline and the panel stand on that date. The other way is not followed: the stage opens on today whatever date the map shows, as the grower asked.
 
 The stage opens on **today**. Play rewinds a year and steps forward; a step can also be pressed directly.
 
@@ -46,7 +69,15 @@ A strategy other than the current practice is played with its own crops: `season
 
 ## 4. The three characters
 
-The figures are the mascot owner's 3D models (Rice, Seed, Satellite; `docs/MASCOT.md`). Each carries a three-dot bubble; the bubble is amber with a mark when the character has something to look at. Nobody speaks until pressed.
+The figures are the mascot owner's 3D models (Rice, Seed, Satellite; `docs/MASCOT.md`). Each carries a three-dot bubble; the bubble is amber with a mark when the character has something to look at. Nobody speaks until pressed, but nobody stands still either (rules in `direct.ts`, tested in `direct.test.ts`; timing in `useStageDirector.ts`):
+
+- **Entrance.** They hop in one after the other, then wave (the Satellite scans).
+- **Between notes.** Every 3.5 to 8 s one of them plays a small clip (Wave, LeafWiggle, Think, Spin, Scan, Jump): never the one who just moved, never one still in a clip, never within 2.2 s of another clip. Sometimes another glances at it. This pauses while a note is open and while the tab is hidden.
+- **The story.** When the step shown changes, each character whose part changed answers it, one after the other (0.4 s apart), one clip each. The Satellite jumps at heavy rain, scans at rain, thinks at heat or frost; Rice celebrates when the harvest begins and jumps when sowing begins; Seed thinks when the ground turns dry and shakes its leaves when it turns wet. Otherwise a new alert makes the character point toward the field and look at it; a note turning worried makes it think, turning glad makes it celebrate (the Satellite spins).
+- **A note.** The speaker talks; the other two turn their eyes, and their body a little, toward it (`MascotStage.aimAt`) until it closes.
+- **Always.** The figure floats (the two on the ground bob over a soft shadow that shrinks as they rise; the Satellite drifts and tilts) and lifts on hover and while speaking.
+
+Under `prefers-reduced-motion` none of this runs: no clips, no float, no entrance.
 
 | Character | Stands | Note (`farmNotes`) | Proposes |
 |---|---|---|---|
@@ -60,7 +91,7 @@ A note is one verdict and at most two points, in a grower's words: no "NDVI", no
 
 ### Trials
 
-A trial is the same year of telemetry with one thing changed (`runTrial`). The proposals are the model's own `whatIf` moves that raise the season outcome, plus up to two more crops from `rankCrops`. **A trial is not advice about what will happen**; its caveat is printed with it. Nothing the grower entered is changed; only "Choose this crop" changes the field, through `setCrop`. Trials are offered on the field as it is, not over a simulated rotation.
+A trial is the same year of telemetry with one thing changed (`runTrial`). The proposals are the model's own `whatIf` moves that raise the season outcome, plus up to two more crops from `rankCrops`. **A trial is not advice about what will happen**; its caveat is printed with it. Nothing the grower entered is changed; only "Choose this crop" changes the field, through `setCrop`, and only after the grower confirms it in a dialog that says the crop changes everywhere (Soil and practice, the scores, the rotations). Trials are offered on the field as it is, not over a simulated rotation.
 
 ## 5. The plants
 
