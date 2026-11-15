@@ -6,13 +6,13 @@
  */
 import type { AskResult, FieldContext, KnowledgeChunk, Lang } from '@/contracts';
 import { bestSentences, Citer, mentions, quote } from './cite';
-import { cropLabel, cropShortName, factLines, viTerm } from './facts';
+import { cropLabel, cropShortName, factLines, viTerm, whereLines } from './facts';
 import { composeFieldFact, missingSentence, readingParagraphs } from './fieldAnswer';
 import { lookupFieldFacts, parseFieldFact, TERM_FACTS } from './fieldFacts';
 import { followUps } from './followups';
 import type { Focus, OutOfScope } from './intent';
 import type { Analysis, Hit } from './retrieve';
-import type { KnowledgeStore } from './store';
+import type { DroppedMention, KnowledgeStore } from './store';
 import { assess, type Check, howToGet } from './suitability';
 import { cap, fold, terms } from './text';
 import type { CropFacts } from './types';
@@ -110,7 +110,7 @@ function supportingQuotes(hits: Hit[], a: Analysis, cite: Citer, lang: Lang, opt
   for (const h of hits) {
     if (out.length >= (opts.max ?? 1)) break;
     const kind = chunkKind(h.chunk);
-    if (kind === 'facts' || opts.skip?.has(h.chunk.id)) continue;
+    if (kind === 'facts' || kind === 'where' || opts.skip?.has(h.chunk.id)) continue;
     if (opts.kinds && !opts.kinds.includes(kind)) continue;
     if (opts.mustMention && !mentions(h.chunk.text, opts.mustMention)) continue;
     // Never quote a passage about a different crop than the one asked about.
@@ -203,14 +203,22 @@ function composeIdeal(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Cit
   const fc = factsChunk(store, crop.id, a.lang);
   const marker = fc ? cite.cite(fc) : '';
   const name = cropShortName(crop, a.lang);
+  // A crop the atlas keeps that EcoCrop has no record of: there is nothing to list, and no quote stands in for it.
+  if (crop.ecocropId == null)
+    return [
+      t(`FAO EcoCrop has no record of ${name} (${crop.sci}), so I have no temperature, rainfall or soil thresholds for it ${marker}.`, `FAO EcoCrop không có bản ghi nào về ${name} (${crop.sci}), nên tôi không có ngưỡng nhiệt độ, lượng mưa hay đất cho cây này ${marker}.`),
+      t('Next step: ask the local extension office or a seed supplier what the crop needs where you are.', 'Bước tiếp theo: hỏi trạm khuyến nông địa phương hoặc nơi bán giống về yêu cầu của cây ở vùng bạn.'),
+    ];
   const lines = factLines(crop, a.lang);
   const keys = wantedKeys(a.focus);
   const chosen = keys.map((k) => lines.find((l) => l.key === k)).filter((l): l is { key: string; line: string } => Boolean(l));
   const paras: string[] = [];
   if (chosen.length) {
     paras.push(`${t(`What ${name} needs (FAO EcoCrop)`, `${cropLabel(crop, 'vi')} cần gì (FAO EcoCrop)`)} ${marker}:\n${chosen.map((l) => `- ${l.line}`).join('\n')}`);
-  } else {
+  } else if (a.focus.length) {
     paras.push(t(`EcoCrop does not record ${a.focus.join(', ')} requirements for ${name}.`, `EcoCrop không ghi yêu cầu về ${a.focus.join(', ')} cho ${name}.`) + ` ${marker}`);
+  } else {
+    paras.push(t(`EcoCrop records no requirements for ${name}.`, `EcoCrop không ghi yêu cầu nào cho ${name}.`) + ` ${marker}`);
   }
   const missingKeys = keys.filter((k) => !lines.some((l) => l.key === k) && ['temp', 'rain', 'ph'].includes(k));
   if (missingKeys.length && chosen.length) paras.push(t(`EcoCrop has no ${missingKeys.join(', ')} values for ${name}; a local extension office can fill the gap.`, `EcoCrop không có giá trị ${missingKeys.join(', ')} cho ${name}; trạm khuyến nông địa phương có thể bổ sung.`));
@@ -496,6 +504,9 @@ function composeRotation(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: 
 
 const CARE_WORDS = ['sow', 'plant', 'harvest', 'fertili', 'prun', 'spacing', 'weed', 'irrigat', 'seed', 'transplant', 'gieo', 'trong', 'thu hoach', 'bon', 'tia', 'tuoi', 'mat do', 'cay con', 'giong'];
 
+/** A question about how much of a crop there is, or where: "harvested area", "diện tích", "which countries". */
+const WHERE_WORDS = /\b(area|hectares?|countr(?:y|ies)|where|dien tich|hecta|nuoc nao|o dau)\b|\bha\b/;
+
 function composeCare(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Citer, ctx?: FieldContext): string[] {
   const t = tr(a.lang);
   const crop = store.crops.get(a.cropIds[0] ?? ctx?.cropId ?? '');
@@ -512,11 +523,20 @@ function composeCare(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Cite
       if (starts.length) paras.push(t(`On your field the rains normally pick up (above 100 mm/month) in ${monthList(starts, 'en')} (${monthlyRain.replace(/^.*\(/, '(')}); rain-fed sowing is usually timed to that start. The advisory panel's sowing window scores each month.`, `Ở ruộng của bạn, mùa mưa thường bắt đầu (trên 100 mm/tháng) vào ${monthList(starts, 'vi')} (${monthlyRain.replace(/^.*\(/, '(')}); gieo nhờ mưa thường căn theo thời điểm này. Khung thời vụ trong bảng tư vấn chấm điểm từng tháng.`));
     }
   }
+  // The sheet on where the crop is grown is given whole or not at all: two sentences picked from
+  // it would leave out the one that says whose figures they are (an item shared by several crops).
+  // It is taken by its id, not from the hits: a question about the area may rank other passages first.
+  const where = crop && WHERE_WORDS.test(fold(a.query)) ? store.chunks.get(`eco:${crop.id}:where${a.lang === 'vi' ? '-vi' : ''}`) : undefined;
+  if (crop && where) {
+    const lines = whereLines(crop, a.lang);
+    if (lines.length) paras.push(`${lines.join(' ')} ${cite.cite(where, lines.join(' '), hits.find((h) => h.chunk.id === where.id)?.score)}`);
+  }
   const qTerms = [...terms(a.query), ...a.expansion];
   let n = 0;
   for (const h of hits) {
     if (n >= 2) break;
-    if (chunkKind(h.chunk) === 'facts' || !mentions(h.chunk.text, CARE_WORDS)) continue;
+    const kind = chunkKind(h.chunk);
+    if (kind === 'facts' || kind === 'where' || !mentions(h.chunk.text, CARE_WORDS)) continue;
     const ss = bestSentences(h.chunk, qTerms, 2, CARE_WORDS);
     if (!ss.length) continue;
     paras.push(`${ss.map((s) => quote(s, h.chunk, a.lang)).join(' ')} ${cite.cite(h.chunk, ss.join(' '), h.score)}`);
@@ -535,6 +555,37 @@ function composeGeneral(_store: KnowledgeStore, a: Analysis, hits: Hit[], cite: 
     ...q,
     t('If this does not answer it, name the crop or the reading you mean and I can be more specific.', 'Nếu chưa đúng ý, hãy nêu tên cây trồng hoặc số đo bạn muốn hỏi để tôi trả lời cụ thể hơn.'),
   ];
+}
+
+/**
+ * A species the crop atlas does not keep: say so, and why, in the words of the atlas's two reasons
+ * (data/crops/atlas/dropped.csv). No number is given: the assistant holds none for the species.
+ */
+function composeDropped(dropped: DroppedMention[], lang: Lang): string[] {
+  const t = tr(lang);
+  const named = dropped.slice(0, 2);
+  const paras = named.map((d) => {
+    const alias = fold(d.alias) === fold(d.sci) ? '' : t(` ("${d.alias}")`, ` ("${d.alias}")`);
+    const why =
+      d.reason === 'group-only'
+        ? t(
+            'FAOSTAT counts it only inside an item that groups several crops, and FAO EcoCrop does not describe it as grown on a large or a small scale, so the crop atlas did not keep it.',
+            'FAOSTAT chỉ tính loài này trong một mặt hàng gộp nhiều cây, và FAO EcoCrop không mô tả nó là cây được trồng trên quy mô lớn hay nhỏ, nên atlas cây trồng không giữ lại.',
+          )
+        : t(
+            // What the atlas found, and no more: no item names the species. That is not a finding that nobody grows it.
+            'FAO EcoCrop describes it, but no statistical item of FAOSTAT names it, by its scientific name or by a common name, so the crop atlas has no figures for it and does not keep it. That says nothing about whether it is grown.',
+            'FAO EcoCrop có mô tả loài này, nhưng không mặt hàng thống kê nào của FAOSTAT nêu tên nó, theo tên khoa học hay tên thường gọi, nên atlas cây trồng không có số liệu về loài này và không giữ lại. Điều đó không nói lên loài này có được trồng hay không.',
+          );
+    return t(`${d.sci}${alias} is not in Astrovivu's crop data. ${why}`, `${d.sci}${alias} không có trong dữ liệu cây trồng của Astrovivu. ${why}`);
+  });
+  paras.push(
+    t(
+      'I therefore have no requirements, countries or prices for it, and I will not answer from a look-alike. If it is grown where you are, ask the local extension office; name another crop and I can answer for that one.',
+      'Vì vậy tôi không có yêu cầu sinh thái, nước trồng hay giá của loài này, và sẽ không trả lời thay bằng một cây trông giống. Nếu nơi bạn có trồng, hãy hỏi trạm khuyến nông địa phương; hãy nêu một cây khác và tôi sẽ trả lời cho cây đó.',
+    ),
+  );
+  return paras;
 }
 
 /** What the assistant says when it declines, by reason (docs/RAG.md, scope table). */
@@ -575,6 +626,9 @@ export function composeExtractive(store: KnowledgeStore, a: Analysis, hits: Hit[
   let confidence = 0;
   if (a.intent === 'off-topic') {
     paras = [declined(a.outOfScope ?? 'other', a.lang)];
+  } else if (a.intent === 'dropped' && a.dropped?.length) {
+    paras = composeDropped(a.dropped, a.lang);
+    confidence = 0.6;
   } else {
     const run = (): string[] => {
       switch (a.intent) {
