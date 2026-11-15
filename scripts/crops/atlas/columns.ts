@@ -100,8 +100,13 @@ add(T, 'world_area_ha', 'Sum of the countries\' harvested area (exact matches on
 add(T, 'world_production_t', 'Sum of the countries\' production (exact matches only). Tonnes of different products are added when the crop has several items.', 'Tổng sản lượng của các nước (chỉ cho khớp chính xác). Nếu cây có nhiều mặt hàng thì cộng tấn của các sản phẩm khác nhau.', 't', FAO, 'sum of country means');
 add(T, 'data_years', 'Years the FAOSTAT means cover.', 'Các năm mà số trung bình FAOSTAT bao phủ.', 'years', FAO, 'earliest and latest year used in any country');
 add(T, 'curated', 'yes when the crop is in our curated list of 73.', 'yes nếu cây thuộc danh sách 73 cây chọn lọc của dự án.', '', CUR, 'join on ecocrop_id');
-add(T, 'urban_candidate', 'yes when the crop qualifies as an urban/container candidate by the EcoCrop rule (scripts/crops/atlas/urban.ts); empty otherwise.', 'yes nếu cây đạt điều kiện ứng viên trồng chậu/đô thị theo quy tắc EcoCrop (scripts/crops/atlas/urban.ts); để trống nếu không.', '', `${ECO}; ${BUILD}`, 'urbanCandidate(s) in scripts/crops/atlas/urban.ts');
-add(T, 'urban_candidate_rule', 'Clause(s) of the urban candidate rule that matched: short-cycle, perennial-aromatic-herb, or both separated by ";".', 'Vế của quy tắc ứng viên đô thị đã khớp: short-cycle (chu kỳ ngắn), perennial-aromatic-herb (cây thơm lâu năm), hoặc cả hai cách nhau bởi ";".', '', BUILD, 'urbanCandidate(s).rule');
+
+// ------------------------------------------------------------------------------------------------ urban_candidates
+// Not columns of crops: the market database mirrors crops.csv column for column (scripts/market/atlas.ts).
+const UC = 'urban_candidates';
+add(UC, 'crop_id', 'Crop (see crops.csv). One row per crop of crops.csv, in the same order.', 'Cây trồng (xem crops.csv). Mỗi cây trong crops.csv một dòng, cùng thứ tự.', '', BUILD, 'join key');
+add(UC, 'urban_candidate', 'yes when the crop qualifies as an urban/container candidate by the EcoCrop rule (scripts/crops/atlas/urban.ts); empty otherwise.', 'yes nếu cây đạt điều kiện ứng viên trồng chậu/đô thị theo quy tắc EcoCrop (scripts/crops/atlas/urban.ts); để trống nếu không.', '', `${ECO}; ${BUILD}`, 'urbanCandidate(s) in scripts/crops/atlas/urban.ts');
+add(UC, 'urban_candidate_rule', 'Clause(s) of the urban candidate rule that matched: short-cycle, perennial-aromatic-herb, or both separated by ";".', 'Vế của quy tắc ứng viên đô thị đã khớp: short-cycle (chu kỳ ngắn), perennial-aromatic-herb (cây thơm lâu năm), hoặc cả hai cách nhau bởi ";".', '', BUILD, 'urbanCandidate(s).rule');
 
 // ------------------------------------------------------------------------------------------------ crop_country / item_country
 const quantities = (table: string, unitOf: string) => {

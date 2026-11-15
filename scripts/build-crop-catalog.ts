@@ -31,6 +31,8 @@ import { mergeUrbanTraits, qualifiesForUrbanCatalog, readUrbanTable } from './cr
 const ROOT = path.resolve(import.meta.dirname, '..');
 const CSV = path.join(ROOT, 'data/ecocrop/ecocrop_2568_plants.csv');
 const ATLAS_CROPS_CSV = path.join(ROOT, 'data/crops/atlas/crops.csv');
+/** Which atlas crops the EcoCrop rule selects (scripts/crops/atlas/urban.ts). Not a column of crops.csv, which the market database mirrors. */
+const ATLAS_URBAN_CANDIDATES_CSV = path.join(ROOT, 'data/crops/atlas/urban_candidates.csv');
 const ATLAS_URBAN_CSV = path.join(ROOT, 'data/crops/atlas/urban.csv');
 const OUT_JSON = path.join(ROOT, 'public/data/crops/ecocrop.json');
 const OUT_TS = path.join(ROOT, 'src/core/crops/curated.generated.ts');
@@ -89,6 +91,11 @@ function main(): void {
   const atlasCropRows = parseCsvObjects(fs.readFileSync(ATLAS_CROPS_CSV, 'utf8'));
   const atlasById = new Map(atlasCropRows.map((r) => [r.crop_id, r]));
   const validAtlasIds = new Set(atlasById.keys());
+  const urbanCandidateIds = new Set(
+    parseCsvObjects(fs.readFileSync(ATLAS_URBAN_CANDIDATES_CSV, 'utf8'))
+      .filter((r) => r.urban_candidate === 'yes')
+      .map((r) => r.crop_id),
+  );
   const urbanTable = readUrbanTable(fs.readFileSync(ATLAS_URBAN_CSV, 'utf8'), validAtlasIds);
 
   // ---------------------------------------------------------------------------- curated profiles
@@ -158,7 +165,7 @@ function main(): void {
   for (const p of rest) {
     const atlasRow = atlasById.get(p.id);
     const entry = urbanTable.byCrop.get(p.id);
-    if (atlasRow?.urban_candidate === 'yes' && qualifiesForUrbanCatalog(entry)) {
+    if (atlasRow && urbanCandidateIds.has(p.id) && qualifiesForUrbanCatalog(entry)) {
       const merged = mergeUrbanTraits(p, undefined, entry);
       if (merged.urban) {
         const enName = atlasRow.name_en?.trim() || p.names.en;
