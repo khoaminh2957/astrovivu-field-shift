@@ -108,12 +108,12 @@ src/rag (browser and server)
 
 | Variant | recall@5 (all / en / vi) | MRR (all / en / vi) |
 |---|---|---|
-| BM25 only (field boosts, no query analysis) | 0.90 / 0.97 / 0.84 | 0.80 / 0.93 / 0.68 |
-| + Vietnamese→English expansion | 0.90 / 1.00 / 0.82 | 0.80 / 0.92 / 0.70 |
+| BM25 only (field boosts, no query analysis) | 0.90 / 0.97 / 0.84 | 0.81 / 0.95 / 0.69 |
+| + Vietnamese→English expansion | 0.90 / 1.00 / 0.82 | 0.81 / 0.93 / 0.70 |
 | + crop linking (alias boost, fact sheet pinned) | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 |
 | Full pipeline (+ intent kind boost, language boost) | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 |
 
-Plain BM25 misses "Is my soil too acid for soybean?" (it ranks pH articles above soybean), "Mè cần loại đất gì?", three questions about garlic and one about rice (one-syllable crop names: "mè", "tỏi", "lúa"), and one question whose crop is the crop of the field and is not named; expansion alone trades one Vietnamese miss for another; crop linking fixes all of them. The first two rows are lower than on the first 62 questions (0.97 and 0.86) because five of the ten questions added with a crop are of those kinds. Before 15 November 2026 the last two rows had an MRR of 0.98 (Vietnamese 0.97): "Cây che phủ nào giúp cố định đạm?" and "Cây nào giúp cố định đạm cho đất?" were linked to the greater yam through "đạm" and found their document second. With "đạm" excluded from crop linking both find it first.
+Plain BM25 misses "Is my soil too acid for soybean?" (it ranks pH articles above soybean), "Mè cần loại đất gì?", three questions about garlic and one about rice (one-syllable crop names: "mè", "tỏi", "lúa"), and one question whose crop is the crop of the field and is not named; expansion alone trades one Vietnamese miss for another; crop linking fixes all of them. The first two rows are lower than on the first 62 questions (0.97 and 0.86) because five of the ten questions added with a crop are of those kinds. The numbers are those of the corpus cut down to the crops of the atlas; on the corpus of all 2,568 EcoCrop species the MRR of the first two rows was 0.80. Before 15 November 2026 the last two rows had an MRR of 0.98 (Vietnamese 0.97): "Cây che phủ nào giúp cố định đạm?" and "Cây nào giúp cố định đạm cho đất?" were linked to the greater yam through "đạm" and found their document second. With "đạm" excluded from crop linking both find it first.
 
 **Routing** is scored on the 126 questions that state an expected intent; the questions about the field also state the kind of question (value, month, forecast), the focus, a focus that must not be found ("năng suất" is not "nắng") and, for a declined question, the reason. The test requires every question of the field groups and of the regression group to be routed as stated, and at least four questions per field group in both languages.
 
