@@ -2,6 +2,8 @@
 
 Viết ngày 15/11/2026. Ai làm phần nào và theo quy trình git nào: xem `CONTRIBUTING.md`. Tài liệu này nói **làm gì, theo thứ tự nào, xong là thế nào**. Mốc thời gian chưa có ngày: Bảo điền khi chốt hạn nộp.
 
+Mỗi bước dưới đây có một issue trên GitHub với hiện trạng đã kiểm trong mã, việc cần làm, tiêu chí xong và cách kiểm. Bảng theo dõi tất cả: <https://github.com/quocbao271207/astrovivu-field-shift/issues/69>. Khi tài liệu này và một issue nói khác nhau về chi tiết, issue là bản mới hơn.
+
 | Người | Phần việc |
 |---|---|
 | Bảo | UI/UX toàn bộ, bản đồ, hợp đồng dữ liệu, gộp nhánh |
@@ -94,7 +96,14 @@ Bảng cũ được dựng lại thành một bộ dữ liệu trong repo (`data
 
 **Kết quả (15/11/2026).** Giữ 387 trên 2.568 loài; 165 loài khớp `exact`, 202 loài thuộc hàng gộp, 20 loài không có hàng FAOSTAT nào (cây thức ăn gia súc, cây phủ đất và vài loại rau trong 73 cây đã biên soạn). 198 nước; 2.273 tỉnh, bang từ MapSPAM. Google Sheet: <https://docs.google.com/spreadsheets/d/1AWTjpsYIUrwBiPcq9UKlxkZezkZLP5gJOZiXXD6Abto/edit>. Chi tiết, nguồn và giấy phép: `docs/CROP_DATA.md`.
 
-**Còn thiếu, cần Thái xử lý.** 12 trong 73 cây đã biên soạn chỉ khớp ở mức hàng gộp nên mức phổ biến theo nước còn `unknown` (ví dụ đậu cô ve, ớt, xoài, xà lách, bí đỏ, sầu riêng); 138 cây chưa có tên tiếng Anh thông dụng từ nguồn; tên tiếng Việt mới có cho 73 cây.
+**Còn thiếu, cần Thái xử lý.** 12 trong 73 cây đã biên soạn chỉ khớp ở mức hàng gộp nên mức phổ biến theo nước còn `unknown` (ví dụ đậu cô ve, ớt, xoài, xà lách, bí đỏ, sầu riêng); tên tiếng Việt mới có cho 73 cây.
+
+**Đính chính sau khi đếm lại trong `data/crops/atlas/` (chiều 15/11/2026).**
+
+- Chưa có mức ở Việt Nam và ở Mỹ là 32 cây đã biên soạn, không phải 12: ngoài 12 cây `unknown` còn 20 cây khớp `none` nên không có dòng nào trong `crop_country.csv` (rau muống, mồng tơi, húng quế, cỏ linh lăng nằm trong số này).
+- 20 cây đã biên soạn khác mang mức `absent` ở Việt Nam, trong đó có cà chua, dưa leo, cà tím, đậu bắp và gừng. FAOSTAT không có dòng riêng cho các mặt hàng đó ở Việt Nam (cột `item_reported` là `no`); Việt Nam báo 898.373 ha dưới mặt hàng gộp "Other vegetables, fresh n.e.c.". Tức `absent` ở đây nghĩa là "FAOSTAT không báo cáo", chưa chắc là "không ai trồng". Ở Mỹ có 9 cây như vậy. Cách xử lý đang chờ quyết định: issue #66, mục 6.
+- Chưa có tên tiếng Anh là 157 cây, không phải 138.
+- Bảng `region_crops.csv` có 44 bang của Mỹ và không có Nevada, nơi có thửa mẫu `nevada-alfalfa`.
 
 ### 2.3 Các bước còn lại của Thái
 
@@ -308,7 +317,7 @@ Khí hậu nhiều năm theo tháng nằm ở `input.telemetry.climateHistory` (
 
 | Thứ | Ở đâu |
 |---|---|
-| Yêu cầu của cây đang chọn: pH, cơ giới, độ sâu, thoát nước, độ mặn, độ phì, mỗi thứ có mức tối ưu và mức chịu được | `getCrop(id).requirements`, kiểu `CropRequirements` trong `src/contracts/crop.ts`; gốc là FAO EcoCrop |
+| Yêu cầu của cây đang chọn: pH, cơ giới, độ sâu, thoát nước, độ mặn, độ phì, mỗi thứ có mức tối ưu và mức chịu được | `getCrop(id).req`, kiểu `CropRequirements` trong `src/contracts/crop.ts`; gốc là FAO EcoCrop |
 | Mức chịu độc nhôm của cây (`soil_al_toxicity_opt`, `soil_al_toxicity_abs`) | mới chỉ có trong `data/crops/atlas/crops.csv`, chưa vào `CropRequirements`. Cần thì nhờ Thái thêm vào danh mục |
 | Số người trồng nhập: pH, chất hữu cơ, cơ giới, thoát nước, độ mặn, độ sâu tầng đất, tưới, nguồn nước | `input.groundTruth` (kiểu `GroundTruth` trong `src/contracts/model.ts`); nhập ở thẻ "Đất và canh tác" |
 | Lời khuyên hiện có để chuyển sang mô-đun mới: bón vôi hoặc lưu huỳnh theo khoảng liều, thoát nước, chống xói mòn | `phPlan` và `advisories` trong `src/core/advisory/actions.ts` |
