@@ -376,6 +376,28 @@ export function Stubble() {
 }
 
 /**
+ * A patch of field for the time bar: three plants of the month's kind on a strip of soil, cropped
+ * tight so that a 30 px chip still reads. Height follows `growth`; a harvest shows stubble; bare
+ * ground is the strip alone.
+ */
+export function FieldChip({ look, growth, ripeness, cut = false, size = 30 }: { look: CropLook; growth: number; ripeness: number; cut?: boolean; size?: number }) {
+  const { fill, dark } = leafColours(0.85, ripeness, RIPENS[look]);
+  const g = Math.max(0.35, growth);
+  return (
+    <svg viewBox="-32 -60 64 66" width={size} height={size} aria-hidden>
+      <rect x={-30} y={0} width={60} height={5} rx={2.5} fill="#a9875c" />
+      {look === 'none'
+        ? <path d="M -22 -3 H 22" stroke="#a9875c" strokeWidth={2} strokeDasharray="3 4" strokeLinecap="round" />
+        : [-15, 0, 15].map((x, i) => (
+            <g key={x} transform={`translate(${x} 0) scale(${i === 1 ? 0.8 : 0.66})`}>
+              {cut ? <Stubble /> : <Plant look={look} growth={g} ripeness={ripeness} fill={fill} dark={dark} seed={i + 1} />}
+            </g>
+          ))}
+    </svg>
+  );
+}
+
+/**
  * A plant on a neutral ground, for a legend, a card or the time bar: by default the full-grown,
  * half-ripe drawing of its kind; with `growth` and `ripeness` the plant as it stands that month.
  * `cut` draws what a harvest leaves; `look: 'none'` a bare strip of ground.

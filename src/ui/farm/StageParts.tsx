@@ -14,7 +14,7 @@ import { StrategyCards } from '@/ui/advisory/StrategyCards';
 import { Button, IconButton, Segmented, cn } from '@/ui/design';
 import { Mascot, type MascotClip, type MascotId } from '@/ui/mascot';
 import { MascotFigure } from './Mascots';
-import { PlantIcon } from './plants';
+import { FieldChip, PlantIcon } from './plants';
 
 export const MASCOT_OF: Record<FarmVoice, MascotId> = { space: 'Satellite', soil: 'Seed', rice: 'Rice' };
 
@@ -79,8 +79,8 @@ export function TimeBar({ periods, idx, step, playing, holdMs, onStep, onPlay, o
                 className={cn('group flex w-full flex-col items-center gap-1 rounded-sm px-1 pt-1.5 pb-1 text-xs transition-colors', on ? 'bg-surface-0 font-semibold text-ink-1 shadow-sm' : 'text-ink-2 hover:bg-surface-2')}
               >
                 {l && (
-                  <span className={cn('farm-land flex h-6 items-end justify-center', l.bare && 'opacity-60')} data-farm-land={l.bare ? 'bare' : l.harvested != null ? 'harvest' : 'crop'}>
-                    <PlantIcon look={l.look} size={24} growth={Math.max(0.25, l.growth)} ripeness={l.ripeness} cut={l.harvested != null && l.harvested >= 0.5} />
+                  <span className={cn('farm-land flex h-[30px] items-end justify-center', l.bare && 'opacity-70')} data-farm-land={l.bare ? 'bare' : l.harvested != null ? 'harvest' : 'crop'}>
+                    <FieldChip look={l.look} growth={l.growth} ripeness={l.ripeness} cut={l.harvested != null && l.harvested >= 0.5} />
                   </span>
                 )}
                 <span className="whitespace-nowrap">{periodLabel(p, lang)}</span>
