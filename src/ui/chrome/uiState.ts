@@ -8,13 +8,17 @@ import { create } from 'zustand';
 import type { Parcel } from '@/contracts';
 
 export type MapPopover = 'layers' | 'measure' | null;
+export type FieldTab = 'overview' | 'soil' | 'rotation' | 'data';
 
 export interface MissionUiState {
-  /** Ground-truth section expanded in the field panel. */
+  /** Soil-and-practice section expanded (the older single-column summary). */
   overrideOpen: boolean;
-  /** Tab of the field panel. */
-  fieldTab: 'status' | 'report' | 'data' | 'truth';
-  setFieldTab(tab: 'status' | 'report' | 'data' | 'truth'): void;
+  /** Tab of the field panel: how the field is, what the grower knows of it, what to grow, where the numbers come from. */
+  fieldTab: FieldTab;
+  setFieldTab(tab: FieldTab): void;
+  /** Fields (by id) whose three opening questions the visitor closed; they stay closed for the session. */
+  quickClosed: Record<string, true>;
+  closeQuick(parcelId: string): void;
   /** Narrow: the sheet covers the map except a strip at the top. */
   sheetFull: boolean;
   setSheetFull(on: boolean): void;
@@ -75,8 +79,10 @@ function storeFold(folded: boolean): void {
 
 export const useMissionUi = create<MissionUiState>()((set) => ({
   overrideOpen: false,
-  fieldTab: 'status',
+  fieldTab: 'overview',
   setFieldTab: (fieldTab) => set({ fieldTab }),
+  quickClosed: {},
+  closeQuick: (parcelId) => set((s) => ({ quickClosed: { ...s.quickClosed, [parcelId]: true } })),
   mapPopover: null,
   listMode: 'list',
   setListMode: (listMode) => set({ listMode }),

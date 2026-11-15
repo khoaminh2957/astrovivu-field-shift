@@ -3,8 +3,8 @@
  * more crops and, if known, the sowing date. Writes `GroundTruth.currentRotation`; the first crop of
  * the season running now becomes the field's crop and its sowing date anchors the growth stages.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Plus, X } from 'lucide-react';
 import type { ISODate } from '@/contracts';
 import { getCrop, searchCrops } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
@@ -97,16 +97,39 @@ function SeasonCard({ row, index, year, active, tropical, fresh, onChange, onRem
   const lang = useLang();
   const months = useMemo(() => Array.from({ length: 12 }, (_, k) => ({ value: String(k + 1), label: t('season.month', { m: k + 1 }) })), [t]);
   const name = seasonName(row, tropical);
-  const sowLabel = `${t(`season.name.${name}`, { n: index + 1 })} · ${t('season.sowing')}`;
+  const title = t(`season.name.${name}`, { n: index + 1 });
+  const sowLabel = `${title} · ${t('season.sowing')}`;
+  // The season running now, a new one and one without a crop are open; the others are one line until asked for.
+  const [open, setOpen] = useState(active || fresh || row.crops.length === 0);
+  const bodyId = useId();
+  const crops = row.crops.map((id) => getCrop(id)).map((c, i) => (c ? cropName(c.names, lang) : row.crops[i]));
   return (
     <li className={cn('flex flex-col gap-2.5 rounded-sm border px-3 py-2.5', active ? 'border-signal/60' : 'border-line-1')}>
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-ink-1">{t(`season.name.${name}`, { n: index + 1 })}</span>
-        {active && <span className="rounded-full bg-signal/15 px-2 text-[11px] leading-5 text-signal-strong">{t('season.now')}</span>}
-        {year > 0 && <span className="rounded-full bg-surface-2 px-2 text-[11px] leading-5 text-ink-2">{t('season.nextYear', { n: year + 1 })}</span>}
-        <span className="flex-1" />
+        <button type="button" aria-expanded={open} aria-controls={bodyId} aria-label={t(open ? 'season.fold' : 'season.unfold', { s: title })} onClick={() => setOpen(!open)} className="flex min-w-0 flex-1 items-center gap-2 rounded-xs text-left">
+          <span className="shrink-0 text-sm font-medium text-ink-1">{title}</span>
+          {active && <span className="shrink-0 rounded-full bg-signal/15 px-2 text-[11px] leading-5 text-signal-strong">{t('season.now')}</span>}
+          {year > 0 && <span className="shrink-0 rounded-full bg-surface-2 px-2 text-[11px] leading-5 text-ink-2">{t('season.nextYear', { n: year + 1 })}</span>}
+          {!open && (
+            <span className="min-w-0 flex-1 truncate text-xs text-ink-2">
+              {shortMonth(row.start, lang)}-{shortMonth(row.end, lang)} · {crops.join(' + ')}
+            </span>
+          )}
+          <span className="flex-1" />
+          <ChevronDown size={16} aria-hidden className={cn('shrink-0 text-ink-3 transition-transform duration-(--dur-fast)', open && 'rotate-180')} />
+        </button>
         <IconButton label={t('season.remove')} icon={<X />} size="sm" onClick={onRemove} />
       </div>
+      {open && <SeasonBody id={bodyId} row={row} months={months} sowLabel={sowLabel} fresh={fresh} onChange={onChange} />}
+    </li>
+  );
+}
+
+function SeasonBody({ id, row, months, sowLabel, fresh, onChange }: { id: string; row: SeasonRow; months: { value: string; label: string }[]; sowLabel: string; fresh: boolean; onChange: (r: SeasonRow) => void }) {
+  const t = useT();
+  const lang = useLang();
+  return (
+    <div id={id} className="flex flex-col gap-2.5">
 
       <div className="flex flex-wrap items-center gap-2">
         <Select ariaLabel={t('season.from')} options={months} value={String(row.start)} onValueChange={(v) => onChange({ ...row, start: Number(v) })} className="w-[7.5rem]" />
@@ -151,7 +174,7 @@ function SeasonCard({ row, index, year, active, tropical, fresh, onChange, onRem
         />
         {!row.sowingDate && <span className="t-caption">{t('season.sowingHint')}</span>}
       </label>
-    </li>
+    </div>
   );
 }
 

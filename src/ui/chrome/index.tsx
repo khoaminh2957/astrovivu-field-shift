@@ -374,11 +374,11 @@ export function Shell() {
   const setOwnField = useMissionUi((s) => s.setOwnField);
   const parcel = useMission((s) => s.parcel);
   const parcelId = parcel?.id;
-  // A newly selected field opens on Status, and the list panel goes back to the list.
+  // A newly selected field opens on its overview, and the list panel goes back to the list.
   useEffect(() => {
     if (!parcelId) return;
     setListMode('list');
-    setFieldTab('status');
+    setFieldTab('overview');
   }, [parcelId, setListMode, setFieldTab]);
   // A field the visitor made stays on offer for the session, in the list and in the search.
   useEffect(() => {

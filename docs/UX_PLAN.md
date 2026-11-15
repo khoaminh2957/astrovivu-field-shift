@@ -77,6 +77,24 @@ Một người lần đầu vào web đi qua bốn bước, mỗi bước một 
 
 **Xong khi.** Mỗi thẻ trả lời được câu hỏi của nó mà không cần cuộn quá một màn hình ở 1440 × 900; không còn nút nào ở đầu bảng lặp lại một thẻ.
 
+**Đã làm (15/11).** Bốn thẻ như bảng trên (`src/ui/field/FieldPanel.tsx`, `OverviewTab.tsx`, `SoilTab.tsx`, `RotationTab.tsx`). Hai nút "Kế hoạch luân canh" và "Ghi chép" ở đầu bảng đã bỏ; trang Ghi chép vẫn mở được từ thanh trái cho đến khi chốt U9.
+
+- Tổng quan: câu tóm tắt là câu của mô hình (`score.summary.headline`); ba số là điểm, yếu tố giới hạn (kèm giá trị thực và khoảng lý tưởng), NDVI hiện tại so với dải bình thường của ngày đó; tối đa hai thay đổi gần ngày đang xem; ảnh ruộng theo ngày; hai biểu đồ NDVI và mưa tích lũy.
+- Luân canh: phương án điểm cao nhất, chuỗi vụ của nó, bốn tiêu chí đầu theo ưu tiên của người trồng so với cách đang làm, nút mở trang so sánh. Mọi số lấy từ báo cáo khuyến nghị, thẻ không tính lại gì.
+- Dữ liệu: tám nhánh, biểu đồ tích ôn; phần vùng sinh trưởng trong thửa gập lại, mở khi cần.
+- Khác bản kế hoạch: ba ô "cây đang trồng, ngày gieo, thời tiết" ở đầu thẻ cũ đã bỏ. Cây và ngày gieo nằm ở "Đất và canh tác"; thời tiết vẫn ở góc bản đồ trên màn hình rộng, màn hình hẹp hiện không còn chỗ hiện thời tiết.
+
+Đo ở 1440 × 900 (bảng cao 884 px), tiếng Việt, thửa mẫu Cần Thơ có ba vụ:
+
+| Thẻ | Chiều cao nội dung | Phải cuộn |
+|---|---|---|
+| Tổng quan | 1.325 px | 0,5 màn hình |
+| Đất và canh tác | 1.725 px | 0,95 màn hình |
+| Luân canh | 884 px | không |
+| Dữ liệu | 1.722 px | 0,95 màn hình |
+
+Ở 426 × 690 bốn tên thẻ nằm vừa một hàng (thẻ thứ hai rút thành "Đất"), không tràn ngang.
+
 ### U6. "Ground truth" đổi tên, đưa lên trước, vẫn có chỗ điền tình trạng đất
 
 **Vấn đề.** Thẻ "Số liệu thực địa" nằm cuối cùng và tên của nó là thuật ngữ. Đây lại là bước làm kết quả đúng hơn nhiều nhất: `GroundTruth` trong `src/contracts/model.ts` có sáu trường về đất (pH, độ dẫn điện, thành phần cơ giới, thoát nước, độ sâu, chất hữu cơ), cùng nước tưới, cây đang trồng và giá; số vệ tinh về đất chỉ là ước lượng ở ô 250 m.
@@ -89,6 +107,20 @@ Một người lần đầu vào web đi qua bốn bước, mỗi bước một 
 - Mỗi lần điền, hiện ngay điểm thay đổi thế nào (sổ hiệu chỉnh đã có trong mô hình).
 
 **Xong khi.** Người dùng điền được pH trong hai thao tác kể từ lúc khoá ruộng; mỗi ô có ước lượng vệ tinh làm mặc định và nguồn của nó.
+
+**Đã làm (15/11).** Tên mới ở mọi chỗ trong giao diện, kể cả nhãn trên từng giá trị ("Số của bạn" thay "Đo thực địa") và các câu ở trang luân canh, ghi chép.
+
+- Thẻ ba câu hỏi nằm đầu thẻ Tổng quan ngay khi mở ruộng (`src/ui/override/QuickFacts.tsx`): pH đất, tưới, cây đang trồng. Ô pH hiện sẵn ước tính và nguồn (ví dụ "Ước tính: 6.1 · SoilGrids 2.0 · 250 m"); tưới và cây có lựa chọn "Tôi không biết". Đóng thẻ thì nó không hiện lại với ruộng đó trong phiên làm việc.
+- Điền pH: bấm vào ô, gõ số, Enter. Đã thử trên thửa Diamond Valley: nhập 7,5 thay cho ước tính 8,8 thì điểm đổi từ 53 thành 85 và dòng "53 → 85 (+32)" hiện ngay trong thẻ.
+- Phần đầy đủ chia bốn nhóm Đất, Nước, Cây trồng, Tiền. Thêm bốn ô trước đây mô hình đã đọc nhưng giao diện chưa cho nhập: chất hữu cơ, nguồn nước, năng suất vụ trước, giá bán, chi phí mỗi ha (USD hoặc VND). Nhóm Tiền hiện giá trị tham chiếu đang dùng và mở ra được nguồn của chúng.
+- Các vụ không phải vụ đang trồng thu lại còn một dòng, bấm để mở.
+- Dòng điểm trước và sau không tính gì ở giao diện: nó ghi lại điểm đang hiện lúc người dùng nhập và điểm sau khi mô hình tính lại (`src/ui/override/scoreChange.ts`, có test).
+
+**Chưa làm, và vì sao.**
+
+- Câu hỏi "đất chua hay không" cho người chưa đo pH: mô hình chỉ nhận một con số pH, không có đầu vào "chua" hay "không chua". Đổi câu trả lời đó thành một con số là tự đặt ra số liệu, nên thẻ chỉ hỏi pH và giữ ước tính khi để trống.
+- Chẩn đoán đất của Duy: `src/core/soil` chưa có. Chỗ dành cho nó là khối "Đất cần gì" dưới nhóm Đất, hiện mới in kế hoạch pH mà phần khuyến nghị đã tính sẵn (chỉ hiện khi cần bón vôi hoặc lưu huỳnh).
+- Tưới không có ước tính từ dữ liệu: khi chưa chọn, ô ghi rõ mô hình coi ruộng là nhờ mưa.
 
 ### U7. Xoay bản đồ bằng chuột
 
@@ -143,7 +175,7 @@ Trên bàn rê Windows vẫn còn hai cách: giữ Alt rồi vuốt hai ngón, v
 | Đợt | Hạng mục | Phụ thuộc |
 |---|---|---|
 | 1 (đang làm) | U1, U2, U3 | không |
-| 2 | U5, U6 | chẩn đoán đất của Duy cho phần hiển thị dưới ô nhập; làm khung trước được |
+| 2 (xong 15/11) | U5, U6 | khối "Đất cần gì" chờ chẩn đoán đất của Duy |
 | 1 (đang làm, thêm vào) | U4, U7 | đã chốt |
 | 4 | U8, U9 | Bảo chốt câu hỏi ở U9 |
 | 5 | U10 và dùng thử | mascot của Uyên |
