@@ -71,6 +71,9 @@ export function RotationTab() {
   const advisory = useMission((s) => s.advisory);
   const priorities = useMission((s) => s.priorities);
   const gtCurrency = useMission((s) => s.groundTruth.currency);
+  // Nothing was entered about today's crops and no crop record exists for the field (the engine reads the
+  // Cropland Data Layer in the US): its "current practice" is then its own assumption.
+  const assumed = useMission((s) => !s.cropId && !s.groundTruth.currentRotation?.length && !s.telemetry?.cropHistory?.length);
   const setPhase = useMission((s) => s.setPhase);
   const setTab = useMissionUi((s) => s.setFieldTab);
   const open = () => setPhase('advisory');
@@ -103,7 +106,7 @@ export function RotationTab() {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm text-ink-2">{t(current ? 'field.rot.lede' : 'field.rot.ledeNoCurrent', { n: all.length })}</p>
+      <p className="text-sm text-ink-2">{t(!current ? 'field.rot.ledeNoCurrent' : assumed ? 'field.rot.ledeAssumed' : 'field.rot.lede', { n: all.length })}</p>
 
       <section className="flex flex-col gap-3 rounded-sm border border-line-1 p-4">
         <div className="flex items-start justify-between gap-3">
@@ -122,10 +125,18 @@ export function RotationTab() {
 
       {current ? (
         <section className="flex flex-col gap-2">
-          <h3 className="t-heading">{t('field.rot.vs')}</h3>
+          <h3 className="t-heading">{t(assumed ? 'field.rot.vsAssumed' : 'field.rot.vs')}</h3>
+          {assumed && (
+            <div className="flex flex-col items-start gap-2 rounded-sm bg-surface-2 px-3 py-2.5">
+              <p className="text-sm text-ink-1">{t('field.rot.assumedNote')}</p>
+              <Button variant="secondary" size="sm" onClick={() => setTab('soil')}>
+                {t('field.rot.tellCrop')}
+              </Button>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-ink-3">
-              {t('field.rot.now')}: <span className="text-ink-1">{pick(current.name, lang)}</span>
+              {t(assumed ? 'field.rot.nowAssumed' : 'field.rot.now')}: <span className="text-ink-1">{pick(current.name, lang)}</span>
             </span>
             <Sequence strategy={current} />
           </div>

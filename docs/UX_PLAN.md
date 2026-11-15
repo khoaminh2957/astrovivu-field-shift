@@ -36,6 +36,8 @@ Một người lần đầu vào web đi qua bốn bước, mỗi bước một 
 
 **Xong khi.** Từ lúc mở web đến lúc thấy dữ liệu của ruộng tự chọn còn bốn thao tác: gõ nơi, chọn gợi ý, bấm vào ruộng, khoá. Ruộng mẫu: một thao tác.
 
+**Sửa sau khi Bảo dùng thử (15/11).** Bảo tự chọn một vị trí trên khung trình duyệt rộng 426 px rồi không thấy nút nào để mở ruộng. Đo lại: nút "Chốt thửa ruộng" nằm ở y = 721 px trong một khung cuộn chỉ hiện đến y = 485 px, tức phải cuộn thêm khoảng 300 px bên trong khung mới thấy. Đã sửa: nút ghim ở mép dưới của bước thêm ruộng, luôn hiện; đổi tên thành "Mở thửa ruộng này"; và hễ đã có đường viền trên bản đồ thì bước này luôn đưa ra nút đó. Ở cửa sổ rộng 1100 đến 1362 px, thẻ thêm ruộng dừng phía trên hộp tìm kiếm để hộp không đè lên nút.
+
 ### U2. Gộp hai ô tìm kiếm (đang làm)
 
 **Vấn đề.** Có hai ô: "Tìm ruộng" trong danh sách và "Tìm địa điểm" trên bản đồ (`src/ui/chrome/MapSearch.tsx`). Người dùng phải biết gõ vào ô nào.

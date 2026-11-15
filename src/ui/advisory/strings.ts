@@ -239,7 +239,7 @@ registerStrings(
     'cs.note': 'The other scores on this page come from the app\'s main method. On the test fields it agreed more often with the crops known to grow or to fail there, so it stays the basis of the advice.',
     'cs.rainNote': 'CropSuite counts only the rain that falls during the season, not the water the soil stores before sowing. That makes it stricter for rainfed crops.',
 
-    'empty.noField': 'No field locked yet',
+    'empty.noField': 'No field open yet',
     'empty.noFieldBody': 'Advice is computed for one field. Pick a demo field or draw your own on the globe.',
     'empty.pickField': 'Choose a field',
     'empty.noReport': 'No advice for this field yet',

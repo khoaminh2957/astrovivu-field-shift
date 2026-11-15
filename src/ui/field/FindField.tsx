@@ -9,9 +9,10 @@
  *              the finder box while it waits for a click on the map, and otherwise a card on the
  *              left edge of a wide screen, or a sheet above the box on a narrow one, so that the
  *              outline it talks about stays in view.
- * One green button per state: Add field, then Show on the map, then Lock field.
+ * One green button per state: Add field, then Show on the map, then Open this field (always in view, on the
+ * bottom edge of the step).
  */
-import { useEffect, useId, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useId, useRef, useState } from 'react';
 import { ArrowDownUp, ArrowLeft, ArrowRight, LocateFixed, MapPin, MessageCircleQuestion, MousePointerClick, Plus, Search, SquarePlus, X } from 'lucide-react';
 import type { LngLat, Parcel, PlaceHit, PlaceInfo, SampleParcel } from '@/contracts';
 import { pick } from '@/contracts';
@@ -135,34 +136,42 @@ function LockForm({ place, defaultName }: { place?: PlaceInfo; defaultName?: str
     if (parcel) void lockParcel(parcel);
   };
   return (
-    <div className="flex flex-col gap-4 border-t border-line-1 pt-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-xs font-medium text-ink-1">{t('field.area.live')}</span>
-          {draft?.areaHa != null ? (
-            <span className="flex items-baseline gap-1" aria-live="polite">
-              <span className="t-value text-lg text-ink-1">{fmtNum(draft.areaHa, draft.areaHa < 10 ? 2 : 1)}</span>
-              <span className="t-unit">ha</span>
-            </span>
-          ) : (
-            <span className="t-caption">--</span>
-          )}
+    <>
+      <div className="flex flex-col gap-4 border-t border-line-1 pt-4">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-xs font-medium text-ink-1">{t('field.area.live')}</span>
+            {draft?.areaHa != null ? (
+              <span className="flex items-baseline gap-1" aria-live="polite">
+                <span className="t-value text-lg text-ink-1">{fmtNum(draft.areaHa, draft.areaHa < 10 ? 2 : 1)}</span>
+                <span className="t-unit">ha</span>
+              </span>
+            ) : (
+              <span className="t-caption">--</span>
+            )}
+          </div>
+          <p className="t-caption">{t('field.drag')}</p>
+          {crossed && <p className="t-caption text-watch">{t('field.crossed')}</p>}
         </div>
-        <p className="t-caption">{t('field.drag')}</p>
-        {crossed && <p className="t-caption text-watch">{t('field.crossed')}</p>}
+        <Field label={t('field.name')} htmlFor={id}>
+          <Input id={id} size="lg" value={name} placeholder={finalName} maxLength={60} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && lockable && lock()} />
+        </Field>
       </div>
-      <Field label={t('field.name')} htmlFor={id}>
-        <Input id={id} size="lg" value={name} placeholder={finalName} maxLength={60} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && lockable && lock()} />
-      </Field>
-      <div className="flex gap-2">
+      {/*
+        The step scrolls inside a short sheet on a phone and inside a card on a low window. The button that
+        opens the field is the point of the step, so it stays on the bottom edge of whatever scrolls:
+        a sibling of the form, not a part of it, because a sticky box cannot leave its parent
+        (the negative offsets take it out to the edges of the step's padding, so nothing shows under it).
+      */}
+      <div className="sticky -bottom-4 z-10 -mx-4 -mb-4 flex gap-2 border-t border-line-1 bg-surface-0 px-4 py-3">
         <Button variant="secondary" size="lg" onClick={cancelDraw}>
           {t('field.cancel')}
         </Button>
-        <Button variant="primary" size="lg" className="flex-1" disabled={!lockable} onClick={lock}>
+        <Button variant="primary" size="lg" className="flex-1" iconRight={<ArrowRight />} disabled={!lockable} onClick={lock}>
           {t('field.lock')}
         </Button>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -188,6 +197,7 @@ export function FindField({ floating = false }: { floating?: boolean }) {
   const way = useMissionUi((s) => s.addWay);
   const setWay = useMissionUi((s) => s.setAddWay);
   const setAddCard = useMissionUi((s) => s.setAddCard);
+  const finderH = useMissionUi((s) => s.finderH);
   const sel = useSelectOnMap(way === 'map');
   const placed = !!draft?.closed && !!chosen;
   /** Floating only: the visitor asked for the whole step, so it no longer folds to one line. */
@@ -274,7 +284,8 @@ export function FindField({ floating = false }: { floating?: boolean }) {
   };
 
   // Waiting for the click that picks the field: one line, so the map under it stays clear.
-  const waiting = way === 'map' && (sel.state.kind === 'idle' || sel.state.kind === 'zoomed' || sel.state.kind === 'detecting');
+  // An outline already on the map is never "waiting", whatever led to it: the step must then offer the button that opens it.
+  const waiting = way === 'map' && !draft?.closed && (sel.state.kind === 'idle' || sel.state.kind === 'zoomed' || sel.state.kind === 'detecting');
   const card = floating && !(waiting && !expanded);
   // The shell counts the card as covered map, so the outline is framed beside it.
   useEffect(() => {
@@ -327,9 +338,7 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       {way === 'map' ? (
         <>
           <SelectOnMapStatus control={sel} />
-          {(sel.state.kind === 'found' || sel.state.kind === 'manual') && draft?.closed && (
-            <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />
-          )}
+          {draft?.closed && <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />}
         </>
       ) : (
         <>
@@ -403,7 +412,9 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       aria-label={t('field.add.step')}
       data-panel-scroll
       // Wide: a card on the left edge (ADD_CARD in uiState: 360 px, 16 px margins), clear of the credits under it. Narrow: a sheet in the finder's stack.
-      className="pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg narrow:static narrow:max-h-[45dvh] narrow:w-auto"
+      // Between 1100 and 1362 px the centred finder box (594 px) reaches under the card's right edge, so there the card ends above the box.
+      style={{ '--finder-h': `${finderH || 150}px` } as CSSProperties}
+      className="pointer-events-auto fixed top-4 left-4 max-h-[calc(100dvh-56px)] w-[360px] overflow-y-auto rounded-lg border border-line-2 bg-surface-0 py-4 shadow-lg min-[1100px]:max-[1362px]:max-h-[calc(100dvh-var(--finder-h)-44px)] narrow:static narrow:max-h-[45dvh] narrow:w-auto"
     >
       {step}
     </section>
