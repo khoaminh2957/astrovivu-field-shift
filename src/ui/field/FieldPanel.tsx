@@ -20,8 +20,7 @@ import { countOverrides } from '@/ui/override';
 import { CardDetail } from './CardDetail';
 import { FieldReport } from './FieldReport';
 import { MetricGrid, useSelectBranch } from './MetricCards';
-import { ChartCard, OverviewTab } from './OverviewTab';
-import { RotationTab } from './RotationTab';
+import { ChartCard, OverviewData, OverviewTab } from './OverviewTab';
 import { SoilTab } from './SoilTab';
 import { AccumChart, gddBase, gddNote, gddSeries } from './StatusCharts';
 import './strings';
@@ -139,6 +138,7 @@ function DataTab() {
   if (focus) return <CardDetail branch={focus} onBack={() => select(null)} />;
   return (
     <div className="flex flex-col gap-6">
+      <OverviewData />
       <MetricGrid />
       <HeatChart />
       <Fold title={t('field.data.within')} note={t('field.data.withinNote')}>
@@ -178,18 +178,14 @@ export function FieldPanel() {
           { value: 'overview', label: t('field.tab.overview') },
           // Four tabs must fit a phone's width without scrolling the bar: the long name shortens, the fixed count goes.
           { value: 'soil', label: t(narrow ? 'field.tab.soilShort' : 'field.tab.soil'), badge: entered > 0 ? badge(entered, t('field.tab.soilCount')) : undefined },
-          { value: 'rotation', label: t('field.tab.rotation') },
           { value: 'data', label: t('field.tab.data'), badge: narrow ? undefined : badge(BRANCHES.length, t('field.tab.dataCount')) },
         ]}
       >
-        <TabPanel value="overview" className="pt-6">
+        <TabPanel value="overview" className="pt-4">
           <OverviewTab />
         </TabPanel>
         <TabPanel value="soil" className="pt-6">
           <SoilTab />
-        </TabPanel>
-        <TabPanel value="rotation" className="pt-6">
-          <RotationTab />
         </TabPanel>
         <TabPanel value="data" className="pt-6">
           <DataTab />

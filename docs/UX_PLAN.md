@@ -200,6 +200,21 @@ Thửa Iowa: 2.240 px. Thửa Nevada (bảy mục lời khuyên): 2.412 px, tứ
 | Hai thứ tiếng | không còn chuỗi tiếng Anh nào ở chế độ tiếng Việt |
 | Tương phản | chữ trắng trên nền xanh lá hiện 2,87:1; nâng lên mức đạt chuẩn hoặc đổi sang xanh đậm |
 
+### U11. Nông trại sống thay thẻ Tổng quan và thẻ Luân canh (bản đầu đã xong, 15/11)
+
+Issue B21 (#101), tài liệu `docs/FARM.md`.
+
+- Thẻ đầu của bảng ruộng là một cảnh nông trại vẽ bằng SVG từ số liệu của ngày đang xem: trời (quang, nhiều mây, mưa, mưa lớn, nắng nóng, sương giá), cây trên luống theo giai đoạn và độ xanh, đất theo độ ẩm tầng rễ, xe thu hoạch và xe gieo theo lịch vụ.
+- Ba mascot (Vũ trụ, Đất, Lúa) đứng ở trời, mép đất và giữa luống; mỗi con nói một câu dựng từ số liệu, có tên nguồn; luân phiên 8 giây một lượt cho tới khi người dùng chọn.
+- Đất và Lúa đề xuất các bản thử lấy từ `whatIf` và `rankCrops`: chỉnh pH, tưới, thoát nước, dời ngày gieo, đổi cây. Bản thử chạy lại điểm của cả năm trên bản sao của dữ liệu; số người dùng nhập không đổi.
+- Dưới cảnh: thanh kéo ngày (chung con trỏ với thanh dưới bản đồ), bốn số của ngày, dải thời tiết hôm nay và dự báo, cảnh báo.
+- Thẻ Luân canh bỏ khỏi thanh thẻ; phần so sánh phương án nằm ở mục "Nên trồng gì" của thẻ Nông trại. Câu tóm tắt, ảnh vệ tinh theo ngày và hai biểu đồ chuyển sang thẻ Dữ liệu.
+- Hình mascot là hình giữ chỗ cho tới khi có hình của người phụ trách mascot (U2, U3).
+
+Đã kiểm trên trình duyệt (15/11): bốn thửa mẫu, kéo qua cả năm ở Cần Thơ (mưa, nắng nóng, đất khô, ba vụ lúa), xe thu hoạch ở Iowa đầu tháng 9, bản thử đổi cây ở Nevada (53 lên 66), bấm một ngày dự báo, màn hình 375 px không tràn ngang.
+
+Còn lại: xe đi vào theo quãng đường dài hơn khi bấm phát; lời mascot cho các việc của `SoilPlan` khi #96 vào `main`; kịch bản tương tác của U4 (#40).
+
 ## 4. Thứ tự
 
 | Đợt | Hạng mục | Phụ thuộc |

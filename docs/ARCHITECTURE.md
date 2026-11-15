@@ -160,7 +160,7 @@ urban  (side mission, reachable from any state)
 
 - **Globe** reads `phase`, `parcel`, `draft`, `drawMode`, `layers`, `timeline.cursor`, `telemetry`, `focusBranch`; writes `anchor`, `draft`, and calls `lockParcel`.
 - **HUD and panels** read `telemetry`, `branchStatus`, `score`, `insights`, `advisory`, `anchor`, `timeline`; call the actions.
-- **Model tiers** are invoked only by the store (`recompute`).
+- **Model tiers** are invoked only by the store (`recompute`). One exception, read-only: the living farm (`src/ui/farm`, docs/FARM.md) runs `src/core/farm` on a copy of the model input to draw a trial; it writes nothing to the store.
 
 Sequence after a parcel is locked:
 

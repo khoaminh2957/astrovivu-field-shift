@@ -179,6 +179,11 @@ export interface WhatIfResult {
   before: number;
   after: number;
   delta: number;
+  /**
+   * What the move changes in the model input, so that a view can run the same move as a trial:
+   * another crop, and the ground-truth keys that differ (a key set to undefined is cleared).
+   */
+  apply?: { cropId?: string | null; groundTruth?: Partial<GroundTruth> };
 }
 
 // ---------------------------------------------------------------------------------------------

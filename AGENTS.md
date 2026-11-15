@@ -31,6 +31,7 @@ Edit only the paths you own. If you need something outside them, describe the ch
 | Design Director | `src/ui/design/**`, `src/styles/**`, `public/fonts/**`, `docs/DESIGN.md` |
 | 4a Mission UI | `src/App.tsx`, `src/ui/chrome/**`, `src/ui/hero/**`, `src/ui/dock/**`, `src/ui/hud/**`, `src/ui/timeline/**`, `src/ui/override/**` |
 | 4b Advisory, urban, assistant UI | `src/ui/advisory/**`, `src/ui/urban/**`, `src/ui/ask/**` |
+| 4c Living farm | `src/core/farm/**`, `src/ui/farm/**`, `docs/FARM.md` |
 | 5 Docs & QA | `README.md`, `docs/DEMO_SCRIPT.md`, `docs/JUDGING.md` |
 | 6 Crop-knowledge RAG | `src/rag/**`, `server/**`, `scripts/rag/**`, `public/rag/**`, `data/rag/**`, `docs/RAG.md` |
 | 7 Market data & database | `supabase/**`, `scripts/market/**`, `data/market/**`, `docs/DATABASE.md` |

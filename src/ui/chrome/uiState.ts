@@ -8,7 +8,8 @@ import { create } from 'zustand';
 import type { Parcel } from '@/contracts';
 
 export type MapPopover = 'layers' | 'measure' | null;
-export type FieldTab = 'overview' | 'soil' | 'rotation' | 'data';
+/** `overview` is the living farm, which also holds what the rotation tab showed. */
+export type FieldTab = 'overview' | 'soil' | 'data';
 
 export interface MissionUiState {
   /** Soil-and-practice section expanded (the older single-column summary). */
