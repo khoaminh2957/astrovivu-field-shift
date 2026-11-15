@@ -1,15 +1,14 @@
 /**
- * Action advisories: irrigation schedule, pH plan, sowing window and the rest. Every card shows
+ * Action advisories: irrigation schedule, pH plan, sowing window and the rest. Every one shows
  * the same anatomy: what to do and when, the impact, the evidence, confidence and caveats.
  */
-import type { ReactNode } from 'react';
 import type { Advisory, CropSuiteSummary, IrrigationPlan, ISODate, Lang, PhPlan, SowingWindow } from '@/contracts';
 import { pick } from '@/contracts';
 import { useLang, useT } from '@/i18n';
 import { addDays, diffDays } from '@/lib/time';
-import { ConfidenceBadge, Panel, Stat, cn, confidenceLevel } from '@/ui/design';
+import { ConfidenceBadge, Stat, cn, confidenceLevel } from '@/ui/design';
 import { type CurrencyCode, clamp, fmtDate, fmtDayMonth, fmtNum, fmtSigned, monthLong, monthShort, money } from './format';
-import { EvidenceList, LocalReviewTag, TextList, factorName } from './shared';
+import { EvidenceList, TextList, factorName } from './shared';
 
 // ---------------------------------------------------------------------------------------------
 // Shared advisory anatomy
@@ -57,41 +56,6 @@ export function AdvisoryBody({ adv, currency, hideSummary, showTitle }: { adv: A
         </div>
       </div>
     </div>
-  );
-}
-
-/** A plate for one advisory. Advisories that need local review tint their whole border. */
-export function AdvisoryPlate({ adv, title, meta, children, className }: { adv?: Advisory; title: ReactNode; meta?: ReactNode; children: ReactNode; className?: string }) {
-  const t = useT();
-  return (
-    <Panel
-      as="article"
-      title={title}
-      meta={meta}
-      actions={
-        adv && (
-          <>
-            {adv.needsLocalReview && <LocalReviewTag />}
-            <span className="t-meta" title={t('advisory.priorityHint')}>
-              P{adv.priority}
-            </span>
-          </>
-        )
-      }
-      className={cn(adv?.needsLocalReview && 'border-watch/45!', className)}
-    >
-      {children}
-    </Panel>
-  );
-}
-
-export function AdvisoryCard({ adv, currency }: { adv: Advisory; currency: CurrencyCode }) {
-  const t = useT();
-  const lang = useLang();
-  return (
-    <AdvisoryPlate adv={adv} title={pick(adv.title, lang)} meta={t(`advisory.kindAdv.${adv.kind}`)}>
-      <AdvisoryBody adv={adv} currency={currency} />
-    </AdvisoryPlate>
   );
 }
 

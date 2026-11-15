@@ -151,6 +151,30 @@ Trên bàn rê Windows vẫn còn hai cách: giữ Alt rồi vuốt hai ngón, v
 
 **Xong khi.** Trang không quá ba màn hình ở 1440 × 900; đổi phương án không cần cuộn lên đầu.
 
+**Đã làm (15/11).**
+
+- Dải phương án dính ở đầu trang (`src/ui/advisory/StrategyCards.tsx`). Mỗi ô ngắn lại: loại phương án, tên, dải màu các vụ, cây trồng, điểm và chênh lệch so với hiện tại. Danh sách "ba khác biệt lớn nhất" trên từng ô đã bỏ, vì biểu đồ được mất nói điều đó đầy đủ hơn.
+- Hai cột trên màn hình rộng: trái là lịch mùa vụ và biểu đồ được mất; phải là lý do, bằng chứng, lợi ích, thiếu sót, rủi ro.
+- Kế hoạch năm, lịch tưới, thời vụ gieo, kế hoạch pH và các lời khuyên khác mỗi mục thu lại một dòng: tên, một câu tóm tắt của chính phần khuyến nghị, nhãn "cần kiểm tra tại chỗ" và mức ưu tiên vẫn hiện khi đóng. Bấm để mở.
+- Dòng "công cụ hỗ trợ, không thay chuyên gia địa phương" trước đây in hai lần, giờ còn một lần ở cuối trang.
+
+Đo ở 1440 × 900, tiếng Việt, thửa mẫu Cần Thơ:
+
+| | Trước | Sau |
+|---|---|---|
+| Chiều cao trang | 6.423 px (7,1 màn hình) | 2.168 px (2,4 màn hình) |
+| Phần lời khuyên hành động | 3.080 px | 418 px khi đóng |
+| Dải phương án | 393 px, trôi theo trang | 170 px, dính ở đầu |
+
+Thửa Iowa: 2.240 px. Thửa Nevada (bảy mục lời khuyên): 2.412 px, tức 2,7 màn hình. Khi mở hết mọi mục, trang Cần Thơ dài 5.982 px. Đã thử: cuộn xuống 900 px rồi bấm một phương án khác, dải vẫn ở đầu và nội dung đổi tại chỗ.
+
+Ở 426 × 690 trang một cột dài 4.293 px (7,4 màn hình hẹp); dải phương án cao 120 px, bằng một phần năm màn hình, và cuộn ngang được. Tiêu chí ba màn hình chỉ đạt trên màn hình rộng.
+
+**Hai lỗi nêu ở trên đã được sửa trong phần mô hình trước đợt này**, tôi chỉ kiểm lại:
+
+- Giá trị trong ô bằng chứng: `EvidenceItem.value` giờ nhận cả hai thứ tiếng, và trên thửa Cần Thơ, Nevada các ô đã hiện tiếng Việt. Còn tiếng Anh ở tên bộ dữ liệu (ví dụ "SSURGO soil survey (dominant component of the map unit)"), là tên riêng của nguồn.
+- Chồng vụ ở Nevada: `src/core/advisory/customRotation.test.ts` có test "non-overlapping full-area rotation seasons across all real samples" và nó qua; ba phương án của Nevada hiện ra trên trình duyệt đều chỉ có một vụ trong mỗi năm.
+
 ### U9. Ghi chép của ruộng
 
 **Vấn đề.** Trang hiện tại (`src/ui/tracking`, 434 dòng) gồm nhật ký tự do và phần theo dõi dài hạn bằng dữ liệu mô phỏng. Nó không phục vụ việc so sánh phương án luân canh mà đề bài yêu cầu, và dữ liệu mô phỏng dễ gây hiểu nhầm.
@@ -177,7 +201,7 @@ Trên bàn rê Windows vẫn còn hai cách: giữ Alt rồi vuốt hai ngón, v
 | 1 (đang làm) | U1, U2, U3 | không |
 | 2 (xong 15/11) | U5, U6 | khối "Đất cần gì" chờ chẩn đoán đất của Duy |
 | 1 (đang làm, thêm vào) | U4, U7 | đã chốt |
-| 4 | U8, U9 | Bảo chốt câu hỏi ở U9 |
+| 4 (U8 xong 15/11) | U8, U9 | U9 chờ Bảo chốt |
 | 5 | U10 và dùng thử | mascot của Uyên |
 
 ## 5. Cách kiểm

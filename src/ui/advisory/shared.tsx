@@ -1,6 +1,6 @@
 /** Small building blocks shared by the advisory, tracking and urban screens. */
-import type { ReactNode } from 'react';
-import { Info } from 'lucide-react';
+import { type ReactNode, useId, useState } from 'react';
+import { ChevronDown, Info } from 'lucide-react';
 import type { BranchId, EvidenceItem, I18nText } from '@/contracts';
 import { pick } from '@/contracts';
 import { SOURCES } from '@/data';
@@ -135,4 +135,33 @@ export function factorName(t: (k: string) => string, key: string): string {
   const k = `advisory.factor.${key}`;
   const s = t(k);
   return s === k ? key : s;
+}
+
+/**
+ * A part of the page that is one line until asked for: its name, one sentence that says what is
+ * inside, and marks that must stay visible while it is closed (local review, priority). The body is
+ * mounted only when open.
+ */
+export function Fold({ title, sub, marks, tone, defaultOpen, children }: { title: ReactNode; sub?: ReactNode; marks?: ReactNode; tone?: 'watch'; defaultOpen?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  const id = useId();
+  return (
+    <section aria-labelledby={`${id}-t`} className={cn('min-w-0 rounded-sm border bg-surface-0', tone === 'watch' ? 'border-watch/45' : 'border-line-1')}>
+      <button type="button" aria-expanded={open} aria-controls={`${id}-b`} onClick={() => setOpen(!open)} className="flex w-full items-start gap-3 rounded-sm px-4 py-3 text-left hover:bg-surface-2 narrow:px-3">
+        <span className="min-w-0 flex-1">
+          <span id={`${id}-t`} role="heading" aria-level={3} className="t-heading block">
+            {title}
+          </span>
+          {sub != null && <span className={cn('t-caption mt-0.5 block', !open && 'line-clamp-2')}>{sub}</span>}
+        </span>
+        {marks != null && <span className="flex shrink-0 items-center gap-2">{marks}</span>}
+        <ChevronDown size={18} strokeWidth={1.5} aria-hidden className={cn('mt-0.5 shrink-0 text-ink-3 transition-transform duration-(--dur-fast)', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div id={`${id}-b`} className="border-t border-line-1 p-4 narrow:p-2.5">
+          {children}
+        </div>
+      )}
+    </section>
+  );
 }
