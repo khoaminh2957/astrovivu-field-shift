@@ -43,11 +43,13 @@ interface NumberOverrideProps {
   /** Line under the control; defaults to nothing. */
   hint?: ReactNode;
   disabled?: boolean;
+  /** Written together with the number, for a value that means nothing without it (the currency of a price). Not written when the number is cleared. */
+  also?: Partial<GroundTruth>;
   className?: string;
 }
 
 /** A number the grower measured or knows. Committed on Enter or blur, validated, clearable. */
-export function NumberOverride({ label, field, unit, min, max, step, estimate, digits = 1, hint, disabled, className }: NumberOverrideProps) {
+export function NumberOverride({ label, field, unit, min, max, step, estimate, digits = 1, hint, disabled, also, className }: NumberOverrideProps) {
   const t = useT();
   const value = useMission((s) => s.groundTruth[field]);
   const setGroundTruth = useMission((s) => s.setGroundTruth);
@@ -56,7 +58,7 @@ export function NumberOverride({ label, field, unit, min, max, step, estimate, d
   const shown = text ?? (value != null ? String(value) : '');
   const parsed = parse(shown);
   const invalid = parsed != null && (!Number.isFinite(parsed) || parsed < min || parsed > max);
-  const patch = (v: number | undefined) => setGroundTruth({ [field]: v } as Partial<GroundTruth>);
+  const patch = (v: number | undefined) => setGroundTruth({ ...(v == null ? null : also), [field]: v } as Partial<GroundTruth>);
 
   const commit = () => {
     if (text == null) return;
