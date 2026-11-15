@@ -9,7 +9,7 @@
  *                 "Hide legend / Show legend" text button.
  */
 import { type ReactNode, useEffect, useState } from 'react';
-import { Box, ChevronDown, Compass, Expand, Focus, Gauge, Layers, LoaderCircle, LocateFixed, Minimize, Minus, Plus, Ruler, SlidersHorizontal, SquareDashed, X } from 'lucide-react';
+import { Box, Compass, Expand, Focus, Gauge, Layers, LoaderCircle, LocateFixed, Minimize, Minus, Plus, Ruler, SlidersHorizontal, SquareDashed, X } from 'lucide-react';
 import { BRANCHES, type BranchId, pick } from '@/contracts';
 import {
   fitParcel,
@@ -30,7 +30,7 @@ import { useLang, useT } from '@/i18n';
 import { displayRange } from '@/lib/raster';
 import { BRANCH_TITLES } from '@/lib/series';
 import { useMission } from '@/state/mission';
-import { Button, Tooltip, cn } from '@/ui/design';
+import { Button, Select, Tooltip, cn } from '@/ui/design';
 import { useSelectBranch } from '@/ui/field/MetricCards';
 import { fmtDate, fmtNum } from '@/ui/hud/format';
 import { LayersPanel } from './LayersPanel';
@@ -204,7 +204,7 @@ export function MapToolbar({ className, workspace = false }: { className?: strin
 }
 
 /** Top-left of the map: the metric the field is coloured by (a selector) over the date of the frame shown. */
-export function MapLayerPill({ className, workspace = false }: { className?: string; workspace?: boolean }) {
+export function MapLayerPill({ className, workspace: _workspace = false }: { className?: string; workspace?: boolean }) {
   const t = useT();
   const lang = useLang();
   const paint = useParcelPaint();
@@ -215,21 +215,16 @@ export function MapLayerPill({ className, workspace = false }: { className?: str
   const title = (b: BranchId) => pick(titles?.[b]?.title ?? BRANCH_TITLES[b], lang);
   const what = paint ? (paint.label ? pick(paint.label, lang).split(',')[0] : paint.unit || paint.key) : null;
   return (
-    <label className={cn('flex h-[41px] max-w-full min-w-0 items-center gap-2 rounded-[20px] py-1 pr-4 pl-3', DARK, workspace && 'workspace-layer-control', className)}>
-      <Layers size={20} strokeWidth={1.5} aria-hidden className="shrink-0" />
-      <span className="flex min-w-0 flex-col">
-        <span className="sr-only">{t('map.painted')}</span>
-        <select value={branch} onChange={(e) => select(e.target.value as BranchId)} className="max-w-44 min-w-0 cursor-pointer appearance-none truncate bg-transparent text-xs leading-4 font-medium text-white outline-offset-4">
-          {BRANCHES.map((b) => (
-            <option key={b} value={b} className="text-ink-1">
-              {title(b)}
-            </option>
-          ))}
-        </select>
-        <span className="truncate text-xs leading-4 text-ink-4">{[what, paint?.date ? fmtDate(paint.date, lang) : null].filter(Boolean).join(' · ') || '--'}</span>
-      </span>
-      {workspace && <ChevronDown size={16} className="ml-auto shrink-0" aria-hidden />}
-    </label>
+    <Select<BranchId>
+      ariaLabel={t('map.painted')}
+      value={branch}
+      onValueChange={select}
+      options={BRANCHES.map((b) => ({ value: b, label: title(b) }))}
+      triggerIcon={<Layers size={20} strokeWidth={1.5} aria-hidden className="shrink-0" />}
+      caption={[what, paint?.date ? fmtDate(paint.date, lang) : null].filter(Boolean).join(' · ') || '--'}
+      className={cn('workspace-theme workspace-layer-control', className)}
+      contentClassName="workspace-theme workspace-layer-menu"
+    />
   );
 }
 

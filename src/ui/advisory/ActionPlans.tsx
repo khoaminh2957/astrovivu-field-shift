@@ -2,6 +2,7 @@
  * Action advisories: irrigation schedule, pH plan, sowing window and the rest. Every one shows
  * the same anatomy: what to do and when, the impact, the evidence, confidence and caveats.
  */
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import type { Advisory, CropSuiteSummary, IrrigationPlan, ISODate, Lang, PhPlan, SowingWindow } from '@/contracts';
 import { pick } from '@/contracts';
 import { useLang, useT } from '@/i18n';
@@ -77,12 +78,12 @@ export function IrrigationView({ plan, today }: { plan: IrrigationPlan; today: I
       {events.length > 0 && (
         <ul className="flex list-none flex-col p-0">
           {events.map((e) => (
-            <li key={e.t} className="grid grid-cols-[5.5rem_3.5rem_1fr] items-baseline gap-x-3 border-b border-line-1 py-1 text-sm last:border-b-0">
+            <li key={e.t} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-line-1 py-1 text-sm last:border-b-0 sm:grid-cols-[6rem_4rem_minmax(0,1fr)]">
               <span className="t-value text-xs text-ink-1">{fmtDate(e.t, lang)}</span>
               <span className="t-value text-right text-xs text-ink-1">
                 {fmtNum(e.mm, lang)} <span className="t-unit">mm</span>
               </span>
-              <span className="truncate text-ink-2" title={pick(e.reason, lang)}>
+              <span className="col-span-2 text-ink-2 sm:col-span-1">
                 {pick(e.reason, lang)}
               </span>
             </li>
@@ -96,39 +97,61 @@ export function IrrigationView({ plan, today }: { plan: IrrigationPlan; today: I
   );
 }
 
+/** Width of an element in CSS pixels, so a chart can be drawn at its real size and its text never scales. */
+function useWidth<T extends HTMLElement>(fallback: number): [RefObject<T | null>, number] {
+  const ref = useRef<T | null>(null);
+  const [w, setW] = useState(fallback);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([e]) => setW(Math.round(e.contentRect.width) || fallback));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fallback]);
+  return [ref, w];
+}
+
 function IrrigationStrip({ events, today, lang }: { events: IrrigationPlan['events']; today: ISODate; lang: Lang }) {
   const t = useT();
+  const [box, measured] = useWidth<HTMLDivElement>(320);
   const first = events[0].t < today ? events[0].t : today;
   const start = `${first.slice(0, 8)}01`;
   const lastEv = events.at(-1)!.t;
   const end = addDays(lastEv, 20);
-  const days = Math.max(30, diffDays(start, end));
-  const W = 600;
-  const H = 64;
-  const base = 46;
+  const days = Math.max(30, diffDays(end, start));
+  // Drawn at the width it is shown, capped like the text column: 11 px labels stay 11 px.
+  const W = Math.max(220, Math.min(measured, 576));
+  const H = 84;
+  const pad = 16;
+  const base = 63;
   const maxMm = Math.max(10, ...events.map((e) => e.mm));
-  const x = (d: ISODate) => (clamp(diffDays(start, d), 0, days) / days) * W;
-  const ticks: ISODate[] = [];
+  const x = (d: ISODate) => pad + (clamp(diffDays(d, start), 0, days) / days) * (W - 2 * pad);
+  const ticks: { date: ISODate; position: number; showLabel: boolean }[] = [];
+  let previousLabel = -Infinity;
   for (let d = start; d <= end; ) {
-    ticks.push(d);
+    const position = x(d);
+    const showLabel = position - previousLabel >= 37;
+    ticks.push({ date: d, position, showLabel });
+    if (showLabel) previousLabel = position;
     const [y, m] = d.split('-').map(Number);
     d = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
   }
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('advisory.irr.stripSummary', { n: events.length, from: fmtDate(events[0].t, lang), to: fmtDate(lastEv, lang) })}>
+    <div ref={box} className="w-full max-w-[36rem]">
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block max-w-full" role="img" aria-label={t('advisory.irr.stripSummary', { n: events.length, from: fmtDate(events[0].t, lang), to: fmtDate(lastEv, lang) })}>
       <rect x={0} y={base} width={W} height={1} fill="var(--color-line-2)" />
-      {ticks.map((d) => (
-        <g key={d}>
-          <rect x={x(d)} y={8} width={1} height={base - 8} fill="var(--color-line-1)" />
-          <text x={x(d) + 3} y={H - 4} fill="var(--color-ink-4)" fontSize={10} fontFamily="var(--font-sans)">
-            {monthShort(Number(d.slice(5, 7)), lang)}
-          </text>
+      {ticks.map(({ date, position, showLabel }) => (
+        <g key={date}>
+          <rect x={position} y={19} width={1} height={base - 19} fill="var(--color-line-1)" />
+          {showLabel && <text x={position} y={H - 5} textAnchor="middle" fill="var(--color-ink-3)" fontSize={11}>
+            {monthShort(Number(date.slice(5, 7)), lang)}
+          </text>}
         </g>
       ))}
       {today >= start && today <= end && (
         <g>
-          <rect x={x(today)} y={2} width={1.5} height={base - 2} fill="var(--color-signal)" />
-          <text x={x(today) + 4} y={10} fill="var(--color-ink-2)" fontSize={10}>
+          <rect x={x(today)} y={16} width={1.5} height={base - 16} fill="var(--color-signal)" />
+          <text x={x(today)} y={12} textAnchor={x(today) > W / 2 ? 'end' : 'start'} fill="var(--color-ink-2)" fontSize={11}>
             {t('advisory.today')}
           </text>
         </g>
@@ -139,13 +162,11 @@ function IrrigationStrip({ events, today, lang }: { events: IrrigationPlan['even
           <g key={e.t}>
             <title>{`${fmtDayMonth(e.t, lang)} · ${fmtNum(e.mm, lang)} mm · ${pick(e.reason, lang)}`}</title>
             <rect x={x(e.t) - 3} y={base - h} width={6} height={h} fill="var(--color-ink-1)" />
-            <text x={x(e.t)} y={base - h - 3} textAnchor="middle" fill="var(--color-ink-2)" fontSize={9.5} fontFamily="var(--font-sans)">
-              {Math.round(e.mm)}
-            </text>
           </g>
         );
       })}
     </svg>
+    </div>
   );
 }
 

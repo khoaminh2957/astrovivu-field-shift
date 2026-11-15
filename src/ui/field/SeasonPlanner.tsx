@@ -217,10 +217,10 @@ export function SeasonPlanner() {
   return (
     <section className="flex flex-col gap-3" aria-labelledby="season-title">
       <div>
-        <h3 id="season-title" className="t-heading">
+        <h3 id="season-title" className="workspace-section-title">
           {t('season.title')}
         </h3>
-        <p className="t-caption">{t('season.lede')}</p>
+        <p className="workspace-copy">{t('season.lede')}</p>
       </div>
 
       {rows.length === 0 && <p className="t-caption text-ink-2">{t('season.empty')}</p>}

@@ -108,7 +108,7 @@ export function UrbanCompanion({ active = true }: { active?: boolean }) {
             </h1>
             {fixture && <FixtureTag />}
           </div>
-          <p className="t-reading max-w-[68ch] text-ink-2">{t('urban.lead')}</p>
+          <p className="workspace-copy max-w-[68ch]">{t('urban.lead')}</p>
         </header>
 
         <div className="grid items-start gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -147,7 +147,7 @@ export function UrbanCompanion({ active = true }: { active?: boolean }) {
               </div>
             </Panel>
             <Panel title={t('urban.climate')} meta={climateSources(climate)} className="workspace-urban-card">
-              {loc ? <ClimateStrip climate={climate} state={climateState} month={month} /> : <p className="text-sm text-ink-2">{t('urban.climateNeedsPlace')}</p>}
+              {loc ? <ClimateStrip climate={climate} state={climateState} month={month} /> : <p className="workspace-copy">{t('urban.climateNeedsPlace')}</p>}
             </Panel>
           </div>
 
@@ -155,14 +155,14 @@ export function UrbanCompanion({ active = true }: { active?: boolean }) {
             <h2 id="urb-picks" className="workspace-section-title flex flex-wrap items-baseline gap-x-2">
               {t('urban.picks')}
               {recs.length > 0 && <span className="t-meta">{recs.length}</span>}
-              {recs.length > 0 && loc && !fixture && <span className="text-sm font-normal text-ink-3">{t('urban.picksFor', { place: loc.label })}</span>}
+              {recs.length > 0 && loc && !fixture && <span className="workspace-caption font-normal">{t('urban.picksFor', { place: loc.label })}</span>}
             </h2>
             {aheadMonth != null && (
               <p role="status" className="flex items-start gap-2.5 rounded-sm border border-line-2 bg-surface-2 p-3">
                 <CalendarClock aria-hidden size={20} strokeWidth={1.5} className="mt-0.5 shrink-0 text-ink-2" />
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="t-heading">{t('urban.aheadTitle', { now: monthName(month) })}</span>
-                  <span className="text-sm text-ink-2">{t('urban.aheadBody', { month: monthName(aheadMonth) })}</span>
+                  <span className="workspace-card-title">{t('urban.aheadTitle', { now: monthName(month) })}</span>
+                  <span className="workspace-copy">{t('urban.aheadBody', { month: monthName(aheadMonth) })}</span>
                 </span>
               </p>
             )}

@@ -11,7 +11,7 @@
  * The shell reports the space its panels cover (`setInsets`) so the globe frames the parcel, or a
  * place the camera flies to, in what is left.
  */
-import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, Building2, FileText, Map as MapIcon, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { BRANCHES } from '@/contracts';
@@ -64,6 +64,7 @@ export function useNav() {
           : id === 'dossier'
             ? phase === 'advisory' && view === 'dossier'
             : phase === id;
+  const selected = askOpen ? NAV.find((item) => item.id === 'ask') : NAV.find((item) => active(item.id));
   const disabled = (id: NavId): boolean => (id === 'advisory' || id === 'dossier') && !hasParcel;
   const go = (id: NavId) => {
     if (disabled(id)) return;
@@ -77,7 +78,40 @@ export function useNav() {
     if (id === 'advisory' && view === 'dossier') setView('farm');
     setPhase(id);
   };
-  return { active, disabled, go };
+  return { active, selected, disabled, go };
+}
+
+function useNavHighlight(selected: NavId | undefined) {
+  const ref = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const nav = ref.current;
+    const button = nav?.querySelector<HTMLButtonElement>('[data-nav-selected]');
+    const highlight = nav?.querySelector('.workspace-nav-highlight');
+    if (!nav || !button || !highlight) return;
+
+    const measure = () => {
+      const surface = nav.getBoundingClientRect();
+      const target = button.getBoundingClientRect();
+      const width = button.offsetWidth;
+      const height = button.offsetHeight;
+      nav.style.setProperty('--workspace-nav-x', `${target.left + (target.width - width) / 2 - surface.left}px`);
+      nav.style.setProperty('--workspace-nav-y', `${target.top + (target.height - height) / 2 - surface.top}px`);
+      nav.style.setProperty('--workspace-nav-width', `${width}px`);
+      nav.style.setProperty('--workspace-nav-height', `${height}px`);
+    };
+    measure();
+    if (!nav.hasAttribute('data-nav-ready')) {
+      // Commit the initial position before enabling transitions between destinations.
+      highlight.getBoundingClientRect();
+      nav.setAttribute('data-nav-ready', '');
+    }
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    nav.querySelectorAll('[data-nav-item]').forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, [selected]);
+  return ref;
 }
 
 const LANGS: { id: Lang; name: string }[] = [
@@ -157,9 +191,11 @@ function Mark() {
 /** Keep the same destinations and labels available on desktop and mobile. */
 function Rail() {
   const t = useT();
-  const { active, disabled, go } = useNav();
+  const { active, selected, disabled, go } = useNav();
+  const navRef = useNavHighlight(selected?.id);
   return (
-    <nav aria-label={t('chrome.nav.label')} className="workspace-rail absolute inset-y-0 left-0 z-(--z-chrome) flex flex-col items-center">
+    <nav ref={navRef} aria-label={t('chrome.nav.label')} className="workspace-rail absolute inset-y-0 left-0 z-(--z-chrome) flex flex-col items-center">
+      {selected && <span className="workspace-nav-highlight" aria-hidden="true" />}
       <Mark />
       <div className="workspace-nav-items">
         {NAV.map((n) => (
@@ -172,6 +208,8 @@ function Rail() {
                 aria-pressed={n.id === 'ask' ? active(n.id) : undefined}
                 aria-disabled={disabled(n.id) || undefined}
                 aria-label={n.step ? t('chrome.nav.stepLabel', { n: n.step, name: t(`chrome.${n.key}`) }) : t(`chrome.${n.key}`)}
+                data-nav-item
+                data-nav-selected={selected?.id === n.id || undefined}
                 onClick={() => go(n.id)}
                 className={cn('workspace-nav-item relative', disabled(n.id) && 'cursor-not-allowed opacity-35')}
               >
@@ -180,7 +218,7 @@ function Rail() {
                     {n.step}
                   </span>
                 )}
-                {n.icon}
+                <span className="workspace-nav-icon" aria-hidden="true">{n.icon}</span>
                 {t(`chrome.${n.key}`)}
               </button>
             </Tooltip>
@@ -196,9 +234,11 @@ function Rail() {
 
 function TabBar() {
   const t = useT();
-  const { active, disabled, go } = useNav();
+  const { active, selected, disabled, go } = useNav();
+  const navRef = useNavHighlight(selected?.id);
   return (
-    <nav aria-label={t('chrome.nav.label')} className="workspace-tab-bar workspace-theme absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-5 border-t border-line-1 safe-bottom">
+    <nav ref={navRef} aria-label={t('chrome.nav.label')} className="workspace-tab-bar workspace-theme absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-5 safe-bottom">
+      {selected && <span className="workspace-nav-highlight" aria-hidden="true" />}
       {NAV.map((n) => (
         <button
           key={n.id}
@@ -206,6 +246,8 @@ function TabBar() {
           aria-current={n.id !== 'ask' && active(n.id) ? 'page' : undefined}
           aria-pressed={n.id === 'ask' ? active(n.id) : undefined}
           aria-disabled={disabled(n.id) || undefined}
+          data-nav-item
+          data-nav-selected={selected?.id === n.id || undefined}
           onClick={() => go(n.id)}
           className={cn(
             'flex min-w-0 flex-col items-center justify-center gap-0.5 text-xs [&_svg]:size-5 [&_svg]:stroke-[1.5]',
@@ -213,7 +255,7 @@ function TabBar() {
             disabled(n.id) && 'opacity-40',
           )}
         >
-          <span className="relative flex h-6 w-8 items-center justify-center">
+          <span className="workspace-nav-icon relative flex h-6 w-8 items-center justify-center" aria-hidden="true">
             {n.icon}
             {n.step && (
               <span aria-hidden className="workspace-nav-step">
@@ -305,10 +347,9 @@ function WideField() {
 function ExploreMap({ narrow }: { narrow: boolean }) {
   const t = useT();
   const { go } = useNav();
-  const flying = useGlobeStatus((s) => s.flying);
   return (
     <>
-      <div data-flying={flying || undefined} className="workspace-theme workspace-explore-nav workspace-explore-chrome absolute top-2 left-2 z-(--z-chrome) flex items-center gap-2.5 px-1.5 py-1">
+      <div className="workspace-theme workspace-explore-nav workspace-explore-chrome absolute top-2 left-2 z-(--z-chrome) flex items-center gap-2.5 px-1.5 py-1">
         <Mark />
         <button type="button" className="workspace-nav-item" onClick={() => go('urban')}>
           <Building2 aria-hidden />{t('chrome.nav.urban')}

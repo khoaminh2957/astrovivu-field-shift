@@ -31,9 +31,10 @@ export function Panel({ title, meta, actions, footer, tone = 'plate', pad = 'md'
     <Tag ref={ref as Ref<HTMLDivElement>} className={cn('flex min-w-0 flex-col text-ink-1', tones[tone], className)} {...rest}>
       {hasHead && (
         <header className="flex min-h-10 shrink-0 items-center gap-3 border-b border-line-1 px-(--panel-pad) py-1.5">
-          <div className="flex min-w-0 flex-1 items-baseline gap-2">
-            {title != null && <h2 className="t-heading truncate">{title}</h2>}
-            {meta != null && <span className="t-meta shrink-0">{meta}</span>}
+          {/* The meta line drops under the title when both do not fit, so neither is squeezed or overlaps. */}
+          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            {title != null && <h2 className="t-heading max-w-full truncate">{title}</h2>}
+            {meta != null && <span className="t-meta min-w-0">{meta}</span>}
           </div>
           {actions != null && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
         </header>

@@ -47,6 +47,7 @@ export function Button({ variant = 'secondary', size = 'md', icon, iconRight, lo
       ref={ref}
       type={type}
       disabled={disabled || loading}
+      data-variant={variant}
       aria-busy={loading || undefined}
       className={cn(base, variants[variant], sizes[size], glyph[size], block && 'w-full', className)}
       {...rest}
@@ -79,6 +80,7 @@ export function IconButton({ label, icon, variant = 'ghost', size = 'md', presse
         type={type}
         aria-label={label}
         aria-pressed={pressed}
+        data-variant={variant}
         aria-busy={loading || undefined}
         disabled={disabled || loading}
         className={cn(

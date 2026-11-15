@@ -120,10 +120,10 @@ export function SectionHead({ title, sub, actions, id }: { title: ReactNode; sub
   return (
     <div className="mb-3 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
       <div className="min-w-0">
-        <h2 id={id} className="t-title">
+        <h2 id={id} className="workspace-section-title">
           {title}
         </h2>
-        {sub != null && <p className="t-caption mt-0.5 max-w-[88ch]">{sub}</p>}
+        {sub != null && <p className="workspace-copy mt-1 max-w-[68ch]">{sub}</p>}
       </div>
       {actions != null && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>

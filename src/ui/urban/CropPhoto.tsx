@@ -1,7 +1,6 @@
 /**
- * A crop's photograph from FAO EcoCrop, loaded from FAO's server (never copied here), or a designed
- * tile when EcoCrop has no photograph or it fails to load. The manifest of which crops have one is
- * `public/data/crops/images.json`, written by `scripts/crops/crop-images.ts`.
+ * Crop photographs from Wikimedia Commons and FAO EcoCrop. The tile stays visible while the
+ * photograph loads and provides a fallback if it is unavailable.
  */
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Bean, Carrot, Cherry, Flower, Flower2, Leaf, LeafyGreen, Sprout, Wheat } from 'lucide-react';
@@ -10,6 +9,7 @@ import { getCrop } from '@/core/crops';
 import { cropImage, ecocropPhotoUrl, type CropImageManifest } from '@/core/urban';
 import { useT } from '@/i18n';
 import { cn } from '@/ui/design';
+import { LOCAL_CROP_PHOTOS } from './cropPhotoCredits';
 import './strings';
 
 let manifest: CropImageManifest | null = null;
@@ -43,8 +43,8 @@ export function useCropImages(): CropImageManifest | null {
 }
 
 /** True when EcoCrop lists a photograph for this crop. */
-export function hasCropPhoto(m: CropImageManifest | null, cropId: string): boolean {
-  return cropImage(m, getCrop(cropId)?.ecocropId) != null;
+export function hasEcoCropPhoto(m: CropImageManifest | null, cropId: string): boolean {
+  return !LOCAL_CROP_PHOTOS[cropId] && cropImage(m, getCrop(cropId)?.ecocropId) != null;
 }
 
 const DEFAULT_GROUP = { icon: <Sprout />, tone: 'bg-surface-2 text-ink-3' };
@@ -79,10 +79,13 @@ export function CropPhoto({ cropId, name, size = 'sm', className }: CropPhotoPro
   const images = useCropImages();
   const crop = getCrop(cropId);
   const entry = cropImage(images, crop?.ecocropId);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [cropId]);
+  const local = LOCAL_CROP_PHOTOS[cropId];
+  const src = local
+    ? `${import.meta.env.BASE_URL}urban-photos/${local.file}`
+    : entry && crop?.ecocropId != null ? ecocropPhotoUrl(crop.ecocropId) : null;
+  const [failedSrc, setFailedSrc] = useState<string>();
   // The large view follows the photograph's own shape when it is known, so a 92 px wide original is not stretched to 136.
-  const box = size === 'lg' && entry && entry !== true ? { w: Math.max(88, Math.min(BOX.lg.w, Math.round((entry.w * BOX.lg.h) / entry.h))), h: BOX.lg.h } : BOX[size];
+  const box = size === 'lg' && !local && entry && entry !== true ? { w: Math.max(88, Math.min(BOX.lg.w, Math.round((entry.w * BOX.lg.h) / entry.h))), h: BOX.lg.h } : BOX[size];
   const group = (crop && GROUP[crop.category]) || DEFAULT_GROUP;
   const initial = name.trim().charAt(0).toLocaleUpperCase();
   return (
@@ -92,16 +95,16 @@ export function CropPhoto({ cropId, name, size = 'sm', className }: CropPhotoPro
         {group.icon}
         <span className={cn('font-medium text-ink-1', size === 'lg' ? 'text-2xl' : 'text-md')}>{initial}</span>
       </span>
-      {entry && crop?.ecocropId != null && !failed && (
+      {src && src !== failedSrc && (
         <img
-          src={ecocropPhotoUrl(crop.ecocropId)}
-          alt={t('urban.photoAlt', { name })}
+          src={src}
+          alt={t(local ? 'urban.photoAltCommons' : 'urban.photoAlt', { name })}
           width={box.w}
           height={box.h}
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src)}
           className="absolute inset-0 size-full object-cover"
         />
       )}

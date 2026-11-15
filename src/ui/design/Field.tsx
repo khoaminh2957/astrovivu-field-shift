@@ -124,10 +124,13 @@ export interface SelectProps<V extends string = string> {
   invalid?: boolean;
   disabled?: boolean;
   className?: string;
+  triggerIcon?: ReactNode;
+  caption?: ReactNode;
+  contentClassName?: string;
 }
 
 /** Choice among more options than a Segmented control can show (crops, textures, drainage classes). */
-export function Select<V extends string = string>({ options, value, onValueChange, id, placeholder, ariaLabel, size = 'md', invalid, disabled, className }: SelectProps<V>) {
+export function Select<V extends string = string>({ options, value, onValueChange, id, placeholder, ariaLabel, size = 'md', invalid, disabled, className, triggerIcon, caption, contentClassName }: SelectProps<V>) {
   const t = useT();
   const fallbackId = useId();
   const cid = id ?? fallbackId;
@@ -146,15 +149,19 @@ export function Select<V extends string = string>({ options, value, onValueChang
           className,
         )}
       >
-        <span className="min-w-0 truncate">
-          <RSelect.Value placeholder={placeholder ?? t('design.common.select')} />
+        {triggerIcon}
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate">
+            <RSelect.Value placeholder={placeholder ?? t('design.common.select')} />
+          </span>
+          {caption != null && <span className="t-caption truncate">{caption}</span>}
         </span>
         <RSelect.Icon className="shrink-0 text-ink-3">
           <ChevronDown size={16} strokeWidth={1.5} aria-hidden />
         </RSelect.Icon>
       </RSelect.Trigger>
       <RSelect.Portal>
-        <RSelect.Content position="popper" sideOffset={4} collisionPadding={8} className="z-(--z-popover) max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) overflow-hidden rounded-sm border border-line-1 bg-surface-0 shadow-lg">
+        <RSelect.Content position="popper" align="start" sideOffset={4} collisionPadding={8} className={cn('z-(--z-popover) max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) overflow-hidden rounded-sm border border-line-1 bg-surface-0 shadow-lg', contentClassName)}>
           <RSelect.Viewport className="p-1">
             {options.map((o) => (
               <RSelect.Item
