@@ -41,6 +41,7 @@ export function AdvisoryPanel() {
   const branchStatus = useMission((s) => s.branchStatus);
   const cropId = useMission((s) => s.cropId);
   const groundTruth = useMission((s) => s.groundTruth);
+  const countryTable = useMission((s) => s.countryTable);
   const today = useMission((s) => s.telemetry?.window.today ?? s.timeline.end);
   const setPhase = useMission((s) => s.setPhase);
   const [currency, setCurrency] = useState<CurrencyCode>(groundTruth.currency ?? (lang === 'vi' ? 'VND' : 'USD'));
@@ -48,8 +49,8 @@ export function AdvisoryPanel() {
   const fixture = useFixture(import.meta.env.DEV ? () => import('./__fixtures__/advisory').then((m) => m.advisoryFixture) : null);
   const report: AdvisoryReport | null = fixture ? fixture(priorities) : live;
   const modelInput = useMemo(
-    () => (fixture ? null : toModelInput({ parcel, telemetry, cropId, groundTruth, priorities })),
-    [fixture, parcel, telemetry, cropId, groundTruth, priorities],
+    () => (fixture ? null : toModelInput({ parcel, telemetry, cropId, groundTruth, priorities, countryTable })),
+    [fixture, parcel, telemetry, cropId, groundTruth, priorities, countryTable],
   );
   const loading = !report && Object.values(branchStatus).some((s) => s === 'loading');
   const crop = getCrop(report?.cropId ?? cropId);

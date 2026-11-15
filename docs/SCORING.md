@@ -516,7 +516,7 @@ Without reported production in the country, compatibility from 60: none.
 - **The level is per country.** Robusta coffee is second on the Mekong Delta paddy field: it reaches the full score there and is `common` in Viet Nam as a whole. Regions inside a country (`region_crops.csv`) are not used yet.
 - **Prevalence breaks ties, it does not re-weight scores.** Maize is seventh in Iowa, not first: its rank score is 90 against 97.5 for potato, onion and cabbage, because 20 % of the analysed years fell short of its needs. Whether a crop grown on a third of the country's cropland should rank above a better-scoring minor crop is a question for K5.
 - **Crops at score 0 are still listed** (Nevada, places 5 to 15), now ordered by what the country grows.
-- **The app does not pass a country table yet** (tasks T6 and B1). Until it does, the lists in the app are as before, except that equal scores are ordered by reliability before the crop id.
+- **The app passes the country table since 15 November 2026** (B20: `src/data/country.ts`, `src/state/mission.ts`; docs/CROP_DATA.md section 11.1). `rankCrops` therefore leaves out `absent` crops in the one place the app calls it, the "switch to another crop" what-if. The rotation builder does not read the table yet (K10), and no screen shows the two lists of `rankCropLists` yet (B2).
 
 ### 12.5 The rotation builder reads the same table (K10)
 
