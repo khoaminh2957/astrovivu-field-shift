@@ -78,12 +78,22 @@ export interface CropRotationTraits {
   coverValue: 'low' | 'medium' | 'high';
 }
 
+export type UrbanHarvestType = 'cut-and-come-again' | 'once' | 'repeated-fruit';
+
 export interface CropUrbanTraits {
   suitable: boolean;
   light: 'full' | 'partial' | 'shade';
   container: boolean;
   difficulty: 1 | 2 | 3;
   tags: string[];
+  potDepthCm?: number;
+  potVolumeL?: number;
+  spacingCm?: number;
+  sunHoursMin?: number;
+  firstHarvestDays?: [ number, number ];
+  harvestType?: UrbanHarvestType;
+  needsTrellis?: boolean;
+  sources?: string[];
 }
 
 export interface CropProfile {
