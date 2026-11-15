@@ -109,7 +109,7 @@ export function AdvisoryPanel() {
         ) : loading ? (
           <LoadingLayout />
         ) : (
-          <Tabs<AdvisoryView> className="rotation-tabs" value={page} onValueChange={setPage} ariaLabel={t('advisory.title')} tabs={PAGES.map((value) => ({ value, label: t(`advisory.workspace.${value}`) }))}>
+          <Tabs<AdvisoryView> className="workspace-tabs rotation-tabs" value={page} onValueChange={setPage} ariaLabel={t('advisory.title')} tabs={PAGES.map((value) => ({ value, label: t(`advisory.workspace.${value}`) }))}>
             <Body
               key={parcel.id}
               report={report}

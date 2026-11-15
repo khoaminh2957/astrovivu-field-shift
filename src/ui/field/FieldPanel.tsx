@@ -73,10 +73,10 @@ function Header({ workspace }: { workspace: boolean }) {
   return (
     <header className="flex items-start gap-2">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <h2 className="truncate text-[20px] leading-[34px] font-[700] text-ink-1" title={parcel.name}>
+        <h1 className="workspace-page-title" title={parcel.name}>
           {parcel.name}
-        </h2>
-        <p className="flex flex-wrap items-center gap-x-1.5 text-base leading-[18px] text-ink-1">
+        </h1>
+        <p className="workspace-copy flex flex-wrap items-center gap-x-1.5">
           <span>
             <span className="font-medium text-ink-1">{fmtNum(parcel.areaHa, parcel.areaHa < 10 ? 1 : 0)} ha</span>
             {crop ? `, ${cropName(crop.names, lang)}` : ''}
@@ -119,8 +119,8 @@ function Fold({ title, note, children }: { title: string; note: string; children
     <section className="flex flex-col gap-4 border-t border-line-1 pt-4">
       <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)} className="flex items-start gap-3 rounded-xs text-left">
         <span className="min-w-0 flex-1">
-          <span className="block text-lg font-medium text-ink-1">{title}</span>
-          <span className="t-caption block">{note}</span>
+          <span className="workspace-section-title block">{title}</span>
+          <span className="workspace-copy mt-1 block">{note}</span>
         </span>
         <ChevronDown size={20} strokeWidth={1.5} aria-hidden className={cn('mt-1 shrink-0 text-ink-3 transition-transform duration-(--dur-fast)', open && 'rotate-180')} />
       </button>
@@ -140,10 +140,10 @@ function CountryCropsNote() {
   const name = table.status === 'ready' ? (new Intl.DisplayNames([lang], { type: 'region' }).of(table.iso2) ?? table.name) : '';
   return (
     <section aria-labelledby="field-country-crops" className="flex flex-col gap-1.5 border-t border-line-1 pt-4">
-      <h3 id="field-country-crops" className="text-lg font-medium text-ink-1">
+      <h3 id="field-country-crops" className="workspace-section-title">
         {t('field.data.country')}
       </h3>
-      <p className="t-caption" data-country-table={table.status}>
+      <p className="workspace-copy" data-country-table={table.status}>
         {table.status === 'ready' ? t('field.data.country.ready', { name, grown: table.grown, source: table.source }) : t(table.status === 'missing' ? 'field.data.country.missing' : 'field.data.country.error')}
       </p>
     </section>
@@ -181,7 +181,7 @@ export function FieldPanel({ workspace = false }: { workspace?: boolean }) {
     scroll?.scrollTo({ top: 0 });
   }, [tab, parcelId, workspace]);
   const badge = (n: number, label: string) => (
-    <span title={label} className="flex h-6 min-w-6 items-center justify-center rounded-xs border border-signal px-1 font-normal text-signal-strong">
+    <span title={label} className="workspace-tab-count">
       {n}
       <span className="sr-only"> {label}</span>
     </span>
@@ -190,7 +190,7 @@ export function FieldPanel({ workspace = false }: { workspace?: boolean }) {
     <div ref={root} className={cn('flex flex-col gap-5 narrow:gap-3', workspace && 'workspace-field-inner')}>
       <Header workspace={workspace} />
       <Tabs<FieldTab>
-        className={workspace ? 'workspace-field-tabs' : undefined}
+        className={cn('workspace-tabs', workspace ? 'workspace-field-tabs' : 'workspace-mobile-tabs')}
         activationMode={workspace ? 'manual' : 'automatic'}
         ariaLabel={t('field.tabs')}
         value={tab}

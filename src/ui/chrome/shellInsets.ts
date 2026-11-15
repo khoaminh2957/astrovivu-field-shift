@@ -41,7 +41,7 @@ export function shellInsets({ width, height, narrow, locked, finding, finderH, a
 export function getShellInsets({ phase, parcel }: Pick<MissionState, 'phase' | 'parcel'>): ViewInsets {
   // Rotation covers the map, but leaving it should reveal the same field framing.
   const locked = !!parcel && (phase === 'locked' || phase === 'advisory');
-  const finding = !locked && (phase === 'hero' || phase === 'explore' || !parcel);
+  const finding = !locked && (phase === 'hero' || phase === 'explore');
   const { finderH, addCard } = useMissionUi.getState();
   const css = getComputedStyle(document.documentElement);
   return shellInsets({

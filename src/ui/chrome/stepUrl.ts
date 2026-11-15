@@ -45,6 +45,7 @@ export function useStepUrl(): void {
       window.history.pushState({ astrovivu: true }, '', next);
     };
     const offMission = useMission.subscribe((s, prev) => {
+      if (s.phase !== prev.phase && useMissionUi.getState().workspacePage) useMissionUi.getState().setWorkspacePage(null);
       if (s.phase !== prev.phase || s.parcel?.id !== prev.parcel?.id) write();
     });
     const offUi = useMissionUi.subscribe((s, prev) => {

@@ -114,9 +114,9 @@ function Summary({ workspace }: { workspace: boolean }) {
   const near = insightsNear(insights, cursor, 21).filter((item) => !(event?.start === item.t && item.branch === 'risk')).slice(0, 2);
   return (
     <section aria-label={t('field.over.summary')} className="flex flex-col gap-3">
-      {workspace && <h2 className="workspace-section-title">{t('field.over.outlook')}</h2>}
+      <h2 className="workspace-section-title">{t('field.over.outlook')}</h2>
       {headline ? (
-        <p className="text-md leading-6 text-ink-1">
+        <p className="workspace-copy">
           {pick(headline, lang)}
           {mode === 'mock' && <StatusTag status="simulated" compact className="ml-2 align-middle" />}
         </p>
@@ -268,7 +268,7 @@ export function ChartCard({ title, value, unit, note, children }: { title: strin
     <section className="grid grid-cols-[minmax(0,1fr)_9.5rem] gap-5 rounded-sm border border-line-1 p-4 narrow:grid-cols-1 narrow:gap-3">
       <div className="min-w-0">{children}</div>
       <div className="flex flex-col gap-1 narrow:order-first">
-        <h4 className="text-base leading-5 font-medium text-ink-1">{title}</h4>
+        <h4 className="workspace-card-title">{title}</h4>
         <span className="flex items-baseline gap-1">
           <span className="t-value text-xl leading-7 text-ink-1">{value}</span>
           <span className="t-unit">{unit}</span>
@@ -366,7 +366,7 @@ export function OverviewTab({ workspace = false }: { workspace?: boolean }) {
       <FieldWeather workspace={workspace} />
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className={workspace ? 'workspace-section-title' : 'text-lg font-medium text-ink-1'}>{t('field.status.satellite')}</h2>
+          <h2 className="workspace-section-title">{t('field.status.satellite')}</h2>
           <DatePill workspace={workspace} />
         </div>
         {workspace ? <WorkspaceImages /> : (

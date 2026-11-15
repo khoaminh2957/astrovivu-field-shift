@@ -284,7 +284,11 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       const hit: PlaceHit = { label: sel.place?.label ?? `${fmtNum(pickedAt[1], 5)}, ${fmtNum(pickedAt[0], 5)}`, location: pickedAt, country: sel.place?.country, admin1: sel.place?.admin1 };
       put(hit);
       if (!sel.place) {
-        void reverseGeocode(pickedAt, lang).then((p) => p && setChosen((c) => (c && c.location === pickedAt ? { ...c, label: p.label, country: p.country, admin1: p.admin1 } : c)));
+        void reverseGeocode(pickedAt, lang).then((p) => {
+          if (!p) return;
+          setChosen((c) => (c && c.location === pickedAt ? { ...c, label: p.label, country: p.country, admin1: p.admin1 } : c));
+          setQ((prev) => (prev === hit.label ? p.label : prev));
+        });
       }
     } else {
       setChosen(null);
