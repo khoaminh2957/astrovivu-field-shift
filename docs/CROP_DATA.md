@@ -336,6 +336,8 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
   - *Yield (`yield_t_ha`)*: filled from `crop_country.csv` (2022–2024 three-year mean or national figure, `quality_yield = official`) where the FAOSTAT item belongs to this crop alone. Where the item is shared by several species (`coffea-arabica`, `coffea-canephora`, `allium-cepa`, `brassica-oleracea-var-capitata`, `citrus-grandis`, `fragaria-x-ananassa`, `persea-americana`) the cell stays empty and `source` gives the item's yield with the reason, the same rule as for prices: the item's figure is not the species' own (robusta coffee in `USA` would otherwise carry the yield of Hawaiian arabica).
   - *Price (`price_usd_t`)*: filled from the `crop_latest_prices` view of the market database (`match = exact`, `item_shared_by_n_crops = 1`, primary item; 11 curated crops in `VNM`, 20 in `USA`, 18 in `IND`, 16 in `BRA`), cross-checked against market and USDA NASS prices (`docs/DATABASE.md` section 8). Shared-item prices (such as FAOSTAT item 656 `Coffee, green` at 709 USD/t in `VNM` vs ~3,359.4 USD/t on the domestic robusta market, or 55,997.5 USD/t in `USA` vs $2.37/lb = 5,225 USD/t cherry in USDA NASS) and pooled `group` item prices are not assigned to single species outside the existing proxy rows (`vigna-radiata`, `mangifera-indica`, `citrus-grandis`, `brassica-oleracea-var-capitata` in `VNM`); both figures are quoted in `source`.
   - *Cost (`cost_usd_ha`)*: no cross-country extrapolation is performed; crops without an opened national or state enterprise budget remain empty (`quality_cost = none`).
+- **10-year rule for FAOSTAT prices.** `year` is the year of the row's figures (`columns.csv`), so a FAOSTAT producer price whose year is more than 10 years before the row's `year` is not used: the cell stays empty (`quality_price = none`) and `source` quotes the FAOSTAT figure and its year under `NOT FOUND`. The 10-year limit is a choice of this project, not taken from a publication. It empties 4 `USA` prices, all rows with `year = 2024` from the 2022–2024 yield: okra (item 430, 1,642 USD/t from 1997), eggplant (item 399, 610 USD/t from 2004), dry cowpea (item 195, 842 USD/t from 2005) and ginger (item 720, 3,527 USD/t from 2008). Three FAOSTAT prices stay although their year differs from `year` by 1 or 2 years: sugar cane in `USA` (2023 price, `year = 2024`; 2023 is FAOSTAT's latest US year) and soybean and maize in `VNM` (2024 prices, `year = 2026` in the reference records carried over from `curated-crops.csv`, which this file keeps unchanged). Their source text states the price year.
+- **FAOSTAT price extract.** `data/crops/review/prices-from-faostat.csv` holds, for each of the 59 prices across `VNM`, `USA`, `IND`, and `BRA` whose `source` cites FAOSTAT producer prices, the FAOSTAT row it equals: 37 used prices (21 in `VNM`/`USA`, 16 in `BRA`) and the 22 prices left out under the 10-year rule (4 in `USA`, 18 in `IND`), whose `NOT FOUND` text quotes them. Each row gives item, year, element 5532 `Producer Price (USD/tonne)` (annual value; FAOSTAT's `Unit` column reads `USD`), value and flag as written in `Prices_E_All_Data_(Normalized).zip` (file dated 2026-10-09 on the server, read 2026-11-15). `npx tsx scripts/crops/atlas/prices-extract.ts` rebuilds it from the cached bulk file and stops if a cited price has no FAOSTAT row; `scripts/crops/atlas/economics.test.ts` checks, without the bulk file, that every such price equals its extract row, that every extract row is referenced by a filled price or a `NOT FOUND` text quoting its value and year, and that no filled FAOSTAT price is more than 10 years older than its row's `year`.
 
 ### 12.2 Sources and licences
 
@@ -357,15 +359,17 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 | `VNM` (national) | 73 | **8** | `price_usd_t` | 15 | 0 | 5 | 0 | 53 |
 | `VNM` (national) | 73 | **8** | `cost_usd_ha` | 0 | 0 | 7 | 1 | 65 |
 | `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `yield_t_ha` | 39 | 0 | 0 | 0 | 41 |
-| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `price_usd_t` | 39 | 0 | 0 | 0 | 41 |
+| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `price_usd_t` | 35 | 0 | 0 | 0 | 45 |
 | `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `cost_usd_ha` | 10 | 17 | 0 | 0 | 53 |
 | `IND` (national) | 73 | **0** | `yield_t_ha` | 25 | 0 | 0 | 0 | 48 |
-| `IND` (national) | 73 | **0** | `price_usd_t` | 18 | 0 | 0 | 0 | 55 |
+| `IND` (national) | 73 | **0** | `price_usd_t` | 0 | 0 | 0 | 0 | 73 |
 | `IND` (national) | 73 | **0** | `cost_usd_ha` | 0 | 0 | 0 | 0 | 73 |
 | `BRA` (national) | 73 | **0** | `yield_t_ha` | 20 | 0 | 0 | 0 | 53 |
 | `BRA` (national) | 73 | **0** | `price_usd_t` | 16 | 0 | 0 | 0 | 57 |
 | `BRA` (national) | 73 | **0** | `cost_usd_ha` | 0 | 0 | 0 | 0 | 73 |
-| **Total (`VNM`, `USA`, `IND`, `BRA`)** | **299** | **35** (28 national + 7 regional) | `yield_t_ha` / `price_usd_t` / `cost_usd_ha` | 106 / 88 / 10 | 0 / 0 / 17 | 0 / 5 / 7 | 0 / 0 / 1 | 193 / 206 / 264 |
+| **Total (`VNM`, `USA`, `IND`, `BRA`)** | **299** | **35** (28 national + 7 regional) | `yield_t_ha` / `price_usd_t` / `cost_usd_ha` | 106 / 66 / 10 | 0 / 0 / 17 | 0 / 5 / 7 | 0 / 0 / 1 | 193 / 228 / 264 |
+
+`economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
 
 ## 13. Atlas coverage summary (`summary.csv`, T7 `#12`)
 
@@ -391,12 +395,11 @@ Every metric below is emitted into `data/crops/atlas/summary.csv` by `scripts/cr
 | `national_rows_read` | 140 | Total rows in `data/crops/national/prevalence.csv` across `VNM`, `USA`, `IND`, `BRA` |
 | `economics_rows` | 299 | Total rows in `data/crops/atlas/economics.csv` (`BRA;IND;USA;VNM`) |
 | `economics_with_yield` | 106 | Rows with `yield_t_ha` (`official`: 106, `none`: 193; shared-item yields left empty) |
-| `economics_with_price` | 93 | Rows with `price_usd_t` (`official`: 88, `press`: 5, `none`: 206) |
+| `economics_with_price` | 71 | Rows with `price_usd_t` (`official`: 66, `press`: 5, `none`: 228) |
 | `economics_with_cost` | 35 | Rows with `cost_usd_ha` (`official`: 10, `budget`: 17, `press`: 7, `derived`: 1, `none`: 264) |
 | `economics_complete` | 35 | Rows with all 3 figures (`yield_t_ha`, `price_usd_t`, `cost_usd_ha`) |
-`economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
 
-## 13. Urban candidates (`urban_candidates.csv`)
+## 14. Urban candidates (`urban_candidates.csv`)
 
 `scripts/crops/atlas/urban.ts` (`urbanCandidate(s)`, constants in `URBAN_RULE`) selects urban / container candidate crops from the 387 kept atlas rows using only EcoCrop columns (`life_form`, `habit`, `category`, `life_span`, `cycle_min_days`) and writes one row per crop to `data/crops/atlas/urban_candidates.csv`, in the order of `crops.csv`: `crop_id`, `urban_candidate` (`yes` or empty) and `urban_candidate_rule` (`short-cycle`, `perennial-aromatic-herb`, or `short-cycle;perennial-aromatic-herb`). The count goes to `urban_candidates` in `data/crops/atlas/summary.csv`.
 

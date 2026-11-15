@@ -83,7 +83,7 @@ describe('the crop on the field', () => {
     expect(cropLook(getCrop('triticum-aestivum'))).toBe('cereal');
     expect(cropLook(getCrop('coffea-canephora'))).toBe('bush');
     expect(cropLook(getCrop('medicago-sativa'))).toBe('grass');
-    expect(cropLook(getCrop('glycine-max'))).toBe('row');
+    expect(cropLook(getCrop('glycine-max'))).toBe('legume');
     expect(cropLook(null)).toBe('none');
   });
 

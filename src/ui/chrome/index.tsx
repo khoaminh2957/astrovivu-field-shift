@@ -3,6 +3,8 @@
  *   No field open (the landing, and the map while the visitor looks for their field): the finder at
  *   the bottom centre is the whole interface; on the map the tools join it on the right edge.
  *   A field open, wide screens (1100 px and up): the rail and the field panel sit on the left.
+ *   The rail is the path a grower walks: (1) the field as it is, (2) the rotation (the farm stage,
+ *   the comparison, the plan), (3) the dossier. Urban and Ask stand apart under a rule.
  *   The map fills the right, with its tools, legend and timeline inside it.
  *   A field open, narrow screens: the map keeps the top of the screen, one scrolling sheet holds
  *   the field panel, the timeline is pinned above a tab bar.
@@ -10,7 +12,7 @@
  * place the camera flies to, in what is left.
  */
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
-import { ArrowLeft, Building2, CloudSun, House, Map as MapIcon, MessageCircleQuestion, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Building2, FileText, Map as MapIcon, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { BRANCHES } from '@/contracts';
 import { DEMO_FIELD } from '@/data';
@@ -20,7 +22,7 @@ import { useLang, useT } from '@/i18n';
 import { pointInPolygon } from '@/lib/geo';
 import { type Phase, useMission } from '@/state/mission';
 import { AdvisoryPanel } from '@/ui/advisory';
-import { StatusTag, Tooltip, cn } from '@/ui/design';
+import { Button, Dialog, StatusTag, Tooltip, cn } from '@/ui/design';
 import { FieldPanel } from '@/ui/field/FieldPanel';
 import { FieldList, FindField } from '@/ui/field/FindField';
 import { TimelineScrubber } from '@/ui/timeline';
@@ -30,38 +32,49 @@ import { goLanding } from './finderActions';
 import { MapLayerPill, MapLegend, MapToolbar } from './MapToolbar';
 import { PlaceSearch } from './PlaceSearch';
 import { getShellInsets } from './shellInsets';
+import { useStepUrl } from './stepUrl';
 import { useMissionUi, useNarrow } from './uiState';
-import { HomePage, WeatherPage } from './WorkspacePages';
 import './strings';
 
-type NavId = 'home' | 'field' | 'weather' | 'advisory' | 'urban' | 'ask';
-const NAV: { id: NavId; icon: ReactNode; key: string }[] = [
-  { id: 'home', icon: <House />, key: 'nav.home' },
-  { id: 'field', icon: <MapIcon />, key: 'nav.field' },
-  { id: 'weather', icon: <CloudSun />, key: 'nav.weather' },
-  { id: 'advisory', icon: <RefreshCw />, key: 'nav.advisory' },
-  { id: 'urban', icon: <Building2 />, key: 'nav.urban' },
+type NavId = 'field' | 'advisory' | 'dossier' | 'urban' | 'ask';
+/** The three steps of a field, numbered, then what stands apart from them. */
+const NAV: { id: NavId; icon: ReactNode; key: string; step?: number; rule?: boolean }[] = [
+  { id: 'field', icon: <MapIcon />, key: 'nav.field', step: 1 },
+  { id: 'advisory', icon: <RefreshCw />, key: 'nav.advisory', step: 2 },
+  { id: 'dossier', icon: <FileText />, key: 'nav.dossier', step: 3 },
+  { id: 'urban', icon: <Building2 />, key: 'nav.urban', rule: true },
   { id: 'ask', icon: <MessageCircleQuestion />, key: 'nav.ask' },
 ];
 
-function useNav() {
+export function useNav() {
   const phase = useMission((s) => s.phase);
   const hasParcel = useMission((s) => !!s.parcel);
   const askOpen = useMission((s) => s.askOpen);
   const setPhase = useMission((s) => s.setPhase);
   const setAskOpen = useMission((s) => s.setAskOpen);
-  const workspacePage = useMissionUi((s) => s.workspacePage);
-  const setWorkspacePage = useMissionUi((s) => s.setWorkspacePage);
+  const view = useMissionUi((s) => s.advisoryView);
+  const setView = useMissionUi((s) => s.setAdvisoryView);
   const active = (id: NavId): boolean =>
-    id === 'ask' ? askOpen : workspacePage ? workspacePage === id : id === 'field' ? phase === 'explore' || phase === 'locked' : phase === id;
-  const disabled = (id: NavId): boolean => id === 'advisory' && !hasParcel;
+    id === 'ask'
+      ? askOpen
+      : id === 'field'
+        ? phase === 'explore' || phase === 'locked'
+        : id === 'advisory'
+          ? phase === 'advisory' && view !== 'dossier'
+          : id === 'dossier'
+            ? phase === 'advisory' && view === 'dossier'
+            : phase === id;
+  const disabled = (id: NavId): boolean => (id === 'advisory' || id === 'dossier') && !hasParcel;
   const go = (id: NavId) => {
     if (disabled(id)) return;
     if (id === 'ask') return setAskOpen(!askOpen);
     if (askOpen) setAskOpen(false);
-    if (id === 'home' || id === 'weather') return setWorkspacePage(id);
-    setWorkspacePage(null);
     if (id === 'field') return setPhase(hasParcel ? 'locked' : 'explore');
+    if (id === 'dossier') {
+      setView('dossier');
+      return setPhase('advisory');
+    }
+    if (id === 'advisory' && view === 'dossier') setView('farm');
     setPhase(id);
   };
   return { active, disabled, go };
@@ -101,17 +114,43 @@ function LangSwitch({ vertical }: { vertical?: boolean }) {
   );
 }
 
+/**
+ * The mark leads to the landing. With a field open that closes the field, so it asks first: losing
+ * the open field without warning was the most confusing jump of the old shell.
+ */
 function Mark() {
   const t = useT();
+  const hasParcel = useMission((s) => !!s.parcel);
+  const [asking, setAsking] = useState(false);
   return (
-    <button
-      type="button"
-      aria-label={t('chrome.home')}
-      onClick={goLanding}
-      className="workspace-mark"
-    >
-      A
-    </button>
+    <>
+      <button type="button" aria-label={t('chrome.home')} onClick={() => (hasParcel ? setAsking(true) : goLanding())} className="workspace-mark">
+        A
+      </button>
+      <Dialog
+        open={asking}
+        onOpenChange={setAsking}
+        size="sm"
+        title={t('chrome.leave.title')}
+        description={t('chrome.leave.body')}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setAsking(false)}>
+              {t('chrome.leave.stay')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setAsking(false);
+                goLanding();
+              }}
+            >
+              {t('chrome.leave.go')}
+            </Button>
+          </>
+        }
+      />
+    </>
   );
 }
 
@@ -124,20 +163,28 @@ function Rail() {
       <Mark />
       <div className="workspace-nav-items">
         {NAV.map((n) => (
-          <Tooltip key={n.id} content={disabled(n.id) ? `${t(`chrome.${n.key}`)}: ${t('chrome.nav.needField')}` : t(`chrome.${n.id === 'urban' ? 'nav.urbanLong' : n.key}`)} side="right" delay={150}>
-            <button
-              type="button"
-              aria-current={n.id !== 'ask' && active(n.id) ? 'page' : undefined}
-              aria-pressed={n.id === 'ask' ? active(n.id) : undefined}
-              aria-disabled={disabled(n.id) || undefined}
-              aria-label={t(`chrome.${n.key}`)}
-              onClick={() => go(n.id)}
-              className={cn('workspace-nav-item', disabled(n.id) && 'cursor-not-allowed opacity-35')}
-            >
-              {n.icon}
-              {t(`chrome.${n.key}`)}
-            </button>
-          </Tooltip>
+          <div key={n.id} className="contents">
+            {n.rule && <span aria-hidden className="workspace-nav-rule" />}
+            <Tooltip content={disabled(n.id) ? `${t(`chrome.${n.key}`)}: ${t('chrome.nav.needField')}` : t(`chrome.${n.key}Long`)} side="right" delay={150}>
+              <button
+                type="button"
+                aria-current={n.id !== 'ask' && active(n.id) ? 'page' : undefined}
+                aria-pressed={n.id === 'ask' ? active(n.id) : undefined}
+                aria-disabled={disabled(n.id) || undefined}
+                aria-label={n.step ? t('chrome.nav.stepLabel', { n: n.step, name: t(`chrome.${n.key}`) }) : t(`chrome.${n.key}`)}
+                onClick={() => go(n.id)}
+                className={cn('workspace-nav-item relative', disabled(n.id) && 'cursor-not-allowed opacity-35')}
+              >
+                {n.step && (
+                  <span aria-hidden className="workspace-nav-step">
+                    {n.step}
+                  </span>
+                )}
+                {n.icon}
+                {t(`chrome.${n.key}`)}
+              </button>
+            </Tooltip>
+          </div>
         ))}
       </div>
       <div className="mt-auto">
@@ -151,7 +198,7 @@ function TabBar() {
   const t = useT();
   const { active, disabled, go } = useNav();
   return (
-    <nav aria-label={t('chrome.nav.label')} className="workspace-tab-bar workspace-theme absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-6 border-t border-line-1 safe-bottom">
+    <nav aria-label={t('chrome.nav.label')} className="workspace-tab-bar workspace-theme absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-5 border-t border-line-1 safe-bottom">
       {NAV.map((n) => (
         <button
           key={n.id}
@@ -166,7 +213,14 @@ function TabBar() {
             disabled(n.id) && 'opacity-40',
           )}
         >
-          <span className="flex h-6 w-8 items-center justify-center">{n.icon}</span>
+          <span className="relative flex h-6 w-8 items-center justify-center">
+            {n.icon}
+            {n.step && (
+              <span aria-hidden className="workspace-nav-step">
+                {n.step}
+              </span>
+            )}
+          </span>
           <span className="max-w-full truncate px-1">{t(`chrome.${n.key}`)}</span>
         </button>
       ))}
@@ -256,8 +310,8 @@ function ExploreMap({ narrow }: { narrow: boolean }) {
     <>
       <div data-flying={flying || undefined} className="workspace-theme workspace-explore-nav workspace-explore-chrome absolute top-2 left-2 z-(--z-chrome) flex items-center gap-2.5 px-1.5 py-1">
         <Mark />
-        <button type="button" className="workspace-nav-item" onClick={() => go('home')}>
-          <House aria-hidden />{t('chrome.nav.home')}
+        <button type="button" className="workspace-nav-item" onClick={() => go('urban')}>
+          <Building2 aria-hidden />{t('chrome.nav.urban')}
         </button>
       </div>
       <MapToolbar className={cn('workspace-explore-chrome absolute z-(--z-map-ui)', narrow ? 'top-2 right-2' : 'top-1/2 right-[15px] -translate-y-1/2')} />
@@ -335,13 +389,12 @@ export function Shell() {
   const phase = useMission((s) => s.phase);
   const hasParcel = useMission((s) => !!s.parcel);
   const narrow = useNarrow();
-  const workspacePage = useMissionUi((s) => s.workspacePage);
-  const { go } = useNav();
-  const locked = phase === 'locked' && hasParcel && !workspacePage;
+  const locked = phase === 'locked' && hasParcel;
   const hero = phase === 'hero';
   /** No field is open and the visitor is finding one: on the landing, or on the map after it. */
-  const finding = !workspacePage && (hero || ((phase === 'explore' || phase === 'locked') && !locked));
-  useReportInsets(narrow, phase, hasParcel, !!workspacePage);
+  const finding = hero || ((phase === 'explore' || phase === 'locked') && !locked);
+  useReportInsets(narrow, phase, hasParcel, false);
+  useStepUrl();
   const setListMode = useMissionUi((s) => s.setListMode);
   const setFieldTab = useMissionUi((s) => s.setFieldTab);
   const setOwnField = useMissionUi((s) => s.setOwnField);
@@ -374,25 +427,18 @@ export function Shell() {
     if (phase === 'urban') setVisitedUrban(true);
     if (phase === 'advisory') setAdvisoryParcel(parcelId);
   }, [phase, parcelId]);
-  const advisory = phase === 'advisory' && !workspacePage;
-  const urban = phase === 'urban' && !workspacePage;
+  const advisory = phase === 'advisory';
+  const urban = phase === 'urban';
   return (
     <>
       {finding && <Finder />}
       {finding && !hero && <ExploreMap narrow={narrow} />}
       {!finding && (narrow ? <TabBar /> : <Rail />)}
       {locked && (narrow ? <NarrowField /> : <WideField />)}
-      {(workspacePage || advisory || urban) && narrow && (
+      {(advisory || urban) && narrow && (
         <div className="workspace-theme workspace-mobile-top absolute inset-x-0 top-0 z-(--z-chrome) flex h-12 items-center justify-between border-b border-line-1 px-3">
           <Mark />
           <LangSwitch />
-        </div>
-      )}
-      {workspacePage && (
-        <div key={workspacePage} className="workspace-page-shell">
-          {workspacePage === 'home' ? (
-            <HomePage onField={() => go('field')} onWeather={() => go('weather')} onRotation={() => go('advisory')} onUrban={() => go('urban')} />
-          ) : <WeatherPage onField={() => go('field')} />}
         </div>
       )}
       {(advisory || (parcelId && parcelId === advisoryParcel)) && (

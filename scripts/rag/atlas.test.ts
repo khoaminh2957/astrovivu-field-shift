@@ -215,7 +215,7 @@ describe('the sheet on where a crop is grown', () => {
       const top = w.top ?? [];
       if (top.length && top.every((c) => c.years === top[0].years)) expect(text, a.cropId).toContain(`Largest harvested areas (means of ${top[0].years}): `);
       else for (const c of top) expect(text, a.cropId).toContain(`${groupDigits(c.areaHa, 'en')} ha, mean of ${c.years}`);
-      for (const c of w.also ?? []) expect(text, a.cropId).toContain(`${groupDigits(c.areaHa, 'en')} ha, mean of ${c.years}, the `);
+      for (const c of w.also ?? []) expect(text, a.cropId).toContain(`${groupDigits(c.areaHa, 'en')} ha, mean of ${c.years}`);
     }
     // Rice: the world figure covers 2021-2024, Viet Nam's is of 2022-2024.
     expect(rice.prevalence!.years).toBe('2021-2024');
@@ -232,11 +232,41 @@ describe('the sheet on where a crop is grown', () => {
       const w = crops.get(a.cropId)!.prevalence!;
       expect(w.faostatItem, a.cropId).toBe(a.row.faostat_item);
       const shared = Number(a.row.item_shared_by_n_crops) > 1;
-      expect(renderWhere(crops.get(a.cropId)!, 'en'), a.cropId).toContain(shared ? `These are the figures of the FAOSTAT item ${w.faostatItem}, which the atlas ties to ${w.sharedBy} crops; they are not for one crop alone.` : `These are the figures of the FAOSTAT item ${w.faostatItem}.`);
-      expect(renderWhere(crops.get(a.cropId)!, 'vi'), a.cropId).toContain(`Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}`);
+      const en = renderWhere(crops.get(a.cropId)!, 'en');
+      if (w.otherItems?.length) {
+        // A crop with several items of its own names them all, and says how they are added up.
+        expect(en, a.cropId).toContain(`These are the figures of the FAOSTAT items ${[w.faostatItem, ...w.otherItems].join(', ')}: for each country, the sum of those it reports`);
+        if (shared) expect(en, a.cropId).toContain(`The item ${w.faostatItem} is tied to ${w.sharedBy} crops of the atlas; the figures are not for one crop alone.`);
+        expect(renderWhere(crops.get(a.cropId)!, 'vi'), a.cropId).toContain(`Đây là số liệu của các mặt hàng FAOSTAT ${[w.faostatItem, ...w.otherItems].join(', ')}`);
+      } else {
+        expect(en, a.cropId).toContain(shared ? `These are the figures of the FAOSTAT item ${w.faostatItem}, which the atlas ties to ${w.sharedBy} crops; they are not for one crop alone.` : `These are the figures of the FAOSTAT item ${w.faostatItem}.`);
+        expect(renderWhere(crops.get(a.cropId)!, 'vi'), a.cropId).toContain(`Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}`);
+      }
     }
     // Carrot: the area is that of "Carrots and turnips", and the sheet says so.
     expect(renderWhere(crops.get('daucus-carota')!, 'en')).toContain('These are the figures of the FAOSTAT item Carrots and turnips.');
+  });
+
+  it('names the items of a country\'s figure when they are not the crop\'s first item (review of #117, point 3)', () => {
+    const name = (code: string) => csv('items.csv').find((x) => x.faostat_item_code === code)!.faostat_item;
+    let named = 0;
+    for (const a of atlas.filter((x) => x.match === 'exact')) {
+      const w = crops.get(a.cropId)!.prevalence!;
+      expect(w.otherItems ?? [], a.cropId).toEqual(a.row.faostat_other_item_codes.split(';').filter(Boolean).map(name));
+      for (const c of [...(w.top ?? []), ...(w.also ?? [])]) {
+        const codes = cropCountry.find((r) => r.crop_id === a.cropId && r.iso3 === c.iso3)!.faostat_item_code.split(';');
+        if (codes.length === 1 && codes[0] === a.row.faostat_item_code) expect(c.items, `${a.cropId} ${c.iso3}`).toBeUndefined();
+        else {
+          expect(c.items, `${a.cropId} ${c.iso3}`).toEqual(codes.map(name));
+          named++;
+        }
+      }
+    }
+    expect(named).toBeGreaterThan(30);
+    // Melons in the United States are "Cantaloupes and other melons"; maize there is grain and green corn added up.
+    expect(renderWhere(crops.get('cucumis-melo')!, 'en')).toContain('United States of America: 21,084 ha, mean of 2022-2024 (item Cantaloupes and other melons), the 18th largest.');
+    expect(renderWhere(crops.get('zea-mays')!, 'en')).toContain('United States of America 33,613,081 ha (sum of the items Maize (corn) + Green corn (maize))');
+    expect(renderWhere(crops.get('musa-sapientum')!, 'vi')).toContain('Việt Nam: 144.947 ha, trung bình 2022-2024 (mặt hàng Bananas), lớn thứ 20.');
   });
 
   it('every number of every sheet is a number of the atlas', () => {

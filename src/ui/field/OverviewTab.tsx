@@ -21,6 +21,7 @@ import { rasterFor } from './picture';
 import { SatelliteCanvas } from './SatelliteCanvas';
 import { TileLegend } from './ScaleLegend';
 import { AccumChart, NdviChart, s2Points } from './StatusCharts';
+import { FieldWeather } from './FieldWeather';
 import './strings';
 
 /** A number that answers part of "how is the field": its name, the value, one line that qualifies it. */
@@ -126,20 +127,26 @@ function Summary({ workspace }: { workspace: boolean }) {
       {workspace && event && (
         <p className="workspace-field-risk">
           <TriangleAlert size={15} aria-hidden className="text-signal-strong" />
-          <span><strong>{pick(event.title, lang)}</strong> · {pick(event.detail, lang)} {fmtDate(event.start, lang)}</span>
+          <span>
+            <span className="t-label mr-1.5">{t(event.start > cursor ? 'field.risk.upcoming' : 'field.risk.active')}:</span>
+            <strong>{pick(event.title, lang)}</strong> · {pick(event.detail, lang)} {fmtDate(event.start, lang)}
+          </span>
         </p>
       )}
       {near.length > 0 && (
-        <ul className="flex flex-col gap-1.5" aria-label={t('field.changed')}>
-          {near.map((i, n) => (
-            <li key={`${i.t}-${i.branch}-${n}`} className="flex gap-2">
-              <AnomalyMarker severity={i.severity} className="mt-0.5 shrink-0" />
-              <span className="min-w-0 text-sm text-ink-1">
-                {pick(i.text, lang)} <span className="t-meta whitespace-nowrap">{fmtDate(i.t, lang)}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-col gap-1.5">
+          {workspace && event && <span className="t-label">{t('field.changed')}</span>}
+          <ul className="flex flex-col gap-1.5" aria-label={t('field.changed')}>
+            {near.map((i, n) => (
+              <li key={`${i.t}-${i.branch}-${n}`} className="flex gap-2">
+                <AnomalyMarker severity={i.severity} className="mt-0.5 shrink-0" />
+                <span className="min-w-0 text-sm text-ink-1">
+                  {pick(i.text, lang)} <span className="t-meta whitespace-nowrap">{fmtDate(i.t, lang)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );
@@ -356,6 +363,7 @@ export function OverviewTab({ workspace = false }: { workspace?: boolean }) {
     <div className={cn('flex flex-col gap-6', workspace && 'workspace-overview')}>
       {!closed && parcelId && <QuickFacts onClose={() => closeQuick(parcelId)} onMore={() => setTab('soil')} />}
       <Summary workspace={workspace} />
+      <FieldWeather workspace={workspace} />
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className={workspace ? 'workspace-section-title' : 'text-lg font-medium text-ink-1'}>{t('field.status.satellite')}</h2>

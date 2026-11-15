@@ -54,7 +54,6 @@ export function openOwnField(): void {
 export function goLanding(): void {
   const mission = useMission.getState();
   const ui = useMissionUi.getState();
-  ui.setWorkspacePage(null);
   mission.setAskOpen(false);
   mission.cancelDraw();
   ui.setListMode('list');
@@ -62,6 +61,6 @@ export function goLanding(): void {
   mission.setPhase('hero');
   const url = new URL(window.location.href);
   const previous = url.search;
-  for (const key of ['phase', 'sample', 'crop']) url.searchParams.delete(key);
+  for (const key of ['phase', 'sample', 'crop', 'view']) url.searchParams.delete(key);
   if (url.search !== previous) window.history.replaceState(window.history.state, '', url);
 }

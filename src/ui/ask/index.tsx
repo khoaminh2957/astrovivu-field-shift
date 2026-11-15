@@ -10,7 +10,6 @@ import { useT } from '@/i18n';
 import { ask, buildFieldContext, suggestQuestions, warmUp } from '@/rag';
 import { useMission } from '@/state/mission';
 import { Button, ConfidenceBars, IconButton, ScrollArea, SkeletonText, Tag, cn, confidenceLevel } from '@/ui/design';
-import { useMissionUi } from '@/ui/chrome/uiState';
 import { AnswerText, SourceDetail } from './Answer';
 import './strings';
 
@@ -40,7 +39,6 @@ function useFieldContext(enabled: boolean): FieldContext | undefined {
 
 export function AskPanel() {
   const phase = useMission((s) => s.phase);
-  const workspacePage = useMissionUi((s) => s.workspacePage);
   const open = useMission((s) => s.askOpen);
   const setOpen = useMission((s) => s.setAskOpen);
   const lang = useMission((s) => s.lang);
@@ -61,7 +59,7 @@ export function AskPanel() {
 
   // The launcher is the Ask entry in the rail or the tab bar.
   if (!visible) return null;
-  return <AskSheet lang={lang} locked={phase === 'locked' && !workspacePage} onClose={() => setOpen(false)} />;
+  return <AskSheet lang={lang} locked={phase === 'locked'} onClose={() => setOpen(false)} />;
 }
 
 function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onClose: () => void }) {

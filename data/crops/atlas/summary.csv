@@ -69,7 +69,7 @@ economics_rows,299
 economics_countries,4
 economics_country_list,BRA;IND;USA;VNM
 economics_with_yield,106
-economics_with_price,93
+economics_with_price,71
 economics_with_cost,35
 economics_complete,35
 economics_yield_official,106
@@ -77,11 +77,11 @@ economics_yield_budget,0
 economics_yield_press,0
 economics_yield_derived,0
 economics_yield_none,193
-economics_price_official,88
+economics_price_official,66
 economics_price_budget,0
 economics_price_press,5
 economics_price_derived,0
-economics_price_none,206
+economics_price_none,228
 economics_cost_official,10
 economics_cost_budget,17
 economics_cost_press,7
