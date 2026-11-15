@@ -1,0 +1,99 @@
+{
+ "id": "23",
+ "lang": "en",
+ "field": "iowa-corn-soy",
+ "question": "What is the reference price and margin for maize here?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:09:13.534Z",
+ "intent": "field",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 18833,
+ "outputTokens": 244,
+ "ms": 1978,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "priceAndMargin",
+   "input": {},
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "crop": "Maize (Zea mays)",
+    "field": "Story County corn-soybean field",
+    "rows": [
+     {
+      "reference": {
+       "region": "US-HEARTLAND",
+       "yieldRegion": "Iowa (grain)",
+       "refYieldTHa": 13.18,
+       "priceUsdPerT": 161.4,
+       "costUsdPerHa": 1195,
+       "year": 2026,
+       "quality": {
+        "yield": "official",
+        "price": "official",
+        "cost": "budget"
+       },
+       "sources": [
+        "yield: 210.0 bu/acre, Iowa 2025; USDA NASS, Crop Production 2025 Summary (https://release.nass.usda.gov/reports/cropan26.txt)",
+        "price: $4.10/bu; USDA NASS, Crop Values 2025 Summary, marketing-year price (https://release.nass.usda.gov/reports/cpvl0226.txt)",
+        "cost: variable costs $483.60/acre for corn following soybeans at 211 bu/acre (total incl. land and labour $911.98/acre); Iowa State University Extension, Ag Decision Maker A1-20, Estimated Costs of Crop Production in Iowa 2026 (https://www.extension.iastate.edu/agdm/crops/pdf/a1-20.pdf)"
+       ]
+      },
+      "season": {
+       "areaHa": 29.25,
+       "yield": {
+        "expectedTHa": 13.18,
+        "lowTHa": 0.14,
+        "highTHa": 13.18,
+        "refTHa": 13.18,
+        "basis": "Reference yield (Iowa (grain), 2026) x expected fraction 100 %; range between the poorest and the best tenth of the analysed years."
+       },
+       "productionT": 385.52,
+       "priceUsdPerT": 161.4,
+       "revenueUsd": 62222,
+       "costUsd": 34954,
+       "marginUsd": 27268,
+       "marginLowUsd": -34298,
+       "marginHighUsd": 27268,
+       "marginPct": 43.8,
+       "breakEvenYieldTHa": 7.4,
+       "usesReferenceValues": true
+      }
+     }
+    ],
+    "rowCount": 1,
+    "sources": [
+     {
+      "name": "Astrovivu reference economics, region US-HEARTLAND (docs/ECONOMICS.md): yield: 210.0 bu/acre, Iowa 2025; USDA NASS, Crop Production 2025 Summary (https://release.nass.usda.gov/reports/cropan26.txt); price: $4.10/bu; USDA NASS, Crop Values 2025 Summary, marketing-year price (https://release.nass.usda.gov/reports/cpvl0226.txt); cost: variable costs $483.60/acre for corn following soybeans at 211 bu/acre (total incl. land and labour $911.98/acre); Iowa State University Extension, Ag Decision Maker A1-20, Estimated Costs of Crop Production in Iowa 2026 (https://www.extension.iastate.edu/agdm/crops/pdf/a1-20.pdf)",
+      "licence": "Each figure keeps the terms of its publisher, named in the source line",
+      "year": "2026"
+     }
+    ],
+    "caveats": [
+     "Source quality: yield official, price official, cost budget. Reference values, not this grower's figures, and not a forecast."
+    ]
+   },
+   "isError": false,
+   "ms": 11
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "The reference yield for maize in Iowa (grain) is 13.18 t/ha with a reference farm-gate price of 161.4 USD/t, based on official USDA NASS figures and Iowa State University Extension estimates [S1].\n\nFor your 29.25 ha parcel, the estimated revenue is 62,222 USD with total costs of 34,954 USD, yielding an estimated margin of 27,268 USD (or a margin of 43.8%), based on reference values rather than your own specific costs and prices [S1].\n\nCheck your local input costs and contract prices with your extension office to confirm these figures for your operation.",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:economics:zea-mays",
+   "title": "Reference yield, price and cost of Maize (Zea mays)",
+   "source": "Astrovivu reference economics, region US-HEARTLAND (docs/ECONOMICS.md): yield: 210.0 bu/acre, Iowa 2025; USDA NASS, Crop Production 2025 Summary (https://release.nass.usda.gov/reports/cropan26.txt); price: $4.10/bu; USDA NASS, Crop Values 2025 Summary, marketing-year price (https://release.nass.usda.gov/reports/cpvl0226.txt); cost: variable costs $483.60/acre for corn following soybeans at 211 bu/acre (total incl. land and labour $911.98/acre); Iowa State University Extension, Ag Decision Maker A1-20, Estimated Costs of Crop Production in Iowa 2026 (https://www.extension.iastate.edu/agdm/crops/pdf/a1-20.pdf), 2026",
+   "license": "Each figure keeps the terms of its publisher, named in the source line"
+  }
+ ]
+}

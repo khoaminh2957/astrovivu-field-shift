@@ -1,0 +1,251 @@
+{
+ "id": "02",
+ "lang": "vi",
+ "question": "Ở Việt Nam người ta trồng những cây gì nhiều nhất?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:07:32.981Z",
+ "intent": "general",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 10816,
+ "outputTokens": 1032,
+ "ms": 4509,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "cropsInPlace",
+   "input": {
+    "country": "VNM",
+    "limit": 15
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "place": "Viet Nam",
+    "rows": [
+     {
+      "name": "Rice",
+      "areaHa": 7089041,
+      "productionT": 43202957,
+      "sharePct": 52.493,
+      "rank": 1,
+      "level": "major",
+      "crops": [
+       "Lúa (Oryza sativa)",
+       "Oryza sativa ssp. indica",
+       "Oryza sativa ssp. javanica"
+      ]
+     },
+     {
+      "name": "Maize (corn)",
+      "areaHa": 875899,
+      "productionT": 4420915,
+      "sharePct": 6.486,
+      "rank": 3,
+      "level": "major",
+      "crops": [
+       "Ngô (Zea mays)",
+       "Zea mays ssp. mays",
+       "Zea mays ssp. saccharata"
+      ]
+     },
+     {
+      "name": "Natural rubber in primary forms",
+      "areaHa": 728509,
+      "productionT": 1311971,
+      "sharePct": 5.394,
+      "rank": 4,
+      "level": "major",
+      "crops": [
+       "Cao su (Hevea brasiliensis)"
+      ]
+     },
+     {
+      "name": "Coffee, green",
+      "areaHa": 667148,
+      "productionT": 1975354,
+      "sharePct": 4.94,
+      "rank": 5,
+      "level": "common",
+      "crops": [
+       "Cà phê chè (Coffea arabica)",
+       "Cà phê vối (Coffea canephora)",
+       "Coffea excelsa",
+       "Coffea liberica"
+      ]
+     },
+     {
+      "name": "Cassava, fresh",
+      "areaHa": 519296,
+      "productionT": 10533331,
+      "sharePct": 3.845,
+      "rank": 6,
+      "level": "common",
+      "crops": [
+       "Sắn (Manihot esculenta)"
+      ]
+     },
+     {
+      "name": "Cashew nuts, in shell",
+      "areaHa": 286817,
+      "productionT": 327549,
+      "sharePct": 2.124,
+      "rank": 7,
+      "level": "common",
+      "crops": [
+       "Điều (Anacardium occidentale)"
+      ]
+     },
+     {
+      "name": "Cinnamon and cinnamon-tree flowers, raw",
+      "areaHa": 191575,
+      "productionT": 68102,
+      "sharePct": 1.419,
+      "rank": 9,
+      "level": "common",
+      "crops": [
+       "Cinnamomum cassia",
+       "Ceylon cinnamon (Cinnamomum verum)"
+      ]
+     },
+     {
+      "name": "Coconuts, in shell",
+      "areaHa": 177318,
+      "productionT": 2112013,
+      "sharePct": 1.313,
+      "rank": 10,
+      "level": "common",
+      "crops": [
+       "Dừa (Cocos nucifera)"
+      ]
+     },
+     {
+      "name": "Sugar cane",
+      "areaHa": 173030,
+      "productionT": 11592168,
+      "sharePct": 1.281,
+      "rank": 11,
+      "level": "common",
+      "crops": [
+       "Mía (Saccharum officinarum)"
+      ]
+     },
+     {
+      "name": "Groundnuts, excluding shelled",
+      "areaHa": 152837,
+      "productionT": 401805,
+      "sharePct": 1.132,
+      "rank": 13,
+      "level": "common",
+      "crops": [
+       "Đậu phộng (Arachis hypogaea)"
+      ]
+     },
+     {
+      "name": "Plantains and cooking bananas",
+      "areaHa": 144947,
+      "productionT": 2591020,
+      "sharePct": 1.073,
+      "rank": 14,
+      "level": "common",
+      "crops": [
+       "Plantains and cooking bananas (Musa sapientum)"
+      ]
+     },
+     {
+      "name": "Tea leaves",
+      "areaHa": 112472,
+      "productionT": 1132108,
+      "sharePct": 0.833,
+      "rank": 17,
+      "level": "common",
+      "crops": [
+       "Chè (Camellia sinensis)",
+       "Camellia sinensis var. assamica",
+       "Camellia sinensis var. sinensis"
+      ]
+     },
+     {
+      "name": "Pepper (Piper spp.), raw",
+      "areaHa": 102798,
+      "productionT": 263946,
+      "sharePct": 0.761,
+      "rank": 18,
+      "level": "common",
+      "crops": [
+       "Long pepper (Piper longum)",
+       "Hồ tiêu (Piper nigrum)"
+      ]
+     },
+     {
+      "name": "Onions and shallots, dry (excluding dehydrated)",
+      "areaHa": 100918,
+      "productionT": 367651,
+      "sharePct": 0.747,
+      "rank": 19,
+      "level": "common",
+      "crops": [
+       "Hành tây (Allium cepa)",
+       "Allium cepa var. aggregatum",
+       "Allium cepa var. cepa",
+       "Allium cepa x A. fistulosum"
+      ]
+     },
+     {
+      "name": "Pomelos and grapefruits",
+      "areaHa": 89242,
+      "productionT": 1189648,
+      "sharePct": 0.661,
+      "rank": 20,
+      "level": "common",
+      "crops": [
+       "Bưởi (Citrus grandis)",
+       "Citrus paradisi"
+      ]
+     }
+    ],
+    "rowCount": 32,
+    "rowsShown": 15,
+    "facts": {
+     "country": "Viet Nam",
+     "items": 32,
+     "crops": 60,
+     "inGroups": 95,
+     "notReported": 105
+    },
+    "sources": [
+     {
+      "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
+      "licence": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)",
+      "year": "2022-2024",
+      "url": "https://www.fao.org/faostat/en/#data/QCL",
+      "accessed": "2026-11-15"
+     }
+    ],
+    "caveats": [
+     "Còn 95 cây được tính trong các mặt hàng gộp mà nước này có báo cáo (\"Other vegetables\" và tương tự): có thể có trồng, nhưng không có số riêng.",
+     "Cây mà thống kê không ghi nhận chưa chắc là cây không được trồng: nước nào không thống kê riêng một cây thì cũng hiện ra như vậy."
+    ]
+   },
+   "isError": false,
+   "ms": 9
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Theo số liệu thống kê của FAOSTAT (2022-2024), những cây trồng có diện tích lớn nhất tại Việt Nam bao gồm:\n\n- Lúa (Rice): 7.089.041 ha, chiếm 52,49% tổng diện tích thu hoạch [S1].\n- Ngô (Maize): 875.899 ha, chiếm 6,49% tổng diện tích thu hoạch [S1].\n- Cao su (Natural rubber): 728.509 ha, chiếm 5,39% tổng diện tích thu hoạch [S1].\n- Cà phê (Coffee, green): 667.148 ha, chiếm 4,94% tổng diện tích thu hoạch [S1].\n- Sắn (Cassava, fresh): 519.296 ha, chiếm 3,85% tổng diện tích thu hoạch [S1].\n\nBạn có muốn tìm hiểu chi tiết về điều kiện sinh thái hoặc vùng trồng của một trong các loại cây này không?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:country:VNM",
+   "title": "Cây trồng của Viet Nam theo diện tích thu hoạch",
+   "source": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2022-2024",
+   "license": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)"
+  }
+ ]
+}

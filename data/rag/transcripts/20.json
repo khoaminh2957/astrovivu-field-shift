@@ -1,0 +1,38 @@
+{
+ "id": "20",
+ "lang": "en",
+ "question": "What conditions does quinoa need?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:56.943Z",
+ "intent": "ideal",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 1,
+ "inputTokens": 4492,
+ "outputTokens": 1236,
+ "ms": 3868,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Quinoa grows best with a mean temperature of 14-18 °C, though it tolerates 2-35 °C, and an optimal annual rainfall of 500-1000 mm [S1]. It is resilient to a killing temperature of -8 °C during early growth and rest [S1].\n\nThe crop prefers a soil pH of 5.5-8, moderate soil fertility, and well-drained soils with dry spells [S1]. It can handle heavy, medium, or light soil textures and low salinity under 4 dS/m [S1].\n\nIts growing period lasts 90-240 days [S1]. Average seed yields are about 400-900 kg/ha, with potential yields reaching 2-3 t/ha [S2].\n\nTo check if your land matches these requirements, consider getting a local soil test.",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "eco:chenopodium-quinoa:facts",
+   "title": "Quinoa (Chenopodium quinoa): ecological requirements",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  },
+  {
+   "n": 2,
+   "chunkId": "eco:chenopodium-quinoa:notes-0",
+   "title": "Quinoa (Chenopodium quinoa): description, uses, growing period, further information",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  }
+ ]
+}

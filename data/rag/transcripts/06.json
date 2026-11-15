@@ -1,0 +1,404 @@
+{
+ "id": "06",
+ "lang": "vi",
+ "field": "daklak-coffee",
+ "question": "Tôi nên luân canh thế nào trên thửa này?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:07:54.962Z",
+ "intent": "rotation",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 21760,
+ "outputTokens": 1458,
+ "ms": 6322,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "rotationOptions",
+   "input": {},
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "field": "Central Highlands robusta block",
+    "rows": [
+     {
+      "id": "current",
+      "kind": "current",
+      "name": "Cách làm hiện tại",
+      "years": 1,
+      "seasons": [
+       {
+        "crop": "Cà phê vối",
+        "startMonth": 1,
+        "endMonth": 12,
+        "year": 0,
+        "role": "perennial",
+        "suitability": 100,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 1271,
+        "rainMm": 1516,
+        "yieldTHa": 2.97,
+        "marginUsdPerHa": 7614,
+        "reason": "Đứng quanh năm: thường có 1516 mm mưa mỗi năm so với lượng nước cây dùng khoảng 1271 mm; trong 5 tháng (tháng 12 đến tháng 4) lượng mưa thấp hơn lượng nước cây dùng, nên phải dựa vào nước tưới."
+       }
+      ],
+      "metrics": {
+       "suitability": 100,
+       "soilHealth": 57,
+       "waterUseMm": 1271,
+       "waterFit": 100,
+       "marginUsdPerHaYr": 7614,
+       "risk": 25,
+       "nitrogenKgHaYr": 0,
+       "groundCoverPct": 100,
+       "pestBreak": 0
+      },
+      "score": 74,
+      "marginUsdPerHaYr": {
+       "expected": 7614,
+       "low": 5619,
+       "high": 7614
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "Mốc để so sánh mọi phương án khác.",
+       "Luân canh bạn đã nhập ở mục Dữ liệu thực địa."
+      ],
+      "benefits": [
+       "Hệ thống quen thuộc: không cần thiết bị, thị trường hay kỹ năng mới.",
+       "Cây hiện tại phù hợp tốt với thửa ruộng (100/100).",
+       "Đất được che phủ gần như quanh năm."
+      ],
+      "gaps": [
+       "Chưa có phân tích đất: pH và sa cấu lấy từ SoilGrids 2.0 (0-30 cm) (bản đồ 250 m), không phải từ thửa ruộng này.",
+       "Lịch sử khí hậu là trung bình ô lưới ~25 km (ERA5 reanalysis (ECMWF), daily aggregates): điểm sương giá cục bộ và vùng khuất mưa không được thể hiện.",
+       "Năng suất, giá và chi phí là giá trị tham chiếu của vùng, không phải số liệu của bạn.",
+       "Chưa mô hình năm kiến thiết của cây lâu năm (năng suất thấp, thêm chi phí); lãi tính cho vườn/đồng đã ổn định."
+      ],
+      "risks": [
+       "Tháng gieo và kế hoạch bón phân cần cán bộ khuyến nông địa phương xác nhận theo giống sẵn có."
+      ]
+     },
+     {
+      "id": "soil-health",
+      "kind": "soil-health",
+      "name": "Luân canh cải tạo đất",
+      "years": 1,
+      "seasons": [
+       {
+        "crop": "Cà phê vối",
+        "startMonth": 1,
+        "endMonth": 12,
+        "year": 0,
+        "role": "perennial",
+        "suitability": 100,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 1271,
+        "rainMm": 1516,
+        "yieldTHa": 2.97,
+        "marginUsdPerHa": 7614,
+        "reason": "Đứng quanh năm: thường có 1516 mm mưa mỗi năm so với lượng nước cây dùng khoảng 1271 mm; trong 5 tháng (tháng 12 đến tháng 4) lượng mưa thấp hơn lượng nước cây dùng, nên phải dựa vào nước tưới."
+       },
+       {
+        "crop": "Lạc dại (che phủ giữa hàng, ~25 % diện tích)",
+        "startMonth": 1,
+        "endMonth": 12,
+        "year": 0,
+        "share": 0.25,
+        "role": "cover",
+        "suitability": 71,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 1019,
+        "rainMm": 1516,
+        "nitrogenKgHa": 90,
+        "reason": "Trồng giữa các hàng Cà phê vối trên khoảng 25 % diện tích: đất ở đó luôn được che phủ dưới 1516 mm mưa thường rơi mỗi năm, đồng thời để lại khoảng 90 kg N/ha tại chỗ trồng (ước lượng)."
+       }
+      ],
+      "metrics": {
+       "suitability": 94,
+       "soilHealth": 70,
+       "waterUseMm": 1526,
+       "waterFit": 100,
+       "marginUsdPerHaYr": 7614,
+       "risk": 13,
+       "nitrogenKgHaYr": 23,
+       "groundCoverPct": 100,
+       "pestBreak": 40
+      },
+      "score": 74,
+      "marginUsdPerHaYr": {
+       "expected": 7614,
+       "low": 5619,
+       "high": 7614
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "Cà phê vối là cây lâu năm, không luân canh hằng năm. Thay đổi thực tế là trồng cây họ đậu che phủ giữa hàng (Lạc dại) để bảo vệ và nuôi đất."
+      ],
+      "benefits": [
+       "Thêm khoảng 23 kg N/ha mỗi năm từ cây họ đậu (ước lượng), có thể giảm phân bón.",
+       "Cắt vòng sâu bệnh tốt hơn (40/100 so với 0/100).",
+       "Điểm rủi ro tổng thể thấp hơn (13 so với 25).",
+       "Chỉ số sức khỏe đất cao hơn (70 so với 57)."
+      ],
+      "gaps": [
+       "Chưa có phân tích đất: pH và sa cấu lấy từ SoilGrids 2.0 (0-30 cm) (bản đồ 250 m), không phải từ thửa ruộng này.",
+       "Lịch sử khí hậu là trung bình ô lưới ~25 km (ERA5 reanalysis (ECMWF), daily aggregates): điểm sương giá cục bộ và vùng khuất mưa không được thể hiện.",
+       "Năng suất, giá và chi phí là giá trị tham chiếu của vùng, không phải số liệu của bạn; chưa có số liệu kinh tế tham chiếu cho Lạc dại.",
+       "Chưa mô hình năm kiến thiết của cây lâu năm (năng suất thấp, thêm chi phí); lãi tính cho vườn/đồng đã ổn định.",
+       "Lợi ích cây che phủ (đạm, che phủ đất) là giá trị tham khảo từ tài liệu, không đo tại đây.",
+       "Chưa có số liệu cho biết nước của thửa ruộng này có trồng Lạc dại hay không: FAOSTAT gộp vào một nhóm cây hoặc không thống kê. Hãy hỏi tại địa phương xem có giống và nơi tiêu thụ không."
+      ],
+      "risks": [
+       "Cần kiểm tra thị trường, giống và nguồn hạt giống của Lạc dại tại địa phương trước khi chuyển đổi.",
+       "Cây che phủ phải gieo ngay sau thu hoạch và kết thúc đúng lúc để không cạnh tranh với vụ sau; thời điểm cần chuyên gia địa phương xem xét.",
+       "Trồng xen thay đổi độ che bóng, cạnh tranh rễ và lao động: khoảng cách và tỉ lệ diện tích cần chuyên gia địa phương xem xét.",
+       "Tháng gieo và kế hoạch bón phân cần cán bộ khuyến nông địa phương xác nhận theo giống sẵn có."
+      ]
+     },
+     {
+      "id": "water-saver",
+      "kind": "water-saver",
+      "name": "Luân canh tiết kiệm nước",
+      "years": 1,
+      "seasons": [
+       {
+        "crop": "Cà phê vối",
+        "startMonth": 1,
+        "endMonth": 12,
+        "year": 0,
+        "share": 0.7,
+        "role": "perennial",
+        "suitability": 100,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 1271,
+        "rainMm": 1516,
+        "yieldTHa": 2.97,
+        "marginUsdPerHa": 7615,
+        "reason": "Đứng quanh năm: thường có 1516 mm mưa mỗi năm so với lượng nước cây dùng khoảng 1271 mm; trong 5 tháng (tháng 12 đến tháng 4) lượng mưa thấp hơn lượng nước cây dùng, nên phải dựa vào nước tưới."
+       },
+       {
+        "crop": "Đậu cô ve (phần chuyển đổi, ~30 % diện tích)",
+        "startMonth": 5,
+        "endMonth": 7,
+        "year": 0,
+        "share": 0.3,
+        "role": "cash",
+        "suitability": 89,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 298,
+        "rainMm": 575,
+        "yieldTHa": 2.01,
+        "marginUsdPerHa": 638,
+        "nitrogenKgHa": 40,
+        "reason": "Gieo tháng 5 để chu kỳ 3 tháng nằm trọn trong mùa mưa: thường có 575 mm mưa, cây cần khoảng 298 mm."
+       }
+      ],
+      "metrics": {
+       "suitability": 99,
+       "soilHealth": 65,
+       "waterUseMm": 979,
+       "waterFit": 100,
+       "marginUsdPerHaYr": 5522,
+       "risk": 13,
+       "nitrogenKgHaYr": 12,
+       "groundCoverPct": 100,
+       "pestBreak": 40
+      },
+      "score": 52,
+      "marginUsdPerHaYr": {
+       "expected": 5522,
+       "low": 4044,
+       "high": 5572
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "Chuyển đổi một phần: khoảng 30 % lô chuyển sang Đậu cô ve, cây cần ít nước hơn, giảm nhu cầu tưới mùa khô của Cà phê vối."
+      ],
+      "benefits": [
+       "Ít hơn khoảng 292 mm nước cây sử dụng mỗi năm so với hiện tại.",
+       "Thêm khoảng 12 kg N/ha mỗi năm từ cây họ đậu (ước lượng), có thể giảm phân bón.",
+       "Cắt vòng sâu bệnh tốt hơn (40/100 so với 0/100).",
+       "Điểm rủi ro tổng thể thấp hơn (13 so với 25).",
+       "Chỉ số sức khỏe đất cao hơn (65 so với 57)."
+      ],
+      "gaps": [
+       "Chưa có phân tích đất: pH và sa cấu lấy từ SoilGrids 2.0 (0-30 cm) (bản đồ 250 m), không phải từ thửa ruộng này.",
+       "Lịch sử khí hậu là trung bình ô lưới ~25 km (ERA5 reanalysis (ECMWF), daily aggregates): điểm sương giá cục bộ và vùng khuất mưa không được thể hiện.",
+       "Năng suất, giá và chi phí là giá trị tham chiếu của vùng, không phải số liệu của bạn.",
+       "Chưa mô hình năm kiến thiết của cây lâu năm (năng suất thấp, thêm chi phí); lãi tính cho vườn/đồng đã ổn định.",
+       "Chưa có số liệu cho biết nước của thửa ruộng này có trồng Đậu cô ve hay không: FAOSTAT gộp vào một nhóm cây hoặc không thống kê. Hãy hỏi tại địa phương xem có giống và nơi tiêu thụ không."
+      ],
+      "risks": [
+       "Cần kiểm tra thị trường, giống và nguồn hạt giống của Đậu cô ve tại địa phương trước khi chuyển đổi.",
+       "Trồng xen thay đổi độ che bóng, cạnh tranh rễ và lao động: khoảng cách và tỉ lệ diện tích cần chuyên gia địa phương xem xét.",
+       "Tháng gieo và kế hoạch bón phân cần cán bộ khuyến nông địa phương xác nhận theo giống sẵn có."
+      ]
+     },
+     {
+      "id": "resilience",
+      "kind": "resilience",
+      "name": "Luân canh chống chịu rủi ro",
+      "years": 1,
+      "seasons": [
+       {
+        "crop": "Cà phê vối",
+        "startMonth": 1,
+        "endMonth": 12,
+        "year": 0,
+        "share": 0.6,
+        "role": "perennial",
+        "suitability": 100,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 1271,
+        "rainMm": 1516,
+        "yieldTHa": 2.97,
+        "marginUsdPerHa": 7614,
+        "reason": "Đứng quanh năm: thường có 1516 mm mưa mỗi năm so với lượng nước cây dùng khoảng 1271 mm; trong 5 tháng (tháng 12 đến tháng 4) lượng mưa thấp hơn lượng nước cây dùng, nên phải dựa vào nước tưới."
+       },
+       {
+        "crop": "Đậu cô ve (phần chuyển đổi, ~20 % diện tích)",
+        "startMonth": 5,
+        "endMonth": 7,
+        "year": 0,
+        "share": 0.2,
+        "role": "cash",
+        "suitability": 89,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 298,
+        "rainMm": 575,
+        "yieldTHa": 2.01,
+        "marginUsdPerHa": 636,
+        "nitrogenKgHa": 40,
+        "reason": "Gieo tháng 5 để chu kỳ 3 tháng nằm trọn trong mùa mưa: thường có 575 mm mưa, cây cần khoảng 298 mm."
+       },
+       {
+        "crop": "Lạc dại (che phủ giữa hàng, ~25 % diện tích)",
+        "startMonth": 1,
+        "endMonth": 12,
+        "year": 0,
+        "share": 0.25,
+        "role": "cover",
+        "suitability": 71,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 1019,
+        "rainMm": 1516,
+        "nitrogenKgHa": 90,
+        "reason": "Trồng giữa các hàng Cà phê vối trên khoảng 25 % diện tích: đất ở đó luôn được che phủ dưới 1516 mm mưa thường rơi mỗi năm, đồng thời để lại khoảng 90 kg N/ha tại chỗ trồng (ước lượng)."
+       }
+      ],
+      "metrics": {
+       "suitability": 91,
+       "soilHealth": 70,
+       "waterUseMm": 1077,
+       "waterFit": 100,
+       "marginUsdPerHaYr": 4696,
+       "risk": 13,
+       "nitrogenKgHaYr": 31,
+       "groundCoverPct": 100,
+       "pestBreak": 60
+      },
+      "score": 41,
+      "marginUsdPerHaYr": {
+       "expected": 4696,
+       "low": 3445,
+       "high": 4729
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "Lô đa dạng: Cà phê vối với cây trồng xen và cây che phủ giữa hàng, để một đợt giá xuống, sâu bệnh hay năm hạn không ảnh hưởng toàn bộ thu nhập."
+      ],
+      "benefits": [
+       "Ít hơn khoảng 194 mm nước cây sử dụng mỗi năm so với hiện tại.",
+       "Thêm khoảng 31 kg N/ha mỗi năm từ cây họ đậu (ước lượng), có thể giảm phân bón.",
+       "Cắt vòng sâu bệnh tốt hơn (60/100 so với 0/100).",
+       "Điểm rủi ro tổng thể thấp hơn (13 so với 25).",
+       "Chỉ số sức khỏe đất cao hơn (70 so với 57)."
+      ],
+      "gaps": [
+       "Chưa có phân tích đất: pH và sa cấu lấy từ SoilGrids 2.0 (0-30 cm) (bản đồ 250 m), không phải từ thửa ruộng này.",
+       "Lịch sử khí hậu là trung bình ô lưới ~25 km (ERA5 reanalysis (ECMWF), daily aggregates): điểm sương giá cục bộ và vùng khuất mưa không được thể hiện.",
+       "Năng suất, giá và chi phí là giá trị tham chiếu của vùng, không phải số liệu của bạn; chưa có số liệu kinh tế tham chiếu cho Lạc dại.",
+       "Chưa mô hình năm kiến thiết của cây lâu năm (năng suất thấp, thêm chi phí); lãi tính cho vườn/đồng đã ổn định.",
+       "Lợi ích cây che phủ (đạm, che phủ đất) là giá trị tham khảo từ tài liệu, không đo tại đây.",
+       "Chưa có số liệu cho biết nước của thửa ruộng này có trồng Đậu cô ve, Lạc dại hay không: FAOSTAT gộp vào một nhóm cây hoặc không thống kê. Hãy hỏi tại địa phương xem có giống và nơi tiêu thụ không."
+      ],
+      "risks": [
+       "Cần kiểm tra thị trường, giống và nguồn hạt giống của Đậu cô ve, Lạc dại tại địa phương trước khi chuyển đổi.",
+       "Cây che phủ phải gieo ngay sau thu hoạch và kết thúc đúng lúc để không cạnh tranh với vụ sau; thời điểm cần chuyên gia địa phương xem xét.",
+       "Trồng xen thay đổi độ che bóng, cạnh tranh rễ và lao động: khoảng cách và tỉ lệ diện tích cần chuyên gia địa phương xem xét.",
+       "Tháng gieo và kế hoạch bón phân cần cán bộ khuyến nông địa phương xác nhận theo giống sẵn có."
+      ]
+     }
+    ],
+    "rowCount": 4,
+    "sources": [
+     {
+      "name": "Astrovivu rotation planner (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14",
+      "licence": "MIT (project code); the readings keep the licences of their sources",
+      "year": "2026"
+     },
+     {
+      "name": "FAO EcoCrop database, 2,568 species",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "data/ecocrop/README.md"
+     }
+    ],
+    "caveats": [
+     "Lãi là giá trị tham chiếu của vùng trừ khi người trồng tự nhập; mỗi phương án có danh sách điều chưa biết và rủi ro riêng."
+    ]
+   },
+   "isError": false,
+   "ms": 31
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Vì cà phê vối là cây lâu năm, phương án giữ nguyên độc canh (cách làm hiện tại) có sự phù hợp là 100/100 theo dữ liệu khí hậu với lượng mưa trung bình năm 1516 mm (ERA5 reanalysis (ECMWF), 25 km pixel, 2006-2025), nhưng việc canh tác độc canh có thể khiến đất nghèo đi theo thời gian [S1][S2]. \n\nBạn có thể cân nhắc ba hướng điều chỉnh dựa trên nhu cầu của mình. Thứ nhất là luân canh cải tạo đất bằng cách trồng thêm lạc dại che phủ giữa hàng trên khoảng 25 % diện tích, giúp nâng chỉ số sức khỏe đất lên 70 và bổ sung khoảng 23 kg N/ha mỗi năm [S2]. Thứ hai là luân canh tiết kiệm nước, chuyển đổi khoảng 30 % diện tích sang đậu cô ve ngắn ngày trong mùa mưa để giảm bớt nhu cầu tưới nước [S2]. Thứ ba là luân canh chống chịu rủi ro, kết hợp cà phê với đậu cô ve và lạc dại che phủ nhằm đa dạng hóa thu nhập và cắt vòng sâu bệnh [S2].\n\nCác phương án xen canh đều có điểm rủi ro thấp hơn (13 so với 25 của độc canh), nhưng cần kiểm tra kỹ thị trường và nguồn hạt giống tại địa phương [S2]. Hãy hỏi cán bộ khuyến nông địa phương về khoảng cách trồng xen và thời điểm gieo vụ phù hợp nhất cho thửa ruộng của bạn [S2].",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "wiki-vi:crop-rotation:01",
+   "title": "Luân canh: Tổng quan",
+   "source": "Wikipedia (vi): Luân canh",
+   "license": "CC BY-SA 4.0"
+  },
+  {
+   "n": 2,
+   "chunkId": "table:rotations:daklak-coffee",
+   "title": "Các phương án luân canh cho thửa ruộng",
+   "source": "Astrovivu rotation planner (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  }
+ ]
+}

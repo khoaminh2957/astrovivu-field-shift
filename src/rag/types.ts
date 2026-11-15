@@ -1,4 +1,4 @@
-import type { KnowledgeChunk } from '@/contracts';
+import type { AskRequest, KnowledgeChunk, ModelInput } from '@/contracts';
 import type { AliasTable } from './aliases';
 
 /** EcoCrop-style window with possibly missing ends: [absMin, optMin, optMax, absMax]. */
@@ -143,4 +143,14 @@ export interface IndexDoc {
 export function chunkKind(c: KnowledgeChunk): ChunkKind {
   const k = c.tags?.find((t) => t.startsWith('kind:'));
   return (k?.slice(5) as ChunkKind | undefined) ?? 'narrative';
+}
+
+/**
+ * A question as the API server takes it: `AskRequest`, and with it the locked field as the scoring
+ * and rotation models read it. The lookups that need a field (suitability, rotations, pH plan,
+ * price and margin) run on the server from this; without it they answer "no field is locked".
+ * Kept here, beside the assistant, until the contract itself carries the field.
+ */
+export interface AssistantRequest extends AskRequest {
+  field?: ModelInput;
 }

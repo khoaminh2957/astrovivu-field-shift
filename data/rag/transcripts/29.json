@@ -1,0 +1,23 @@
+{
+ "id": "29",
+ "lang": "en",
+ "question": "Can you diagnose this leaf from a photo?",
+ "expect": "declined",
+ "askedAt": "2026-11-15T08:09:39.940Z",
+ "intent": "off-topic",
+ "mode": "extractive",
+ "fallback": "declined by the router",
+ "provider": null,
+ "model": null,
+ "requests": 0,
+ "inputTokens": 0,
+ "outputTokens": 0,
+ "ms": 2,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "I cannot look at a photo or diagnose a pest or disease from a description. I can tell you what the readings of your field say (soil, moisture, weather risk) and what a crop needs; for a diagnosis take a sample or a photo to the local plant-protection office.",
+ "citations": []
+}

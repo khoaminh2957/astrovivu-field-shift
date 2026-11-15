@@ -1,0 +1,23 @@
+{
+ "id": "15",
+ "lang": "vi",
+ "question": "Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?",
+ "expect": "declined",
+ "askedAt": "2026-11-15T08:08:35.872Z",
+ "intent": "off-topic",
+ "mode": "extractive",
+ "fallback": "declined by the router",
+ "provider": null,
+ "model": null,
+ "requests": 0,
+ "inputTokens": 0,
+ "outputTokens": 0,
+ "ms": 9,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Tôi không nêu tên thuốc hay liều lượng thuốc bảo vệ thực vật: hãy mô tả vấn đề với trạm bảo vệ thực vật địa phương, nơi nắm các thuốc được phép sử dụng. Tôi có thể cho biết yêu cầu của cây và số liệu của ruộng bạn.",
+ "citations": []
+}

@@ -1,0 +1,39 @@
+{
+ "id": "25",
+ "lang": "en",
+ "field": "nevada-alfalfa",
+ "question": "What is my soil pH and where does that number come from?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:09:22.354Z",
+ "intent": "field-fact",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 1,
+ "inputTokens": 8340,
+ "outputTokens": 82,
+ "ms": 1480,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "The soil pH of your parcel is 8.8. This value comes from the SSURGO soil survey (dominant component of the map unit). \n\nSoil pH measures acidity on a logarithmic scale where 7 is neutral, and values above 7.5 are alkaline [S1]. In dry climates, weathering and leaching are less intense, which often results in neutral or alkaline soils [S2].",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "gloss-en:soil-ph",
+   "title": "Soil pH and acidity",
+   "source": "Astrovivu glossary",
+   "license": "CC BY 4.0 (Astrovivu team)"
+  },
+  {
+   "n": 2,
+   "chunkId": "wiki-en:soil-ph:03",
+   "title": "Soil pH: Factors affecting soil pH",
+   "source": "Wikipedia (en): Soil pH",
+   "license": "CC BY-SA 4.0"
+  }
+ ]
+}

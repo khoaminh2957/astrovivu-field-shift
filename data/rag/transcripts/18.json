@@ -1,0 +1,198 @@
+{
+ "id": "18",
+ "lang": "en",
+ "question": "What does Iowa grow most?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:45.317Z",
+ "intent": "term",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 10135,
+ "outputTokens": 396,
+ "ms": 3376,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "cropsInPlace",
+   "input": {
+    "country": "USA",
+    "region": "Iowa"
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "place": "Iowa, United States of America",
+    "rows": [
+     {
+      "name": "Maize",
+      "areaHa": 4601295,
+      "sharePct": 54.56,
+      "rank": 1,
+      "residual": false,
+      "crops": [
+       "Maize (Zea mays)",
+       "Zea mays ssp. mays",
+       "Zea mays ssp. saccharata"
+      ]
+     },
+     {
+      "name": "Soybean",
+      "areaHa": 3786696,
+      "sharePct": 44.9,
+      "rank": 2,
+      "residual": false,
+      "crops": [
+       "Soybean (Glycine max)"
+      ]
+     },
+     {
+      "name": "Other Cereals",
+      "areaHa": 40299,
+      "sharePct": 0.48,
+      "rank": 3,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Wheat",
+      "areaHa": 3617,
+      "sharePct": 0.04,
+      "rank": 4,
+      "residual": false,
+      "crops": [
+       "Wheat (Triticum aestivum)",
+       "Durum (Triticum durum)",
+       "Spelt (Triticum spelta)"
+      ]
+     },
+     {
+      "name": "Other Vegetables",
+      "areaHa": 929,
+      "sharePct": 0.01,
+      "rank": 5,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Temperate Fruit",
+      "areaHa": 628,
+      "sharePct": 0.01,
+      "rank": 6,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Potato",
+      "areaHa": 259,
+      "sharePct": 0,
+      "rank": 7,
+      "residual": false,
+      "crops": [
+       "Potato (Solanum tuberosum)"
+      ]
+     },
+     {
+      "name": "Other Tropical Fruit",
+      "areaHa": 118,
+      "sharePct": 0,
+      "rank": 8,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Sorghum",
+      "areaHa": 98,
+      "sharePct": 0,
+      "rank": 9,
+      "residual": false,
+      "crops": [
+       "Sorghum (Sorghum bicolor)",
+       "Sorghum bicolor var. sweet"
+      ]
+     },
+     {
+      "name": "Tomato",
+      "areaHa": 53,
+      "sharePct": 0,
+      "rank": 10,
+      "residual": false,
+      "crops": [
+       "Tomato (Lycopersicon esculentum)"
+      ]
+     },
+     {
+      "name": "Onion",
+      "areaHa": 37,
+      "sharePct": 0,
+      "rank": 11,
+      "residual": false,
+      "crops": [
+       "Onion (Allium cepa)",
+       "Allium cepa var. aggregatum",
+       "Allium cepa var. cepa",
+       "Allium cepa x A. fistulosum",
+       "Spring onion (Allium fistulosum)"
+      ]
+     },
+     {
+      "name": "Sunflower",
+      "areaHa": 26,
+      "sharePct": 0,
+      "rank": 12,
+      "residual": false,
+      "crops": [
+       "Sunflower (Helianthus annuus)"
+      ]
+     },
+     {
+      "name": "Sweet Potato",
+      "areaHa": 7,
+      "sharePct": 0,
+      "rank": 13,
+      "residual": false,
+      "crops": [
+       "Sweet potato (Ipomoea batatas)"
+      ]
+     }
+    ],
+    "rowCount": 13,
+    "facts": {
+     "region": "Iowa",
+     "country": "United States of America"
+    },
+    "sources": [
+     {
+      "name": "SPAM 2020 V2r2, global harvested area, CSV (spam2020V2r2_global_harvested_area.csv.zip)",
+      "licence": "CC BY 4.0 with citation and the IFPRI adaptation notice (IFPRI Dataverse Terms of Use, December 2019)",
+      "year": "2020",
+      "url": "https://doi.org/10.7910/DVN/SWPENT",
+      "accessed": "2026-11-15"
+     }
+    ],
+    "caveats": [
+     "MapSPAM estimate: a model spreads national and sub-national statistics of 2020 over a grid. It is not a census of the province, and it knows 46 crops and classes of crops.",
+     "A class such as \"Other Vegetables\" names no single crop: its area cannot be given to any one of them."
+    ]
+   },
+   "isError": false,
+   "ms": 2
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Maize is grown most in Iowa, covering 4,601,295 hectares (54.56% of the harvested area) according to MapSPAM estimates for 2020 [S1]. \n\nSoybean is the second most grown crop in the state, with 3,786,696 hectares (44.90%) [S1]. Other crops like cereals, wheat, and vegetables account for a very small fraction of the remaining harvested area [S1].",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:region:USA:Iowa",
+   "title": "Crops of Iowa, United States of America by harvested area",
+   "source": "SPAM 2020 V2r2, global harvested area, CSV (spam2020V2r2_global_harvested_area.csv.zip), 2020",
+   "license": "CC BY 4.0 with citation and the IFPRI adaptation notice (IFPRI Dataverse Terms of Use, December 2019)"
+  }
+ ]
+}

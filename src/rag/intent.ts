@@ -107,10 +107,13 @@ const PRICE = String.raw`(?:\bprices?\b|(?<!suong |bang |danh )\bgia\b(?! (?:din
 const AHEAD = String.raw`(?:tomorrow|next (?:week|month|year|season)|will (?:it |they )?(?:rise|fall|go up|go down|drop)|forecast|predict|ngay mai|tuan (?:sau|toi)|thang (?:sau|toi)|nam (?:sau|toi)|sap toi|du bao0?|se (?:tang|giam|len|xuong))`;
 const PRICE_AHEAD = new RegExp(`${PRICE}.*${AHEAD}|${AHEAD}.*${PRICE}`);
 // "sổ đỏ" (land title) is left out on purpose: folded it is "so do", which is also "số đó" (that number).
-const LEGAL = /\b(lawyer|lawsuit|legal advice|land dispute|land title|sue|tenancy)\b|\b(lease|rental|land) (contract|agreement)|contract dispute|luat su|kien tung|tranh chap|phap ly|quyen su dung dat|hop dong (thue|mua ban|chuyen nhuong)|thue dat\b/;
+const LEGAL =
+  /\b(lawyer|lawsuit|legal advice|land dispute|land title|sue|tenancy|illegal|lawful|unlawful)\b|\b(lease|rental|land) (contract|agreement)|\bis it legal\b|\blegal(ly)? to\b|\ballowed by law\b|contract dispute|luat su|kien tung|tranh chap|phap ly|quyen su dung dat|hop dong (thue|mua ban|chuyen nhuong)|thue dat\b|(co )?hop phap khong|trai phap luat|phap luat (co )?cho phep/;
 const CHEMICAL = String.raw`(?:pesticide|herbicide|fungicide|insecticide|glyphosate|paraquat|mancozeb|thuoc (?:tru sau|diet co|tru co|tru benh|tru nam|diet nam|bao ve thuc vat|bvtv))`;
 const DOSE = new RegExp(
-  `(?:dose|dosage|mixing rate|how much|what rate|rate of) .*${CHEMICAL}|${CHEMICAL}\\w* .*(?:dose|dosage|brand|product name|how much|rate\\b)|lieu (?:luong |dung |pha )?.*(?:thuoc|glyphosate|paraquat)|${CHEMICAL}.*(?:lieu|bao nhieu|loai nao|ten gi|hieu nao|pha\\b)|pha thuoc`,
+  `(?:dose|dosage|mixing rate|how much|what rate|rate of) .*${CHEMICAL}|${CHEMICAL}\\w* .*(?:dose|dosage|brand|product name|how much|rate\\b)|lieu (?:luong |dung |pha )?.*(?:thuoc|glyphosate|paraquat)|${CHEMICAL}.*(?:lieu|bao nhieu|loai nao|ten gi|hieu nao|pha\\b)|pha thuoc` +
+    // Which product to spray is the same question as how much of it: "phun thuốc gì", "which fungicide should I spray".
+    String.raw`|(?:phun|xit|tuoi|rai) thuoc (?:gi|nao|loai nao)|thuoc (?:gi|nao|loai nao)\b.*(?:lieu|bao nhieu|pha\b)|(?:which|what) ${CHEMICAL}|what (?:should i |do i |to )?spray\b`,
 );
 
 /**

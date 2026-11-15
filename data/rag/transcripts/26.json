@@ -1,0 +1,32 @@
+{
+ "id": "26",
+ "lang": "en",
+ "field": "nevada-alfalfa",
+ "question": "Should I lime this field?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:09:25.359Z",
+ "intent": "field-fact",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 1,
+ "inputTokens": 8826,
+ "outputTokens": 584,
+ "ms": 3024,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Soil pH is 8.8 (SSURGO soil survey), which is strongly alkaline. Because agricultural lime raises soil pH [S1], liming this field is not appropriate and would make the soil even more alkaline. \n\nTo manage high soil pH, consult your local agricultural extension office and obtain a targeted soil test to see if acidifying amendments are recommended for your alfalfa crop.",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "gloss-en:soil-ph",
+   "title": "Soil pH and acidity",
+   "source": "Astrovivu glossary",
+   "license": "CC BY 4.0 (Astrovivu team)"
+  }
+ ]
+}

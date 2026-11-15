@@ -1,0 +1,40 @@
+{
+ "id": "27",
+ "lang": "en",
+ "field": "daklak-coffee",
+ "question": "What would a season of quinoa earn on this field?",
+ "expect": "no-data",
+ "askedAt": "2026-11-15T08:09:29.912Z",
+ "intent": "field",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 17829,
+ "outputTokens": 477,
+ "ms": 4002,
+ "calls": [
+  {
+   "name": "priceAndMargin",
+   "input": {
+    "crop": "quinoa"
+   },
+   "output": {
+    "ok": false,
+    "reason": "no-data",
+    "message": "No reference price or cost was collected for this crop.",
+    "crop": "Quinoa (Chenopodium quinoa)",
+    "field": "Central Highlands robusta block"
+   },
+   "isError": false,
+   "ms": 1
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "No reference price or cost was collected for quinoa on this field, so the application cannot provide earnings for a season of quinoa here. \n\nAsk your local agricultural extension office for regional market prices and estimated yields if you are considering a trial planting of quinoa.",
+ "citations": []
+}

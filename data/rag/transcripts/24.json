@@ -1,0 +1,194 @@
+{
+ "id": "24",
+ "lang": "en",
+ "field": "nevada-alfalfa",
+ "question": "Can I grow rice on this field?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:09:17.040Z",
+ "intent": "field",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 19486,
+ "outputTokens": 694,
+ "ms": 3787,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "fieldSuitability",
+   "input": {
+    "crop": "rice"
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "crop": "Rice (Oryza sativa)",
+    "field": "Diamond Valley alfalfa pivot",
+    "rows": [
+     {
+      "suitabilityOutOf100": 13,
+      "bestSuitabilityOutOf100": 13,
+      "sowingMonth": 6,
+      "sowingAssumed": true,
+      "bestSowingMonth": 6,
+      "windowMonths": 4,
+      "reliability": {
+       "yearsOk": 20,
+       "yearsTotal": 20
+      },
+      "waterSupplyMm": 63.33685544,
+      "waterNeedMm": 1500,
+      "seasonalGdd": 1474,
+      "needsLocalReview": false,
+      "limiting": "ph",
+      "factors": [
+       {
+        "key": "temperature",
+        "label": "Temperature in the growing window",
+        "actual": 18.7,
+        "ideal": "20-30",
+        "kind": "fixed",
+        "unit": "°C",
+        "note": "Worst month of the 4-month window.",
+        "scoreOutOf100": 87,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "water",
+        "label": "Water over the growing window",
+        "actual": 63,
+        "ideal": "1500-2000",
+        "kind": "manageable",
+        "unit": "mm",
+        "note": "Rain and stored soil water supply 63 mm; irrigation covers the rest.",
+        "scoreOutOf100": 100,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "ph",
+        "label": "Soil pH",
+        "actual": 8.8,
+        "ideal": "5.5-7",
+        "kind": "manageable",
+        "scoreOutOf100": 10,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "texture",
+        "label": "Soil texture",
+        "actual": "light",
+        "ideal": "heavy, medium, light",
+        "kind": "fixed",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "drainage",
+        "label": "Drainage",
+        "actual": "well",
+        "ideal": "poor",
+        "kind": "manageable",
+        "scoreOutOf100": 15,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "depth",
+        "label": "Soil depth",
+        "actual": null,
+        "ideal": "medium",
+        "kind": "fixed",
+        "unit": "cm",
+        "note": "No data: skipped, not scored as zero.",
+        "scoreOutOf100": null,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "salinity",
+        "label": "Salinity",
+        "actual": 1,
+        "ideal": "low",
+        "kind": "manageable",
+        "unit": "dS/m",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "fertility",
+        "label": "Soil fertility (organic carbon, CEC)",
+        "actual": "high",
+        "ideal": "high",
+        "kind": "manageable",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "slope",
+        "label": "Slope",
+        "actual": 1.8,
+        "ideal": "<= 4.6",
+        "kind": "fixed",
+        "unit": "°",
+        "scoreOutOf100": 100,
+        "source": "SRTM GL1 30 m point elevations"
+       },
+       {
+        "key": "climateZone",
+        "label": "Climate zone",
+        "actual": "Dc/Df",
+        "ideal": "Aw Ar Cf Cs Cw Do Dc Dw",
+        "kind": "fixed",
+        "scoreOutOf100": 100,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "sowing",
+        "label": "Sowing window",
+        "actual": 6,
+        "ideal": "6",
+        "unit": "month",
+        "kind": "choice",
+        "note": "Share of the best window's score reached by this sowing month; already inside temperature and water.",
+        "scoreOutOf100": 100
+       }
+      ]
+     }
+    ],
+    "rowCount": 1,
+    "sources": [
+     {
+      "name": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14",
+      "licence": "MIT (project code); the readings keep the licences of their sources",
+      "year": "2026"
+     },
+     {
+      "name": "FAO EcoCrop database, 2,568 species",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "data/ecocrop/README.md"
+     }
+    ],
+    "caveats": [
+     "A score of climate and soil at the field, not a yield forecast; it says nothing of markets, pests or the grower's means."
+    ]
+   },
+   "isError": false,
+   "ms": 5
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Growing rice on this field is severely limited, with a suitability score of 13 out of 100. The primary limiting factors are the soil pH and drainage conditions. \n\nRice prefers acidic to neutral soils with an optimal pH of 5.5 to 7 [S1], whereas the SSURGO soil survey records an alkaline soil pH of 8.8. Furthermore, rice thrives in poorly drained conditions where fields remain saturated for more than half the year [S1], while the field's soil is well drained. \n\nWhile temperature (18.7 °C in the growing window) and texture (light, sandy loam) are tolerated, the high pH and well-drained soil make conventional rice production impractical here without major soil and water management interventions.",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "eco:oryza-sativa:facts",
+   "title": "Rice (Oryza sativa): ecological requirements",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  }
+ ]
+}

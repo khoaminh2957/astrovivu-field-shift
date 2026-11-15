@@ -73,7 +73,7 @@ Declined, whether or not a crop is named:
 
 Code: `src/rag/lookups.ts` (the lookups), `src/rag/tables.ts` (loading), `scripts/rag/tables.ts` (the files); the server reads the same files through `fileReader` in `server/loader.ts`. Tests: `src/rag/lookups.test.ts`, `scripts/rag/tables.test.ts`; every expected number is read from `data/crops/atlas/*.csv` in the test.
 
-A question about a number is better answered from a table than from a passage that happens to hold the number. The lookups are pure functions over tables that are already loaded; they return rows, the source of the rows (name, licence, years, day of access) and the cautions a reader needs, in both languages, or a reason why there are no rows. The extractive answers (issue C3) and the language model's tools (issue C4) are to call the same functions.
+A question about a number is better answered from a table than from a passage that happens to hold the number. The lookups are pure functions over tables that are already loaded; they return rows, the source of the rows (name, licence, years, day of access) and the cautions a reader needs, in both languages, or a reason why there are no rows. The language model calls them as functions (`server/tools.ts`, see "Generative mode"); the extractive answers (issue C3) are to call the same ones.
 
 | Lookup | Answers | From | No rows when |
 |---|---|---|---|
@@ -108,7 +108,7 @@ Four rules hold in every lookup, each with a test:
 
 The crops of one country are not written a second time: the lookups read `public/data/crops/country/<ISO3>.json`, the files the app loads for the model (`scripts/crops/country-tables.ts`, 198 files). One file is read per question (a country, a crop or the regions of a country), on demand, and kept; `tableSource` does that over a reader, `fetch` in the browser and the disk on the server.
 
-Not done here: routing a question to a lookup and wording the answer (C3), the language model's tools (C4), the assistant receiving the model input from the interface (a field of `AskRequest`, the project lead's), prices from `economics.csv` (T5) and the soil plan (S2).
+Not done here: routing a question to a lookup and wording the extractive answer (C3), the interface sending the model input with a question (`field`, which the server already takes; the call is in `src/ui/ask/index.tsx`, the project lead's), prices from `economics.csv` (T5) and the soil plan (S2).
 
 ## Pipeline
 
@@ -118,7 +118,7 @@ data/crops/atlas (which crops, where grown, which dropped) + data/ecocrop + data
         ├─ public/rag/core.json   the 70 curated crops + Wikipedia + glossary (first load)
         └─ public/rag/full.json   index over ALL chunks + the other 317 crops + where every crop is grown + names of dropped species (lazy)
 src/rag (browser and server)
-   ask(req) ─ health check ─┬─ generative: POST /api/ask (server retrieves the same way, Claude writes)
+   ask(req) ─ health check ─┬─ generative: POST /api/ask (server retrieves the same way; Claude or Gemini calls the lookups and writes; number check)
                             └─ extractive: analyze → search → compose (templates over facts + quotes)
 ```
 
@@ -139,13 +139,114 @@ src/rag (browser and server)
 
 **FieldContext** (`buildFieldContext` in `src/rag/fieldContext.ts`, pure): latest value at the cursor of each key series (`sampleAt`, with stale flag and anomaly against the day-of-year baseline), 30/90-day rain sums (from the observed series, or from the reanalysis series where the observed one stops short of the cursor, as CHIRPS does by several weeks; the fact names the series used), what the forecast holds from the cursor on (`forecast_tmin`, `forecast_tmax`, `forecast_rain`), the risk events of the forecast, all static facts with their uncertainty, climate normals (annual and monthly) from `climateHistory`, ground-truth overrides ("measured by the farmer; satellite/model estimate was …"), score at the cursor, every factor, and one score per month. Each fact is a string that starts with the value, e.g. `sm_root: "0.21 m³/m³ (SMAP L4, 9 km pixel, modelled, 2026-11-08; 9% below normal …)"`.
 
-**Generative path** (`server/`, Hono on port 8787, `npm run server`). `GET /api/health` → `{ ok, generative }`; `POST /api/ask` validates the request (zod), retrieves with the same code, and sends Claude the "System prompt" section of docs/SYSTEM_INSTRUCTIONS.md (read at start-up) plus a data-handling rule, and a user turn with `FIELD CONTEXT` and `KNOWLEDGE` blocks (`src/rag/prompt.ts`). Retrieved text is wrapped in `<passage id="S1" …>` tags with `<`/`>` neutralised so a passage cannot close its wrapper, and with double quotes and line breaks neutralised in the tag's attributes (source name, licence) so a value cannot add attributes to the tag; the model is told that text inside the blocks is data. Cited ids are renumbered to first-use order and mapped back to citations. Any failure (no key, refusal, network) returns the extractive answer. The Claude call lives in `server/llm.ts` (`createLlm`, reusable for advisory narratives): `@anthropic-ai/sdk`, model from `ANTHROPIC_MODEL` (default `claude-opus-5-5`), `output_config.effort` from `ANTHROPIC_EFFORT` (default `low`), cached system prompt, server-side refusal fallback (`fallbacks: "default"`). The key is read from the environment or `.env` only and never logged. **The generative path has not been run against the live API** (no key was configured); request assembly, citation mapping and fallback are unit-tested with a fake model.
+**Generative path**: the next section.
+
+## Generative mode
+
+Code: `server/app.ts` (the request), `server/llm.ts` (the loop and the Claude provider), `server/gemini.ts` (the Gemini provider), `server/tools.ts` (the lookups as functions a model calls), `src/rag/prompt.ts` (what the model is told), `src/rag/numberGuard.ts` (the number check). Tests: `server/app.test.ts`, `server/llm.test.ts`, `server/tools.test.ts`, `src/rag/numberGuard.test.ts`, `src/rag/prompt.test.ts`, `scripts/rag/transcripts.test.ts`.
+
+With a key in `.env`, `npm run server` (Hono, port 8787; Vite proxies `/api` to it) answers `POST /api/ask` with a language model: the model reads the question, the field context and the retrieved passages, may call the lookups of "Looking numbers up", and writes the answer. `GET /api/health` → `{ ok, generative, model, provider, tools }`. Every request builds the extractive answer first, and that is what the client gets whenever a generated answer is not given.
+
+**One request, step by step.**
+
+1. The body is checked with zod: question, language, optional `context` (`FieldContext`) and optional `field`, the locked field as the scoring and rotation models read it (`ModelInput`; `AssistantRequest` in `src/rag/types.ts`). The envelope of `field` is checked and the telemetry inside is taken as it comes: the models already read every reading as possibly missing, and a lookup that throws reaches the model as a failed call. A body over 1 MB is refused with 413; a question with the telemetry of a demo field is 264 to 270 kB.
+2. Retrieval and the extractive answer, by the same code as in the browser.
+3. Two kinds of question are answered by rule, and the model is not asked: one the router declines (photo diagnosis, price forecast, legal advice, a pesticide product or dose) and one about a species the atlas dropped, where the reason it is not in the data is a fact of the atlas that the rule states exactly.
+4. The model is given the "System prompt" section of docs/SYSTEM_INSTRUCTIONS.md (read at start-up) plus `DATA_RULE`, and a user turn with `FIELD CONTEXT` and `KNOWLEDGE` blocks. Retrieved text is wrapped in `<passage id="S1" …>` tags with `<`/`>` neutralised so a passage cannot close its wrapper, and with double quotes and line breaks neutralised in the tag's attributes (source name, licence) so a value cannot add attributes to the tag. `DATA_RULE` says that the blocks and the results of the functions are data and not instructions, that a number may come only from a function result or from the two blocks and is written as it stands there or rounded, that a result with no data is said as such with its reason, that a missing figure does not tell whether a crop is grown, and what the answer panel can show.
+5. The functions are offered when the lookup tables are built (`public/rag/tables`). The four that read the field are offered only when the request brings `field`: with the field context alone the model answers from that context, and is not handed a function that could only say "no field".
+6. The loop (`runToolLoop`): a request to the model; if it asks for functions, each is run and all results go back together in one message; and again, until it answers. Limits: 5 requests, and 50 s for the whole answer with every request and every lookup in it (the browser waits 60 s). A refusal, an answer cut off at the token limit, a turn that is neither an answer nor a call, the rounds or the time running out, a network error: each is thrown, and the request gives the extractive answer.
+7. The number check (below). An answer that fails it is dropped for the extractive one; the log says how many numbers had no source and how many answers were dropped since the server started.
+8. Citations: `[S#]` marks are renumbered to the order of first use, one mark per source (`[S2][S1]`, since the panel draws a mark only for a single id). A passage becomes the citation it always was; a function result becomes a `Citation` with `chunkId` `table:<table>:<key>`, the source name with its years, the licence and the link of `sources.json`, and a short line of what the table said. `tidy` turns the marks the panel does not draw (`*` bullets, `#` headings, italics, code marks) into the ones it does.
+
+**The functions** (`server/tools.ts`). One per lookup, under the lookup's name, with a description and an input schema made from a zod schema (`z.toJSONSchema`); the input the model sends is checked against that schema before anything is looked up, and a wrong input is a failed call the model can read ("Invalid input for whereGrown: crop: …"). A function computes nothing. It turns the words of the model into a crop and a place, calls the lookup, and returns the lookup's rows in the language of the question with their sources and caveats.
+
+| Function | Input | Returns | Cited as |
+|---|---|---|---|
+| `cropsInPlace` | `country?`, `region?`, `limit?` | the first rows of the table (15 unless asked, 40 at most) and how many there are | `table:country:<ISO3>`, `table:region:<ISO3>:<region>` |
+| `whereGrown` | `crop`, `country?`, `top?` | the largest growers and the country asked about | `table:crop-countries:<crop>[:<ISO3>]` |
+| `cropFigures` | `crop` | requirement lines and world figures | `table:crop-figures:<crop>` |
+| `compareCrops` | `cropA`, `cropB`, `country?` | the two crops line against line | `table:compare:<a>:<b>` |
+| `fieldSuitability` | `crop?` | the assessment of the crop on the field, factor by factor, each factor with the source of its reading | `table:field-suitability:<parcel>:<crop>` |
+| `rotationOptions` | none | each rotation: seasons, metrics, margin with its range, reasons, gaps, risks (the per-season accounts are left to `priceAndMargin`) | `table:rotations:<parcel>` |
+| `soilPlan` | none | the pH plan | `table:soil-plan:<parcel>` |
+| `priceAndMargin` | `crop?` | the reference record with its three sources, and the season on the field | `table:economics:<crop>` |
+
+- A crop is given by name, in English, Vietnamese or Latin, and found with the alias table of the retrieval; the longest name wins. A name that only holds a crop name among other words ("moon cabbage") is not taken for that crop: the result says which crop was seen in it, for the model to ask again if that is the one meant.
+- A country is given by ISO3 code or by FAOSTAT's English name; Viet Nam and the United States also by their Vietnamese names. Left out, it is the country of the locked field.
+- The field's country table is put in on the server from the same file the app loads; what the request carried is not used.
+- Scores go to the model out of 100, as the app shows them (`score100`), so it has nothing to convert. In the first runs the model turned a compatibility of 0.86 into "86 %", a number that stands in no source, and the answer was dropped.
+- A result with rows carries a `cite` id that follows the ids of the passages. A second call with the same input returns the same result under the same id.
+
+**The number check** (`unsupportedNumbers` in `src/rag/numberGuard.ts`, pure). Every number of the answer is looked for in what the model was given: the user turn (question, field context, passages) and the results of its calls. `7,089,041` and `7.089.041` are one number and `6,1` is `6.1`; a lone mark before three digits (`6.094`, `1,173`) is tried both ways. A number may be a rounding of its source to the digits it is written with: `6,1` for 6.094, `43 %` for 43.2, `7.1 million` for 7,089,041, `7,100,000` for 7,089,041 when at least two digits stand before the zeros. Citation marks, the numbering of a list and digits inside a name (`ERA5`, `MOD13Q1`, `v2.0`, `Sentinel-2`) are not numbers of the answer, and a version number in a source (`SoilGrids v2.0`) supports only that version, not a quantity "2".
+
+It is a net, not a proof. It does not see a number said of the wrong thing, a claim without a number, or a quantity written in words. With some eighty field facts and six passages in the sources, a small number of the model's own can find an unrelated match: in one run "nearly 70 %", the sum of two shares of a table, passed because "70 %" stood in a retrieved passage about irrigated land in Asia, which the answer did not cite. Counting a passage as a source only when the answer cites it would have caught that; it was not done, because the model does not always cite the passage it used.
+
+**The two providers** (`server/llm.ts`). A provider opens a conversation; the loop is written once over that interface, so the limits are the same for both.
+
+| | Claude | Gemini |
+|---|---|---|
+| API | Messages API through `@anthropic-ai/sdk` 1.8 (`client.beta.messages.create`) | Interactions API (`POST /v1beta/interactions`) with `fetch`, no SDK |
+| Key and model | `ANTHROPIC_API_KEY`; `ANTHROPIC_MODEL` (default `claude-opus-5-5`) | `GEMINI_API_KEY`, sent in the `x-goog-api-key` header only; `GEMINI_MODEL` (default `gemini-3.5-flash-lite`) |
+| How much it thinks | `ANTHROPIC_EFFORT` (default `low`) as `output_config.effort`, for the models that take it | `GEMINI_THINKING_LEVEL` (default `low`; `model` sends none) as `generation_config.thinking_level` |
+| Output cap | `ANTHROPIC_MAX_TOKENS` (8000) | `GEMINI_MAX_TOKENS` (8000), thinking included |
+| A function | `{ name, description, input_schema }`; `tool_choice` left at `auto`, since the current models reject a forced call | `{ type: "function", name, description, parameters }` |
+| A call | a `tool_use` block, `stop_reason: "tool_use"` | a `function_call` step, status `requires_action` |
+| The results | the model's content appended unchanged (thinking blocks too), then one user message of `tool_result` blocks only, `is_error: true` on a failed call | the model's steps appended as received (its `thought` steps with their signatures), then `function_result` steps, `is_error: true` on a failed call |
+| State | the conversation is sent again with each request | `store: false`, and the conversation is sent again with each request: nothing is kept on Google's side for a later request to refer to |
+| Not an answer | `refusal`, `max_tokens`, `model_context_window_exceeded`, `pause_turn` | status `incomplete`, `failed`, `cancelled`; an error code that says the content is blocked is a refusal |
+| Other | cached system prompt, with the function definitions under the same cache breakpoint; server-side refusal fallback (`fallbacks: "default"`) for the models that have it, and after such a fallback only the calls of the model that finished the turn are run and echoed | a rate limit or a server error is tried again twice (1 s, 3 s) inside the time left; no sampling parameter is sent, since the current models ignore `temperature` and are announced to reject it |
+| Run against the live API | **no**: no Anthropic key was configured. Request assembly, the reading of a response and the loop are tested against a fake client | **yes**: the 30 conversations below |
+
+With both keys set, Claude is used unless `LLM_PROVIDER=gemini`; `LLM_PROVIDER` naming a provider whose key is missing gives no generative mode, not the other provider.
+
+Documentation read on 15 November 2026. Claude: `platform.claude.com/docs/en/agents-and-tools/tool-use/overview`, `/define-tools`, `/handle-tool-calls`, `/parallel-tool-use`, `/tool-runner` (the SDK's own loop; the hand-written loop is kept because the request needs the deadline, the per-call record and the citation ids, and because it is shared with Gemini), `platform.claude.com/docs/en/build-with-claude/handling-stop-reasons`, `/effort` (the models that take `effort`: Claude Sonnet 4.5 and Claude Haiku 4.5 are not among them, as `NO_EFFORT` has it), `/refusals-and-fallback` (the models with a server-side fallback: Claude Fable 5 was missing from `FALLBACK_MODELS` and was added; Claude Haiku 5.5 has none). Gemini: `aistudio.google.com/docs/migrate-to-interactions` (the Interactions API is recommended for all new development; `generateContent` stays supported), `/docs/function-calling`, `/docs/thinking`, `/docs/models`, `/docs/pricing`, `/docs/deprecations`, `/docs/logs-policy`, `/api-reference/interactions-api/create-interaction`; the shapes were then checked against the live API.
+
+**Choice of the Gemini model.** Six of the live-run questions (01, 06, 09, 21, 24, 28) were asked once of each setting on 15 November 2026. Every answer was given and passed the number check; the settings differ in time and in which function the model took.
+
+| Model, thinking level | Right function | Time per answer: shortest / median / longest | Output tokens, median (thinking included) |
+|---|---:|---|---:|
+| `gemini-3.5-flash-lite`, its default (`minimal`) | 4 of 6 | 2.5 / 3.2 / 3.7 s | 327 |
+| **`gemini-3.5-flash-lite`, `low`** | 6 of 6 | 2.6 / 4.5 / 6.8 s | 1,011 |
+| `gemini-3.5-flash-lite`, `medium` | 6 of 6 | 4.2 / 6.3 / 8.3 s | 1,941 |
+| `gemini-3.8-flash`, `low` | 6 of 6 | 4.0 / 6.6 / 12.9 s | 418 |
+| `gemini-3.8-flash`, its default (`medium`) | 6 of 6 | 12.9 / 17.7 / 39.4 s | 1,898 |
+| `gemini-4-hydrogen`, its default (`high`) | 6 of 6 | 15.4 / 20.9 / 34.8 s | 4,397 |
+
+At its own default Flash-Lite answered the rotation question without calling `rotationOptions`, with three strategies that are not the planner's (one of them a species the atlas dropped), and took `compareCrops` where `fieldSuitability` was the lookup for the question. No number was wrong, so the number check could not catch either; one level of thinking more did. Gemini 3.8 Flash and Gemini 4 Hydrogen wrote the fuller answers, closer to the form the system prompt asks for, at four to five times the wait, and Hydrogen's longest answer came within 15 s of the deadline. Google's model page names Gemini 4 Hydrogen and Gemini 3.5 Flash-Lite for new projects; list prices on the pricing page are 0.30 / 2.50 USD per million tokens in / out for Flash-Lite, 0.75 / 3.75 for 3.8 Flash until 31 December 2026 (double after), 1.50 / 7.50 for Hydrogen. Six questions asked once are a trial, not a benchmark: the default is the cheapest setting that made no wrong call, and `GEMINI_MODEL` and `GEMINI_THINKING_LEVEL` change it.
+
+**The live run** (`npx tsx scripts/rag/live-run.ts`, 15 November 2026). The 30 questions of `data/rag/transcripts/questions.json` were asked through the server's own app (`createApp`, called without the HTTP listener; the requests to Gemini are real), with the context and the telemetry of a demo field where the question has one. Each transcript holds the question, every function called with its input and its result, the answer, the model, the tokens in and out, the time and what the number check found; `data/rag/transcripts/README.md` has the table of all 30. No transcript holds a key or a header, and a test searches them for both.
+
+| | |
+|---|---|
+| Questions | 30: 15 in Vietnamese, 15 in English; 14 on a demo field (all four fields) |
+| Asked of the model | 25, `gemini-3.5-flash-lite` at thinking level `low` |
+| Answered by the router without the model | 5: four declined (price forecast, pesticide product and dose, photo diagnosis, legal), one about a dropped species |
+| Generated answers given | 25 of 25 |
+| Number check | 25 of 25 answers held only numbers of their sources |
+| Function calls | 16, none failed; 41 requests to the model; three calls returned "no data" (durian in two countries: counted inside a group item; quinoa: no reference price) and the answer said so |
+| Tokens | 304,007 in, 19,767 out |
+| Time per answer | median 3.8 s, longest 6.3 s |
+
+This is the fourth run of the same 30 questions; the code changed between runs as the runs showed what was wrong. In the three before it the number check dropped two, one and one answers: a harvested area with two digits transposed (671,148 ha for 667,148), a sum of two shares the model made ("over 99 %", twice), and a score turned into a percentage (which is why scores now go out of 100). The first run also showed two questions the router did not decline ("Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "Is it legal to lease farmland to a foreign company?"); the model declined both by itself, the rules were then widened, and both questions are in the eval set.
+
+What the transcripts show that no check catches:
+
+- **A citation of the wrong source.** The model sometimes cites a passage for what it took from a function result, so the list of sources names EcoCrop where the number came from the suitability score.
+- **A caveat left out.** "Robusta coffee is reported by 79 countries": the figure is that of the FAOSTAT item "Coffee, green", shared by four coffee crops. The recorded answer goes on to say so; an earlier one did not.
+- **A looser reading of the days asked about.** "Is there frost next week?" was answered with a warning of the week after as well. The rule-based answer keeps to the days asked about.
+- **The key of a fact echoed** (`factor_salinity`) in an answer about a reading the field does not have.
+
+In the browser (headless Chrome, the assistant panel, the Đắk Lắk and Cần Thơ demo fields, with `npm run server` and `npm run dev`): a question about a table ("Tỉnh Đắk Lắk của Việt Nam trồng cây gì nhiều nhất?") is answered with the label "Tạo sinh", a list, and one source, the MapSPAM table. A question about the field reaches the four field lookups only once the panel sends the field: `src/ui/ask/index.tsx` does not yet, and was not changed here (it is the interface owner's). With `field: toModelInput(useMission.getState())` added to its call of `ask` for the test and removed again, "Tôi nên luân canh thế nào trên thửa này?" on the Cần Thơ field was answered from `rotationOptions`, with the planner's margins.
+
+**What is sent to the provider.** For each question that reaches the model: the system prompt; the question; the field context when a field is locked, which holds the name of the parcel, its place, its coordinates and area, the crop, and some eighty readings with their sources; the retrieved passages; the definitions of the functions; and, in the later requests of the loop, the results of the functions called, which for the field lookups hold the model's assessment of the field, its rotations and the reference prices. The telemetry itself (`field`) stays on the server. Nothing is sent for a question the router answers. The key is in `.env`, which git ignores, and is read by the server only; it is in no log line, no error message and no transcript.
+
+Google's side, as its pages said on 15 November 2026: with `store: false` an interaction cannot be fetched or continued later; the project's own logs are a separate setting of the project (on by default for the Interactions API in a project with billing, kept 55 days at most, turned off in AI Studio by the owner of the project); on the free tier, content is used to improve Google's products, on the paid tier it is not. Which tier the key of the live run is on was not checked. The demo fields are public sample data; a grower's own field is not, and whoever turns the generative mode on for real users has to settle that first.
 
 ## Evaluation
 
-`data/rag/eval.json`: 132 hand-written questions (57 English, 75 Vietnamese, three without diacritics, 72 asked with a field context). `npx tsx scripts/rag/eval.ts` prints the tables below; `scripts/rag/eval.test.ts` guards them. The first 62 are the set the retrieval was built against; 48 were added for the questions about the field itself; 22 are questions that an earlier state of that change answered wrongly and that its review found (group `regression`).
+`data/rag/eval.json`: 134 hand-written questions (58 English, 76 Vietnamese, three without diacritics, 72 asked with a field context). `npx tsx scripts/rag/eval.ts` prints the tables below; `scripts/rag/eval.test.ts` guards them. The first 62 are the set the retrieval was built against; 48 were added for the questions about the field itself; 24 are in the group `regression`: 22 questions that an earlier state of that change answered wrongly and that its review found, and 2 that the live run of the generative mode showed the router did not decline.
 
-**Retrieval** is scored on the 72 questions that state expected documents or crops (the other 60 are answered from the field's own readings or declined, where nothing is retrieved). A retrieved chunk counts as relevant when its document or one of its crops is expected. The test fails if the full pipeline drops below recall@5 0.95 or MRR 0.90.
+**Retrieval** is scored on the 72 questions that state expected documents or crops (the other 62 are answered from the field's own readings or declined, where nothing is retrieved). A retrieved chunk counts as relevant when its document or one of its crops is expected. The test fails if the full pipeline drops below recall@5 0.95 or MRR 0.90.
 
 | Variant | recall@5 (all / en / vi) | MRR (all / en / vi) |
 |---|---|---|
@@ -156,7 +257,7 @@ src/rag (browser and server)
 
 Plain BM25 misses "Is my soil too acid for soybean?" (it ranks pH articles above soybean), "Mè cần loại đất gì?", three questions about garlic and one about rice (one-syllable crop names: "mè", "tỏi", "lúa"), and one question whose crop is the crop of the field and is not named; expansion alone trades one Vietnamese miss for another; crop linking fixes all of them. The first two rows are lower than on the first 62 questions (0.97 and 0.86) because five of the ten questions added with a crop are of those kinds. The numbers are those of the corpus cut down to the crops of the atlas; on the corpus of all 2,568 EcoCrop species the MRR of the first two rows was 0.80. Before 15 November 2026 the last two rows had an MRR of 0.98 (Vietnamese 0.97): "Cây che phủ nào giúp cố định đạm?" and "Cây nào giúp cố định đạm cho đất?" were linked to the greater yam through "đạm" and found their document second. With "đạm" excluded from crop linking both find it first.
 
-**Routing** is scored on the 126 questions that state an expected intent; the questions about the field also state the kind of question (value, month, forecast), the focus, a focus that must not be found ("năng suất" is not "nắng") and, for a declined question, the reason. The test requires every question of the field groups and of the regression group to be routed as stated, and at least four questions per field group in both languages.
+**Routing** is scored on the 128 questions that state an expected intent; the questions about the field also state the kind of question (value, month, forecast), the focus, a focus that must not be found ("năng suất" is not "nắng") and, for a declined question, the reason. The test requires every question of the field groups and of the regression group to be routed as stated, and at least four questions per field group in both languages.
 
 | Group (row of the scope table) | Questions (en / vi) | Routed as expected |
 |---|---|---|
@@ -168,7 +269,7 @@ Plain BM25 misses "Is my soil too acid for soybean?" (it ranks pH articles above
 | source | 6 (3 / 3) | 6 |
 | contrast (a value against a definition, a crop, an unknown reading) | 4 (1 / 3) | 4 |
 | declined | 6 (3 / 3) | 6 |
-| regression (found by the review of the change) | 22 (5 / 17) | 22 |
+| regression (found by the review of the change, and by the live run) | 24 (6 / 18) | 24 |
 
 **Content** is scored on the 29 questions about a value of the field that state what the answer is made of: the readings (keys of the fixture's facts) it must give and no others, and the readings it must name as missing. Routing alone does not show an answer that brings the pH along with the soil moisture; this does. All 29 are made of the stated readings.
 
@@ -196,6 +297,8 @@ const result = await ask({ query, lang, context });   // AskResult: answer with 
 const starters = suggestQuestions(context, lang);
 ```
 
+`ask` also takes `field`, the locked field as the models read it (`toModelInput` of the mission state). Only the API server uses it, for the four lookups that run the models on the field; without it the generative mode answers a question about the field from `context` and the passages.
+
 `result.answer` uses `\n\n` between paragraphs and `- ` list lines; `[S#]` refers to `result.citations[#-1]`.
 
 ## Rebuild
@@ -208,6 +311,9 @@ npx tsx scripts/rag/eval.ts    # eval table
 npx tsx scripts/rag/demo.ts "Is my soil too acid for soybean?" en field   # print an answer (fixture field)
 npx tsx scripts/rag/demo.ts "Tuần tới có sương giá không?" vi iowa-corn-soy   # the same on a demo field's cached telemetry
 npx vitest run src/rag scripts/rag server
+npm run server                 # the API server; generative with GEMINI_API_KEY or ANTHROPIC_API_KEY in .env
+npx tsx scripts/rag/live-run.ts        # ask the 30 questions of data/rag/transcripts/questions.json (spends the provider's quota)
+npx tsx scripts/rag/live-run.ts 06 21  # only these
 ```
 
 ## Limits
@@ -227,4 +333,9 @@ npx vitest run src/rag scripts/rag server
 - The sheet on where a crop is grown is not yet what a question such as "which countries grow rice?" is answered from: routing for that question is issue C3. Until then the sheet is reached by search and through `CropFacts.prevalence`.
 - Country names in the Vietnamese sheets are FAOSTAT's English names, except Viet Nam and the United States.
 - The eval is small and self-written (see above).
-- Generative mode is untested against the live API.
+- Generative mode was run against the live API with Gemini only (30 conversations, one model, one day). The Claude provider is tested against a fake client and has not been run live.
+- The number check is a net over numbers: a number of the sources said of the wrong thing, a citation of the wrong source, a caveat left out and a claim without a number pass it ("Generative mode" lists what the transcripts show). A right answer can also be dropped: a sum or a share the model worked out is a number of its own.
+- The generated answer for a question about a reading of the field is looser than the rule-based one (the days a forecast question asks about, the source of a factor). Whether those questions should go to the model at all is open.
+- In the browser the four field lookups are not reached until the assistant panel sends the field with the question; until then the model answers a field question from the field context and the passages.
+- A country is found by its code or by FAOSTAT's English name (Viet Nam and the United States also in Vietnamese); a province by the name MapSPAM gives it. A crop name the alias table does not know is "not in the atlas".
+- The model answers in one turn: it has no memory of the questions before (issue C5).

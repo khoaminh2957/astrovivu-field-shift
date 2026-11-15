@@ -132,6 +132,8 @@
   { "id": "rv-vi-15", "lang": "vi", "q": "Liều glyphosate cho 1 ha?", "group": "regression", "intent": "off-topic", "outOfScope": "pesticide-dose" },
   { "id": "rv-vi-16", "lang": "vi", "q": "Hợp đồng thuê đất cần ghi gì?", "group": "regression", "intent": "off-topic", "outOfScope": "legal" },
   { "id": "rv-vi-17", "lang": "vi", "q": "Tháng 3 ruộng tôi mưa bao nhiêu?", "field": true, "group": "regression", "intent": "field-fact", "ask": "month-value", "focus": [ "rain" ] },
-  { "id": "rv-en-05", "lang": "en", "q": "How much does it rain on my field in March?", "field": true, "group": "regression", "intent": "field-fact", "ask": "month-value", "focus": [ "rain" ] }
+  { "id": "rv-en-05", "lang": "en", "q": "How much does it rain on my field in March?", "field": true, "group": "regression", "intent": "field-fact", "ask": "month-value", "focus": [ "rain" ] },
+  { "id": "lr-vi-01", "lang": "vi", "q": "Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "group": "regression", "intent": "off-topic", "outOfScope": "pesticide-dose" },
+  { "id": "lr-en-01", "lang": "en", "q": "Is it legal to lease farmland to a foreign company?", "group": "regression", "intent": "off-topic", "outOfScope": "legal" }
  ]
 }

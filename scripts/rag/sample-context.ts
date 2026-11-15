@@ -16,12 +16,16 @@ const ROOT = path.resolve(import.meta.dirname, '../..');
 export const SAMPLE_TODAY = '2026-11-14';
 export const SAMPLE_FIELDS = ['daklak-coffee', 'cantho-rice', 'iowa-corn-soy', 'nevada-alfalfa'] as const;
 
-export function sampleContext(id: string, groundTruth: Partial<GroundTruth> = {}): FieldContext {
+/** The demo field as the scoring and rotation models read it, with its default farm profile. */
+export function sampleModelInput(id: string, groundTruth: Partial<GroundTruth> = {}): ModelInput {
   const parcel = getSampleParcel(id);
   if (!parcel) throw new Error(`No demo field ${id}; one of ${SAMPLE_FIELDS.join(', ')}`);
   const defaults = (parcel as { defaultGroundTruth?: GroundTruth }).defaultGroundTruth ?? {};
-  const gt = { ...defaults, ...groundTruth };
   const telemetry = JSON.parse(fs.readFileSync(path.join(ROOT, `public/data/samples/${id}.json`), 'utf8')) as FieldTelemetry;
-  const input: ModelInput = { parcel, telemetry, cropId: parcel.defaultCropId, groundTruth: gt, priorities: ['profit', 'water', 'soil'], today: SAMPLE_TODAY };
-  return buildFieldContext({ parcel, telemetry, score: computeScoreTimeline(input), cursor: SAMPLE_TODAY, cropId: parcel.defaultCropId, groundTruth: gt });
+  return { parcel, telemetry, cropId: parcel.defaultCropId, groundTruth: { ...defaults, ...groundTruth }, priorities: ['profit', 'water', 'soil'], today: SAMPLE_TODAY };
+}
+
+export function sampleContext(id: string, groundTruth: Partial<GroundTruth> = {}): FieldContext {
+  const input = sampleModelInput(id, groundTruth);
+  return buildFieldContext({ parcel: input.parcel, telemetry: input.telemetry, score: computeScoreTimeline(input), cursor: SAMPLE_TODAY, cropId: input.cropId, groundTruth: input.groundTruth });
 }

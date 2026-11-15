@@ -1,0 +1,99 @@
+{
+ "id": "09",
+ "lang": "vi",
+ "field": "cantho-rice",
+ "question": "Giá lúa tham chiếu và lãi một vụ ở ruộng tôi khoảng bao nhiêu?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:14.709Z",
+ "intent": "field",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 18733,
+ "outputTokens": 439,
+ "ms": 3458,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "priceAndMargin",
+   "input": {},
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "crop": "Lúa (Oryza sativa)",
+    "field": "Mekong Delta paddy",
+    "rows": [
+     {
+      "reference": {
+       "region": "VN",
+       "yieldRegion": "Viet Nam, national average (paddy)",
+       "refYieldTHa": 6.15,
+       "priceUsdPerT": 228.5,
+       "costUsdPerHa": 867,
+       "year": 2026,
+       "quality": {
+        "yield": "official",
+        "price": "press",
+        "cost": "press"
+       },
+       "sources": [
+        "yield: 6,151.7 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip)",
+        "price: paddy bought by traders at 5,700-6,000 VND/kg (midpoint used), An Giang, April 2026; Nhân Dân 22 Apr 2026 (https://nhandan.vn/lien-ket-ben-vung-cung-nha-nong-vuot-kho-post957604.html). FAOSTAT 2024: 356 USD/t",
+        "cost: 22.2 million VND/ha in eight demonstration models, winter-spring 2025-26, An Giang (same article; scope of the cost not stated; conventional practice is given as more than 3.2 million VND/ha higher)"
+       ]
+      },
+      "season": {
+       "areaHa": 1.35,
+       "yield": {
+        "expectedTHa": 6.15,
+        "lowTHa": 5.86,
+        "highTHa": 6.15,
+        "refTHa": 6.15,
+        "basis": "Năng suất tham chiếu (Viet Nam, national average (paddy), 2026) x tỉ lệ kỳ vọng 100 %; khoảng dao động nằm giữa 10 % năm kém nhất và 10 % năm tốt nhất trong các năm đã phân tích."
+       },
+       "productionT": 8.3,
+       "priceUsdPerT": 228.5,
+       "revenueUsd": 1897,
+       "costUsd": 1170,
+       "marginUsd": 727,
+       "marginLowUsd": 639,
+       "marginHighUsd": 727,
+       "marginPct": 38.3,
+       "breakEvenYieldTHa": 3.79,
+       "usesReferenceValues": true
+      }
+     }
+    ],
+    "rowCount": 1,
+    "sources": [
+     {
+      "name": "Astrovivu reference economics, region VN (docs/ECONOMICS.md): yield: 6,151.7 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip); price: paddy bought by traders at 5,700-6,000 VND/kg (midpoint used), An Giang, April 2026; Nhân Dân 22 Apr 2026 (https://nhandan.vn/lien-ket-ben-vung-cung-nha-nong-vuot-kho-post957604.html). FAOSTAT 2024: 356 USD/t; cost: 22.2 million VND/ha in eight demonstration models, winter-spring 2025-26, An Giang (same article; scope of the cost not stated; conventional practice is given as more than 3.2 million VND/ha higher)",
+      "licence": "Each figure keeps the terms of its publisher, named in the source line",
+      "year": "2026"
+     }
+    ],
+    "caveats": [
+     "Chất lượng nguồn: năng suất official, giá press, chi phí press. Đây là giá trị tham chiếu, không phải số của người trồng, và không phải dự báo."
+    ]
+   },
+   "isError": false,
+   "ms": 17
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Dựa trên số liệu tham chiếu kinh tế vùng (Việt Nam, trung bình quốc gia), giá lúa tham chiếu và kết quả tài chính ước tính cho diện tích 1.35 ha của ruộng lúa Mekong Delta paddy như sau [S1]:\n\n- Giá lúa tham chiếu là 228.5 USD/tấn (tương đương giá thu mua lúa tươi tại An Giang khoảng 5.700-6.000 đồng/kg) [S1].\n- Doanh thu ước tính cho một vụ là 1.897 USD trên toàn bộ diện tích dựa trên năng suất tham chiếu 6.15 tấn/ha và tỉ lệ kỳ vọng 100% [S1].\n- Chi phí ước tính là 1.170 USD [S1].\n- Lãi gộp ước tính khoảng 727 USD cho một vụ (khoảng 639-727 USD tùy theo biến động năng suất), tương đương biên lợi nhuận 38,3% [S1].\n\nĐây là các giá trị tham chiếu từ cơ sở dữ liệu kinh tế của Astrovivu dựa trên số liệu FAOSTAT và báo chí địa phương tại An Giang, không phải số liệu ghi chép thực tế của riêng bạn và không phải dự báo [S1].\n\nBạn có muốn điều chỉnh lại các con số này bằng chi phí và giá bán thực tế của gia đình trong vụ vừa qua không?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:economics:oryza-sativa",
+   "title": "Năng suất, giá và chi phí tham chiếu của Lúa (Oryza sativa)",
+   "source": "Astrovivu reference economics, region VN (docs/ECONOMICS.md): yield: 6,151.7 kg/ha; FAOSTAT, Crops and livestock products, Viet Nam 2024 (https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_Asia.zip); price: paddy bought by traders at 5,700-6,000 VND/kg (midpoint used), An Giang, April 2026; Nhân Dân 22 Apr 2026 (https://nhandan.vn/lien-ket-ben-vung-cung-nha-nong-vuot-kho-post957604.html). FAOSTAT 2024: 356 USD/t; cost: 22.2 million VND/ha in eight demonstration models, winter-spring 2025-26, An Giang (same article; scope of the cost not stated; conventional practice is given as more than 3.2 million VND/ha higher), 2026",
+   "license": "Each figure keeps the terms of its publisher, named in the source line"
+  }
+ ]
+}

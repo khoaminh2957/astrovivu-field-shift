@@ -1,0 +1,23 @@
+{
+ "id": "30",
+ "lang": "en",
+ "question": "Is it legal to lease farmland to a foreign company?",
+ "expect": "declined",
+ "askedAt": "2026-11-15T08:09:41.443Z",
+ "intent": "off-topic",
+ "mode": "extractive",
+ "fallback": "declined by the router",
+ "provider": null,
+ "model": null,
+ "requests": 0,
+ "inputTokens": 0,
+ "outputTokens": 0,
+ "ms": 2,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "I do not give legal advice (land rights, contracts, disputes). The commune or district office and a lawyer are the right places; I can help with the crop, soil and water side of the question.",
+ "citations": []
+}

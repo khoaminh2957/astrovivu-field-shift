@@ -1,0 +1,53 @@
+{
+ "id": "04",
+ "lang": "vi",
+ "question": "Việt Nam có trồng sầu riêng không, diện tích bao nhiêu?",
+ "expect": "no-data",
+ "askedAt": "2026-11-15T08:07:44.114Z",
+ "intent": "rotation",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 8675,
+ "outputTokens": 678,
+ "ms": 3796,
+ "calls": [
+  {
+   "name": "whereGrown",
+   "input": {
+    "crop": "Durio zibethinus"
+   },
+   "output": {
+    "ok": false,
+    "reason": "group-item",
+    "message": "FAOSTAT tính cây này trong mặt hàng Other tropical fruits, n.e.c., cùng 30 cây khác của atlas: không có số riêng cho cây này, ở nước nào cũng vậy.",
+    "crop": "Sầu riêng (Durio zibethinus)"
+   },
+   "isError": false,
+   "ms": 3
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Sầu riêng (Durio zibethinus) là cây gỗ lâu năm thuộc nhóm quả và hạt, có yêu cầu sinh thái phù hợp với vùng khí hậu nhiệt đới ẩm [S1]. Tuy nhiên, cơ sở dữ liệu thống kê của FAOSTAT không có số liệu riêng cho cây sầu riêng mà tính gộp chung vào mặt hàng trái cây nhiệt đới khác [S2].\n\nDo cách tính gộp này, nguồn số liệu hiện tại không thể nêu được diện tích trồng sầu riêng ở Việt Nam hay ở bất kỳ quốc gia nào khác [S2].\n\nBạn có muốn tìm hiểu thêm về các yêu cầu sinh thái và điều kiện đất đai của sầu riêng không?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "eco:durio-zibethinus:facts-vi",
+   "title": "Sầu riêng (Durio zibethinus): yêu cầu sinh thái",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  },
+  {
+   "n": 2,
+   "chunkId": "eco:durio-zibethinus:where-vi",
+   "title": "Sầu riêng (Durio zibethinus): trồng ở đâu",
+   "source": "FAOSTAT crops and livestock products (QCL), via the Astrovivu crop atlas",
+   "license": "CC BY 4.0, © FAO"
+  }
+ ]
+}

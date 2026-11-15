@@ -1,0 +1,31 @@
+{
+ "id": "16",
+ "lang": "en",
+ "question": "Where is coffee grown, and how much does Viet Nam grow?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:37.384Z",
+ "intent": "ideal",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 1,
+ "inputTokens": 4140,
+ "outputTokens": 692,
+ "ms": 2595,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Robusta coffee is reported by 79 countries to FAOSTAT, with a total world harvested area of 12,353,073 ha (mean of 2021-2024) [S1]. The largest harvested areas are found in Brazil with 1,905,536 ha, Indonesia with 1,267,388 ha, Colombia with 840,479 ha, Ethiopia with 833,661 ha, and Uganda with 832,866 ha [S1]. \n\nViet Nam has 667,148 ha harvested, making it the 7th largest [S1]. These figures come from the FAOSTAT item Coffee, green, which ties to 4 crops and is not for one crop alone [S1].",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "eco:coffea-canephora:where",
+   "title": "Robusta coffee (Coffea canephora): where it is grown",
+   "source": "FAOSTAT crops and livestock products (QCL), via the Astrovivu crop atlas",
+   "license": "CC BY 4.0, © FAO"
+  }
+ ]
+}

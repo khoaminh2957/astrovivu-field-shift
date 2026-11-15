@@ -1,0 +1,203 @@
+{
+ "id": "08",
+ "lang": "vi",
+ "field": "daklak-coffee",
+ "question": "Trồng sầu riêng ở thửa này được không?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:07.990Z",
+ "intent": "rotation",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 18697,
+ "outputTokens": 1042,
+ "ms": 5188,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "fieldSuitability",
+   "input": {
+    "crop": "Durio zibethinus"
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "crop": "Sầu riêng (Durio zibethinus)",
+    "field": "Central Highlands robusta block",
+    "rows": [
+     {
+      "suitabilityOutOf100": 86,
+      "bestSuitabilityOutOf100": 86,
+      "sowingMonth": 2,
+      "sowingAssumed": true,
+      "bestSowingMonth": 2,
+      "windowMonths": 10,
+      "reliability": {
+       "yearsOk": 19,
+       "yearsTotal": 19
+      },
+      "waterSupplyMm": 1500,
+      "waterNeedMm": 1500,
+      "seasonalGdd": 3444,
+      "needsLocalReview": false,
+      "limiting": "texture",
+      "factors": [
+       {
+        "key": "temperature",
+        "label": "Nhiệt độ trong vụ",
+        "actual": 21.3,
+        "ideal": "22-40",
+        "kind": "fixed",
+        "unit": "°C",
+        "note": "Tháng bất lợi nhất trong 10 tháng của vụ.",
+        "scoreOutOf100": 93,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "water",
+        "label": "Nước trong vụ",
+        "actual": 1500,
+        "ideal": "1500-2500",
+        "kind": "manageable",
+        "unit": "mm",
+        "note": "Mưa trong vụ 1466 mm + ẩm trữ trong đất 0 mm.",
+        "scoreOutOf100": 100,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "ph",
+        "label": "pH đất",
+        "actual": 5.7,
+        "ideal": "5-6.5",
+        "kind": "manageable",
+        "scoreOutOf100": 100,
+        "source": "SoilGrids 2.0 (0-30 cm)"
+       },
+       {
+        "key": "texture",
+        "label": "Thành phần cơ giới",
+        "actual": "heavy",
+        "ideal": "medium, light",
+        "kind": "fixed",
+        "scoreOutOf100": 70,
+        "source": "SoilGrids 2.0 (0-30 cm)"
+       },
+       {
+        "key": "drainage",
+        "label": "Thoát nước",
+        "actual": null,
+        "ideal": "well",
+        "kind": "manageable",
+        "note": "Thiếu dữ liệu: bỏ qua, không tính là 0.",
+        "scoreOutOf100": null,
+        "source": "SoilGrids 2.0 (0-30 cm)"
+       },
+       {
+        "key": "depth",
+        "label": "Độ sâu tầng đất",
+        "actual": null,
+        "ideal": "deep",
+        "kind": "fixed",
+        "unit": "cm",
+        "note": "Thiếu dữ liệu: bỏ qua, không tính là 0.",
+        "scoreOutOf100": null,
+        "source": "SoilGrids 2.0 (0-30 cm)"
+       },
+       {
+        "key": "salinity",
+        "label": "Độ mặn",
+        "actual": null,
+        "ideal": "low",
+        "kind": "manageable",
+        "unit": "dS/m",
+        "note": "Thiếu dữ liệu: bỏ qua, không tính là 0.",
+        "scoreOutOf100": null,
+        "source": "SoilGrids 2.0 (0-30 cm)"
+       },
+       {
+        "key": "fertility",
+        "label": "Độ phì (carbon hữu cơ, CEC)",
+        "actual": "high",
+        "ideal": "high",
+        "kind": "manageable",
+        "scoreOutOf100": 100,
+        "source": "SoilGrids 2.0 (0-30 cm)"
+       },
+       {
+        "key": "slope",
+        "label": "Độ dốc",
+        "actual": 7.7,
+        "ideal": "<= 9",
+        "kind": "fixed",
+        "unit": "°",
+        "scoreOutOf100": 100,
+        "source": "SRTM GL1 30 m point elevations"
+       },
+       {
+        "key": "climateZone",
+        "label": "Vùng khí hậu",
+        "actual": "Aw",
+        "ideal": "Ar Aw",
+        "kind": "fixed",
+        "scoreOutOf100": 100,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "sowing",
+        "label": "Thời vụ gieo trồng",
+        "actual": 2,
+        "ideal": "2",
+        "unit": "month",
+        "kind": "choice",
+        "note": "Tỉ lệ điểm so với thời vụ tốt nhất; đã nằm trong điểm nhiệt độ và nước.",
+        "scoreOutOf100": 100
+       }
+      ]
+     }
+    ],
+    "rowCount": 1,
+    "sources": [
+     {
+      "name": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14",
+      "licence": "MIT (project code); the readings keep the licences of their sources",
+      "year": "2026"
+     },
+     {
+      "name": "FAO EcoCrop database, 2,568 species",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "data/ecocrop/README.md"
+     }
+    ],
+    "caveats": [
+     "Đây là điểm về khí hậu và đất tại thửa ruộng, không phải dự báo năng suất; điểm không nói gì về thị trường, sâu bệnh hay điều kiện của người trồng."
+    ]
+   },
+   "isError": false,
+   "ms": 11
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Trồng sầu riêng (Durio zibethinus) ở thửa ruộng này đạt mức độ thích hợp 86/100 dựa trên các điều kiện đất và khí hậu [S1]. Độ cao của thửa ruộng là 713 m, nằm trong giới hạn chịu được dưới 800 m của cây sầu riêng [S2].\n\nYếu tố hạn chế chính là thành phần cơ giới đất nặng (đất sét), trong khi cây chuộng đất trung bình hoặc nhẹ [S1]. Nhiệt độ trung bình tại thửa là 21.3 °C, hơi thấp hơn mức tối ưu từ 22 đến 40 °C [S2], [S1]. Trong khi đó, lượng nước (1500 mm) và pH đất (5.7) đều nằm trong khoảng thích hợp [S2], [S1].\n\nBạn có muốn kiểm tra thêm khả năng thoát nước thực tế của tầng đất nặng tại thửa ruộng này trước khi quyết định trồng không?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:field-suitability:daklak-coffee:durio-zibethinus",
+   "title": "Mức phù hợp của Sầu riêng (Durio zibethinus) với thửa ruộng",
+   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  },
+  {
+   "n": 2,
+   "chunkId": "eco:durio-zibethinus:facts-vi",
+   "title": "Sầu riêng (Durio zibethinus): yêu cầu sinh thái",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  }
+ ]
+}

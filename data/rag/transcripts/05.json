@@ -1,0 +1,38 @@
+{
+ "id": "05",
+ "lang": "vi",
+ "question": "So sánh yêu cầu của cà phê vối và hồ tiêu.",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:07:49.415Z",
+ "intent": "compare",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 1,
+ "inputTokens": 4597,
+ "outputTokens": 1728,
+ "ms": 4009,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Cà phê vối và hồ tiêu đều là cây lâu năm vùng nhiệt đới nhưng có những yêu cầu sinh thái khác nhau về khí hậu và đất đai.\n\n- Nhiệt độ và lượng mưa: Cà phê vối yêu cầu nhiệt độ trung bình tối ưu từ 20-30 °C và lượng mưa năm tối ưu từ 1700-3000 mm [S1]. Hồ tiêu cần nhiệt độ ấm hơn với mức tối ưu từ 22-35 °C và lượng mưa lớn hơn, từ 2500-4000 mm [S2].\n- Đất và độ pH: Cà phê vối thích hợp với độ pH đất tối ưu từ 5-6.3 [S1], trong khi hồ tiêu ưa đất có độ pH từ 6-7 [S2]. Cả hai loại cây đều ưa thành phần cơ giới đất nặng hoặc trung bình và yêu cầu thoát nước tốt [S1][S2].\n- Tầng đất và độ cao: Cà phê vối phù hợp với độ sâu tầng đất trung bình từ 50-150 cm và độ cao tối đa chịu được là 1300 m [S1]. Hồ tiêu yêu cầu tầng đất sâu trên 150 cm và chịu được độ cao đến 2000 m [S2].\n\nBạn muốn tìm hiểu thêm về yêu cầu sinh thái của giống cây nào khác không?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "eco:coffea-canephora:facts-vi",
+   "title": "Cà phê vối (Coffea canephora): yêu cầu sinh thái",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  },
+  {
+   "n": 2,
+   "chunkId": "eco:piper-nigrum:facts-vi",
+   "title": "Hồ tiêu (Piper nigrum): yêu cầu sinh thái",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  }
+ ]
+}

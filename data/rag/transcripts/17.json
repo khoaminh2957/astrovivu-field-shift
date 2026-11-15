@@ -1,0 +1,245 @@
+{
+ "id": "17",
+ "lang": "en",
+ "question": "What are the main crops of the United States by harvested area?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:41.484Z",
+ "intent": "term",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 9703,
+ "outputTokens": 516,
+ "ms": 2329,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "cropsInPlace",
+   "input": {
+    "country": "USA"
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "place": "United States of America",
+    "rows": [
+     {
+      "name": "Soya beans",
+      "areaHa": 34330527,
+      "productionT": 116109930,
+      "sharePct": 34.737,
+      "rank": 1,
+      "level": "major",
+      "crops": [
+       "Soybean (Glycine max)"
+      ]
+     },
+     {
+      "name": "Maize (corn)",
+      "areaHa": 33613081,
+      "productionT": 373999542,
+      "sharePct": 34.011,
+      "rank": 2,
+      "level": "major",
+      "crops": [
+       "Maize (Zea mays)",
+       "Zea mays ssp. mays",
+       "Zea mays ssp. saccharata"
+      ]
+     },
+     {
+      "name": "Wheat",
+      "areaHa": 15004017,
+      "productionT": 49287260,
+      "sharePct": 15.182,
+      "rank": 3,
+      "level": "major",
+      "crops": [
+       "Wheat (Triticum aestivum)",
+       "Durum (Triticum durum)",
+       "Spelt (Triticum spelta)"
+      ]
+     },
+     {
+      "name": "Seed cotton, unginned",
+      "areaHa": 3052090,
+      "productionT": 8645010,
+      "sharePct": 3.088,
+      "rank": 4,
+      "level": "common",
+      "crops": [
+       "Gossypium arboreum",
+       "Gossypium barbadense",
+       "Gossypium herbaceum",
+       "Cotton (Gossypium hirsutum)"
+      ]
+     },
+     {
+      "name": "Sorghum",
+      "areaHa": 2197467,
+      "productionT": 7191747,
+      "sharePct": 2.223,
+      "rank": 5,
+      "level": "common",
+      "crops": [
+       "Sorghum (Sorghum bicolor)",
+       "Sorghum bicolor var. sweet"
+      ]
+     },
+     {
+      "name": "Rice",
+      "areaHa": 1064067,
+      "productionT": 9078877,
+      "sharePct": 1.077,
+      "rank": 6,
+      "level": "common",
+      "crops": [
+       "Rice (Oryza sativa)",
+       "Oryza sativa ssp. indica",
+       "Oryza sativa ssp. javanica"
+      ]
+     },
+     {
+      "name": "Rape or colza seed",
+      "areaHa": 975183,
+      "productionT": 1947097,
+      "sharePct": 0.987,
+      "rank": 7,
+      "level": "common",
+      "crops": [
+       "Rapeseed (Brassica napus)"
+      ]
+     },
+     {
+      "name": "Barley",
+      "areaHa": 924713,
+      "productionT": 3649000,
+      "sharePct": 0.936,
+      "rank": 8,
+      "level": "common",
+      "crops": [
+       "Barley (Hordeum vulgare)"
+      ]
+     },
+     {
+      "name": "Groundnuts, excluding shelled",
+      "areaHa": 633530,
+      "productionT": 2701500,
+      "sharePct": 0.641,
+      "rank": 9,
+      "level": "common",
+      "crops": [
+       "Groundnut (Arachis hypogaea)"
+      ]
+     },
+     {
+      "name": "Almonds, in shell",
+      "areaHa": 554425,
+      "productionT": 1873757,
+      "sharePct": 0.561,
+      "rank": 10,
+      "level": "common",
+      "crops": [
+       "Almonds, in shell (Prunus amygdalus)"
+      ]
+     },
+     {
+      "name": "Sunflower seed",
+      "areaHa": 478763,
+      "productionT": 939217,
+      "sharePct": 0.484,
+      "rank": 12,
+      "level": "minor",
+      "crops": [
+       "Sunflower (Helianthus annuus)"
+      ]
+     },
+     {
+      "name": "Sugar beet",
+      "areaHa": 451943,
+      "productionT": 31191430,
+      "sharePct": 0.457,
+      "rank": 13,
+      "level": "minor",
+      "crops": [
+       "Sugar beet (Beta vulgaris)"
+      ]
+     },
+     {
+      "name": "Peas, dry",
+      "areaHa": 418207,
+      "productionT": 992133,
+      "sharePct": 0.423,
+      "rank": 14,
+      "level": "minor",
+      "crops": [
+       "Pea (Pisum sativum)"
+      ]
+     },
+     {
+      "name": "Potatoes",
+      "areaHa": 378223,
+      "productionT": 19096937,
+      "sharePct": 0.383,
+      "rank": 14,
+      "level": "minor",
+      "crops": [
+       "Potato (Solanum tuberosum)"
+      ]
+     },
+     {
+      "name": "Sugar cane",
+      "areaHa": 376267,
+      "productionT": 30986710,
+      "sharePct": 0.381,
+      "rank": 15,
+      "level": "minor",
+      "crops": [
+       "Sugarcane (Saccharum officinarum)"
+      ]
+     }
+    ],
+    "rowCount": 72,
+    "rowsShown": 15,
+    "facts": {
+     "country": "United States of America",
+     "items": 72,
+     "crops": 107,
+     "inGroups": 102,
+     "notReported": 58
+    },
+    "sources": [
+     {
+      "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
+      "licence": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)",
+      "year": "2022-2024",
+      "url": "https://www.fao.org/faostat/en/#data/QCL",
+      "accessed": "2026-11-15"
+     }
+    ],
+    "caveats": [
+     "102 more crops are counted inside group items the country reports (\"Other vegetables\" and the like): they may be grown, and have no figure of their own.",
+     "A crop the statistics report none of is not thereby a crop that is not grown: a country that does not itemise a crop reads the same way."
+    ]
+   },
+   "isError": false,
+   "ms": 4
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "The main crops of the United States by harvested area are dominated by soybeans and maize, followed by wheat, cotton, and sorghum [S1]. \n\nSoya beans rank first with 34,330,527 hectares, covering 34.74% of the harvested area [S1].\n\nMaize (corn) ranks second with 33,613,081 hectares, covering 34.01% of the harvested area [S1].\n\nWheat ranks third with 15,004,017 hectares, covering 15.18% of the harvested area [S1].\n\nSeed cotton, unginned covers 3,052,090 hectares (3.09% share), and sorghum covers 2,197,467 hectares (2.22% share) [S1].",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:country:USA",
+   "title": "Crops of United States of America by harvested area",
+   "source": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2022-2024",
+   "license": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)"
+  }
+ ]
+}

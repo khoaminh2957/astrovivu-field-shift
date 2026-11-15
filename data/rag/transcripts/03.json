@@ -1,0 +1,212 @@
+{
+ "id": "03",
+ "lang": "vi",
+ "question": "Tỉnh Đắk Lắk trồng cây gì nhiều nhất?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:07:38.995Z",
+ "intent": "general",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 9654,
+ "outputTokens": 584,
+ "ms": 3615,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "cropsInPlace",
+   "input": {
+    "country": "VNM",
+    "region": "Dak Lak"
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "place": "Dak Lak, Viet Nam",
+    "rows": [
+     {
+      "name": "Rice",
+      "areaHa": 100041,
+      "sharePct": 25.88,
+      "rank": 1,
+      "residual": false,
+      "crops": [
+       "Lúa (Oryza sativa)",
+       "Oryza sativa ssp. indica",
+       "Oryza sativa ssp. javanica"
+      ]
+     },
+     {
+      "name": "Maize",
+      "areaHa": 85873,
+      "sharePct": 22.22,
+      "rank": 2,
+      "residual": false,
+      "crops": [
+       "Ngô (Zea mays)",
+       "Zea mays ssp. mays",
+       "Zea mays ssp. saccharata"
+      ]
+     },
+     {
+      "name": "Rubber",
+      "areaHa": 60017,
+      "sharePct": 15.53,
+      "rank": 3,
+      "residual": false,
+      "crops": [
+       "Cao su (Hevea brasiliensis)"
+      ]
+     },
+     {
+      "name": "Cassava",
+      "areaHa": 39571,
+      "sharePct": 10.24,
+      "rank": 4,
+      "residual": false,
+      "crops": [
+       "Sắn (Manihot esculenta)"
+      ]
+     },
+     {
+      "name": "Robust Coffee",
+      "areaHa": 23871,
+      "sharePct": 6.18,
+      "rank": 5,
+      "residual": false,
+      "crops": [
+       "Cà phê vối (Coffea canephora)"
+      ]
+     },
+     {
+      "name": "Other Vegetables",
+      "areaHa": 15357,
+      "sharePct": 3.97,
+      "rank": 6,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Temperate Fruit",
+      "areaHa": 9465,
+      "sharePct": 2.45,
+      "rank": 7,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Other Tropical Fruit",
+      "areaHa": 8051,
+      "sharePct": 2.08,
+      "rank": 8,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Citrus",
+      "areaHa": 7169,
+      "sharePct": 1.85,
+      "rank": 9,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Rest Of Crops",
+      "areaHa": 6688,
+      "sharePct": 1.73,
+      "rank": 10,
+      "residual": true,
+      "crops": []
+     },
+     {
+      "name": "Sugarcane",
+      "areaHa": 6173,
+      "sharePct": 1.6,
+      "rank": 11,
+      "residual": false,
+      "crops": [
+       "Mía (Saccharum officinarum)"
+      ]
+     },
+     {
+      "name": "Sweet Potato",
+      "areaHa": 6163,
+      "sharePct": 1.59,
+      "rank": 12,
+      "residual": false,
+      "crops": [
+       "Khoai lang (Ipomoea batatas)"
+      ]
+     },
+     {
+      "name": "Bean",
+      "areaHa": 4832,
+      "sharePct": 1.25,
+      "rank": 13,
+      "residual": false,
+      "crops": []
+     },
+     {
+      "name": "Groundnut",
+      "areaHa": 3376,
+      "sharePct": 0.87,
+      "rank": 14,
+      "residual": false,
+      "crops": [
+       "Đậu phộng (Arachis hypogaea)"
+      ]
+     },
+     {
+      "name": "Tea",
+      "areaHa": 2645,
+      "sharePct": 0.68,
+      "rank": 15,
+      "residual": false,
+      "crops": [
+       "Chè (Camellia sinensis)",
+       "Camellia sinensis var. assamica",
+       "Camellia sinensis var. sinensis"
+      ]
+     }
+    ],
+    "rowCount": 24,
+    "rowsShown": 15,
+    "facts": {
+     "region": "Dak Lak",
+     "country": "Viet Nam"
+    },
+    "sources": [
+     {
+      "name": "SPAM 2020 V2r2, global harvested area, CSV (spam2020V2r2_global_harvested_area.csv.zip)",
+      "licence": "CC BY 4.0 with citation and the IFPRI adaptation notice (IFPRI Dataverse Terms of Use, December 2019)",
+      "year": "2020",
+      "url": "https://doi.org/10.7910/DVN/SWPENT",
+      "accessed": "2026-11-15"
+     }
+    ],
+    "caveats": [
+     "Ước tính MapSPAM: một mô hình phân bổ thống kê quốc gia và cấp vùng của năm 2020 lên lưới ô. Đây không phải số điều tra của tỉnh, và chỉ có 46 cây và nhóm cây.",
+     "Một nhóm như \"Other Vegetables\" không chỉ cây nào cụ thể: không thể gán diện tích của nhóm cho một cây."
+    ]
+   },
+   "isError": false,
+   "ms": 3
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Theo ước tính phân bổ diện tích thu hoạch của MapSPAM cho năm 2020 (lưới ô, 2020) [S1], các cây trồng nhiều nhất tại tỉnh Đắk Lắk gồm:\n\n- Lúa (Rice): 100.041 ha, chiếm 25,88% diện tích thu hoạch [S1].\n- Ngô (Maize): 85.873 ha, chiếm 22,22% diện tích thu hoạch [S1].\n- Cao su (Rubber): 60.017 ha, chiếm 15,53% diện tích thu hoạch [S1].\n- Sắn (Cassava): 39.571 ha, chiếm 10,24% diện tích thu hoạch [S1].\n- Cà phê vối (Robust Coffee): 23.871 ha, chiếm 6,18% diện tích thu hoạch [S1].\n\nLưu ý rằng đây là các ước tính mô hình phân bổ diện tích thu hoạch cấp tỉnh, không phải số điều tra trực tiếp và chỉ bao gồm các cây hoặc nhóm cây nhất định [S1].\n\nBạn có muốn tìm hiểu chi tiết về yêu cầu sinh trưởng của một trong các loại cây này không?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:region:VNM:Dak Lak",
+   "title": "Cây trồng của Dak Lak, Viet Nam theo diện tích thu hoạch",
+   "source": "SPAM 2020 V2r2, global harvested area, CSV (spam2020V2r2_global_harvested_area.csv.zip), 2020",
+   "license": "CC BY 4.0 with citation and the IFPRI adaptation notice (IFPRI Dataverse Terms of Use, December 2019)"
+  }
+ ]
+}

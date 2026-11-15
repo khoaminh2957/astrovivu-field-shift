@@ -1,0 +1,167 @@
+{
+ "id": "19",
+ "lang": "en",
+ "question": "Compare maize and soybean: what does each need?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:50.196Z",
+ "intent": "compare",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 10847,
+ "outputTokens": 1148,
+ "ms": 5243,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "compareCrops",
+   "input": {
+    "cropA": "maize",
+    "cropB": "soybean"
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "cropA": "Maize (Zea mays)",
+    "cropB": "Soybean (Glycine max)",
+    "rows": [
+     {
+      "key": "temp",
+      "a": "Mean temperature during growth: optimal 18-33 °C, tolerated 10-47 °C.",
+      "b": "Mean temperature during growth: optimal 20-33 °C, tolerated 10-38 °C."
+     },
+     {
+      "key": "rain",
+      "a": "Annual rainfall: optimal 600-1200 mm, tolerated 400-1800 mm.",
+      "b": "Annual rainfall: optimal 600-1500 mm, tolerated 450-1800 mm."
+     },
+     {
+      "key": "ph",
+      "a": "Soil pH: optimal 5-7, tolerated 4.5-8.5.",
+      "b": "Soil pH: optimal 5.5-6.5, tolerated 4.5-8.4."
+     },
+     {
+      "key": "depth",
+      "a": "Soil depth: optimal medium (50-150 cm); tolerated shallow (20-50 cm).",
+      "b": "Soil depth: optimal medium (50-150 cm); tolerated shallow (20-50 cm)."
+     },
+     {
+      "key": "fertility",
+      "a": "Soil fertility: optimal high; tolerated low.",
+      "b": "Soil fertility: optimal high; tolerated low."
+     },
+     {
+      "key": "salinity",
+      "a": "Salinity: optimal low (<4 dS/m); tolerated medium (4-10 dS/m).",
+      "b": "Salinity: optimal low (<4 dS/m); tolerated medium (4-10 dS/m)."
+     },
+     {
+      "key": "light",
+      "a": "Light: optimal very bright; tolerated clear skies to very bright.",
+      "b": "Light: optimal very bright; tolerated very bright to clear skies."
+     },
+     {
+      "key": "cycle",
+      "a": "Growing period: 65-365 days.",
+      "b": "Growing period: 75-180 days."
+     },
+     {
+      "key": "alt",
+      "a": "Maximum tolerated altitude: 4000 m.",
+      "b": "Maximum tolerated altitude: 3000 m."
+     },
+     {
+      "key": "lat",
+      "a": "Tolerated latitude: 40° to 48°.",
+      "b": "Tolerated latitude: 47° to 52°."
+     },
+     {
+      "key": "uses",
+      "a": "Main uses: food & beverage; animal food (feed); material; medicinal; fuels.",
+      "b": "Main uses: food & beverage; food additive; animal food (feed); material; environmental; fuels."
+     },
+     {
+      "key": "companions",
+      "a": "Companion species: legumes; peanuts, okra, pumpkins, melons; grain legumes (Vigna unguiculata), soybeans (Glycine max), Acacia auriculiformis, Cajanus cajan; coconut, mango, mung bean, oil-palm, young rubber trees.",
+      "b": null
+     },
+     {
+      "key": "countries",
+      "a": "Countries reporting production: 172.",
+      "b": "Countries reporting production: 104."
+     },
+     {
+      "key": "worldAreaHa",
+      "a": "Harvested area in the world: 209749146 ha.",
+      "b": "Harvested area in the world: 138641874 ha."
+     },
+     {
+      "key": "texture",
+      "a": null,
+      "b": "Soil texture: optimal medium, organic; tolerated heavy, medium, light."
+     },
+     {
+      "key": "drainage",
+      "a": null,
+      "b": "Drainage: optimal well (dry spells); tolerated poorly (saturated >50% of year), well (dry spells), excessive (dry/moderately dry)."
+     },
+     {
+      "key": "photo",
+      "a": null,
+      "b": "Photoperiod: short day (<12 hours)."
+     },
+     {
+      "key": "climate",
+      "a": null,
+      "b": "Climate zones: tropical wet & dry (Aw), steppe or semiarid (Bs), subtropical dry summer (Cs)."
+     }
+    ],
+    "rowCount": 18,
+    "sources": [
+     {
+      "name": "FAO EcoCrop database, 2,568 species",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "data/ecocrop/README.md"
+     },
+     {
+      "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
+      "licence": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)",
+      "year": "2015-2024",
+      "url": "https://www.fao.org/faostat/en/#data/QCL",
+      "accessed": "2026-11-15"
+     },
+     {
+      "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
+      "licence": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)",
+      "year": "2019-2024",
+      "url": "https://www.fao.org/faostat/en/#data/QCL",
+      "accessed": "2026-11-15"
+     }
+    ],
+    "caveats": [
+     "The world figures are those of the FAOSTAT item Maize (corn), tied to 3 crops.",
+     "EcoCrop gives one envelope per species, not per variety, and has no year of publication for a single record."
+    ]
+   },
+   "isError": false,
+   "ms": 5
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Maize and soybean share similar temperature and rainfall needs, but differ in their specific soil pH and growing cycle ranges [S1]. Both crops thrive under very bright light and prefer high soil fertility with low salinity [S1].\n\nFor temperature, maize requires an optimal mean of 18-33 °C and tolerates 10-47 °C, while soybean prefers 20-33 °C and tolerates 10-38 °C [S1]. Annual rainfall requirements are also close, with maize needing an optimal 600-1200 mm (tolerated 400-1800 mm) and soybean needing 600-1500 mm (tolerated 450-1800 mm) [S1].\n\nSoil pH preferences differ slightly: maize has an optimal range of 5-7 (tolerated 4.5-8.5), whereas soybean prefers 5.5-6.5 (tolerated 4.5-8.4) [S1]. Furthermore, maize has a wider growing period of 65-365 days compared to soybean's 75-180 days [S1].\n\nWhich of these two crops are you planning to grow on your land?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:compare:zea-mays:glycine-max",
+   "title": "Maize (Zea mays) and Soybean (Glycine max) side by side",
+   "source": "FAO EcoCrop database, 2,568 species; FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2015-2024; FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2019-2024",
+   "license": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md); CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)"
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+{
+ "id": "11",
+ "lang": "vi",
+ "field": "cantho-rice",
+ "question": "Tháng nào mưa nhiều nhất ở ruộng tôi?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:08:23.580Z",
+ "intent": "field-fact",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 1,
+ "inputTokens": 8635,
+ "outputTokens": 680,
+ "ms": 2006,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Theo dữ liệu tái phân tích ERA5 (ECMWF, tổng hợp hàng ngày, điểm ảnh 25 km, mô hình hóa, 2006-2025), tháng mưa nhiều nhất ở khu vực ruộng của bạn là tháng 10 với lượng mưa trung bình là 312 mm. \n\nCác tháng tiếp theo có lượng mưa lớn là tháng 9 (295 mm) và tháng 7 (222 mm).\n\nBạn có muốn xem phân bổ lượng mưa chi tiết cho tất cả các tháng trong năm không?",
+ "citations": []
+}

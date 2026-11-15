@@ -6,14 +6,16 @@
  * goes to `/api/ask` instead (same retrieval, answer written by the language model); any failure
  * there falls back to the extractive answer, so the panel always gets a grounded result.
  */
-import type { AskRequest, AskResult, FieldContext, Lang } from '@/contracts';
+import type { AskResult, FieldContext, Lang } from '@/contracts';
 import { answerExtractive } from './engine';
 import { cropShortName } from './facts';
 import { starterQuestions } from './followups';
 import { fetchLoader, KnowledgeStore } from './store';
+import type { AssistantRequest } from './types';
 
 export { buildFieldContext, type FieldContextInput } from './fieldContext';
 export { KnowledgeStore, type BundleLoader } from './store';
+export type { AssistantRequest } from './types';
 
 let store: KnowledgeStore | null = null;
 function getStore(): KnowledgeStore {
@@ -52,7 +54,12 @@ function isAskResult(x: unknown): x is AskResult {
   return Boolean(r && typeof r.answer === 'string' && Array.isArray(r.citations) && (r.mode === 'generative' || r.mode === 'extractive'));
 }
 
-export async function ask(req: AskRequest): Promise<AskResult> {
+/**
+ * `req.field` is the locked field as the models read it (`toModelInput` of the mission state).
+ * Only the API server uses it, for the lookups that run the models on the field; the answer made
+ * in the browser does not need it. Its country table is not sent: the server has the same table.
+ */
+export async function ask(req: AssistantRequest): Promise<AskResult> {
   const query = req.query.trim();
   if (!query) {
     return { answer: '', mode: 'extractive', citations: [], followUps: suggestQuestions(req.context, req.lang), confidence: 0 };
@@ -62,7 +69,7 @@ export async function ask(req: AskRequest): Promise<AskResult> {
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...req, query }),
+        body: JSON.stringify({ ...req, query, ...(req.field ? { field: { ...req.field, country: undefined } } : {}) }),
         signal: AbortSignal.timeout(60_000),
       });
       if (res.ok) {
@@ -74,7 +81,8 @@ export async function ask(req: AskRequest): Promise<AskResult> {
     }
   }
   try {
-    const { retrieval: _r, ...result } = await answerExtractive(getStore(), { ...req, query });
+    const { field: _field, ...rest } = req;
+    const { retrieval: _r, ...result } = await answerExtractive(getStore(), { ...rest, query });
     return result;
   } catch {
     return {

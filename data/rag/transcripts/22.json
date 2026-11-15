@@ -1,0 +1,210 @@
+{
+ "id": "22",
+ "lang": "en",
+ "field": "iowa-corn-soy",
+ "question": "How well does soybean suit this field?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:09:07.962Z",
+ "intent": "field",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 19235,
+ "outputTokens": 820,
+ "ms": 4030,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "fieldSuitability",
+   "input": {
+    "crop": "soybean"
+   },
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "crop": "Soybean (Glycine max)",
+    "field": "Story County corn-soybean field",
+    "rows": [
+     {
+      "suitabilityOutOf100": 92,
+      "bestSuitabilityOutOf100": 92,
+      "sowingMonth": 6,
+      "sowingAssumed": true,
+      "bestSowingMonth": 6,
+      "windowMonths": 4,
+      "reliability": {
+       "yearsOk": 14,
+       "yearsTotal": 20
+      },
+      "waterSupplyMm": 604.0649999999999,
+      "waterNeedMm": 600,
+      "seasonalGdd": 1463,
+      "needsLocalReview": false,
+      "limiting": "temperature",
+      "factors": [
+       {
+        "key": "temperature",
+        "label": "Temperature in the growing window",
+        "actual": 19.2,
+        "ideal": "20-33",
+        "kind": "fixed",
+        "unit": "°C",
+        "note": "Worst month of the 4-month window.",
+        "scoreOutOf100": 92,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "water",
+        "label": "Water over the growing window",
+        "actual": 604,
+        "ideal": "600-1500",
+        "kind": "manageable",
+        "unit": "mm",
+        "note": "Rain in the window 414 mm + stored soil water 190 mm.",
+        "scoreOutOf100": 100,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "ph",
+        "label": "Soil pH",
+        "actual": 6.2,
+        "ideal": "5.5-6.5",
+        "kind": "manageable",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "texture",
+        "label": "Soil texture",
+        "actual": "medium",
+        "ideal": "medium, organic",
+        "kind": "fixed",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "drainage",
+        "label": "Drainage",
+        "actual": "well",
+        "ideal": "well",
+        "kind": "manageable",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "depth",
+        "label": "Soil depth",
+        "actual": null,
+        "ideal": "medium",
+        "kind": "fixed",
+        "unit": "cm",
+        "note": "No data: skipped, not scored as zero.",
+        "scoreOutOf100": null,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "salinity",
+        "label": "Salinity",
+        "actual": 0,
+        "ideal": "low",
+        "kind": "manageable",
+        "unit": "dS/m",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "fertility",
+        "label": "Soil fertility (organic carbon, CEC)",
+        "actual": "high",
+        "ideal": "high",
+        "kind": "manageable",
+        "scoreOutOf100": 100,
+        "source": "SSURGO soil survey (dominant component of the map unit)"
+       },
+       {
+        "key": "slope",
+        "label": "Slope",
+        "actual": 2.6,
+        "ideal": "<= 4.6",
+        "kind": "fixed",
+        "unit": "°",
+        "scoreOutOf100": 100,
+        "source": "SRTM GL1 30 m point elevations"
+       },
+       {
+        "key": "frost",
+        "label": "Killing temperature",
+        "actual": null,
+        "ideal": "> 4 °C",
+        "kind": "fixed",
+        "scoreOutOf100": 100,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "climateZone",
+        "label": "Climate zone",
+        "actual": "Dc/Df",
+        "ideal": "Aw Ar Bs Cf Cs Cw Do Dc Df Dw",
+        "kind": "fixed",
+        "scoreOutOf100": 100,
+        "source": "ERA5 reanalysis (ECMWF), daily aggregates"
+       },
+       {
+        "key": "sowing",
+        "label": "Sowing window",
+        "actual": 6,
+        "ideal": "6",
+        "unit": "month",
+        "kind": "choice",
+        "note": "Share of the best window's score reached by this sowing month; already inside temperature and water.",
+        "scoreOutOf100": 100
+       }
+      ]
+     }
+    ],
+    "rowCount": 1,
+    "sources": [
+     {
+      "name": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14",
+      "licence": "MIT (project code); the readings keep the licences of their sources",
+      "year": "2026"
+     },
+     {
+      "name": "FAO EcoCrop database, 2,568 species",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "data/ecocrop/README.md"
+     }
+    ],
+    "caveats": [
+     "A score of climate and soil at the field, not a yield forecast; it says nothing of markets, pests or the grower's means."
+    ]
+   },
+   "isError": false,
+   "ms": 5
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Soybean suits this field very well, scoring 92 out of 100 in suitability and proving reliable in 14 of 20 analysed years [S1]. \n\nThe main limiting factor is temperature, with the worst month of the four-month window averaging 19.2 °C against an ideal optimum of 20 to 33 °C [S2][S1]. \n\nOther key factors are highly favourable and manageable: soil pH is 6.2 (within the 5.5 to 6.5 ideal range), soil texture is medium, drainage is well, and total water over the growing window is 604 mm (comprising 414 mm of rain and 190 mm of stored soil water) [S2][S1]. \n\nAsk your local extension office about locally adapted soybean varieties and planting dates for Story County.",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:field-suitability:iowa-corn-soy:glycine-max",
+   "title": "How Soybean (Glycine max) suits the field",
+   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  },
+  {
+   "n": 2,
+   "chunkId": "eco:glycine-max:facts",
+   "title": "Soybean (Glycine max): ecological requirements",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  }
+ ]
+}

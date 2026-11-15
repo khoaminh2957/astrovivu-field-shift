@@ -1,0 +1,586 @@
+{
+ "id": "21",
+ "lang": "en",
+ "field": "iowa-corn-soy",
+ "question": "Which rotation would you suggest for this field?",
+ "expect": "answer",
+ "askedAt": "2026-11-15T08:09:02.331Z",
+ "intent": "rotation",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 2,
+ "inputTokens": 21897,
+ "outputTokens": 543,
+ "ms": 4037,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "rotationOptions",
+   "input": {},
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "field": "Story County corn-soybean field",
+    "rows": [
+     {
+      "id": "current",
+      "kind": "current",
+      "name": "Current practice",
+      "years": 2,
+      "seasons": [
+       {
+        "crop": "Maize",
+        "startMonth": 5,
+        "endMonth": 10,
+        "year": 0,
+        "role": "cash",
+        "suitability": 80,
+        "metInYears": {
+         "met": 15,
+         "of": 20
+        },
+        "waterNeedMm": 625,
+        "rainMm": 631,
+        "yieldTHa": 10.54,
+        "marginUsdPerHa": 507,
+        "reason": "Sown in May so the 6-month cycle sits inside the rains: 631 mm normally falls, the crop needs about 625 mm."
+       },
+       {
+        "crop": "Soybean",
+        "startMonth": 5,
+        "endMonth": 10,
+        "year": 1,
+        "role": "cash",
+        "suitability": 64,
+        "metInYears": {
+         "met": 13,
+         "of": 20
+        },
+        "waterNeedMm": 683,
+        "rainMm": 631,
+        "yieldTHa": 2.73,
+        "marginUsdPerHa": 307,
+        "nitrogenKgHa": 40,
+        "reason": "Sown in May (fit 64/100): 631 mm of rain normally falls in the 6-month cycle against a need of about 683 mm, so the crop relies on water stored in the soil."
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 11,
+        "endMonth": 4,
+        "year": 0,
+        "role": "fallow",
+        "reason": "No crop in Nov-Apr, the cold season: the monthly mean temperature falls to -6.6 °C and 332 mm of rain or snow normally falls.",
+        "rainMm": 332
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 11,
+        "endMonth": 4,
+        "year": 1,
+        "role": "fallow",
+        "reason": "No crop in Nov-Apr, the cold season: the monthly mean temperature falls to -6.6 °C and 332 mm of rain or snow normally falls.",
+        "rainMm": 332
+       }
+      ],
+      "metrics": {
+       "suitability": 72,
+       "soilHealth": 41,
+       "waterUseMm": 654,
+       "waterFit": 77,
+       "marginUsdPerHaYr": 407,
+       "risk": 33,
+       "nitrogenKgHaYr": 20,
+       "groundCoverPct": 50,
+       "pestBreak": 100
+      },
+      "score": 30,
+      "marginUsdPerHaYr": {
+       "expected": 407,
+       "low": 134,
+       "high": 680
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "The reference every alternative is compared with.",
+       "The rotation you entered under Ground Truth."
+      ],
+      "benefits": [
+       "Known system: no new equipment, markets or skills needed.",
+       "The current crops fit this field well (72/100).",
+       "Legumes already supply about 20 kg N/ha a year."
+      ],
+      "gaps": [
+       "No soil test: pH and texture come from SSURGO soil survey (dominant component of the map unit), not from this field.",
+       "Climate history is a ~25 km grid average (ERA5 reanalysis (ECMWF), daily aggregates): local frost pockets and rain shadows are not resolved.",
+       "Yields, prices and costs are reference values for the region, not your own figures."
+      ],
+      "risks": [
+       "Frost dates vary from year to year: sowing and harvest months here are climatological and must be adjusted to the local frost calendar.",
+       "Sowing months and fertiliser plans need confirmation by a local extension officer for the varieties available."
+      ]
+     },
+     {
+      "id": "soil-health",
+      "kind": "soil-health",
+      "name": "Soil-health rotation",
+      "years": 2,
+      "seasons": [
+       {
+        "crop": "Maize",
+        "startMonth": 5,
+        "endMonth": 10,
+        "year": 0,
+        "role": "cash",
+        "suitability": 80,
+        "metInYears": {
+         "met": 15,
+         "of": 20
+        },
+        "waterNeedMm": 625,
+        "rainMm": 631,
+        "yieldTHa": 10.54,
+        "marginUsdPerHa": 507,
+        "reason": "Sown in May so the 6-month cycle sits inside the rains: 631 mm normally falls, the crop needs about 625 mm."
+       },
+       {
+        "crop": "Soybean",
+        "startMonth": 6,
+        "endMonth": 9,
+        "year": 1,
+        "role": "legume",
+        "suitability": 92,
+        "metInYears": {
+         "met": 14,
+         "of": 20
+        },
+        "waterNeedMm": 497,
+        "rainMm": 414,
+        "yieldTHa": 3.93,
+        "marginUsdPerHa": 755,
+        "nitrogenKgHa": 40,
+        "reason": "A legume sown in Jun that leaves about 40 kg N/ha (indicative) for the next crop (Maize); 414 mm of rain normally falls in its 4-month cycle and it needs about 497 mm."
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 11,
+        "endMonth": 4,
+        "year": 0,
+        "role": "fallow",
+        "reason": "No crop in Nov-Apr, the cold season: the monthly mean temperature falls to -6.6 °C and 332 mm of rain or snow normally falls.",
+        "rainMm": 332
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 10,
+        "endMonth": 5,
+        "year": 1,
+        "role": "fallow",
+        "reason": "No crop in Oct-May, the cold season: the monthly mean temperature falls to -6.6 °C and 549 mm of rain or snow normally falls.",
+        "rainMm": 549
+       }
+      ],
+      "metrics": {
+       "suitability": 85,
+       "soilHealth": 38,
+       "waterUseMm": 561,
+       "waterFit": 75,
+       "marginUsdPerHaYr": 631,
+       "risk": 32,
+       "nitrogenKgHaYr": 20,
+       "groundCoverPct": 42,
+       "pestBreak": 100
+      },
+      "score": 35,
+      "marginUsdPerHaYr": {
+       "expected": 631,
+       "low": 314,
+       "high": 865
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "Keeps Maize as the main crop and fills the gaps with legumes or cover crops that fix nitrogen, protect the soil and break pest cycles."
+      ],
+      "benefits": [
+       "About 93 mm less crop water use a year than the current practice.",
+       "Reference margin about 224 USD/ha a year higher."
+      ],
+      "gaps": [
+       "No soil test: pH and texture come from SSURGO soil survey (dominant component of the map unit), not from this field.",
+       "Climate history is a ~25 km grid average (ERA5 reanalysis (ECMWF), daily aggregates): local frost pockets and rain shadows are not resolved.",
+       "Yields, prices and costs are reference values for the region, not your own figures."
+      ],
+      "risks": [
+       "Frost dates vary from year to year: sowing and harvest months here are climatological and must be adjusted to the local frost calendar.",
+       "Sowing months and fertiliser plans need confirmation by a local extension officer for the varieties available."
+      ]
+     },
+     {
+      "id": "water-saver",
+      "kind": "water-saver",
+      "name": "Water-saver rotation",
+      "years": 1,
+      "seasons": [
+       {
+        "crop": "Watermelon",
+        "startMonth": 6,
+        "endMonth": 8,
+        "year": 0,
+        "role": "cash",
+        "suitability": 98,
+        "metInYears": {
+         "met": 19,
+         "of": 20
+        },
+        "waterNeedMm": 345,
+        "rainMm": 333,
+        "yieldTHa": 25.15,
+        "marginUsdPerHa": 2170,
+        "reason": "Sown in Jun, its best-fitting month here (98/100): 333 mm of rain normally falls in the 3-month cycle against a need of about 345 mm, so the crop relies on water stored in the soil."
+       },
+       {
+        "crop": "Buckwheat (cover crop)",
+        "startMonth": 9,
+        "endMonth": 10,
+        "year": 0,
+        "role": "cover",
+        "suitability": 42,
+        "metInYears": {
+         "met": 5,
+         "of": 20
+        },
+        "waterNeedMm": 152,
+        "rainMm": 171,
+        "marginUsdPerHa": -160,
+        "reason": "Keeps the soil covered through the wet months (Sep-Oct): 171 mm of rain normally falls on ground that would otherwise be bare."
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 11,
+        "endMonth": 5,
+        "year": 0,
+        "role": "fallow",
+        "reason": "No crop in Nov-May, the cold season: the monthly mean temperature falls to -6.6 °C and 459 mm of rain or snow normally falls.",
+        "rainMm": 459
+       }
+      ],
+      "metrics": {
+       "suitability": 76,
+       "soilHealth": 41,
+       "waterUseMm": 498,
+       "waterFit": 81,
+       "marginUsdPerHaYr": 2011,
+       "risk": 34,
+       "nitrogenKgHaYr": 0,
+       "groundCoverPct": 42,
+       "pestBreak": 100
+      },
+      "score": 51,
+      "marginUsdPerHaYr": {
+       "expected": 2011,
+       "low": 366,
+       "high": 2178
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "Built around Watermelon, the suitable crop with the lowest modelled water demand for its fit here, with at most one more season of a crop that is not a heavy water user; the remaining months stay fallow instead of carrying another thirsty crop."
+      ],
+      "benefits": [
+       "About 156 mm less crop water use a year than the current practice.",
+       "Reference margin about 1604 USD/ha a year higher."
+      ],
+      "gaps": [
+       "No soil test: pH and texture come from SSURGO soil survey (dominant component of the map unit), not from this field.",
+       "Climate history is a ~25 km grid average (ERA5 reanalysis (ECMWF), daily aggregates): local frost pockets and rain shadows are not resolved.",
+       "Yields, prices and costs are reference values for the region, not your own figures.",
+       "Cover-crop benefits (nitrogen, soil cover) are indicative literature values, not measured here."
+      ],
+      "risks": [
+       "Market, varieties and seed supply for Watermelon, Buckwheat must be checked locally before switching.",
+       "Cover crops must be sown right after harvest and terminated on time so they do not compete with the next crop; timing needs local review.",
+       "Frost dates vary from year to year: sowing and harvest months here are climatological and must be adjusted to the local frost calendar.",
+       "Sowing months and fertiliser plans need confirmation by a local extension officer for the varieties available."
+      ]
+     },
+     {
+      "id": "income",
+      "kind": "income",
+      "name": "Income rotation",
+      "years": 2,
+      "seasons": [
+       {
+        "crop": "Maize",
+        "startMonth": 6,
+        "endMonth": 9,
+        "year": 0,
+        "role": "cash",
+        "suitability": 100,
+        "metInYears": {
+         "met": 16,
+         "of": 20
+        },
+        "waterNeedMm": 455,
+        "rainMm": 414,
+        "yieldTHa": 13.18,
+        "marginUsdPerHa": 932,
+        "reason": "Sown in Jun, its best-fitting month here (100/100): 414 mm of rain normally falls in the 4-month cycle against a need of about 455 mm, so the crop relies on water stored in the soil."
+       },
+       {
+        "crop": "Common bean",
+        "startMonth": 5,
+        "endMonth": 7,
+        "year": 1,
+        "role": "cash",
+        "suitability": 70,
+        "metInYears": {
+         "met": 20,
+         "of": 20
+        },
+        "waterNeedMm": 368,
+        "rainMm": 359,
+        "yieldTHa": 1.58,
+        "marginUsdPerHa": 352,
+        "nitrogenKgHa": 40,
+        "reason": "Sown in May (fit 70/100): 359 mm of rain normally falls in the 3-month cycle against a need of about 368 mm, so the crop relies on water stored in the soil."
+       },
+       {
+        "crop": "Canola",
+        "startMonth": 8,
+        "endMonth": 10,
+        "year": 1,
+        "role": "cash",
+        "suitability": 57,
+        "metInYears": {
+         "met": 12,
+         "of": 20
+        },
+        "waterNeedMm": 257,
+        "rainMm": 272,
+        "yieldTHa": 1.29,
+        "marginUsdPerHa": -58,
+        "reason": "Sown in Aug so the 3-month cycle sits inside the rains: 272 mm normally falls, the crop needs about 257 mm."
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 10,
+        "endMonth": 5,
+        "year": 0,
+        "role": "fallow",
+        "reason": "No crop in Oct-May, the cold season: the monthly mean temperature falls to -6.6 °C and 549 mm of rain or snow normally falls.",
+        "rainMm": 549
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 11,
+        "endMonth": 4,
+        "year": 1,
+        "role": "fallow",
+        "reason": "No crop in Nov-Apr, the cold season: the monthly mean temperature falls to -6.6 °C and 332 mm of rain or snow normally falls.",
+        "rainMm": 332
+       }
+      ],
+      "metrics": {
+       "suitability": 78,
+       "soilHealth": 45,
+       "waterUseMm": 540,
+       "waterFit": 77,
+       "marginUsdPerHaYr": 613,
+       "risk": 24,
+       "nitrogenKgHaYr": 20,
+       "groundCoverPct": 42,
+       "pestBreak": 100
+      },
+      "score": 36,
+      "marginUsdPerHaYr": {
+       "expected": 613,
+       "low": 237,
+       "high": 777
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "The highest expected margin among 23 one-year sequences and 204 two-year alternations of crops that suit this field and have a reference price and cost here. Every one was compared; none was drawn at random.",
+       "It keeps the soil-health index and the water fit at least at the level of what you do now.",
+       "56 sequences with a higher margin were set aside (soil health: 54, water fit: 54). The best of them would earn 8,097 USD per hectare and year more.",
+       "Not compared, because no reference price or cost is known for this region: Chickpea, Safflower, Sweet potato, Onion, Sudangrass, Tomato, Mustard greens, Cabbage, Cucumber, Pumpkin, Watermelon, Coriander, Marigold. No figure of another region was used in their place."
+      ],
+      "benefits": [
+       "About 114 mm less crop water use a year than the current practice.",
+       "Reference margin about 206 USD/ha a year higher.",
+       "Lower overall risk score (24 against 33).",
+       "Higher soil-health index (45 against 41)."
+      ],
+      "gaps": [
+       "No soil test: pH and texture come from SSURGO soil survey (dominant component of the map unit), not from this field.",
+       "Climate history is a ~25 km grid average (ERA5 reanalysis (ECMWF), daily aggregates): local frost pockets and rain shadows are not resolved.",
+       "Yields, prices and costs are reference values for the region, not your own figures.",
+       "No statistic says whether the country of this field grows Common bean: FAOSTAT counts it inside a group of crops, or not at all. Ask locally whether seed and buyers exist."
+      ],
+      "risks": [
+       "Market, varieties and seed supply for Common bean, Canola must be checked locally before switching.",
+       "Frost dates vary from year to year: sowing and harvest months here are climatological and must be adjusted to the local frost calendar.",
+       "Sowing months and fertiliser plans need confirmation by a local extension officer for the varieties available."
+      ]
+     },
+     {
+      "id": "resilience",
+      "kind": "resilience",
+      "name": "Resilience rotation",
+      "years": 3,
+      "seasons": [
+       {
+        "crop": "Maize",
+        "startMonth": 5,
+        "endMonth": 10,
+        "year": 0,
+        "role": "cash",
+        "suitability": 80,
+        "metInYears": {
+         "met": 15,
+         "of": 20
+        },
+        "waterNeedMm": 625,
+        "rainMm": 631,
+        "yieldTHa": 10.54,
+        "marginUsdPerHa": 507,
+        "reason": "Sown in May so the 6-month cycle sits inside the rains: 631 mm normally falls, the crop needs about 625 mm."
+       },
+       {
+        "crop": "Common bean",
+        "startMonth": 7,
+        "endMonth": 9,
+        "year": 1,
+        "role": "cash",
+        "suitability": 90,
+        "metInYears": {
+         "met": 17,
+         "of": 20
+        },
+        "waterNeedMm": 341,
+        "rainMm": 271,
+        "yieldTHa": 2.03,
+        "marginUsdPerHa": 653,
+        "nitrogenKgHa": 40,
+        "reason": "Sown in Jul, its best-fitting month here (90/100): 271 mm of rain normally falls in the 3-month cycle against a need of about 341 mm, so the crop relies on water stored in the soil."
+       },
+       {
+        "crop": "Potato",
+        "startMonth": 5,
+        "endMonth": 8,
+        "year": 2,
+        "role": "cash",
+        "suitability": 100,
+        "metInYears": {
+         "met": 19,
+         "of": 20
+        },
+        "waterNeedMm": 520,
+        "rainMm": 460,
+        "yieldTHa": 51.56,
+        "marginUsdPerHa": 8710,
+        "reason": "Sown in May, its best-fitting month here (100/100): 460 mm of rain normally falls in the 4-month cycle against a need of about 520 mm, so the crop relies on water stored in the soil."
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 11,
+        "endMonth": 4,
+        "year": 0,
+        "role": "fallow",
+        "reason": "No crop in Nov-Apr, the cold season: the monthly mean temperature falls to -6.6 °C and 332 mm of rain or snow normally falls.",
+        "rainMm": 332
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 10,
+        "endMonth": 6,
+        "year": 1,
+        "role": "fallow",
+        "reason": "No crop in Oct-Jun, the cold season: the monthly mean temperature falls to -6.6 °C and 692 mm of rain or snow normally falls.",
+        "rainMm": 692
+       },
+       {
+        "crop": "Fallow",
+        "startMonth": 9,
+        "endMonth": 4,
+        "year": 2,
+        "role": "fallow",
+        "reason": "No crop in Sep-Apr, the cold season: the monthly mean temperature falls to -6.6 °C and 504 mm of rain or snow normally falls.",
+        "rainMm": 504
+       }
+      ],
+      "metrics": {
+       "suitability": 88,
+       "soilHealth": 40,
+       "waterUseMm": 495,
+       "waterFit": 73,
+       "marginUsdPerHaYr": 3290,
+       "risk": 23,
+       "nitrogenKgHaYr": 13,
+       "groundCoverPct": 36,
+       "pestBreak": 100
+      },
+      "score": 72,
+      "marginUsdPerHaYr": {
+       "expected": 3290,
+       "low": 2238,
+       "high": 3454
+      },
+      "usesReferenceValues": true,
+      "why": [
+       "Spreads risk across 3 years and 3 plant families, favouring crops that met their needs in most of the analysed years."
+      ],
+      "benefits": [
+       "About 159 mm less crop water use a year than the current practice.",
+       "Reference margin about 2883 USD/ha a year higher.",
+       "Lower overall risk score (23 against 33)."
+      ],
+      "gaps": [
+       "No soil test: pH and texture come from SSURGO soil survey (dominant component of the map unit), not from this field.",
+       "Climate history is a ~25 km grid average (ERA5 reanalysis (ECMWF), daily aggregates): local frost pockets and rain shadows are not resolved.",
+       "Yields, prices and costs are reference values for the region, not your own figures.",
+       "No statistic says whether the country of this field grows Common bean: FAOSTAT counts it inside a group of crops, or not at all. Ask locally whether seed and buyers exist."
+      ],
+      "risks": [
+       "Market, varieties and seed supply for Common bean, Potato must be checked locally before switching.",
+       "Frost dates vary from year to year: sowing and harvest months here are climatological and must be adjusted to the local frost calendar.",
+       "Sowing months and fertiliser plans need confirmation by a local extension officer for the varieties available."
+      ]
+     }
+    ],
+    "rowCount": 5,
+    "sources": [
+     {
+      "name": "Astrovivu rotation planner (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14",
+      "licence": "MIT (project code); the readings keep the licences of their sources",
+      "year": "2026"
+     },
+     {
+      "name": "FAO EcoCrop database, 2,568 species",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "data/ecocrop/README.md"
+     }
+    ],
+    "caveats": [
+     "Margins are reference values of the region unless the grower entered their own; each rotation lists its own gaps and risks."
+    ]
+   },
+   "isError": false,
+   "ms": 49
+  }
+ ],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "For your 29.25-ha parcel in Story County, Iowa (Clarion loam soil, rainfed), the Astrovivu rotation planner offers several alternatives compared to your current practice [S1]:\n\n- **Current practice (Maize and Soybean)**: Suitability 72/100, expected reference margin 407 USD/ha/yr [S1]. This is a familiar system requiring no new equipment, with soybeans adding about 20 kg N/ha/yr [S1].\n- **Soil-health rotation (Maize and Soybean)**: Suitability 85/100, expected reference margin 631 USD/ha/yr [S1]. Keeps maize as the main crop and uses a shorter-cycle legume to boost the margin and reduce water demand by about 93 mm per year [S1].\n- **Income rotation (Maize, Common bean, and Canola)**: Suitability 78/100, expected reference margin 613 USD/ha/yr [S1]. A two-year sequence providing a higher margin, lower risk score (24 against 33), and higher soil health index while using about 114 mm less water annually [S1].\n- **Resilience rotation (Maize, Common bean, and Potato)**: Suitability 88/100, expected reference margin 3,290 USD/ha/yr [S1]. Spreads risk across three plant families and three years, though market access for common beans and potatoes requires local verification [S1].\n\nNote that these economic figures use regional reference values rather than your own costs, and local frost dates must guide exact sowing times [S1]. \n\nWould you like to explore the water demands or pest-break benefits of one of these specific rotations in more detail?",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:rotations:iowa-corn-soy",
+   "title": "Rotations proposed for the field",
+   "source": "Astrovivu rotation planner (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  }
+ ]
+}

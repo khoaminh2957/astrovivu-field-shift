@@ -1,0 +1,24 @@
+{
+ "id": "10",
+ "lang": "vi",
+ "field": "cantho-rice",
+ "question": "Đất ruộng tôi có bị mặn không?",
+ "expect": "no-data",
+ "askedAt": "2026-11-15T08:08:19.693Z",
+ "intent": "field-fact",
+ "mode": "generative",
+ "fallback": null,
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "requests": 1,
+ "inputTokens": 8561,
+ "outputTokens": 454,
+ "ms": 2357,
+ "calls": [],
+ "numberGuard": {
+  "passed": true,
+  "unsupported": []
+ },
+ "answer": "Dữ liệu hiện tại của hệ thống chưa có thông tin đo đạc về độ mặn (chỉ số độ dẫn điện của đất) cho thửa ruộng của bạn (factor_salinity: actual n/a dS/m). \n\nĐể biết chính xác đất ruộng có bị nhiễm mặn hay không, cách chính xác và tiết kiệm nhất là mang mẫu đất đi phân tích tại phòng thí nghiệm hoặc liên hệ với trạm khuyến nông địa phương để được hỗ trợ đo đạc thực tế tại ruộng.",
+ "citations": []
+}
