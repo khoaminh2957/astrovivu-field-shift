@@ -78,6 +78,8 @@ crops,world_area_ha,Sum of the countries' harvested area (exact matches only; sh
 crops,world_production_t,Sum of the countries' production (exact matches only). Tonnes of different products are added when the crop has several items.,Tổng sản lượng của các nước (chỉ cho khớp chính xác). Nếu cây có nhiều mặt hàng thì cộng tấn của các sản phẩm khác nhau.,t,FAOSTAT QCL,sum of country means
 crops,data_years,Years the FAOSTAT means cover.,Các năm mà số trung bình FAOSTAT bao phủ.,years,FAOSTAT QCL,earliest and latest year used in any country
 crops,curated,yes when the crop is in our curated list of 73.,yes nếu cây thuộc danh sách 73 cây chọn lọc của dự án.,,curated-crops.csv,join on ecocrop_id
+crops,urban_candidate,yes when the crop qualifies as an urban/container candidate by the EcoCrop rule (scripts/crops/atlas/urban.ts); empty otherwise.,yes nếu cây đạt điều kiện ứng viên trồng chậu/đô thị theo quy tắc EcoCrop (scripts/crops/atlas/urban.ts); để trống nếu không.,,FAO EcoCrop; build,urbanCandidate(s) in scripts/crops/atlas/urban.ts
+crops,urban_candidate_rule,"Clause(s) of the urban candidate rule that matched: short-cycle, perennial-aromatic-herb, or both separated by "";"".","Vế của quy tắc ứng viên đô thị đã khớp: short-cycle (chu kỳ ngắn), perennial-aromatic-herb (cây thơm lâu năm), hoặc cả hai cách nhau bởi "";"".",,build,urbanCandidate(s).rule
 crop_country,crop_id,Crop (see crops.csv).,Cây trồng (xem crops.csv).,,build,join key
 crop_country,iso3,ISO 3166-1 alpha-3 country code.,Mã quốc gia ISO 3166-1 alpha-3.,,UN M49,FAOSTAT M49 code looked up in the UN M49 list
 crop_country,country,Country name as FAOSTAT writes it.,Tên quốc gia theo FAOSTAT.,,FAOSTAT QCL,copied
