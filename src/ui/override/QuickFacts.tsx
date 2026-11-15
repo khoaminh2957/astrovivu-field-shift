@@ -38,7 +38,7 @@ export function QuickFacts({ onClose, onMore }: { onClose: () => void; onMore: (
   const modes = useMemo(() => [...MODES.map((v) => ({ value: v as string, label: t(`gt.irr.${v}`) })), { value: UNKNOWN, label: t('gt.q.unknown') }], [t]);
 
   return (
-    <section aria-labelledby={titleId} className="flex flex-col gap-3 rounded-sm border border-signal/50 bg-signal/5 p-4">
+    <section aria-labelledby={titleId} className="field-quick-facts flex flex-col gap-3 rounded-sm border border-signal/50 bg-signal/5 p-4">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h3 id={titleId} className="t-heading">

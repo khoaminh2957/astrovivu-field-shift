@@ -99,7 +99,7 @@ const MetricCard = memo(function MetricCard({ id }: { id: BranchId }) {
         </span>
         <span className="truncate text-base font-medium text-ink-1">{title}</span>
       </span>
-      <span className="relative block aspect-[4/3] overflow-hidden">
+      <span data-metric-preview className="relative block aspect-[4/3] overflow-hidden">
         {unavailable ? null : pic === 'loading' || loading ? <span className="skeleton absolute inset-4 opacity-30" aria-hidden /> : <LiveFieldCanvas branch={id} pad={10} />}
       </span>
       {unavailable ? null : ramp ? <span aria-hidden className="h-1.5 rounded-full" style={{ background: ramp }} /> : <span className="t-caption truncate">{caption}</span>}

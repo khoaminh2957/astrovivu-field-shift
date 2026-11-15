@@ -254,6 +254,27 @@ export interface PhPlan {
   caveats: I18nText[];
 }
 
+export type SoilStatus = 'optimal' | 'tolerable' | 'outside' | 'uncertain' | 'no_data';
+
+export interface SoilPlanItem {
+  metric: string;
+  status: SoilStatus;
+  title: I18nText;
+  action: I18nText;
+  rateRange: { min: number; max: number; unit: string } | null;
+  timing: I18nText;
+  verification: I18nText;
+  evidence: EvidenceItem[];
+  caveats: I18nText[];
+  needsLocalReview: boolean;
+}
+
+export interface SoilPlan {
+  items: SoilPlanItem[];
+  summary: I18nText;
+  mostLimitingFactor: string | null;
+}
+
 export interface AdvisoryReport {
   generatedAt: ISODate;
   cropId: string | null;
@@ -265,6 +286,7 @@ export interface AdvisoryReport {
   /** The selected crop read by the CropSuite method, shown next to the sowing window as a second opinion. */
   cropSuite?: CropSuiteSummary;
   ph?: PhPlan;
+  soilPlan?: SoilPlan;
   annualPlan?: AnnualPlan;
 }
 

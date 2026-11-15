@@ -102,7 +102,7 @@ export function Slider({ value, onValueChange, onValueCommit, min, max, step = 1
               style={{ left: pct(r.from), width: `calc(${pct(r.to)} - ${pct(r.from)})` }}
             />
           ))}
-          {fill && <RSlider.Range className="absolute h-full bg-ink-2" />}
+          {fill && <RSlider.Range className="slider-fill absolute h-full bg-ink-2" />}
         </RSlider.Track>
         <RSlider.Thumb
           aria-label={ariaLabel}
