@@ -6,7 +6,7 @@
  */
 import type { AskResult, FieldContext, KnowledgeChunk, Lang } from '@/contracts';
 import { bestSentences, Citer, mentions, quote } from './cite';
-import { cropLabel, cropShortName, factLines, viTerm } from './facts';
+import { cropLabel, cropShortName, factLines, viTerm, whereLines } from './facts';
 import { composeFieldFact, missingSentence, readingParagraphs } from './fieldAnswer';
 import { lookupFieldFacts, parseFieldFact, TERM_FACTS } from './fieldFacts';
 import { followUps } from './followups';
@@ -504,6 +504,9 @@ function composeRotation(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: 
 
 const CARE_WORDS = ['sow', 'plant', 'harvest', 'fertili', 'prun', 'spacing', 'weed', 'irrigat', 'seed', 'transplant', 'gieo', 'trong', 'thu hoach', 'bon', 'tia', 'tuoi', 'mat do', 'cay con', 'giong'];
 
+/** A question about how much of a crop there is, or where: "harvested area", "diện tích", "which countries". */
+const WHERE_WORDS = /\b(area|hectares?|countr(?:y|ies)|where|dien tich|hecta|nuoc nao|o dau)\b|\bha\b/;
+
 function composeCare(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Citer, ctx?: FieldContext): string[] {
   const t = tr(a.lang);
   const crop = store.crops.get(a.cropIds[0] ?? ctx?.cropId ?? '');
@@ -520,11 +523,20 @@ function composeCare(store: KnowledgeStore, a: Analysis, hits: Hit[], cite: Cite
       if (starts.length) paras.push(t(`On your field the rains normally pick up (above 100 mm/month) in ${monthList(starts, 'en')} (${monthlyRain.replace(/^.*\(/, '(')}); rain-fed sowing is usually timed to that start. The advisory panel's sowing window scores each month.`, `Ở ruộng của bạn, mùa mưa thường bắt đầu (trên 100 mm/tháng) vào ${monthList(starts, 'vi')} (${monthlyRain.replace(/^.*\(/, '(')}); gieo nhờ mưa thường căn theo thời điểm này. Khung thời vụ trong bảng tư vấn chấm điểm từng tháng.`));
     }
   }
+  // The sheet on where the crop is grown is given whole or not at all: two sentences picked from
+  // it would leave out the one that says whose figures they are (an item shared by several crops).
+  // It is taken by its id, not from the hits: a question about the area may rank other passages first.
+  const where = crop && WHERE_WORDS.test(fold(a.query)) ? store.chunks.get(`eco:${crop.id}:where${a.lang === 'vi' ? '-vi' : ''}`) : undefined;
+  if (crop && where) {
+    const lines = whereLines(crop, a.lang);
+    if (lines.length) paras.push(`${lines.join(' ')} ${cite.cite(where, lines.join(' '), hits.find((h) => h.chunk.id === where.id)?.score)}`);
+  }
   const qTerms = [...terms(a.query), ...a.expansion];
   let n = 0;
   for (const h of hits) {
     if (n >= 2) break;
-    if (chunkKind(h.chunk) === 'facts' || !mentions(h.chunk.text, CARE_WORDS)) continue;
+    const kind = chunkKind(h.chunk);
+    if (kind === 'facts' || kind === 'where' || !mentions(h.chunk.text, CARE_WORDS)) continue;
     const ss = bestSentences(h.chunk, qTerms, 2, CARE_WORDS);
     if (!ss.length) continue;
     paras.push(`${ss.map((s) => quote(s, h.chunk, a.lang)).join(' ')} ${cite.cite(h.chunk, ss.join(' '), h.score)}`);
@@ -561,8 +573,9 @@ function composeDropped(dropped: DroppedMention[], lang: Lang): string[] {
             'FAOSTAT chỉ tính loài này trong một mặt hàng gộp nhiều cây, và FAO EcoCrop không mô tả nó là cây được trồng trên quy mô lớn hay nhỏ, nên atlas cây trồng không giữ lại.',
           )
         : t(
-            'FAO EcoCrop describes it, but no FAOSTAT crop item names it, by its scientific name or by a common name, so the crop atlas found no evidence that it is grown as a crop and did not keep it.',
-            'FAO EcoCrop có mô tả loài này, nhưng không mặt hàng cây trồng nào của FAOSTAT gọi tên nó, theo tên khoa học hay tên thường gọi, nên atlas cây trồng không tìm thấy bằng chứng loài này được trồng thành cây trồng và không giữ lại.',
+            // What the atlas found, and no more: no item names the species. That is not a finding that nobody grows it.
+            'FAO EcoCrop describes it, but no statistical item of FAOSTAT names it, by its scientific name or by a common name, so the crop atlas has no figures for it and does not keep it. That says nothing about whether it is grown.',
+            'FAO EcoCrop có mô tả loài này, nhưng không mặt hàng thống kê nào của FAOSTAT nêu tên nó, theo tên khoa học hay tên thường gọi, nên atlas cây trồng không có số liệu về loài này và không giữ lại. Điều đó không nói lên loài này có được trồng hay không.',
           );
     return t(`${d.sci}${alias} is not in Astrovivu's crop data. ${why}`, `${d.sci}${alias} không có trong dữ liệu cây trồng của Astrovivu. ${why}`);
   });

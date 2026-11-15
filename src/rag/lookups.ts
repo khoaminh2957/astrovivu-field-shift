@@ -199,7 +199,8 @@ export function whereGrown(t: AtlasTables, file: CropCountriesFile | null, cropI
   const sharing = (item?.crops ?? []).filter((id) => t.crops.crops[id]?.match === 'exact').length;
   if (crop.match === 'group')
     return fail('group-item', tx(`FAOSTAT counts it inside the item ${item?.name ?? 'of a group'}, with ${(item?.crops.length ?? 1) - 1} other crops of the atlas: there is no figure for it alone, in any country.`, `FAOSTAT tính cây này trong mặt hàng ${item?.name ?? 'gộp'}, cùng ${(item?.crops.length ?? 1) - 1} cây khác của atlas: không có số riêng cho cây này, ở nước nào cũng vậy.`));
-  if (crop.match === 'none' || !file) return fail('no-data', tx("FAOSTAT's crop statistics have no item for it.", 'Thống kê cây trồng của FAOSTAT không có mặt hàng nào cho cây này.'));
+  // What the atlas did, not what FAOSTAT has: FAOSTAT has an item for bananas, and the atlas ties none to Musa acuminata.
+  if (crop.match === 'none' || !file) return fail('no-data', tx('The crop atlas ties no FAOSTAT item to it, so it has no figures by country for it.', 'Atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với cây này, nên không có số liệu theo nước cho cây này.'));
   if (iso3 && !t.countries[iso3]) return fail('unknown-place');
   const withArea = file.rows.filter((r) => r.areaHa != null);
   const rankOf = (code: string) => {
@@ -253,7 +254,7 @@ export function cropFigures(t: AtlasTables, facts: CropFacts | undefined, cropId
     rows.push({ key: 'worldAreaHa', line: tx(`Harvested area in the world: ${w.worldAreaHa} ha.`, `Diện tích thu hoạch toàn thế giới: ${w.worldAreaHa} ha.`) });
     sources.push(source(t, 'faostat-qcl', w.years ?? 'n.d.'));
   }
-  if (!rows.length || !sources.length) return fail('no-data', tx('FAO EcoCrop has no record of this crop, and FAOSTAT no item for it.', 'FAO EcoCrop không có bản ghi nào về cây này, và FAOSTAT không có mặt hàng nào cho nó.'));
+  if (!rows.length || !sources.length) return fail('no-data', tx('FAO EcoCrop has no record of this crop, and the crop atlas ties no FAOSTAT item to it.', 'FAO EcoCrop không có bản ghi nào về cây này, và atlas cây trồng chưa gắn mặt hàng FAOSTAT nào với nó.'));
   const caveats: I18nText[] = [];
   if (w?.match === 'group') caveats.push(tx(`FAOSTAT counts it inside the item ${w.faostatItem}: there are no world figures for it alone.`, `FAOSTAT tính cây này trong mặt hàng ${w.faostatItem}: không có số liệu thế giới riêng cho nó.`));
   if (w?.match === 'exact' && (w.sharedBy ?? 1) > 1) caveats.push(tx(`The world figures are those of the FAOSTAT item ${w.faostatItem}, tied to ${w.sharedBy} crops.`, `Số liệu thế giới là của mặt hàng FAOSTAT ${w.faostatItem}, gắn với ${w.sharedBy} cây.`));
