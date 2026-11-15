@@ -18,14 +18,10 @@ export interface CropCountry {
   level: string;
   /** Place among the countries that report an area of the crop, 1 = largest. */
   rank: number;
+  /** The FAOSTAT items the figure is of, by name, when they are not `CropWhere.faostatItem` alone. */
+  items?: string[];
 }
 
-/**
- * What the crop atlas knows about where a crop is grown (data/crops/atlas, FAOSTAT QCL).
- * `exact`: a FAOSTAT item is the crop, or names only its genus; the figures are that item's.
- * `group`: FAOSTAT counts the crop inside an item of several crops; no figure is the crop's own.
- * `none`: no FAOSTAT crop item covers it.
- */
 /** What a country's own statistics say of a crop, where the atlas has such a row (`match = national` in crop_country.csv). */
 export interface CropNational {
   iso3: string;
@@ -38,9 +34,20 @@ export interface CropNational {
   source: string;
 }
 
+/**
+ * What the crop atlas knows about where a crop is grown (data/crops/atlas, FAOSTAT QCL).
+ * `exact`: a FAOSTAT item is the crop, or names only its genus; the figures are that item's.
+ * `group`: FAOSTAT counts the crop inside an item of several crops; no figure is the crop's own.
+ * `none`: the atlas ties no FAOSTAT crop item to it.
+ */
 export interface CropWhere {
   match: 'exact' | 'group' | 'none';
   faostatItem?: string;
+  /**
+   * The crop's other FAOSTAT items, by name (green corn beside maize grain): a country's figure is
+   * the sum of the crop's items it reports, and the world figure the sum of those.
+   */
+  otherItems?: string[];
   /** Crops of the atlas tied to the same FAOSTAT item; above 1 the figures are shared. */
   sharedBy?: number;
   /** Countries that report production. */

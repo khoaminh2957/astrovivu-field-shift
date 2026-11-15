@@ -126,7 +126,8 @@ describe('what a lookup hands back', () => {
     expect(r.rowCount).toBe(r.rows.length);
     expect(r.sources[0].name).toMatch(/FAOSTAT/);
     expect(r.sources[0].licence).toMatch(/CC BY/);
-    expect(r.caveats.join(' ')).toMatch(/item Rice, which the atlas ties to 3 crops/);
+    expect(r.caveats.join(' ')).toMatch(/The item Rice is tied to 3 crops of the atlas/);
+    expect(r.rows.find((x) => x.iso3 === 'VNM')!.items).toEqual(['Rice']);
     expect(out.citation).toMatchObject({ chunkId: 'table:crop-countries:oryza-sativa:VNM', title: 'Where Rice (Oryza sativa) is grown' });
     expect(out.citation!.source).toMatch(/FAOSTAT.*20\d\d/);
     expect(out.citation!.url).toMatch(/^https:\/\//);
@@ -194,7 +195,9 @@ describe('what a lookup hands back', () => {
     const cmp = await tools().compareCrops.run({ cropA: 'rice', cropB: 'maize', country: 'VNM' });
     const c = found(cmp);
     expect(c).toMatchObject({ cropA: 'Rice (Oryza sativa)', cropB: 'Maize (Zea mays)' });
-    expect(c.rows.find((x) => x.key === 'in:VNM')).toMatchObject({ a: expect.stringContaining(String(area('oryza-sativa', 'VNM'))), b: expect.stringContaining(String(area('zea-mays', 'VNM'))) });
+    // In the language of the question, the areas grouped as that language writes numbers.
+    expect(c.rows.find((x) => x.key === 'in:VNM')).toMatchObject({ a: expect.stringContaining(area('oryza-sativa', 'VNM').toLocaleString('en-US')), b: expect.stringContaining(area('zea-mays', 'VNM').toLocaleString('en-US')) });
+    expect(c.rows.find((x) => x.key === 'in:VNM')!.a).toMatch(/^major \(5 % of the harvested area or more\)/);
     expect(cmp.citation!.chunkId).toBe('table:compare:oryza-sativa:zea-mays');
   });
 });
@@ -246,8 +249,12 @@ describe('the lookups that need the locked field', () => {
   it('soilPlan and priceAndMargin: the plan and the reference record, each source named', async () => {
     const field = sampleModelInput('daklak-coffee');
     const plan = found(await tools('en', field).soilPlan.run({}));
-    expect(plan.rows[0]).toMatchObject({ current: 5.7, amendment: 'none' });
-    expect(plan.caveats.join(' ')).toMatch(/pH part only/);
+    const soil = plan.rows[0] as { ph: { current: number; amendment: string }; diagnosis: { key: string; status: string }[]; plan: { items: { metric: string }[]; summary: string } };
+    expect(soil.ph).toMatchObject({ current: 5.7, amendment: 'none' });
+    expect(soil.diagnosis.find((d) => d.key === 'ph')).toBeDefined();
+    expect(typeof soil.plan.summary).toBe('string');
+    expect(soil.plan.items.map((i) => i.metric)).toEqual(expect.arrayContaining(['drainage', 'depth', 'salinity']));
+    expect(JSON.stringify(plan)).not.toMatch(/pH part only/);
 
     const out = await tools('en', field).priceAndMargin.run({});
     const price = found(out);

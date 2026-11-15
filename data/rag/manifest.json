@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-11-15T08:41:31.584Z",
+ "builtAt": "2026-11-15T09:45:42.032Z",
  "sources": {
   "ecocrop": {
    "license": "FAO EcoCrop (attribution, non-commercial)",
@@ -45,7 +45,7 @@
  "chunks": {
   "core": 1522,
   "total": 2951,
-  "wordsMedian": 142,
+  "wordsMedian": 144,
   "wordsP10": 44,
   "wordsP90": 249
  },
@@ -64,22 +64,22 @@
  },
  "artifacts": {
   "public/rag/core.json": {
-   "bytes": 4166762,
-   "gzip": 1024283
+   "bytes": 4167578,
+   "gzip": 1024460
   },
   "public/rag/full.json": {
-   "bytes": 6172146,
-   "gzip": 1187721
+   "bytes": 6188157,
+   "gzip": 1191793
   }
  },
  "tables": {
-  "files": 349,
-  "bytes": 2094371,
+  "files": 350,
+  "bytes": 2148722,
   "largest": "crops.json",
-  "largestBytes": 50333,
+  "largestBytes": 58997,
   "crop": {
    "files": 165,
-   "bytes": 983932
+   "bytes": 1000581
   },
   "region": {
    "files": 179,

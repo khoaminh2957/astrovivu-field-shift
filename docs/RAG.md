@@ -29,7 +29,7 @@ Details, revision ids and the sources considered and rejected: `data/rag/ATTRIBU
 
 **National statistics.** Since 15 November 2026 the atlas also holds what the statistics of Viet Nam and of the United States say of 59 crop and country pairs that FAOSTAT counts inside a group, has no item for, or reports nothing of (`match = national` in `crop_country.csv`); 17 of them carry a figure. A sheet of any of the three kinds gives each such figure in a sentence of its own, with the area, the production where there is one, the year and the publication as the atlas names it: "Viet Nam, from its national statistics: 178,800 ha harvested and 1,470,000 t produced in 2024 (…)" for durian. It is not ranked among FAOSTAT's countries, and a national row without a figure is not turned into a statement.
 
-Every number of every sheet is a column of `crops.csv` or `crop_country.csv` (a test checks all 387), the years included (`year_from`, `year_to` of each country's row). In an extractive answer the sheet is given whole, with the sentence that names the item, or not at all: sentences are never picked out of it. Country names are FAOSTAT's, in both languages, except Viet Nam and the United States, which have their Vietnamese name in the Vietnamese sheet.
+Every number of every sheet is a column of `crops.csv` or `crop_country.csv` (a test checks all 387), the years included (`year_from`, `year_to` of each country's row). Each country's figure names its FAOSTAT items when they are not the crop's first item alone ("United States of America 33,613,081 ha (sum of the items Maize (corn) + Green corn (maize))"), and a crop with several items of its own has them all named, with the statement that a country's figure is the sum of those it reports. In an extractive answer the sheet is given whole, with the sentence that names the item, or not at all: sentences are never picked out of it. Country names are FAOSTAT's, in both languages, except Viet Nam and the United States, which have their Vietnamese name in the Vietnamese sheet.
 
 **Names.** A curated crop is shown under its curated names. Any other crop takes `name_en` and `name_vi` of the atlas where it has them (162 and 16 of the 317), and its scientific name otherwise.
 
@@ -79,40 +79,46 @@ A question about a number is better answered from a table than from a passage th
 
 | Lookup | Answers | From | No rows when |
 |---|---|---|---|
-| `cropsInPlace(iso3)` | the crops a country grows, largest harvested area first, with level, share and rank | the country's table (FAOSTAT QCL) | `unknown-place`: the atlas has no such country |
-| `cropsInPlace(iso3, admin1)` | the crops of a province or state | MapSPAM 2020, a model estimate, said as such | `no-data`: MapSPAM has no such region (Nevada is not among its 44 for the United States) |
-| `whereGrown(cropId, iso3?)` | the five countries with the largest area, how many report it, and the level and place of the country asked about; where the atlas has that country's figure from national statistics, that figure with its publication | the crop's table (FAOSTAT QCL); the country's table for a national figure | `group-item`: the crop is counted inside a group item; `no-data`: the atlas ties no item to it; in both cases only when the country asked about has no national figure either; `dropped-crop`, `unknown-crop` |
+| `cropsInPlace(iso3)` | the crops a country grows, largest harvested area first, with level, share and rank; one row per set of FAOSTAT items the atlas writes for the country, named by those items ("Bananas" for *Musa sapientum* in Viet Nam; "Maize (corn) + Green corn (maize)" in the United States) | the country's table (FAOSTAT QCL); the items of its rows (`row-items.json`) | `unknown-place`: the atlas has no such country |
+| `cropsInPlace(iso3, admin1)` | the crops of a province or state | MapSPAM 2020, a model estimate, said as such | `no-data`: MapSPAM has no such region (Nevada is not among its 44 for the United States), or the name could be two regions ("dosso" in Niger), which are named |
+| `whereGrown(cropId, iso3?, { country })` | the five countries with the largest area, how many report it, and the level and place of the country asked about, each row with the FAOSTAT items its figure is of; where the atlas has that country's figure from national statistics, that figure with its publication. With `iso3` the country's table has to be given (the types require it); without it, a country FAOSTAT has no row of is `unknown`, not `absent` | the crop's table (FAOSTAT QCL); the country's table for a national figure | `group-item`: the crop is counted inside a group item; `no-data`: the atlas ties no item to it; in both cases only when the country asked about has no national figure either; `dropped-crop`, `unknown-crop` |
 | `cropFigures(cropId)` | what the crop needs and how widely it is grown, as lines in both languages | FAO EcoCrop, FAOSTAT QCL | `no-data`: the crop has neither |
 | `compareCrops(a, b, iso3?)` | the two crops line against line, and how much of each the country grows | the same | as above |
 | `fieldSuitability(input, cropId)` | the model's assessment of the crop on the locked field: `assessCrop`, unchanged | the suitability score | `no-field` |
 | `rotationOptions(input)` | the rotations the app builds: `buildRotations`, unchanged | the rotation planner | `no-field` |
-| `soilPlan(input)` | the pH plan, with the caution that it is the pH part only: the soil module (issue S2) is not built | the advisory report | `no-field`, `no-data` |
-| `priceAndMargin(input, cropId)` | the reference yield, price and cost of the field's region and the season built on them, with the quality of each source | the reference economics | `no-data`: no record, or only a record of another country |
+| `soilPlan(input)` | the soil module's diagnosis of each factor and its plan (measure first, correct pH, leach salts, drain), with the pH plan: built as the advisory report builds `soilPlan`, so both give the same steps and lime figure | `diagnoseSoil`, `buildSoilPlan`, `phPlan` (docs/SOIL.md) | `no-field`; `no-data`: no crop chosen |
+| `priceAndMargin(input, cropId)` | the reference yield, price and cost of the field's region and the season built on them, with the quality of each source in words; a record without a cost is given without a season, and says so | the reference economics | `no-data`: no record, or only a record of another country (checked on the record itself, so also for a record without a cost) |
 
-Five rules hold in every lookup, each with a test:
+Six rules hold in every lookup, each with a test:
 
 - **A shared item is one row.** FAOSTAT's "Rice" is the item of three rice crops of the atlas; the atlas has the same 7,089,041 ha for Viet Nam on three rows, the lookup has it once with the three crops.
 - **A group crop never gets the group's numbers.** Durian is counted in "Other tropical fruits, n.e.c."; African rice in "Rice". Neither has a figure, in any country, and the lookup says which item it is counted in.
 - **"Cannot tell" is not "not grown".** A crop a country reports none of is given as `absent` with the caution that a country that does not itemise a crop reads the same way.
 - **A national figure is said to be one.** Since 15 November 2026 the atlas holds what the statistics of Viet Nam and of the United States say of 59 crop and country pairs FAOSTAT has no usable figure for; 17 carry a figure. Such a row is given under the crop's name with its publication (`source`), the publication is among the sources of the result with the table read, its address and its terms (`national.json`), and it has no place among FAOSTAT's countries. Durian in Viet Nam: 178,800 ha in 2024, where FAOSTAT counts durian inside a group. A national row without a figure is `unknown`, with the caution that the publication read has none; it is not `absent`.
-- **No figure of another country.** Common bean has no Vietnamese price; the reference table would fall back to the record of the United States, and the lookup returns `no-data` instead.
+- **No figure of another country.** Common bean has no Vietnamese price; the reference table would fall back to the record of the United States, and the lookup returns `no-data` instead. Until the review of this change the check looked at the season built on the record, and a record without a cost (onion on the Cần Thơ field: a record of the United States) built none and went through; on the four demo fields 30 results were records of another country. It now looks at the record.
+- **A figure is said to be of the items it is of.** The atlas writes, for each country's row, the FAOSTAT items its figure is the sum of (`faostat_item_code` of `crop_country.csv`), and that is not always the crop's first item: 835 of the 11,399 rows of the crops with an item of their own are of another item or of several. Melons in the United States are "Cantaloupes and other melons", not "Melonseed"; *Musa sapientum* in Viet Nam is "Bananas", not "Plantains and cooking bananas"; maize in the United States is grain and green corn added up. Each row names its items, a sum is said to be one, and the world figure of a crop with several items is said to be their sum over the countries (`world_area_ha` of `crops.csv` is the sum of the countries' rows).
 
 **The tables** (`public/rag/tables/`, written by `npm run rag:build`; nothing is computed, every value is a cell of the atlas; no date in the files, so a second build writes the same bytes):
 
 | File | Holds | Files | Size | Largest |
 |---|---|---:|---:|---|
-| `crops.json` | the 387 crops (names, match, FAOSTAT item) and each item with its crops | 1 | 49 kB | |
+| `crops.json` | the 387 crops (names, match, FAOSTAT item and other items, EcoCrop record), each item with its crops, and the name of each of the 157 items | 1 | 58 kB | |
 | `countries.json` | the 198 countries, ISO3 to name | 1 | 4 kB | |
 | `spam.json` | the 46 SPAM crops and classes, with the crops of ours tied to each | 1 | 4 kB | |
 | `sources.json` | title, publisher, licence, landing page and day of access of the three sources cited | 1 | 1 kB | |
 | `national.json` | for each of the 59 rows of national statistics: the publication, its address, the table read, the day it was read and its terms | 1 | 28 kB | |
-| `crop/<crop_id>.json` | the countries that report the crop; only for the 165 crops with an item of their own | 165 | 961 kB | 14.7 kB |
+| `row-items.json` | the FAOSTAT items of the 835 rows whose items are not the crop's first item, by crop and country (the country files do not carry them) | 1 | 28 kB | |
+| `crop/<crop_id>.json` | the countries that report the crop, each row with its items where they are not the crop's first; only for the 165 crops with an item of their own | 165 | 977 kB | 15.8 kB |
 | `region/<ISO3>.json` | MapSPAM harvested area by first-level region | 179 | 1,000 kB | 32.1 kB (Viet Nam; 10.4 kB gzip) |
-| **All** | | **349** | **2,045 kB** (554 kB gzip) | 49 kB |
+| **All** | | **350** | **2,098 kB** (561 kB gzip) | 58 kB |
 
 The crops of one country are not written a second time: the lookups read `public/data/crops/country/<ISO3>.json`, the files the app loads for the model (`scripts/crops/country-tables.ts`, 198 files). One file is read per question (a country, a crop or the regions of a country), on demand, and kept; `tableSource` does that over a reader, `fetch` in the browser and the disk on the server.
 
-Not done here: routing a question to a lookup and wording the extractive answer (C3), the interface sending the model input with a question (`field`, which the server already takes; the call is in `src/ui/ask/index.tsx`, the project lead's), prices from `economics.csv` (T5) and the soil plan (S2).
+Not done here: routing a question to a lookup and wording the extractive answer (C3), the interface sending the model input with a question (`field`, which the server already takes; the call is in `src/ui/ask/index.tsx`, the project lead's) and prices from `economics.csv` (T5). No part of the app calls the lookups outside the generative mode yet; that is C3.
+
+**Regions.** A province or state is found among MapSPAM's names for the country in three tries, each only when the one before found nothing: the name exactly as written; without accents, case, punctuation and "tỉnh" or "thành phố" in front; and both without MapSPAM's words ("city", "province", "state", "region", "oblast"), where every such word of the question is on the region's name too. A try that finds two regions ends with both named and no figures. "Minsk City" is Minsk City and not the oblast of Minsk; "Mexico City" is not the state of Mexico; "Hà" is nothing, not Hà Tĩnh. Every one of the 2,271 region names of the tables finds itself and no other (a test).
+
+**Sources.** FAO EcoCrop gives no year of publication for a record, and the day the file was downloaded was not recorded; its source line has `n.d.` for the year and says that in a note, with the species page of the record as its address (`ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=<record>`, docs/DATA_SOURCES.md). Prevalence levels and the quality of the reference figures are given in words in both languages, by the definitions of docs/CROP_DATA.md (section 7) and docs/ECONOMICS.md (section 2).
 
 ## Pipeline
 
@@ -286,8 +292,8 @@ The answers themselves are checked in `src/rag/fieldAnswer.test.ts`: on the fixt
 
 | Artifact | Raw | gzip | Loaded |
 |---|---|---|---|
-| `public/rag/core.json` (1,522 chunks, 70 crops, index over core) | 4,069 kB | 1,000 kB | on the first question (or `warmUp()`) |
-| `public/rag/full.json` (index over all 2,951 chunks + 1,429 extra chunks, 317 crops, names of 2,178 dropped species) | 6,027 kB | 1,160 kB | in the background after core; awaited when a question matches nothing in core, or asks what a crop needs and names no curated crop |
+| `public/rag/core.json` (1,522 chunks, 70 crops, index over core) | 4,070 kB | 1,000 kB | on the first question (or `warmUp()`) |
+| `public/rag/full.json` (index over all 2,951 chunks + 1,429 extra chunks, 317 crops, names of 2,178 dropped species) | 6,043 kB | 1,164 kB | in the background after core; awaited when a question matches nothing in core, or asks what a crop needs and names no curated crop |
 
 Before the corpus was cut down to the atlas (13 November 2026): 4,130 kB (1,015 kB gzip) and 16,266 kB (2,962 kB gzip), 6,108 chunks. The first load is 2 % smaller, the lazy file 63 % smaller.
 

@@ -15,6 +15,13 @@ export interface CropEntry {
   match: 'exact' | 'group' | 'none';
   /** FAOSTAT item code. */
   item?: string;
+  /**
+   * The crop's other FAOSTAT items (dry and green peas; maize grain and green corn): a country's
+   * figures are the sum of the crop's items it reports (docs/CROP_DATA.md, section 7).
+   */
+  otherItems?: string[];
+  /** FAO EcoCrop record, when the crop has one: its species page is `ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=<eco>`. */
+  eco?: number;
 }
 
 export interface CropsTable {
@@ -25,6 +32,12 @@ export interface CropsTable {
    * also counts African rice (`group`: no number of its own). Each crop's own `match` says which.
    */
   items: Record<string, { name: string; crops: string[] }>;
+  /**
+   * The name of every FAOSTAT item of the atlas (data/crops/atlas/items.csv), also of those that
+   * are no crop's own item: a country's row can be of another item than the crop's ("Bananas"
+   * for Musa sapientum, whose own item is "Plantains and cooking bananas").
+   */
+  itemNames: Record<string, string>;
 }
 
 /** ISO 3166-1 alpha-3 -> name as FAOSTAT writes it. */
@@ -36,8 +49,26 @@ export interface CropCountriesFile {
   item: string;
   /** Key of `SourcesTable`. */
   source: string;
-  rows: { iso3: string; areaHa: number | null; productionT: number | null; level: 'major' | 'common' | 'minor' | 'present'; years: [from: number, to: number] }[];
+  rows: {
+    iso3: string;
+    areaHa: number | null;
+    productionT: number | null;
+    level: 'major' | 'common' | 'minor' | 'present';
+    years: [from: number, to: number];
+    /**
+     * The FAOSTAT items the row's figures are of, when they are not `item` alone: another item
+     * (melons in the United States are "Cantaloupes and other melons"), or the sum of several
+     * ("Maize (corn)" and "Green corn (maize)"). As `crop_country.csv` writes them.
+     */
+    items?: string[];
+  }[];
 }
+
+/**
+ * The FAOSTAT items of a crop's row in a country, `<crop_id>:<ISO3>` -> item codes, for the rows
+ * whose items are not the crop's own item (835 of 11,399 rows): the country files do not carry them.
+ */
+export type RowItemsTable = Record<string, string[]>;
 
 /** The SPAM crops: code -> name, whether it is a class of several crops, and the crops of ours tied to it. */
 export type SpamTable = Record<string, { name: string; /** A class such as "Other Vegetables": no crop of ours is tied to it. */ residual: boolean; crops: string[] }>;
@@ -77,6 +108,7 @@ export interface TableSource {
   sources(): Promise<SourcesTable>;
   spam(): Promise<SpamTable>;
   national(): Promise<NationalTable>;
+  rowItems(): Promise<RowItemsTable>;
   country(iso3: string): Promise<CountryTableFile | null>;
   crop(cropId: string): Promise<CropCountriesFile | null>;
   regions(iso3: string): Promise<RegionFile | null>;
@@ -113,6 +145,7 @@ export function tableSource(read: TableReader, paths = { tables: 'rag/tables/', 
     sources: () => must<SourcesTable>(`${paths.tables}sources.json`),
     spam: () => must<SpamTable>(`${paths.tables}spam.json`),
     national: () => must<NationalTable>(`${paths.tables}national.json`),
+    rowItems: () => must<RowItemsTable>(`${paths.tables}row-items.json`),
     country: (iso3) => (safe(iso3) ? once<CountryTableFile>(`${paths.countries}${iso3.toUpperCase()}.json`) : Promise.resolve(null)),
     crop: (cropId) => (safe(cropId) ? once<CropCountriesFile>(`${paths.tables}crop/${cropId}.json`) : Promise.resolve(null)),
     regions: (iso3) => (safe(iso3) ? once<RegionFile>(`${paths.tables}region/${iso3.toUpperCase()}.json`) : Promise.resolve(null)),

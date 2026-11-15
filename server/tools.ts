@@ -130,7 +130,8 @@ const DESCRIPTIONS: Record<keyof typeof SCHEMAS, string> = {
     'How a crop suits the locked field, as the suitability model of the application scores it: the suitability out of 100, each factor (temperature, water, pH, texture, drainage, salinity, depth and others) with its own score out of 100, the field reading, the source of that reading and the range the crop wants, the limiting factor, and in how many of the analysed years the needs were met. Needs a locked field. Use it for "can I grow this here", "how well does this crop fit my field".',
   rotationOptions:
     'The crop rotations the application proposes for the locked field, the current practice among them: the seasons of each with their months, its suitability, soil, water, risk and nitrogen figures, its margin per hectare and year with the range over the yield range, why it is proposed, what is not known and what needs local review. Needs a locked field. Use it for "what should I grow", "which rotation", "what after this crop".',
-  soilPlan: 'What to do about the soil pH of the locked field for its crop: the pH now, the pH aimed at, and the amendment and indicative rate when one is needed. It covers pH only. Needs a locked field with a crop.',
+  soilPlan:
+    'What to do about the soil of the locked field for its crop: each soil factor (pH, texture, drainage, depth, salinity and others) with the field reading, what the crop needs and a status; the steps that follow (measure first where there is no reading, correct pH, leach salts, drain) with indicative rates; and the pH plan: the pH now, the pH aimed at, the amendment and rate. Needs a locked field with a crop. Use it for "does my soil need lime", "is my soil salty", "how do I improve my soil".',
   priceAndMargin:
     'The reference yield, farm-gate price and cost of a crop in the region of the locked field, each with the source it was taken from, and the revenue, cost and margin of one season on the field with those figures, with the range over the yield range. Reference values, not a forecast and not the grower\'s own figures. Needs a locked field.',
 };
@@ -149,7 +150,7 @@ class Lookups {
 
   private tables(): Promise<AtlasTables> {
     const t = this.ctx.tables;
-    this.atlas ??= Promise.all([t.crops(), t.countries(), t.sources(), t.spam(), t.national()]).then(([crops, countries, sources, spam, national]) => ({ crops, countries, sources, spam, national }));
+    this.atlas ??= Promise.all([t.crops(), t.countries(), t.sources(), t.spam(), t.national(), t.rowItems()]).then(([crops, countries, sources, spam, national, rowItems]) => ({ crops, countries, sources, spam, national, rowItems }));
     return this.atlas;
   }
 
@@ -277,7 +278,8 @@ class Lookups {
     const iso3 = input.country ? this.iso3(t, input.country) : undefined;
     if (iso3 === null) return { result: { ok: false, reason: 'unknown-place', message: FAILURE['unknown-place'][lang] } };
     // The file of the country asked about: where the atlas has the crop there from national statistics, that figure is given.
-    const r = whereGrown(t, await this.ctx.tables.crop(id), id, iso3, { top: input.top, isDropped: this.isDropped, country: iso3 ? await this.ctx.tables.country(iso3) : null });
+    const file = await this.ctx.tables.crop(id);
+    const r = iso3 ? whereGrown(t, file, id, iso3, { top: input.top, isDropped: this.isDropped, country: await this.ctx.tables.country(iso3) }) : whereGrown(t, file, id, undefined, { top: input.top, isDropped: this.isDropped });
     const crop = this.cropName(t, id);
     return this.output(r, { crop }, (rows) => rows, {
       chunkId: `table:crop-countries:${id}${iso3 ? `:${iso3}` : ''}`,
@@ -371,8 +373,8 @@ class Lookups {
     const field = await this.field();
     return this.output(soilPlan(t, field), field ? { field: field.parcel.name } : {}, (rows) => rows, {
       chunkId: `table:soil-plan:${field?.parcel.id ?? ''}`,
-      title: tx(lang, 'pH plan for the field', 'Kế hoạch pH cho thửa ruộng'),
-      snippet: (rows) => rows[0].basis[lang],
+      title: tx(lang, 'Soil plan for the field', 'Kế hoạch cải tạo đất cho thửa ruộng'),
+      snippet: (rows) => rows[0].plan.summary[lang],
     });
   }
 

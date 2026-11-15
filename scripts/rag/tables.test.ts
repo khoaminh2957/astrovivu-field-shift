@@ -96,13 +96,31 @@ describe('the files under public/rag/tables', () => {
   it('are the tables, file for file', () => {
     expect(files.filter((f) => f.startsWith('crop/'))).toHaveLength(built.crop.size);
     expect(files.filter((f) => f.startsWith('region/'))).toHaveLength(built.region.size);
-    expect(files.filter((f) => !f.includes('/')).sort()).toEqual(['countries.json', 'crops.json', 'national.json', 'sources.json', 'spam.json']);
+    expect(files.filter((f) => !f.includes('/')).sort()).toEqual(['countries.json', 'crops.json', 'national.json', 'row-items.json', 'sources.json', 'spam.json']);
     const read = (rel: string) => JSON.parse(fs.readFileSync(path.join(TABLES_DIR, rel), 'utf8')) as unknown;
     expect(read('crops.json')).toEqual(built.crops);
     expect(read('crop/oryza-sativa.json')).toEqual(built.crop.get('oryza-sativa'));
     expect(read('region/VNM.json')).toEqual(built.region.get('VNM'));
     expect(read('spam.json')).toEqual(built.spam);
     expect(read('national.json')).toEqual(built.national);
+    expect(read('row-items.json')).toEqual(built.rowItems);
+  });
+
+  it('keep the FAOSTAT items of every row whose items are not the crop\'s own, and name every item', () => {
+    const rows = csv('crop_country.csv').filter((r) => r.match === 'exact' && ['major', 'common', 'minor', 'present'].includes(r.level));
+    const own = new Map(csv('crops.csv').map((c) => [c.crop_id, c.faostat_item_code]));
+    const other = rows.filter((r) => r.faostat_item_code !== own.get(r.crop_id));
+    expect(other.length).toBeGreaterThan(500);
+    expect(Object.keys(built.rowItems).sort()).toEqual(other.map((r) => `${r.crop_id}:${r.iso3}`).sort());
+    for (const r of other) {
+      expect(built.rowItems[`${r.crop_id}:${r.iso3}`]).toEqual(r.faostat_item_code.split(';'));
+      expect(built.crop.get(r.crop_id)!.rows.find((x) => x.iso3 === r.iso3)!.items).toEqual(r.faostat_item_code.split(';'));
+    }
+    // The other rows carry no list: their item is the file's.
+    expect(built.crop.get('oryza-sativa')!.rows.every((x) => x.items === undefined)).toBe(true);
+    expect(built.crop.get('cucumis-melo')!.item).toBe('299');
+    // Every item code of the atlas has its name.
+    for (const i of csv('items.csv')) expect(built.crops.itemNames[i.faostat_item_code]).toBe(i.faostat_item);
   });
 
   it('none is larger than 150 kB', () => {

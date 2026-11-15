@@ -8,13 +8,16 @@ import path from 'node:path';
 import Papa from 'papaparse';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { FieldTelemetry, GroundTruth, ModelInput } from '@/contracts';
+import { buildAdvisoryReport } from '@/core/advisory';
 import { phPlan } from '@/core/advisory/actions';
 import { buildRotations } from '@/core/advisory/rotation';
-import { referenceEconomics } from '@/core/economics';
+import { economicCountry, REGION_ISO3, referenceEconomics } from '@/core/economics';
+import { computeScoreTimeline } from '@/core/scoring';
+import { buildSoilPlan, diagnoseSoil } from '@/core/soil';
 import { assessCrop } from '@/core/scoring';
 import { getSampleParcel } from '@/data/samples';
 import { fileLoader, fileReader } from '../../server/loader';
-import { type AtlasTables, compareCrops, cropFigures, cropsInPlace, fieldSuitability, type LookupResult, priceAndMargin, regionKey, rotationOptions, soilPlan, whereGrown } from './lookups';
+import { type AtlasTables, compareCrops, cropFigures, cropsInPlace, fieldSuitability, findRegion, type LookupResult, priceAndMargin, regionKey, rotationOptions, soilPlan, whereGrown } from './lookups';
 import { KnowledgeStore } from './store';
 import { tableSource } from './tables';
 
@@ -24,13 +27,14 @@ const csv = (name: string): Row[] => Papa.parse<Row>(fs.readFileSync(path.join(R
 const cropCountry = csv('crop_country.csv');
 const regionCrops = csv('region_crops.csv');
 const cropsCsv = csv('crops.csv');
+const itemsCsv = csv('items.csv');
 const cc = (cropId: string, iso3: string) => cropCountry.find((r) => r.crop_id === cropId && r.iso3 === iso3)!;
 
 const tables = tableSource(fileReader(path.join(ROOT, 'public')));
 let t: AtlasTables;
 let store: KnowledgeStore;
 beforeAll(async () => {
-  t = { crops: await tables.crops(), countries: await tables.countries(), sources: await tables.sources(), spam: await tables.spam(), national: await tables.national() };
+  t = { crops: await tables.crops(), countries: await tables.countries(), sources: await tables.sources(), spam: await tables.spam(), national: await tables.national(), rowItems: await tables.rowItems() };
   store = new KnowledgeStore(fileLoader(path.join(ROOT, 'public/rag')));
   await store.ensureFull();
 });
@@ -71,6 +75,7 @@ describe('what a place grows', () => {
     // is from national statistics; every crop with a quantity is in exactly one row.
     const grown = cropCountry.filter((x) => x.iso3 === 'VNM' && ['major', 'common', 'minor', 'present'].includes(x.level));
     const fromNational = grown.filter((x) => x.match === 'national');
+    // One row per set of items the atlas writes for the country's rows, as `crop_country.csv` has them.
     expect(r.rows).toHaveLength(new Set(grown.filter((x) => x.match !== 'national').map((x) => x.faostat_item_code)).size + fromNational.length);
     expect(r.rows.flatMap((x) => x.cropIds).sort()).toEqual(grown.map((x) => x.crop_id).sort());
     // Largest area first.
@@ -142,6 +147,45 @@ describe('what a place grows', () => {
     for (const name of ['Dak Lak', 'đắk lắk', 'tỉnh Đắk Lắk', 'Cần Thơ', 'Thành phố Cần Thơ', 'Thừa Thiên Huế', 'Hồ Chí Minh', 'An Giang']) expect(cropsInPlace(t, { country, regions }, 'VNM', name).ok, name).toBe(true);
     expect(regionKey('Can Tho city')).toBe('can tho');
     expect(regionKey('Thua Thien - Hue')).toBe(regionKey('Thừa Thiên Huế'));
+    // "Tĩnh" of Hà Tĩnh is a name, not the word for province.
+    expect(cropsInPlace(t, { country, regions }, 'VNM', 'Tỉnh Hà Tĩnh')).toMatchObject({ ok: true, facts: { region: 'Ha Tinh' } });
+  });
+
+  it('never gives the figures of one region for the name of another (review of #117, point 2)', async () => {
+    const place = async (iso3: string) => ({ country: await tables.country(iso3), regions: await tables.regions(iso3) });
+    const region = (r: LookupResult<unknown>) => (r.ok ? r.facts?.region : r.reason);
+    const first = (iso3: string, admin1: string) => regionCrops.filter((x) => x.iso3 === iso3 && x.admin1 === admin1).sort((a, b) => Number(a.rank_in_region) - Number(b.rank_in_region))[0];
+    // The name as MapSPAM writes it is that region, even when another one shares its stem.
+    const minsk = cropsInPlace(t, await place('BLR'), 'BLR', 'Minsk City');
+    expect(region(minsk)).toBe('Minsk City');
+    expect(minsk.ok && minsk.rows[0].areaHa).toBe(Number(first('BLR', 'Minsk City').harvested_area_ha));
+    expect(region(cropsInPlace(t, await place('BLR'), 'BLR', 'Minsk'))).toBe('Minsk');
+    const damascus = cropsInPlace(t, await place('SYR'), 'SYR', 'Damascus');
+    expect(region(damascus)).toBe('Damascus');
+    expect(damascus.ok && damascus.rows[0]).toMatchObject({ name: 'Barley', areaHa: Number(first('SYR', 'Damascus').harvested_area_ha) });
+    // "city" in the question is on the name of one of the two: that one.
+    expect(region(cropsInPlace(t, await place('SYR'), 'SYR', 'Damascus city'))).toBe('City_Damascus');
+    expect(region(cropsInPlace(t, await place('KAZ'), 'KAZ', 'Almaty city'))).toBe('Almaty (city)');
+    // A name that could be two regions gives neither, and names both: Niger has "DOSSO" and "Dosso".
+    const either = cropsInPlace(t, await place('NER'), 'NER', 'dosso');
+    expect(either).toMatchObject({ ok: false, reason: 'no-data' });
+    expect(either.caveats[0].en).toContain('could be (Niger): DOSSO; Dosso');
+    expect(findRegion(['DOSSO', 'Dosso'], 'dosso')).toEqual({ ambiguous: ['DOSSO', 'Dosso'] });
+    expect(findRegion(['DOSSO', 'Dosso'], 'Dosso')).toEqual({ name: 'Dosso' });
+    // "Mexico City" is not the state of Mexico; "Hà" is no province.
+    expect(region(cropsInPlace(t, await place('MEX'), 'MEX', 'Mexico City'))).toBe('no-data');
+    expect(region(cropsInPlace(t, await place('MEX'), 'MEX', 'Mexico'))).toBe('Mexico');
+    expect(region(cropsInPlace(t, await place('VNM'), 'VNM', 'Hà'))).toBe('no-data');
+    expect(region(cropsInPlace(t, await place('VNM'), 'VNM', 'Hà Tĩnh'))).toBe('Ha Tinh');
+    // Over every region of the atlas: its own name finds it, and no other.
+    const byCountry = new Map<string, string[]>();
+    for (const x of regionCrops) if (x.level === 'admin1' && x.admin1) byCountry.set(x.iso3, [...new Set([...(byCountry.get(x.iso3) ?? []), x.admin1])]);
+    let checked = 0;
+    for (const [, names] of byCountry) for (const n of names) {
+      expect(findRegion(names, n), n).toEqual({ name: n });
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(2000);
   });
 
   it('Nevada is not among the regions MapSPAM has for the United States: no data, not another state', async () => {
@@ -159,13 +203,13 @@ describe('what a place grows', () => {
 describe('where a crop is grown', () => {
   it('soybean: 34,330,527 ha and major in the United States, 30,237 ha and minor in Viet Nam', async () => {
     const file = await tables.crop('glycine-max');
-    const usa = whereGrown(t, file, 'glycine-max', 'USA');
+    const usa = whereGrown(t, file, 'glycine-max', 'USA', { country: await tables.country('USA') });
     sourced(usa);
     const rowUsa = cc('glycine-max', 'USA');
     expect(rowUsa.area_ha).toBe('34330527');
     expect(usa.rows.find((r) => r.iso3 === 'USA')).toMatchObject({ areaHa: Number(rowUsa.area_ha), level: rowUsa.level, country: 'United States of America' });
     expect(usa.facts!.askedLevel).toBe('major');
-    const vnm = whereGrown(t, file, 'glycine-max', 'VNM');
+    const vnm = whereGrown(t, file, 'glycine-max', 'VNM', { country: await tables.country('VNM') });
     sourced(vnm);
     const rowVnm = cc('glycine-max', 'VNM');
     expect(rowVnm.area_ha).toBe('30237');
@@ -199,8 +243,7 @@ describe('where a crop is grown', () => {
     expect(r.caveats[0].en).toContain('FAOSTAT has no figure for it alone, in any country');
     expect(r.caveats[1].en).toContain('is from its national statistics');
     expect(r.caveats[1].vi).toContain('lấy từ thống kê quốc gia');
-    // Without the country's file, or for another country, there is nothing to give, as before.
-    expect(whereGrown(t, null, 'durio-zibethinus', 'VNM')).toMatchObject({ ok: false, reason: 'group-item' });
+    // For another country, or for none, there is nothing to give, as before.
     expect(whereGrown(t, null, 'durio-zibethinus', 'THA', { country: await tables.country('THA') })).toMatchObject({ ok: false, reason: 'group-item' });
     expect(whereGrown(t, null, 'durio-zibethinus')).toMatchObject({ ok: false, reason: 'group-item' });
   });
@@ -248,11 +291,56 @@ describe('where a crop is grown', () => {
   });
 
   it('says when the figures are those of an item shared by several crops', async () => {
-    const r = whereGrown(t, await tables.crop('oryza-sativa'), 'oryza-sativa', 'VNM');
+    const r = whereGrown(t, await tables.crop('oryza-sativa'), 'oryza-sativa', 'VNM', { country: await tables.country('VNM') });
     sourced(r);
     const shared = cropsCsv.find((c) => c.crop_id === 'oryza-sativa')!.item_shared_by_n_crops;
-    expect(r.caveats.some((c) => c.en.includes(`ties to ${shared} crops`))).toBe(true);
+    expect(r.caveats.some((c) => c.en.includes(`is tied to ${shared} crops of the atlas`))).toBe(true);
     expect(r.facts!.countriesReporting).toBe(Number(cropsCsv.find((c) => c.crop_id === 'oryza-sativa')!.n_countries_producing));
+  });
+
+  it('names the FAOSTAT items each figure is of, as the atlas writes them for that row (review of #117, point 3)', async () => {
+    const name = (code: string) => itemsCsv.find((x) => x.faostat_item_code === code)!.faostat_item;
+    const names = (cropId: string, iso3: string) => cc(cropId, iso3).faostat_item_code.split(';').map(name);
+    // Melons in the United States: not "Melonseed", the crop's first item, but "Cantaloupes and other melons".
+    const melon = whereGrown(t, await tables.crop('cucumis-melo'), 'cucumis-melo', 'USA', { country: await tables.country('USA') });
+    sourced(melon);
+    expect(melon.rows.find((x) => x.iso3 === 'USA')).toMatchObject({ areaHa: Number(cc('cucumis-melo', 'USA').area_ha), items: ['Cantaloupes and other melons'] });
+    expect(names('cucumis-melo', 'USA')).toEqual(['Cantaloupes and other melons']);
+    expect(melon.caveats.some((c) => c.en.includes('of the FAOSTAT items Melonseed, Cantaloupes and other melons: for each country, the sum of those it reports'))).toBe(true);
+    // Musa sapientum in Viet Nam: "Bananas", not "Plantains and cooking bananas".
+    const banana = whereGrown(t, await tables.crop('musa-sapientum'), 'musa-sapientum', 'VNM', { country: await tables.country('VNM') });
+    expect(banana.ok && banana.rows.find((x) => x.iso3 === 'VNM')!.items).toEqual(names('musa-sapientum', 'VNM'));
+    expect(names('musa-sapientum', 'VNM')).toEqual(['Bananas']);
+    // Maize in the United States: grain and green corn, added up, and said to be a sum.
+    const maize = whereGrown(t, await tables.crop('zea-mays'), 'zea-mays', 'USA', { country: await tables.country('USA') });
+    expect(maize.ok && maize.rows.find((x) => x.iso3 === 'USA')!.items).toEqual(['Maize (corn)', 'Green corn (maize)']);
+    expect(maize.caveats.some((c) => c.en.startsWith('A figure given with two items or more is their sum'))).toBe(true);
+    // Every row of every crop file names the items of its row in the atlas.
+    for (const c of cropsCsv.filter((x) => x.match === 'exact')) {
+      const r = whereGrown(t, await tables.crop(c.crop_id), c.crop_id, undefined, { top: 300 });
+      if (!r.ok) continue;
+      for (const row of r.rows) expect(row.items, `${c.crop_id} ${row.iso3}`).toEqual(names(c.crop_id, row.iso3));
+    }
+    // A country's list names the row by its items, and gives the sum as a sum.
+    const usa = cropsInPlace(t, { country: await tables.country('USA') }, 'USA');
+    expect(usa.ok && usa.rows.find((x) => x.cropIds.includes('zea-mays'))).toMatchObject({ name: 'Maize (corn) + Green corn (maize)', items: ['Maize (corn)', 'Green corn (maize)'], areaHa: Number(cc('zea-mays', 'USA').area_ha) });
+    expect(usa.ok && usa.caveats.some((c) => c.en.startsWith('A figure given with two items or more is their sum'))).toBe(true);
+    const vnm = cropsInPlace(t, { country: await tables.country('VNM') }, 'VNM');
+    expect(vnm.ok && vnm.rows.find((x) => x.cropIds.includes('musa-sapientum'))).toMatchObject({ name: 'Bananas', areaHa: Number(cc('musa-sapientum', 'VNM').area_ha) });
+    expect(vnm.ok && vnm.rows.some((x) => x.name === 'Plantains and cooking bananas' && x.cropIds.includes('musa-sapientum'))).toBe(false);
+  });
+
+  it('a country FAOSTAT has no row of is "not known" when its own statistics were not looked at', async () => {
+    // Sesame in the United States: the atlas has it from the 2022 Census of Agriculture, not from FAOSTAT.
+    expect(cc('sesamum-indicum', 'USA').match).toBe('national');
+    const loose = whereGrown as (...a: unknown[]) => LookupResult<{ iso3: string; level: string }>;
+    const r = loose(t, await tables.crop('sesamum-indicum'), 'sesamum-indicum', 'USA', {});
+    sourced(r);
+    expect(r.rows.find((x) => x.iso3 === 'USA')!.level).toBe('unknown');
+    expect(r.caveats.some((c) => c.en.includes("the country's own statistics were not looked at"))).toBe(true);
+    // With the country's file, the census figure.
+    const full = whereGrown(t, await tables.crop('sesamum-indicum'), 'sesamum-indicum', 'USA', { country: await tables.country('USA') });
+    expect(full.ok && full.rows.find((x) => x.iso3 === 'USA')).toMatchObject({ areaHa: Number(cc('sesamum-indicum', 'USA').area_ha), level: cc('sesamum-indicum', 'USA').level });
   });
 
   it('tells a species the atlas dropped from one it never heard of, and a crop without an item', async () => {
@@ -260,7 +348,7 @@ describe('where a crop is grown', () => {
     expect(whereGrown(t, null, 'abelmoschus-manihot', undefined, { isDropped })).toMatchObject({ ok: false, reason: 'dropped-crop' });
     expect(whereGrown(t, null, 'not-a-crop', undefined, { isDropped })).toMatchObject({ ok: false, reason: 'unknown-crop' });
     expect(whereGrown(t, await tables.crop('tagetes-erecta'), 'tagetes-erecta')).toMatchObject({ ok: false, reason: 'no-data' });
-    expect(whereGrown(t, await tables.crop('glycine-max'), 'glycine-max', 'XXX')).toMatchObject({ ok: false, reason: 'unknown-place' });
+    expect(whereGrown(t, await tables.crop('glycine-max'), 'glycine-max', 'XXX', { country: null })).toMatchObject({ ok: false, reason: 'unknown-place' });
   });
 });
 
@@ -271,8 +359,20 @@ describe('what a crop needs, and two crops side by side', () => {
     const row = cropsCsv.find((c) => c.crop_id === 'glycine-max')!;
     expect(r.rows.find((x) => x.key === 'ph')!.line).toEqual({ en: `Soil pH: optimal ${Number(row.ph_opt_min)}-${Number(row.ph_opt_max)}, tolerated ${Number(row.ph_abs_min)}-${Number(row.ph_abs_max)}.`, vi: `pH đất: tối ưu ${Number(row.ph_opt_min)}-${Number(row.ph_opt_max)}, chịu được ${Number(row.ph_abs_min)}-${Number(row.ph_abs_max)}.` });
     expect(r.rows.find((x) => x.key === 'countries')!.line.en).toBe(`Countries reporting production: ${row.n_countries_producing}.`);
-    expect(r.rows.find((x) => x.key === 'worldAreaHa')!.line.en).toBe(`Harvested area in the world: ${row.world_area_ha} ha.`);
+    expect(r.rows.find((x) => x.key === 'worldAreaHa')!.line.en).toBe(`Harvested area in the world: ${Number(row.world_area_ha).toLocaleString('en-US')} ha, of the FAOSTAT item ${row.faostat_item}.`);
+    expect(r.rows.find((x) => x.key === 'worldAreaHa')!.line.vi).toBe(`Diện tích thu hoạch toàn thế giới: ${Number(row.world_area_ha).toLocaleString('vi-VN')} ha, của mặt hàng FAOSTAT ${row.faostat_item}.`);
     expect(r.sources.map((s) => s.year)).toEqual(['n.d.', row.data_years]);
+    // EcoCrop: the species page, and what is known of the date in place of a date.
+    expect(r.sources[0]).toMatchObject({ name: `FAO EcoCrop database, record ${row.ecocrop_id}`, url: `https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=${row.ecocrop_id}` });
+    expect(r.sources[0].note).toContain('no year of publication');
+    expect(r.sources[0]).not.toHaveProperty('accessed');
+  });
+
+  it('gives the world figure of a crop with several items as the sum of those items', () => {
+    const row = cropsCsv.find((c) => c.crop_id === 'cucumis-melo')!;
+    const r = cropFigures(t, store.crops.get('cucumis-melo'), 'cucumis-melo');
+    sourced(r);
+    expect(r.rows.find((x) => x.key === 'worldAreaHa')!.line.en).toBe(`Harvested area in the world: ${Number(row.world_area_ha).toLocaleString('en-US')} ha, the sum over the countries of the FAOSTAT items Melonseed, Cantaloupes and other melons each reports.`);
   });
 
   it('gives a group crop its requirements and no world figures', () => {
@@ -286,18 +386,22 @@ describe('what a crop needs, and two crops side by side', () => {
 
   it('sets two crops line against line, and says how much of each a country grows', async () => {
     const pair = async (id: string) => ({ cropId: id, facts: store.crops.get(id), file: await tables.crop(id) });
-    const r = compareCrops(t, await pair('glycine-max'), await pair('zea-mays'), 'VNM');
+    const r = compareCrops(t, await pair('glycine-max'), await pair('zea-mays'), 'VNM', { country: await tables.country('VNM') });
     sourced(r);
     const ph = r.rows.find((x) => x.key === 'ph')!;
     expect(ph.a!.en).toMatch(/^Soil pH: optimal 5\.5-6\.5/);
     expect(ph.b!.en).toMatch(/^Soil pH: optimal 5-7/);
     const here = r.rows.find((x) => x.key === 'in:VNM')!;
-    expect(here.a!.en).toBe(`${cc('glycine-max', 'VNM').level}, ${cc('glycine-max', 'VNM').area_ha} ha`);
-    expect(here.b!.en).toBe(`${cc('zea-mays', 'VNM').level}, ${cc('zea-mays', 'VNM').area_ha} ha`);
+    expect(here.a!.en).toBe(`minor (under 0.5 %), ${Number(cc('glycine-max', 'VNM').area_ha).toLocaleString('en-US')} ha (item Soya beans)`);
+    expect(here.a!.vi).toBe(`ít (dưới 0,5 %), ${Number(cc('glycine-max', 'VNM').area_ha).toLocaleString('vi-VN')} ha (mặt hàng Soya beans)`);
+    expect(here.b!.vi).toBe(`trồng nhiều (từ 5 % diện tích thu hoạch), ${Number(cc('zea-mays', 'VNM').area_ha).toLocaleString('vi-VN')} ha (mặt hàng Maize (corn))`);
+    expect([cc('glycine-max', 'VNM').level, cc('zea-mays', 'VNM').level]).toEqual(['minor', 'major']);
+    // No English word in the Vietnamese line but the names of the items.
+    expect(here.a!.vi.replace(/\(mặt hàng [^)]*\)/, '')).not.toMatch(/\b(major|common|minor|present|absent)\b/);
     // With a group crop: its side says so, with no number.
-    const withDurian = compareCrops(t, await pair('glycine-max'), await pair('durio-zibethinus'), 'VNM');
-    sourced(withDurian);
-    expect(withDurian.rows.find((x) => x.key === 'in:VNM')!.b!.en).toBe('counted inside a group item: no figure of its own');
+    const withJackfruit = compareCrops(t, await pair('glycine-max'), await pair('artocarpus-heterophyllus'), 'VNM', { country: await tables.country('VNM') });
+    sourced(withJackfruit);
+    expect(withJackfruit.rows.find((x) => x.key === 'in:VNM')!.b!.en).toBe('counted inside a group item: no figure of its own');
     expect(compareCrops(t, await pair('glycine-max'), await pair('not-a-crop'))).toMatchObject({ ok: false, reason: 'unknown-crop' });
   });
 });
@@ -323,13 +427,27 @@ describe('the locked field', () => {
     expect(rotationOptions(t, undefined)).toMatchObject({ ok: false, reason: 'no-field' });
   });
 
-  it('the soil plan is the pH plan for now, and says that it is only that', () => {
-    const input = field('iowa-corn-soy');
-    const r = soilPlan(t, input);
-    sourced(r);
-    expect(r.rows).toEqual([phPlan(input)]);
-    expect(r.caveats[0].en).toMatch(/^This is the pH part only/);
+  it('the soil plan is the one the soil module builds, the pH plan with it (review of #117, point 4)', () => {
+    for (const id of ['daklak-coffee', 'cantho-rice', 'iowa-corn-soy', 'nevada-alfalfa']) {
+      const input = field(id);
+      const r = soilPlan(t, input);
+      sourced(r);
+      const diagnosis = diagnoseSoil(input);
+      expect(r.rows[0], id).toEqual({ ph: phPlan(input) ?? null, diagnosis: diagnosis.metrics, plan: buildSoilPlan(diagnosis, input, phPlan(input) ?? undefined) });
+      // The same plan as the advisory report's.
+      expect(r.rows[0].plan, id).toEqual(buildAdvisoryReport(input, computeScoreTimeline(input)).soilPlan);
+      expect(r.sources[0].name).toContain('soil diagnosis and plan (docs/SOIL.md)');
+      // Nothing says the plan is the pH part alone.
+      expect(JSON.stringify(r)).not.toMatch(/pH part only|phần pH/);
+    }
+    // Cần Thơ: drainage, depth and salinity are in the plan, as steps to measure first.
+    const cantho = soilPlan(t, field('cantho-rice'));
+    expect(cantho.ok && cantho.rows[0].plan.items.map((x) => x.metric)).toEqual(expect.arrayContaining(['drainage', 'depth', 'salinity']));
+    // Nevada: the pH step with sulfur, and the same figure as the pH plan.
+    const nevada = soilPlan(t, field('nevada-alfalfa'));
+    expect(nevada.ok && nevada.rows[0].ph?.amendment).toBe('sulfur');
     expect(soilPlan(t, null)).toMatchObject({ ok: false, reason: 'no-field' });
+    expect(soilPlan(t, { ...field('iowa-corn-soy'), cropId: null })).toMatchObject({ ok: false, reason: 'no-data' });
   });
 
   it('price and margin are the reference record of the region and the season built on it', () => {
@@ -340,7 +458,10 @@ describe('the locked field', () => {
     expect(r.rows[0].reference).toBe(reference);
     expect(r.rows[0].season).toMatchObject({ cropId: 'oryza-sativa', priceUsdPerT: reference.priceUsdPerT });
     expect(r.sources[0].year).toBe(String(reference.year));
-    expect(r.caveats[0].en).toContain(`yield ${reference.quality.yield}, price ${reference.quality.price}, cost ${reference.quality.cost}`);
+    expect(r.caveats[0].en).toContain(`yield ${reference.quality.yield} (`);
+    // In Vietnamese, the quality words are Vietnamese.
+    expect(r.caveats[0].vi).not.toMatch(/\b(official|budget|press|derived)\b/);
+    expect(r.caveats[0].vi).toContain('năng suất chính thức (cơ quan thống kê)');
   });
 
   it('a record of another country is not given in place of a missing one', () => {
@@ -354,5 +475,43 @@ describe('the locked field', () => {
     expect(priceAndMargin(t, field('iowa-corn-soy'), 'phaseolus-vulgaris').ok).toBe(true);
     expect(priceAndMargin(t, null, 'oryza-sativa')).toMatchObject({ ok: false, reason: 'no-field' });
     expect(priceAndMargin(t, input, 'not-a-crop')).toMatchObject({ ok: false, reason: 'unknown-crop' });
+  });
+
+  it('nor when the record has no cost and builds no season (review of #117, point 1)', () => {
+    // Onion on the Cần Thơ field: the only record is of the United States, and it has no cost.
+    const cantho = field('cantho-rice');
+    const onion = referenceEconomics('allium-cepa', cantho.parcel)!;
+    expect(onion.region).toBe('US');
+    expect(onion.costUsdPerHa).toBeNull();
+    expect(priceAndMargin(t, cantho, 'allium-cepa')).toMatchObject({ ok: false, reason: 'no-data' });
+    // Cashew on the Iowa field: the only record is of Viet Nam.
+    expect(referenceEconomics('anacardium-occidentale', field('iowa-corn-soy').parcel)!.region).toBe('VN');
+    expect(priceAndMargin(t, field('iowa-corn-soy'), 'anacardium-occidentale')).toMatchObject({ ok: false, reason: 'no-data' });
+    // Over every crop of the atlas on the four demo fields: a result is always of the field's own country.
+    let given = 0;
+    for (const id of ['daklak-coffee', 'cantho-rice', 'iowa-corn-soy', 'nevada-alfalfa']) {
+      const input = field(id);
+      const score = computeScoreTimeline(input);
+      for (const c of cropsCsv) {
+        const r = priceAndMargin(t, input, c.crop_id, score);
+        if (!r.ok) continue;
+        given++;
+        expect(REGION_ISO3[r.rows[0].reference.region], `${id} ${c.crop_id}`).toBe(economicCountry(input.parcel));
+      }
+    }
+    expect(given).toBeGreaterThan(40);
+  });
+
+  it("a record of the field's own country without a cost is given, and says there is no margin", () => {
+    const input = field('iowa-corn-soy');
+    const noCost = cropsCsv.map((c) => c.crop_id).find((id) => {
+      const ref = referenceEconomics(id, input.parcel);
+      return ref && REGION_ISO3[ref.region] === 'USA' && ref.costUsdPerHa == null;
+    });
+    expect(noCost, 'no US record without a cost to test with').toBeDefined();
+    const r = priceAndMargin(t, input, noCost!);
+    sourced(r);
+    expect(r.rows[0].season).toBeNull();
+    expect(r.caveats.some((c) => c.en.startsWith('The record has no cost, or the model cannot place the crop on this field'))).toBe(true);
   });
 });
