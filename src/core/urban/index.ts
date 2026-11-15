@@ -5,6 +5,8 @@
 import type { I18nText, UrbanClimate, UrbanPreference, UrbanRecommendation, UrbanSite } from '@/contracts';
 import { tx } from '@/contracts';
 import { monthEn, monthVi, monthsFrom, wrapMonth } from '@/core/advisory/util';
+import { listUrbanCrops } from '@/core/crops';
+import { trapezoid, windowMonths } from '@/core/scoring';
 import { listCrops } from '@/core/crops';
 import { SOW_FIT } from './calendar';
 import { COLD_MARGIN_C, HEAT_MARGIN_C, KILL_MARGIN_C, PHOTOPERIOD_MIN, climateLimitingReason, photoperiodClass, windowFit, type ClimateLimitingFactor, type WindowFitDetail } from './climateFit';
@@ -68,7 +70,7 @@ function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], 
   const sunHoursNow = monthlySun ? (monthlySun[now - 1] ?? 0) : null;
   const effectiveLight = sunHoursNow != null ? lightClass(sunHoursNow) : site.light;
   const out: UrbanRecommendation[] = [];
-  for (const c of listCrops()) {
+  for (const c of listUrbanCrops()) {
     const u = c.urban;
     if (!u?.suitable) continue;
     if ((site.space === 'windowsill' || site.space === 'balcony') && !u.container) continue;
@@ -131,7 +133,29 @@ function rank(site: UrbanSite, climate: UrbanClimate, prefs: UrbanPreference[], 
         : undefined;
     const lightTxt = u.light === 'full' ? tx('6 or more hours of direct sun a day.', 'Từ 6 giờ nắng trực tiếp mỗi ngày.') : u.light === 'partial' ? tx('3-6 hours of sun; shade at midday in hot months.', '3-6 giờ nắng; che nắng buổi trưa vào tháng nóng.') : tx('Bright shade or 2-3 hours of morning sun.', 'Bóng râm sáng hoặc 2-3 giờ nắng sáng.');
     const tips = u.tags.map((t) => TAG_TIPS[t]).filter((x): x is I18nText => !!x).slice(0, 3);
-    tips.push(tx(site.space === 'windowsill' ? 'Use a pot at least 15 cm deep with drainage holes.' : 'Use containers at least 20-30 cm deep with drainage holes and a light potting mix.', site.space === 'windowsill' ? 'Dùng chậu sâu ít nhất 15 cm có lỗ thoát nước.' : 'Dùng chậu sâu ít nhất 20-30 cm có lỗ thoát nước và giá thể nhẹ.'));
+    if (u.potDepthCm != null) {
+      const volEn = u.potVolumeL != null ? ` (at least ${u.potVolumeL} L)` : '';
+      const volVi = u.potVolumeL != null ? ` (ít nhất ${u.potVolumeL} lít)` : '';
+      const spEn = u.spacingCm != null ? `, spaced ${u.spacingCm} cm apart` : '';
+      const spVi = u.spacingCm != null ? `, cây cách cây ${u.spacingCm} cm` : '';
+      tips.push(
+        tx(
+          `Use a pot at least ${u.potDepthCm} cm deep${volEn}${spEn} with drainage holes and a light potting mix.`,
+          `Dùng chậu sâu ít nhất ${u.potDepthCm} cm${volVi}${spVi}, có lỗ thoát nước và giá thể nhẹ.`,
+        ),
+      );
+    } else {
+      tips.push(
+        tx(
+          site.space === 'windowsill'
+            ? 'Use a pot at least 15 cm deep with drainage holes.'
+            : 'Use containers at least 20-30 cm deep with drainage holes and a light potting mix.',
+          site.space === 'windowsill'
+            ? 'Dùng chậu sâu ít nhất 15 cm có lỗ thoát nước.'
+            : 'Dùng chậu sâu ít nhất 20-30 cm có lỗ thoát nước và giá thể nhẹ.',
+        ),
+      );
+    }
     const harvestOffset = Math.max(1, Math.round((harvestDays[0] + harvestDays[1]) / 2 / 30.4));
     const calendar = Array.from({ length: 12 }, (_, i) => {
       const m = i + 1;

@@ -32,12 +32,19 @@ import { DEFAULT_REGION_ORDER, FX_DATE, FX_SOURCE, PREFER_VN, REFERENCE_ECONOMIC
 import { FIELD_CROPS } from './crops/overlay-field';
 import { GARDEN_CROPS } from './crops/overlay-garden';
 import { PERENNIAL_AND_COVER_CROPS } from './crops/overlay-perennial';
+import { parseCsvObjects } from './crops/atlas/csv';
+import { water } from './crops/fao56';
 import { cleanEcoCrop, readEcoCropCsv, type CleaningEvent } from './crops/parse';
 import type { CuratedSpec } from './crops/types';
+import { mergeUrbanTraits, qualifiesForUrbanCatalog, readUrbanTable } from './crops/urban-table';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const ATLAS_DIR = path.join(ROOT, 'data/crops/atlas');
 const CSV = path.join(ROOT, 'data/ecocrop/ecocrop_2568_plants.csv');
+const ATLAS_CROPS_CSV = path.join(ROOT, 'data/crops/atlas/crops.csv');
+/** Which atlas crops the EcoCrop rule selects (scripts/crops/atlas/urban.ts). Not a column of crops.csv, which the market database mirrors. */
+const ATLAS_URBAN_CANDIDATES_CSV = path.join(ROOT, 'data/crops/atlas/urban_candidates.csv');
+const ATLAS_URBAN_CSV = path.join(ROOT, 'data/crops/atlas/urban.csv');
 const OUT_JSON = path.join(ROOT, 'public/data/crops/ecocrop.json');
 const OUT_PREV = path.join(ROOT, 'public/data/crops/prevalence.json');
 const OUT_TS = path.join(ROOT, 'src/core/crops/curated.generated.ts');
@@ -47,6 +54,25 @@ const BUILD_DATE = '2026-11-14';
 
 const SPECS: CuratedSpec[] = [...FIELD_CROPS, ...PERENNIAL_AND_COVER_CROPS, ...GARDEN_CROPS];
 const ordered = (q: Quad) => q[0] <= q[1] && q[1] <= q[2] && q[2] <= q[3];
+
+const URBAN_CANDIDATE_WATER: Record<string, ReturnType<typeof water>> = {
+  'spinacia-oleracea': water('spinach'),
+  'daucus-carota': water('carrot'),
+  'raphanus-sativus-var-radicula': water('radish'),
+  'brassica-oleracea-var-acephala': water('crucifer'),
+  'brassica-oleracea-var-italica': water('crucifer'),
+  'brassica-oleracea-var-botrytis': water('crucifer'),
+  'brassica-oleracea-var-gongyloides': water('crucifer'),
+  'beta-vulgaris-var-cicla': water('spinach', { assumed: 'Swiss chard is not named in FAO-56; Spinach row used' }),
+  'beta-vulgaris-var-crassa': water('rootsGroup', { assumed: 'Garden beet uses the FAO-56 Roots and tubers group default' }),
+  'cucurbita-pepo': water('cucurbitGroup', { assumed: 'Summer squash uses the FAO-56 Cucumber family group default' }),
+  'capsicum-frutescens': water('pepper', { assumed: 'Chilli/Tabasco pepper uses the FAO-56 Sweet peppers row' }),
+  'allium-schoenoprasum': water('onionGreen', { assumed: 'Chives uses the FAO-56 Onions, green row' }),
+  'allium-sativum': water('onionGreen', { assumed: 'Garlic uses the FAO-56 Onions, green row' }),
+  'petroselinum-crispum': water('smallVegGroup', { assumed: 'Parsley uses the FAO-56 Small vegetables group default' }),
+  'anethum-graveolens': water('smallVegGroup', { assumed: 'Dill uses the FAO-56 Small vegetables group default' }),
+  'thymus-vulgaris': water('mint', { stages: 'generic', assumed: 'Thyme uses the FAO-56 Mint row (same family Lamiaceae)' }),
+};
 
 function defaultEconomics(id: string, table: ReferenceTable): CropEconomics | undefined {
   const byRegion = table[id];
@@ -76,6 +102,16 @@ function main(): void {
   const atlasPrevalence = readPrevalence(ATLAS_DIR);
   const referenceEconomics = readEconomics(ATLAS_DIR);
 
+  const atlasCropRows = parseCsvObjects(fs.readFileSync(ATLAS_CROPS_CSV, 'utf8'));
+  const atlasById = new Map(atlasCropRows.map((r) => [r.crop_id, r]));
+  const validAtlasIds = new Set(atlasById.keys());
+  const urbanCandidateIds = new Set(
+    parseCsvObjects(fs.readFileSync(ATLAS_URBAN_CANDIDATES_CSV, 'utf8'))
+      .filter((r) => r.urban_candidate === 'yes')
+      .map((r) => r.crop_id),
+  );
+  const urbanTable = readUrbanTable(fs.readFileSync(ATLAS_URBAN_CSV, 'utf8'), validAtlasIds);
+
   // ---------------------------------------------------------------------------- curated profiles
   const curated: CropProfile[] = [];
   const curationNotes: Record<string, string[]> = {};
@@ -101,6 +137,10 @@ function main(): void {
     if (spec.water.assumed) flags.add('water-model-assumed');
     const aliases = [...(spec.aliases ?? [])];
     if (spec.eco && spec.scientificName && spec.scientificName !== spec.eco) aliases.push(spec.eco);
+    const cycleDays = spec.cycleDays ?? base!.cycleDays;
+    const urbanMerged = spec.urban
+      ? mergeUrbanTraits({ id, category: spec.category, cycleDays, req }, spec.urban, urbanTable.byCrop.get(id))
+      : { urban: undefined, notes: [] as string[] };
     const economics = defaultEconomics(id, referenceEconomics);
     const profile: CropProfile = {
       id,
@@ -110,11 +150,11 @@ function main(): void {
       category: spec.category,
       lifeSpan: spec.lifeSpan ?? base?.lifeSpan ?? 'annual',
       req,
-      cycleDays: spec.cycleDays ?? base!.cycleDays,
+      cycleDays,
       water: spec.water.model,
       ...(economics ? { economics } : {}),
       rotation: spec.rotation,
-      ...(spec.urban ? { urban: spec.urban } : {}),
+      ...(urbanMerged.urban ? { urban: urbanMerged.urban } : {}),
       summary: { en: spec.summary[0], vi: spec.summary[1] },
       curated: true,
       ...(flags.size ? { flags: [...flags].sort() } : {}),
@@ -127,7 +167,7 @@ function main(): void {
     if (curated.some((c) => c.id === id)) problems.push(`${id}: duplicate curated id`);
     if (base?.ecocropId != null) usedEcoIds.add(base.ecocropId);
     curated.push(profile);
-    curationNotes[id] = [...(spec.reqNotes ?? []), `water model: ${spec.water.model.source}`];
+    curationNotes[id] = [...(spec.reqNotes ?? []), `water model: ${spec.water.model.source}`, ...urbanMerged.notes];
   }
   if (problems.length) throw new Error(`Curated overlay is inconsistent:\n  ${problems.join('\n  ')}`);
   if (curated.length < 45) throw new Error(`Only ${curated.length} curated crops; at least 45 are required`);
@@ -160,6 +200,33 @@ function main(): void {
   // ------------------------------------------------------------------------------ full catalogue
   const rest = [...cleaned.profiles.values()].filter((p) => !usedEcoIds.has(p.ecocropId!) && !curated.some((c) => c.id === p.id));
   rest.sort((a, b) => a.id.localeCompare(b.id));
+  const urbanCandidates: CropProfile[] = [];
+  for (const p of rest) {
+    const atlasRow = atlasById.get(p.id);
+    const entry = urbanTable.byCrop.get(p.id);
+    if (atlasRow && urbanCandidateIds.has(p.id) && qualifiesForUrbanCatalog(entry)) {
+      const merged = mergeUrbanTraits(p, undefined, entry);
+      if (merged.urban) {
+        const enName = atlasRow.name_en?.trim() || p.names.en;
+        const w = URBAN_CANDIDATE_WATER[p.id] ?? water('smallVegGroup', { assumed: 'Uses the FAO-56 Small vegetables group default' });
+        const flags = new Set(p.flags ?? []);
+        if (w.assumed) flags.add('water-model-assumed');
+        const candidate: CropProfile = {
+          ...p,
+          names: {
+            ...p.names,
+            en: enName,
+            ...(atlasRow.name_vi?.trim() ? { vi: atlasRow.name_vi.trim() } : {}),
+          },
+          water: w.model,
+          urban: merged.urban,
+          ...(flags.size ? { flags: [...flags].sort() } : {}),
+        };
+        urbanCandidates.push(candidate);
+        curationNotes[p.id] = [`water model: ${w.model.source}`, ...merged.notes];
+      }
+    }
+  }
   const catalog = encodeCatalog(rest, {
     source: 'FAO EcoCrop (Food and Agriculture Organization of the United Nations, Land and Water Division); cleaned, see data/crops/CLEANING_LOG.md',
     generated: BUILD_DATE,
@@ -172,7 +239,7 @@ function main(): void {
   // ---------------------------------------------------------------------------- generated module
   const ts = `/**
  * GENERATED by \`npm run crops:build\` (scripts/build-crop-catalog.ts) on ${BUILD_DATE}. Do not edit:
- * change scripts/crops/overlay-*.ts or scripts/crops/economics.ts and rebuild.
+ * change scripts/crops/overlay-*.ts, scripts/crops/economics.ts or data/crops/atlas/urban.csv and rebuild.
  *
  * ${curated.length} curated crops: EcoCrop thresholds (with the documented overrides), FAO-56 water
  * model, rotation and urban traits, and reference economics. Reference values are reference
@@ -187,6 +254,7 @@ export const CATALOG_META = ${JSON.stringify(
       ecocropRows: cleaned.stats.rows,
       scorableSpecies: cleaned.stats.scorable,
       curated: curated.length,
+      urbanSuitable: curated.filter((c) => c.urban?.suitable).length + urbanCandidates.length,
       fullCatalogSpecies: rest.length + curated.length,
     },
     null,
@@ -198,6 +266,9 @@ export const EXCHANGE_RATE = ${JSON.stringify({ vndPerUsd: VND_PER_USD, asOf: FX
 
 export const CURATED_CROPS: CropProfile[] = ${JSON.stringify(curated, null, 2)};
 
+/** Additional atlas urban candidates (\`urban_candidate = yes\`) with complete sourced container data in \`data/crops/atlas/urban.csv\`. */
+export const URBAN_CANDIDATE_CROPS: CropProfile[] = ${JSON.stringify(urbanCandidates, null, 2)};
+
 /** Yield, price and operating cost by region, with the quality of each source. */
 export const REFERENCE_ECONOMICS: ReferenceTable = ${JSON.stringify(referenceEconomics, null, 2)};
 
@@ -208,7 +279,7 @@ export const CURATION_NOTES: Record<string, string[]> = ${JSON.stringify(curatio
 
   // --------------------------------------------------------------------------------- cleaning log
   fs.mkdirSync(path.dirname(OUT_LOG), { recursive: true });
-  fs.writeFileSync(OUT_LOG, cleaningLog(cleaned.events, cleaned.stats, curated, curationNotes, rest.length));
+  fs.writeFileSync(OUT_LOG, cleaningLog(cleaned.events, cleaned.stats, curated, urbanCandidates, urbanTable.resolutions, curationNotes, rest.length));
   fs.writeFileSync(OUT_CSV, curatedCsv(curated, REFERENCE_ECONOMICS));
 
   const econRecordCount = Object.values(referenceEconomics).reduce((n, r) => n + Object.keys(r).length, 0);
@@ -216,6 +287,7 @@ export const CURATION_NOTES: Record<string, string[]> = ${JSON.stringify(curatio
   console.log(`EcoCrop rows read:        ${cleaned.stats.rows}`);
   console.log(`Scorable species:         ${cleaned.stats.scorable} (${cleaned.stats['dropped:no-climate-window'] ?? 0} rows without a temperature or rainfall window dropped, ${cleaned.stats['merged-duplicates'] ?? 0} duplicate rows merged)`);
   console.log(`Repairs logged:           ${cleaned.events.length}`);
+  console.log(`Curated crops:            ${curated.length} (${curated.filter((c) => c.economics).length} with complete reference economics, ${curated.filter((c) => c.urban).length} curated + ${urbanCandidates.length} atlas candidates = ${curated.filter((c) => c.urban).length + urbanCandidates.length} for the urban tool)`);
   console.log(`Curated crops:            ${curated.length} (${curated.filter((c) => c.prevalence).length} with bundled prevalence, ${curated.filter((c) => c.economics).length} with complete reference economics, ${curated.filter((c) => c.urban).length} for the urban tool)`);
   console.log(`Atlas prevalence crops:   ${Object.keys(prevalenceJson).length}`);
   console.log(`Reference economics rows: ${econRecordCount} (${Object.keys(referenceEconomics).length} crops)`);
@@ -225,7 +297,7 @@ export const CURATION_NOTES: Record<string, string[]> = ${JSON.stringify(curatio
   console.log(`Wrote ${path.relative(ROOT, OUT_LOG)} and ${path.relative(ROOT, OUT_CSV)}`);
 }
 
-function cleaningLog(events: CleaningEvent[], stats: Record<string, number>, curated: CropProfile[], notes: Record<string, string[]>, restCount: number): string {
+function cleaningLog(events: CleaningEvent[], stats: Record<string, number>, curated: CropProfile[], urbanCandidates: CropProfile[], urbanResolutions: string[], notes: Record<string, string[]>, restCount: number): string {
   const byField = new Map<string, CleaningEvent[]>();
   for (const e of events) byField.set(e.field, [...(byField.get(e.field) ?? []), e]);
   const lines: string[] = [];
@@ -240,6 +312,7 @@ function cleaningLog(events: CleaningEvent[], stats: Record<string, number>, cur
   lines.push(`| of which curated (bundled with the app) | ${curated.filter((c) => c.ecocropId != null).length} |`);
   lines.push(`| Curated species EcoCrop does not hold | ${curated.filter((c) => c.ecocropId == null).length} |`);
   lines.push(`| Species in \`public/data/crops/ecocrop.json\` | ${restCount} |`);
+  lines.push(`| Urban container crops (\`urban.suitable = true\`: ${curated.filter((c) => c.urban?.suitable).length} curated + ${urbanCandidates.length} atlas \`urban_candidate = yes\` with full \`data/crops/atlas/urban.csv\` rows) | ${curated.filter((c) => c.urban?.suitable).length + urbanCandidates.length} |`);
   lines.push(`| Species with no growing cycle in EcoCrop (cycle 0): annuals get the median annual cycle ${stats.medianAnnualCycleMin}-${stats.medianAnnualCycleMax} days, others 365 days, flag \`cycle-assumed\` | ${stats['cycle-assumed'] ?? 0} |`);
   lines.push(`| Repairs listed below | ${events.length} |`, '');
   lines.push('Rules, in the order they are tried on a temperature, rainfall or pH window `absMin/optMin/optMax/absMax`:', '');
@@ -257,6 +330,18 @@ function cleaningLog(events: CleaningEvent[], stats: Record<string, number>, cur
   lines.push('## Curated overrides', '', 'Thresholds of curated crops that differ from the EcoCrop row, and the source of each water model.', '');
   for (const c of curated) {
     lines.push(`### ${c.names.en} (\`${c.id}\`${c.ecocropId != null ? `, EcoCrop ${c.ecocropId}` : ', not in EcoCrop'})`, '');
+    for (const n of notes[c.id] ?? []) lines.push(`- ${n}`);
+    if (c.flags?.length) lines.push(`- flags: ${c.flags.join(', ')}`);
+    lines.push('');
+  }
+  lines.push('## Atlas urban candidates (`data/crops/atlas/urban.csv`)', '', 'Uncurated `urban_candidate = yes` species that enter the urban catalogue with complete sourced container data (`sun_hours_min`, `pot_depth_min`, `difficulty`), and conservative resolutions when multiple extension sources report different container values.', '');
+  if (urbanResolutions.length) {
+    lines.push('### Multi-source conservative resolutions', '');
+    for (const r of urbanResolutions) lines.push(`- ${r}`);
+    lines.push('');
+  }
+  for (const c of urbanCandidates) {
+    lines.push(`### ${c.names.en} (\`${c.id}\`, EcoCrop ${c.ecocropId})`, '');
     for (const n of notes[c.id] ?? []) lines.push(`- ${n}`);
     if (c.flags?.length) lines.push(`- flags: ${c.flags.join(', ')}`);
     lines.push('');
