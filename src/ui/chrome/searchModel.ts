@@ -29,7 +29,8 @@ export const MAX_SUGGESTIONS = 6;
 
 /** "12.68, 108.05" or "12.68 108.05": latitude first, the way people copy it from a map. */
 export function parseLatLon(q: string): LngLat | null {
-  const m = q.trim().match(/^(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)$/);
+  // `fmtNum` writes negatives with the minus sign U+2212, and so do pages a coordinate is often copied from.
+  const m = q.trim().replace(/−/g, '-').match(/^(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)$/);
   if (!m) return null;
   const lat = Number(m[1]);
   const lon = Number(m[2]);

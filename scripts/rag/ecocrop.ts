@@ -10,7 +10,8 @@ import Papa from 'papaparse';
 import type { KnowledgeChunk } from '../../src/contracts';
 import type { CropFacts, Range4 } from '../../src/rag/types';
 import { slugify, wordCount } from '../../src/rag/text';
-import { renderFactSheet } from '../../src/rag/facts';
+import { renderFactSheet, renderWhere } from '../../src/rag/facts';
+import { type AtlasCrop, FAOSTAT_SOURCE, whereOf } from './atlas';
 import type { CuratedCrop } from './curated';
 import { splitWords } from './chunk';
 
@@ -54,7 +55,24 @@ function pair(row: Row, base: string): { opt?: string; abs?: string } | undefine
   return opt || abs ? { opt, abs } : undefined;
 }
 
-export function toFacts(row: Row, curated?: CuratedCrop): CropFacts {
+/** Source of a sheet that states only what the crop atlas holds (a crop EcoCrop has no record of). */
+// No link: the atlas is described in docs/CROP_DATA.md of this repository, which is not an address a reader can open from the answer panel.
+export const ATLAS_SOURCE = { name: 'Astrovivu crop atlas (docs/CROP_DATA.md)', url: '', license: 'CC BY 4.0 (Astrovivu team)' };
+
+/** Facts of a crop the atlas keeps and EcoCrop has no record of: its names and where it is grown, no requirements. */
+export function factsFromAtlas(crop: AtlasCrop, curated?: CuratedCrop): CropFacts {
+  return {
+    id: crop.cropId,
+    sci: crop.sci,
+    en: curated?.en ?? crop.nameEn,
+    vi: curated?.vi[0] ?? crop.nameVi,
+    names: [],
+    curated: Boolean(curated),
+    prevalence: whereOf(crop),
+  };
+}
+
+export function toFacts(row: Row, curated?: CuratedCrop, atlas?: AtlasCrop): CropFacts {
   const cleaning: string[] = [];
   const guard = (label: string, lim: number) => (v: number | null) => {
     if (v != null && Math.abs(v) > lim) {
@@ -80,8 +98,8 @@ export function toFacts(row: Row, curated?: CuratedCrop): CropFacts {
     sci: row.name.trim(),
     ecocropId: Number(row.ecocrop_id),
     family: str(row.family)?.split(':').pop(),
-    en: curated?.en,
-    vi: curated?.vi[0],
+    en: curated?.en ?? atlas?.nameEn,
+    vi: curated?.vi[0] ?? atlas?.nameVi,
     names: names.slice(0, 8),
     category: str(row.desc_category),
     lifeForm: str(row.desc_life_form),
@@ -111,14 +129,17 @@ export function toFacts(row: Row, curated?: CuratedCrop): CropFacts {
     companions: str(row.cult_companion_species),
     curated: Boolean(curated),
     cleaning: cleaning.length ? cleaning : undefined,
+    ...(atlas ? { prevalence: whereOf(atlas) } : {}),
   };
 }
 
 /** All aliases of a species (folded later): scientific name, synonyms, common names, curated names. */
-export function aliasesOf(row: Row, curated?: CuratedCrop): string[] {
+export function aliasesOf(row: Row, curated?: CuratedCrop, atlas?: AtlasCrop): string[] {
   const out = new Set<string>([row.name.trim()]);
   for (const s of (row.synonyms ?? '').split(/,\s*/)) if (s.trim().length > 3) out.add(s.trim());
   for (const s of (row.common_names ?? '').split(/,\s*/)) if (s.trim().length > 2) out.add(s.trim().replace(/['‚’]+$/, ''));
+  if (atlas?.nameEn) out.add(atlas.nameEn);
+  if (atlas?.nameVi) out.add(atlas.nameVi);
   if (curated) {
     out.add(curated.en);
     for (const a of curated.enAliases ?? []) out.add(a);
@@ -149,9 +170,22 @@ export function noteSections(notes: string): { head: string; text: string }[] {
 
 const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
-export function ecoChunks(row: Row, facts: CropFacts, curated?: CuratedCrop): KnowledgeChunk[] {
+/** The passages on where a crop is grown, in English and Vietnamese. Their source is FAOSTAT, not EcoCrop. */
+export function whereChunks(facts: CropFacts, tagsBase: string[]): KnowledgeChunk[] {
+  if (!facts.prevalence) return [];
+  const label = facts.en ? `${facts.en} (${facts.sci})` : facts.sci;
+  const tags = ['kind:where', 'faostat', ...tagsBase.filter((t) => t !== 'ecocrop'), `match:${facts.prevalence.match}`, 'countries', 'area'];
+  return [
+    { id: `eco:${facts.id}:where`, docId: `eco:${facts.id}`, title: `${label}: where it is grown`, text: renderWhere(facts, 'en'), lang: 'en', source: FAOSTAT_SOURCE, cropIds: [facts.id], tags },
+    { id: `eco:${facts.id}:where-vi`, docId: `eco:${facts.id}`, title: `${facts.vi ?? facts.en ?? facts.sci} (${facts.sci}): trồng ở đâu`, text: renderWhere(facts, 'vi'), lang: 'vi', source: FAOSTAT_SOURCE, cropIds: [facts.id], tags },
+  ];
+}
+
+/** `row` is null for a crop the atlas keeps that EcoCrop has no record of. */
+export function ecoChunks(row: Row | null, facts: CropFacts, curated?: CuratedCrop): KnowledgeChunk[] {
   const label = facts.en ? `${facts.en} (${facts.sci})` : facts.sci;
   const tagsBase = ['ecocrop', ...(facts.category ? [`cat:${facts.category}`] : []), ...(curated ? [`group:${curated.group}`] : [])];
+  const source = facts.ecocropId != null ? { ...ECOCROP_SOURCE, url: `${ECOCROP_SOURCE.url}#${facts.ecocropId}` } : ATLAS_SOURCE;
   const chunks: KnowledgeChunk[] = [
     {
       id: `eco:${facts.id}:facts`,
@@ -159,7 +193,7 @@ export function ecoChunks(row: Row, facts: CropFacts, curated?: CuratedCrop): Kn
       title: `${label}: ecological requirements`,
       text: renderFactSheet(facts, 'en'),
       lang: 'en',
-      source: { ...ECOCROP_SOURCE, url: `${ECOCROP_SOURCE.url}#${facts.ecocropId}` },
+      source,
       cropIds: [facts.id],
       tags: ['kind:facts', ...tagsBase, 'ideal', 'requirements'],
     },
@@ -171,12 +205,13 @@ export function ecoChunks(row: Row, facts: CropFacts, curated?: CuratedCrop): Kn
       title: `${facts.vi ?? label} (${facts.sci}): yêu cầu sinh thái`,
       text: renderFactSheet(facts, 'vi'),
       lang: 'vi',
-      source: { ...ECOCROP_SOURCE, url: `${ECOCROP_SOURCE.url}#${facts.ecocropId}` },
+      source,
       cropIds: [facts.id],
       tags: ['kind:facts', ...tagsBase, 'ideal', 'requirements'],
     });
   }
-  const secs = noteSections(row.notes ?? '');
+  chunks.push(...whereChunks(facts, tagsBase));
+  const secs = noteSections(row?.notes ?? '');
   // Pack sections into 150-300 word chunks without splitting a section unless it is longer.
   let buf: string[] = [];
   let heads: string[] = [];
@@ -190,7 +225,7 @@ export function ecoChunks(row: Row, facts: CropFacts, curated?: CuratedCrop): Kn
       title: `${label}: ${heads.map(titleCase).join(', ').toLowerCase()}`,
       text,
       lang: 'en',
-      source: { ...ECOCROP_SOURCE, url: `${ECOCROP_SOURCE.url}#${facts.ecocropId}` },
+      source,
       cropIds: [facts.id],
       tags: ['kind:narrative', ...tagsBase, ...heads.map((h) => `sec:${h.toLowerCase().replace(/\s+/g, '-')}`)],
     });

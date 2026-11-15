@@ -3,6 +3,10 @@
  *
  * Principle: only EcoCrop columns (`life_form`, `habit`, `category`, `life_span`, `cycle_min_days`)
  * and documented numeric thresholds enter the rule. No crop names or ids appear here.
+ *
+ * The result is written to `data/crops/atlas/urban_candidates.csv`, not to `crops.csv`: the market
+ * database mirrors `crops.csv` column for column (scripts/market/atlas.ts), so a column added there
+ * would require changing a migration that is already applied.
  */
 import type { AtlasSpecies } from './ecocrop';
 
@@ -106,4 +110,10 @@ export function urbanCandidate(s: AtlasSpecies | null | undefined): { candidate:
   if (shortCycle) matchedRules.push('short-cycle');
   if (perennialHerb) matchedRules.push('perennial-aromatic-herb');
   return { candidate: true, rule: matchedRules.join(';') };
+}
+
+/** One row of `urban_candidates.csv`: `crop_id`, `urban_candidate` (`yes` or empty), `urban_candidate_rule`. */
+export function urbanCandidateRow(cropId: string, s: AtlasSpecies | null | undefined): [string, string, string] {
+  const { candidate, rule } = urbanCandidate(s);
+  return [cropId, candidate ? 'yes' : '', rule];
 }

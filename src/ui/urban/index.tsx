@@ -4,13 +4,14 @@
  * cards that open a care guide). Phone first.
  */
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { Blinds, Building2, CalendarClock, Carrot, Cherry, Cloud, CloudSun, Fence, Flower2, Leaf, Sprout, Sun, Trees, Umbrella } from 'lucide-react';
+import { ArrowLeft, Blinds, Building2, CalendarClock, Carrot, Cherry, Cloud, CloudSun, Fence, Flower2, Leaf, MapPin, Sprout, Sun, Trees, Umbrella } from 'lucide-react';
 import type { UrbanClimate, UrbanPreference, UrbanRecommendation, UrbanSite } from '@/contracts';
 import { recommendUrban, recommendUrbanAhead } from '@/core/urban';
 import { loadUrbanClimate } from '@/data';
 import { useLang, useT } from '@/i18n';
 import { todayISO } from '@/lib/time';
-import { EmptyState, Panel, Skeleton } from '@/ui/design';
+import { useMission } from '@/state/mission';
+import { Button, EmptyState, Panel, Skeleton } from '@/ui/design';
 import { useFixture } from '@/ui/advisory/fixture';
 import { monthLong } from '@/ui/advisory/format';
 import { FixtureTag } from '@/ui/advisory/shared';
@@ -40,9 +41,11 @@ const PREFS = [
   { value: 'fruit', icon: <Cherry /> },
 ] as const satisfies readonly { value: UrbanPreference; icon: ReactNode }[];
 
-export function UrbanCompanion() {
+export function UrbanCompanion({ active = true }: { active?: boolean }) {
   const t = useT();
   const lang = useLang();
+  const parcel = useMission((s) => s.parcel);
+  const setPhase = useMission((s) => s.setPhase);
   const [loc, setLoc] = useState<Loc | null>(null);
   const [climate, setClimate] = useState<UrbanClimate | null>(null);
   const [climateState, setClimateState] = useState<ClimateState>('idle');
@@ -81,6 +84,7 @@ export function UrbanCompanion() {
   // Vietnamese month names are sentence-initial ("Tháng 3"); inside a sentence they are lower case.
   const monthName = (m: number) => (lang === 'vi' ? monthLong(m, lang).toLocaleLowerCase('vi') : monthLong(m, lang));
   const open = recs.find((r) => r.cropId === openId) ?? null;
+  const fieldLocationSelected = parcel && loc && loc.at[0] === parcel.centroid[0] && loc.at[1] === parcel.centroid[1];
 
   const openGuide = (cropId: string) => {
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -94,11 +98,12 @@ export function UrbanCompanion() {
   };
 
   return (
-    <main aria-labelledby="urb-title" className="absolute inset-0 overflow-x-hidden overflow-y-auto bg-surface-0">
+    <main aria-labelledby="urb-title" className="workspace-theme urban-workspace absolute inset-0 overflow-x-hidden overflow-y-auto">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 pt-4 pb-24 lg:px-6 lg:pt-5">
         <header className="flex flex-col gap-1">
+          {parcel && <button type="button" className="rotation-back mb-2 self-start" onClick={() => setPhase('locked')}><ArrowLeft size={16} aria-hidden />{t('urban.backToField')}</button>}
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h1 id="urb-title" className="text-xl leading-7 font-semibold text-ink-1">
+            <h1 id="urb-title" className="workspace-page-title">
               {t('urban.title')}
             </h1>
             {fixture && <FixtureTag />}
@@ -108,9 +113,14 @@ export function UrbanCompanion() {
 
         <div className="grid items-start gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-5">
-            <Panel title={t('urban.spot')}>
+            <Panel title={t('urban.spot')} className="workspace-urban-card">
               <div className="flex flex-col gap-5">
                 <LocationPicker loc={loc} onPick={setLoc} />
+                {parcel && !fieldLocationSelected && (
+                  <Button icon={<MapPin />} variant="secondary" onClick={() => setLoc({ at: parcel.centroid, label: parcel.place?.label ?? parcel.name })}>
+                    {t('urban.useFieldLocation')}
+                  </Button>
+                )}
                 <ChoiceTiles
                   legend={t('urban.light')}
                   name="urb-light"
@@ -136,13 +146,13 @@ export function UrbanCompanion() {
                 />
               </div>
             </Panel>
-            <Panel title={t('urban.climate')} meta={climateSources(climate)}>
+            <Panel title={t('urban.climate')} meta={climateSources(climate)} className="workspace-urban-card">
               {loc ? <ClimateStrip climate={climate} state={climateState} month={month} /> : <p className="text-sm text-ink-2">{t('urban.climateNeedsPlace')}</p>}
             </Panel>
           </div>
 
           <section aria-labelledby="urb-picks" className="flex min-w-0 flex-col gap-3">
-            <h2 id="urb-picks" className="t-title flex flex-wrap items-baseline gap-x-2">
+            <h2 id="urb-picks" className="workspace-section-title flex flex-wrap items-baseline gap-x-2">
               {t('urban.picks')}
               {recs.length > 0 && <span className="t-meta">{recs.length}</span>}
               {recs.length > 0 && loc && !fixture && <span className="text-sm font-normal text-ink-3">{t('urban.picksFor', { place: loc.label })}</span>}
@@ -172,7 +182,7 @@ export function UrbanCompanion() {
           </section>
         </div>
       </div>
-      <PlantDetail rec={open} month={month} onClose={closeGuide} />
+      <PlantDetail rec={active ? open : null} month={month} onClose={closeGuide} />
     </main>
   );
 }

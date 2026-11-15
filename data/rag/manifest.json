@@ -1,22 +1,35 @@
 {
- "builtAt": "2026-11-13T20:17:19.775Z",
+ "builtAt": "2026-11-15T11:03:04.352Z",
  "sources": {
   "ecocrop": {
    "license": "FAO EcoCrop (attribution, non-commercial)",
-   "documents": 2568,
-   "chunks": 4845,
-   "factSheets": 2642,
-   "cleanedRows": 693
+   "documents": 386,
+   "chunks": 936,
+   "factSheets": 456,
+   "cleanedRows": 30
+  },
+  "crop-atlas": {
+   "license": "CC BY 4.0, © FAO",
+   "documents": 387,
+   "chunks": 774,
+   "sheetsWithoutEcoCrop": [
+    "tagetes-erecta"
+   ],
+   "byMatch": {
+    "exact": 165,
+    "group": 202,
+    "none": 20
+   }
   },
   "wikipedia-en": {
    "license": "CC BY-SA 4.0",
-   "documents": 98,
-   "chunks": 830
+   "documents": 94,
+   "chunks": 813
   },
   "wikipedia-vi": {
    "license": "CC BY-SA 4.0",
-   "documents": 82,
-   "chunks": 377
+   "documents": 79,
+   "chunks": 371
   },
   "glossary-en": {
    "license": "CC BY 4.0 (Astrovivu team)",
@@ -30,24 +43,47 @@
   }
  },
  "chunks": {
-  "core": 1559,
-  "total": 6108,
-  "wordsMedian": 155,
-  "wordsP10": 50,
-  "wordsP90": 231
+  "core": 1522,
+  "total": 2951,
+  "wordsMedian": 145,
+  "wordsP10": 45,
+  "wordsP90": 249
  },
  "aliases": {
-  "core": 1660,
-  "full": 15318
+  "core": 1611,
+  "full": 3794
+ },
+ "dropped": {
+  "inAtlas": 2182,
+  "named": 2178,
+  "names": 10600
+ },
+ "crops": {
+  "core": 70,
+  "full": 317
  },
  "artifacts": {
   "public/rag/core.json": {
-   "bytes": 4229368,
-   "gzip": 1039796
+   "bytes": 4169047,
+   "gzip": 1024871
   },
   "public/rag/full.json": {
-   "bytes": 16656684,
-   "gzip": 3033583
+   "bytes": 6195283,
+   "gzip": 1193603
+  }
+ },
+ "tables": {
+  "files": 350,
+  "bytes": 2169545,
+  "largest": "crops.json",
+  "largestBytes": 58997,
+  "crop": {
+   "files": 165,
+   "bytes": 1000581
+  },
+  "region": {
+   "files": 179,
+   "bytes": 1023472
   }
  },
  "wikipedia": [
@@ -598,22 +634,6 @@
   {
    "source": "wikipedia-en",
    "lang": "en",
-   "title": "Macadamia integrifolia",
-   "revid": 1359886197,
-   "url": "https://en.wikipedia.org/wiki/Macadamia_integrifolia",
-   "chunks": 3
-  },
-  {
-   "source": "wikipedia-vi",
-   "lang": "vi",
-   "title": "Mắc ca lá nhẵn",
-   "revid": 73517510,
-   "url": "https://vi.wikipedia.org/wiki/M%E1%BA%AFc_ca_l%C3%A1_nh%E1%BA%B5n",
-   "chunks": 1
-  },
-  {
-   "source": "wikipedia-en",
-   "lang": "en",
    "title": "Banana",
    "revid": 1385011100,
    "url": "https://en.wikipedia.org/wiki/Banana",
@@ -742,22 +762,6 @@
   {
    "source": "wikipedia-en",
    "lang": "en",
-   "title": "Trifolium repens",
-   "revid": 1376551191,
-   "url": "https://en.wikipedia.org/wiki/Trifolium_repens",
-   "chunks": 5
-  },
-  {
-   "source": "wikipedia-vi",
-   "lang": "vi",
-   "title": "Đậu chẽ ba hoa trắng",
-   "revid": 71194143,
-   "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_ch%E1%BA%BD_ba_hoa_tr%E1%BA%AFng",
-   "chunks": 4
-  },
-  {
-   "source": "wikipedia-en",
-   "lang": "en",
    "title": "Trifolium pratense",
    "revid": 1371055360,
    "url": "https://en.wikipedia.org/wiki/Trifolium_pratense",
@@ -834,38 +838,6 @@
    "revid": 70936840,
    "url": "https://vi.wikipedia.org/wiki/%C4%90%E1%BA%ADu_m%C3%A8o_r%E1%BB%ABng",
    "chunks": 1
-  },
-  {
-   "source": "wikipedia-en",
-   "lang": "en",
-   "title": "Stylosanthes guianensis",
-   "revid": 1357923316,
-   "url": "https://en.wikipedia.org/wiki/Stylosanthes_guianensis",
-   "chunks": 1
-  },
-  {
-   "source": "wikipedia-vi",
-   "lang": "vi",
-   "title": "Ti lô mảnh",
-   "revid": 70019718,
-   "url": "https://vi.wikipedia.org/wiki/Ti_l%C3%B4_m%E1%BA%A3nh",
-   "chunks": 1
-  },
-  {
-   "source": "wikipedia-en",
-   "lang": "en",
-   "title": "Lablab",
-   "revid": 1375448947,
-   "url": "https://en.wikipedia.org/wiki/Lablab",
-   "chunks": 8
-  },
-  {
-   "source": "wikipedia-vi",
-   "lang": "vi",
-   "title": "Chi Đậu ván",
-   "revid": 74920127,
-   "url": "https://vi.wikipedia.org/wiki/Chi_%C4%90%E1%BA%ADu_v%C3%A1n",
-   "chunks": 0
   },
   {
    "source": "wikipedia-en",

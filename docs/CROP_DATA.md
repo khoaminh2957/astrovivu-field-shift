@@ -10,25 +10,21 @@ The one principle: every value is copied or computed from a named source file by
 
 | File | Rows | Content |
 |---|---|---|
-| `crops.csv` | 387 | One row per kept crop: ids, names, EcoCrop description and requirements, FAOSTAT item, match, MapSPAM crop, evidence, commonness, urban candidate flags, world totals |
-| `crop_country.csv` | 72,746 | One row per crop and country: area, production, yield, share, rank, level, source (15 columns, the ones the market database mirrors; 11,424 with quantities, 21,260 `absent`, 40,062 `unknown`; 104 `match = national`, of which 25 with a figure and 79 without) |
+| `crops.csv` | 387 | One row per kept crop: ids, names, EcoCrop description and requirements, FAOSTAT item, match, MapSPAM crop, evidence, commonness, world totals |
+| `urban_candidates.csv` | 387 | One row per crop of `crops.csv`, in its order: whether the EcoCrop rule selects it as an urban / container candidate, and the clause that matched (section 13) |
+| `crop_country.csv` | 72,706 | One row per crop and country: area, production, yield, share, rank, level, source (15 columns, the ones the market database mirrors; 11,416 with quantities, 21,260 `absent`, 40,030 `unknown`; 59 `match = national`, of which 17 with a figure and 42 without) |
 | `item_country.csv` | 9,358 | The same quantities per FAOSTAT item and country, group items included |
 | `country_crops.csv` | 198 | One row per country: what is grown there, largest first |
 | `region_crops.csv` | 50,967 | MapSPAM 2020 harvested area per country and first-level region, per SPAM crop |
 | `items.csv` | 157 | Crosswalk FAOSTAT item to species, with the definition text it was read from |
 | `spam_crops.csv` | 46 | Crosswalk MapSPAM crop to FAOSTAT items and to our crops |
 | `dropped.csv` | 2,182 | Every EcoCrop species that was not kept, with the reason |
-| `economics.csv` | 299 | Reference yields (`t/ha`), prices (`USD/t`) and operating costs (`USD/ha`) with `SourceQuality` and provenance across `VNM`, `USA`, `IND` and `BRA` |
-| `economics_template.csv` | 0 | Header only; template for `economics.csv` |
-| `sources.csv` | 35 | Source, URL, licence, access date, file, SHA-256, rows used (22 files of the build and the 13 publications the national rows cite, which have no checksum: the build keeps no copy) |
-| `columns.csv` | 209 | Every column across all 12 tables: meaning in English and Vietnamese, unit, source, rule |
-| `summary.csv` | 88 | The counts of the build |
+| `economics_template.csv` | 0 | Header only; yields, prices and costs are for the team to fill |
+| `sources.csv` | 33 | Source, URL, licence, access date, file, SHA-256, rows used (22 files of the build and the 11 publications the national rows cite, which have no checksum: the build keeps no copy) |
+| `columns.csv` | 210 | Every column: meaning in English and Vietnamese, unit, source, rule |
+| `summary.csv` | 58 | The counts of the build |
 
-### 1.1 Column dictionary alignment (`columns.csv` vs data headers)
-
-Every column present in the header of the 12 atlas tables (`crops.csv`: 81, `crop_country.csv`: 15, `item_country.csv`: 15, `country_crops.csv`: 14, `region_crops.csv`: 13, `items.csv`: 16, `spam_crops.csv`: 10, `dropped.csv`: 12, `sources.csv`: 11, `columns.csv`: 7, `summary.csv`: 2, `economics_template.csv` / `economics.csv`: 13; total **209** column definitions) appears in the exact same order in `columns.csv` (`scripts/crops/atlas/columns.ts`), verified by a unit test in `scripts/crops/atlas/columns.test.ts`.
-
-`.cache/atlas/astrovivu-crop-atlas.xlsx` (git-ignored, 5.9 MB, 1,419,230 cells) holds one sheet per table behind a README sheet, for upload to Google Sheets. It leaves out the `absent` rows of `crop_country` and keeps the 15 largest crops of each region in `region_crops`; the CSV files are complete. Values are plain: numbers are numeric cells, codes such as CPC `0113` are text, there are no formulas and no dates. Excel 16 opens it without repair (checked).
+`.cache/atlas/astrovivu-crop-atlas.xlsx` (git-ignored, 6.0 MB, 1,421,337 cells) holds one sheet per table behind a README sheet, for upload to Google Sheets. It leaves out the `absent` rows of `crop_country` and keeps the 15 largest crops of each region in `region_crops`; the CSV files are complete. Values are plain: numbers are numeric cells, codes such as CPC `0113` are text, there are no formulas and no dates. Excel 16 opens it without repair (checked).
 
 ## 2. Sources
 
@@ -348,6 +344,8 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
   - *Yield (`yield_t_ha`)*: filled from `crop_country.csv` (2022–2024 three-year mean or national figure, `quality_yield = official`) where the FAOSTAT item belongs to this crop alone. Where the item is shared by several species (`coffea-arabica`, `coffea-canephora`, `allium-cepa`, `brassica-oleracea-var-capitata`, `citrus-grandis`, `fragaria-x-ananassa`, `persea-americana`) the cell stays empty and `source` gives the item's yield with the reason, the same rule as for prices: the item's figure is not the species' own (robusta coffee in `USA` would otherwise carry the yield of Hawaiian arabica).
   - *Price (`price_usd_t`)*: filled from the `crop_latest_prices` view of the market database (`match = exact`, `item_shared_by_n_crops = 1`, primary item; 11 curated crops in `VNM`, 20 in `USA`, 18 in `IND`, 16 in `BRA`), cross-checked against market and USDA NASS prices (`docs/DATABASE.md` section 8). Shared-item prices (such as FAOSTAT item 656 `Coffee, green` at 709 USD/t in `VNM` vs ~3,359.4 USD/t on the domestic robusta market, or 55,997.5 USD/t in `USA` vs $2.37/lb = 5,225 USD/t cherry in USDA NASS) and pooled `group` item prices are not assigned to single species outside the existing proxy rows (`vigna-radiata`, `mangifera-indica`, `citrus-grandis`, `brassica-oleracea-var-capitata` in `VNM`); both figures are quoted in `source`.
   - *Cost (`cost_usd_ha`)*: no cross-country extrapolation is performed; crops without an opened national or state enterprise budget remain empty (`quality_cost = none`).
+- **10-year rule for FAOSTAT prices.** `year` is the year of the row's figures (`columns.csv`), so a FAOSTAT producer price whose year is more than 10 years before the row's `year` is not used: the cell stays empty (`quality_price = none`) and `source` quotes the FAOSTAT figure and its year under `NOT FOUND`. The 10-year limit is a choice of this project, not taken from a publication. It empties 4 `USA` prices, all rows with `year = 2024` from the 2022–2024 yield: okra (item 430, 1,642 USD/t from 1997), eggplant (item 399, 610 USD/t from 2004), dry cowpea (item 195, 842 USD/t from 2005) and ginger (item 720, 3,527 USD/t from 2008). Three FAOSTAT prices stay although their year differs from `year` by 1 or 2 years: sugar cane in `USA` (2023 price, `year = 2024`; 2023 is FAOSTAT's latest US year) and soybean and maize in `VNM` (2024 prices, `year = 2026` in the reference records carried over from `curated-crops.csv`, which this file keeps unchanged). Their source text states the price year.
+- **FAOSTAT price extract.** `data/crops/review/prices-from-faostat.csv` holds, for each of the 59 prices across `VNM`, `USA`, `IND`, and `BRA` whose `source` cites FAOSTAT producer prices, the FAOSTAT row it equals: 37 used prices (21 in `VNM`/`USA`, 16 in `BRA`) and the 22 prices left out under the 10-year rule (4 in `USA`, 18 in `IND`), whose `NOT FOUND` text quotes them. Each row gives item, year, element 5532 `Producer Price (USD/tonne)` (annual value; FAOSTAT's `Unit` column reads `USD`), value and flag as written in `Prices_E_All_Data_(Normalized).zip` (file dated 2026-10-09 on the server, read 2026-11-15). `npx tsx scripts/crops/atlas/prices-extract.ts` rebuilds it from the cached bulk file and stops if a cited price has no FAOSTAT row; `scripts/crops/atlas/economics.test.ts` checks, without the bulk file, that every such price equals its extract row, that every extract row is referenced by a filled price or a `NOT FOUND` text quoting its value and year, and that no filled FAOSTAT price is more than 10 years older than its row's `year`.
 
 ### 12.2 Sources and licences
 
@@ -369,15 +367,17 @@ The app does not read `crop_country.csv` (5.7 MB) or the Google Sheet. `scripts/
 | `VNM` (national) | 73 | **8** | `price_usd_t` | 15 | 0 | 5 | 0 | 53 |
 | `VNM` (national) | 73 | **8** | `cost_usd_ha` | 0 | 0 | 7 | 1 | 65 |
 | `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `yield_t_ha` | 39 | 0 | 0 | 0 | 41 |
-| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `price_usd_t` | 39 | 0 | 0 | 0 | 41 |
+| `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `price_usd_t` | 35 | 0 | 0 | 0 | 45 |
 | `USA` (all: 73 national + 7 regional) | 80 | **27** (20 national + 7 regional) | `cost_usd_ha` | 10 | 17 | 0 | 0 | 53 |
 | `IND` (national) | 73 | **0** | `yield_t_ha` | 25 | 0 | 0 | 0 | 48 |
-| `IND` (national) | 73 | **0** | `price_usd_t` | 18 | 0 | 0 | 0 | 55 |
+| `IND` (national) | 73 | **0** | `price_usd_t` | 0 | 0 | 0 | 0 | 73 |
 | `IND` (national) | 73 | **0** | `cost_usd_ha` | 0 | 0 | 0 | 0 | 73 |
 | `BRA` (national) | 73 | **0** | `yield_t_ha` | 20 | 0 | 0 | 0 | 53 |
 | `BRA` (national) | 73 | **0** | `price_usd_t` | 16 | 0 | 0 | 0 | 57 |
 | `BRA` (national) | 73 | **0** | `cost_usd_ha` | 0 | 0 | 0 | 0 | 73 |
-| **Total (`VNM`, `USA`, `IND`, `BRA`)** | **299** | **35** (28 national + 7 regional) | `yield_t_ha` / `price_usd_t` / `cost_usd_ha` | 106 / 88 / 10 | 0 / 0 / 17 | 0 / 5 / 7 | 0 / 0 / 1 | 193 / 206 / 264 |
+| **Total (`VNM`, `USA`, `IND`, `BRA`)** | **299** | **35** (28 national + 7 regional) | `yield_t_ha` / `price_usd_t` / `cost_usd_ha` | 106 / 66 / 10 | 0 / 0 / 17 | 0 / 5 / 7 | 0 / 0 / 1 | 193 / 228 / 264 |
+
+`economics_template.csv` has the header `crop_id, iso3, region, yield_t_ha, price_usd_t, cost_usd_ha, year, quality_yield, quality_price, quality_cost, source, url, accessed`. Use `crop_id` from `crops.csv` and `iso3` from `country_crops.csv`; one row per crop and place; every figure with its source and the date it was read. `crop_country.yield_t_ha` already gives the FAOSTAT yield for exact crops, so the work is prices and costs. FAOSTAT producer prices are already joined to `crop_id` and `iso3` in the market database (`docs/DATABASE.md`): its view `crop_latest_prices` gives, per crop and country, the latest price with its year, its FAOSTAT flag and the match of the crop. For an exact crop that is alone on its item this is a `price_usd_t` from an `official` source; `docs/DATABASE.md` section 8 gives a case (coffee in Viet Nam) where the FAOSTAT figure is far from the market. FAOSTAT has no costs.
 
 ## 13. Urban candidates (`urban_candidate`, `urban_candidate_rule`)
 
@@ -448,6 +448,54 @@ Every metric below is emitted into `data/crops/atlas/summary.csv` by `scripts/cr
 | `national_rows_read` | 140 | Total rows in `data/crops/national/prevalence.csv` across `VNM`, `USA`, `IND`, `BRA` |
 | `economics_rows` | 299 | Total rows in `data/crops/atlas/economics.csv` (`BRA;IND;USA;VNM`) |
 | `economics_with_yield` | 106 | Rows with `yield_t_ha` (`official`: 106, `none`: 193; shared-item yields left empty) |
-| `economics_with_price` | 93 | Rows with `price_usd_t` (`official`: 88, `press`: 5, `none`: 206) |
+| `economics_with_price` | 71 | Rows with `price_usd_t` (`official`: 66, `press`: 5, `none`: 228) |
 | `economics_with_cost` | 35 | Rows with `cost_usd_ha` (`official`: 10, `budget`: 17, `press`: 7, `derived`: 1, `none`: 264) |
 | `economics_complete` | 35 | Rows with all 3 figures (`yield_t_ha`, `price_usd_t`, `cost_usd_ha`) |
+
+## 14. Urban candidates (`urban_candidates.csv`)
+
+`scripts/crops/atlas/urban.ts` (`urbanCandidate(s)`, constants in `URBAN_RULE`) selects urban / container candidate crops from the 387 kept atlas rows using only EcoCrop columns (`life_form`, `habit`, `category`, `life_span`, `cycle_min_days`) and writes one row per crop to `data/crops/atlas/urban_candidates.csv`, in the order of `crops.csv`: `crop_id`, `urban_candidate` (`yes` or empty) and `urban_candidate_rule` (`short-cycle`, `perennial-aromatic-herb`, or `short-cycle;perennial-aromatic-herb`). The count goes to `urban_candidates` in `data/crops/atlas/summary.csv`.
+
+The result has a file of its own and `crops.csv` has no `urban_` column: the market database mirrors `crops.csv` column for column (`scripts/market/atlas.ts`, `docs/DATABASE.md`), so a column added there would change the table of a migration that is already applied. Join on `crop_id`.
+
+### 13.1 Rule and variants tested
+
+A row qualifies when all three conditions hold:
+
+1. **Life form (`life_form`)**: contains `herb`, `sub-shrub`, `shrub` or `vine`, and does **not** contain `tree`.
+2. **Use category & broadacre field-crop filter (`category`, `habit`, `cycle_min_days`)**:
+   - `category` contains at least one of `vegetables`, `fruits & nuts`, `ornamentals/turf`, or `medicinals & aromatic`.
+   - If the only qualifying category is `medicinals & aromatic` and the row also carries a broadacre field/industrial category (`cereals & pseudocereals`, `pulses (grain legumes)`, `roots/tubers`, `forage/pasture`, `materials`, `cover crop`, `forest/wood`), it is excluded unless `habit` contains `climber/scrambler/scadent`.
+   - If `category` includes a staple field-crop category (`cereals & pseudocereals`, `pulses (grain legumes)`, `roots/tubers`), it must either have `habit` containing `climber/scrambler/scadent` or `cycle_min_days <= 60` (`maxStapleVegetableCycleMinDays`).
+3. **Cycle / longevity (`cycle_min_days`, `life_span`)**:
+   - **`short-cycle`**: `cycle_min_days <= 120` (`maxCycleMinDays`), **or**
+   - **`perennial-aromatic-herb`**: `life_span` contains `perennial`, `category` contains `medicinals & aromatic`, and `life_form` contains `herb` or `sub-shrub`.
+
+| Variant | Rule summary | Atlas rows matched | Of 32 hand-curated urban crops | Union (`rule ∪ overlay`) | Broadacre field crops excluded (`arachis-hypogaea`, `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`) |
+|---|---|---:|---:|---:|---|
+| `R0` (issue baseline) | Any of the 4 categories + non-tree life form + (`cycle_min_days <= 120` or perennial aromatic herb) | 128 (110 short-cycle, 18 perennial herb) | 23 / 32 | 137 | None (all 4 included) |
+| `R1` (strict medicinal only) | Disqualify `medicinals & aromatic`-only rows when paired with any field category | 106 | 22 / 32 (drops `pisum-sativum`) | 116 | Excludes `solanum-tuberosum`, `lens-culinaris`, `linum-usitatissimum`; keeps `arachis-hypogaea` |
+| **`R` (adopted in `urban.ts`)** | `R1` + allow `climber/scrambler/scadent` on pulses (`pisum-sativum`) + require `climber` or `cycle_min_days <= 60` on staple categories | **106** (79 `short-cycle`, 15 `perennial-aromatic-herb`, 12 both) | **23 / 32** | **115** | **All 4 excluded** |
+
+### 13.2 Hand-curated urban crops not matched by the rule (9 of 32)
+
+The 9 hand-curated crops (`urban.suitable = true` in `scripts/crops/overlay-*.ts`) that the EcoCrop rule does not select remain in the urban pool through the overlay (`candidate set = rule ∪ overlay = 115 crops`):
+
+| `crop_id` | Name | Why `urbanCandidate` returns `false` on its EcoCrop row |
+|---|---|---|
+| `ipomoea-batatas` | Sweet potato (Khoai lang) | `life_form`, `habit`, and `category` are empty in EcoCrop (`ecocrop_id = 1265`) |
+| `tagetes-erecta` | Marigold (Cúc vạn thọ) | Not in the FAO EcoCrop CSV (`curated-only`, `ecocrop_id` empty) |
+| `mentha-spicata-var-crispa` | Spearmint (Húng lủi) | EcoCrop `category` is only `materials` (missing `medicinals & aromatic` and `vegetables`) |
+| `cymbopogon-citratus` | Lemongrass (Sả) | EcoCrop `life_form` is `grass` (excluded so cereal/forage grasses do not enter) |
+| `vigna-radiata` | Mung bean (Đậu xanh) | EcoCrop `category` is `pulses (grain legumes), forage/pasture, cover crop, environmental` (lacks `vegetables`) |
+| `vigna-unguiculata-ssp-sesquipedalis` | Yardlong bean (Đậu đũa) | EcoCrop `category` is `pulses (grain legumes), forage/pasture, environmental` (lacks `vegetables`) |
+| `arachis-pintoi` | Pinto peanut (Lạc dại) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
+| `musa-acuminata` | Banana (Chuối) | `cycle_min_days = 180` (> 120) and `category` lacks `medicinals & aromatic` |
+| `fragaria-x-ananassa` | Strawberry (Dâu tây) | `cycle_min_days = 180` (> 120) and `category` is `fruits & nuts` without `medicinals & aromatic` |
+
+### 13.3 Limitations
+
+- **The thresholds are a choice of the project.** The 120-day limit of the short-cycle clause (`maxCycleMinDays`) and the 60-day limit for staple categories (`maxStapleVegetableCycleMinDays`) are a choice of the project, not taken from a publication.
+- **The rule selects more than a balcony can hold.** It reads only EcoCrop's life form, category, life span and shortest cycle, so `yes` also falls on crops that are not pot crops: papaya (`carica-papaya`: life form `herb`, `perennial`, `medicinals & aromatic`), vanilla (`vanilla-planifolia`: `herb, vine`, `perennial`, `medicinals & aromatic`), jojoba and myrtle (`simmondsia-chinensis`, `myrtus-communis`: `shrub`, shortest cycle 120 days), pigeon pea (`cajanus-cajan`: `shrub`, 90 days) and rapeseed (`brassica-napus`: 85 days). `yes` means the crop passes this filter, not that it is recommended: a crop may be offered to a balcony grower only when it also has container figures with a source.
+- **Empty EcoCrop cells.** Missing `life_form`, `category`, or `cycle_min_days` evaluates to `false` rather than guessing.
+- **Dropped species.** 676 cultivated EcoCrop species with no FAOSTAT crop item are in `dropped.csv` (section 10), including many ornamentals and culinary herbs; the rule is evaluated on the 387 kept atlas crops only.

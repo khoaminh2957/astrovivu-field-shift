@@ -45,7 +45,7 @@ Bottom to top. Ids are in `style.ts`.
 | SVG overlay | DOM, inside the canvas container | Locked parcel (single-colour fill when there is no raster, honesty texture, faint casing, thin light outline), reticle during the descent, draft outline, measure tool. |
 | Markers | DOM | Demo-field beacons (buttons), draft handles. |
 
-Terrain: AWS Terrarium, level 12, exaggeration 1.25, switched on at zoom 9.5 and off below 8.6. From orbit relief is sub-pixel and would cost the terrain texture cache.
+Terrain: AWS Terrarium, level 12, exaggeration 1.25, enabled before a parcel descent (or above zoom 9.5 in free exploration) and kept active when ascending back to explore so reopening a field never reloads DEM tiles mid-flight; turned off in the hero globe or when the terrain toggle is off. From orbit relief is sub-pixel and would cost the terrain texture cache.
 
 **Why the parcel is SVG.** A fill draped on terrain lives in the texture cache; recolouring it would redraw the cache for the whole view on every timeline step. The outline, fill and anchor are instead computed from one projected ring inside MapLibre's `render` event (`map.project` follows the terrain; edges are split every 30 m so the outline hugs relief). Recolouring is one style write. Fill textures follow the design system: dotted for simulated data, hatched when the reading is missing or held past its hold window.
 
@@ -63,7 +63,7 @@ Terrain: AWS Terrarium, level 12, exaggeration 1.25, switched on at zoom 9.5 and
 
 `anchor` is `{x, y}` = **centre** of the parcel's screen bounding box, `{w, h}` its size, CSS pixels, published at most once per rendered frame and only when it changes by half a pixel. `visible` is false when the parcel is off screen or behind the planet.
 
-Motion is on by default. The system `prefers-reduced-motion` setting is deliberately not followed: the user reported the cuts it produced as not smooth and asked for smooth globe movement. `?motion=reduced` or `setMotion('reduced')` give the old behaviour (no rotation, flights become cuts under a 120 ms fade, toolbar eases become jumps).
+Automatic motion follows the system's `prefers-reduced-motion` setting. `?motion=reduced` and `setMotion('reduced')` also cut immediately to the destination, with no rotation or camera fade. The map bench can request `?motion=full` to compare flights.
 
 ## 3b. Field picture (changed 2026-11-14)
 
@@ -84,7 +84,7 @@ Touchpad and wheel handling (`engine.ts`):
 - Turning the map is a gesture; the toolbar keeps only the compass (reset north). Touch screen: two fingers, through MapLibre's `touchZoomRotate`, which the engine leaves on (read in the code, not tried on touch hardware). Safari trackpad: `gesturestart` / `gesturechange` / `gestureend` on the map element apply `event.rotation` to the bearing (clockwise fingers, clockwise map) and `event.scale` to the zoom, and cancel the page zoom; feature-detected, skipped while touches are down, not tried in Safari. Other browsers send no trackpad twist to the page (Chromium on Windows among them): `Alt` + two-finger swipe (or `Alt` + wheel) turns the map there.
 - The landing (hero) globe can be dragged and zoomed. `heroPose` keeps its lower edge clear of the landing's controls (150 px along the bottom edge); the turn slows with the zoom so its speed on screen stays the same; a visitor who zoomed in keeps that zoom when they leave the landing.
 
-`insets` from the store are the camera padding (plus 12 px) for the fly-in, `fitParcel`, `refocusParcel`, `flyToPlace` and draft framing; the padding is shrunk so at least 120 px of map stay free each way. With insets the parcel fills 62 % of the free area. A change of insets eases (360 ms): the whole framing when the camera is still near the parcel view, only the padding when the user has wandered off. Without insets the old design-token estimate is used. Hero and explore poses do not use insets yet.
+The mission shell passes its inset reader to the globe. Entering a field computes the destination insets from the new phase before the UI renders (with locked field framing taking precedence over any open finder or coordinate card), including on the first frame of a sample link. The target compensates for the larger near edge of a pitched outline so the projected boundary is centred. `transitionInsets` retains the framed destination insets across the flight and after arrival so late or duplicate shell reports matching the framed insets are ignored without queueing a post-landing `easeTo`, while genuine window or layout changes still reframe the map. Camera padding includes an additional 12 px margin and leaves at least 120 px of map in each direction. Compact desktop framing uses a smaller fill to clear the legend and timeline. The isolated map bench uses the inset fallback when it has no mission shell.
 
 ## 4. Exports of `@/globe`
 

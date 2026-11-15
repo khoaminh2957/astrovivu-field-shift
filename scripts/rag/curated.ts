@@ -5,6 +5,12 @@
  *
  * `eco` is the exact EcoCrop `name`; the crop id is its slug. Vietnamese names are the common
  * southern/northern forms; the first one is used in answers.
+ *
+ * Every crop here is a crop the atlas keeps (data/crops/atlas/crops.csv); the build stops if one
+ * is not. Four that used to be here are in dropped.csv ("no FAOSTAT crop item names it") and were
+ * taken out on 15 November 2026: Macadamia integrifolia, Trifolium repens, Stylosanthes
+ * guianensis var. guianensis and Lablab purpureus. Whether the atlas should keep them is the crop
+ * data owner's decision (docs/CROP_DATA.md, section 10); when it does, they come back here.
  */
 export interface CuratedCrop {
   eco: string;
@@ -14,6 +20,18 @@ export interface CuratedCrop {
   wiki: string;
   group: 'cereal' | 'pulse' | 'oilseed' | 'root' | 'perennial' | 'fruit' | 'cover' | 'vegetable' | 'herb' | 'fibre';
 }
+
+/**
+ * The names the four species taken out of `CURATED` were known by, kept so that a question that
+ * uses one ("macadamia", "đậu ván") is still recognised and answered with "not in the crop data,
+ * and why" instead of with passages that happen to share a word.
+ */
+export const FORMERLY_CURATED: { eco: string; names: string[] }[] = [
+  { eco: 'Macadamia integrifolia', names: ['Macadamia', 'Mắc ca'] },
+  { eco: 'Trifolium repens', names: ['White clover', 'Cỏ ba lá trắng'] },
+  { eco: 'Stylosanthes guianensis var. guianensis', names: ['Stylo', 'stylosanthes', 'Cỏ stylo', 'cỏ stylosanthes'] },
+  { eco: 'Lablab purpureus', names: ['Lablab', 'hyacinth bean', 'Đậu ván'] },
+];
 
 export const CURATED: CuratedCrop[] = [
   // Cereals
@@ -55,7 +73,6 @@ export const CURATED: CuratedCrop[] = [
   { eco: 'Saccharum officinarum', en: 'Sugarcane', vi: ['Mía'], wiki: 'Sugarcane', group: 'perennial' },
   { eco: 'Gossypium hirsutum', en: 'Cotton', vi: ['Bông', 'bông vải'], wiki: 'Gossypium hirsutum', group: 'fibre' },
   { eco: 'Anacardium occidentale', en: 'Cashew', vi: ['Điều', 'đào lộn hột'], wiki: 'Cashew', group: 'perennial' },
-  { eco: 'Macadamia integrifolia', en: 'Macadamia', vi: ['Mắc ca'], wiki: 'Macadamia integrifolia', group: 'perennial' },
   // Fruit
   { eco: 'Musa acuminata', en: 'Banana', vi: ['Chuối'], wiki: 'Banana', group: 'fruit' },
   { eco: 'Durio zibethinus', en: 'Durian', vi: ['Sầu riêng'], wiki: 'Durio zibethinus', group: 'fruit' },
@@ -66,14 +83,11 @@ export const CURATED: CuratedCrop[] = [
   { eco: 'Citrullus lanatus', en: 'Watermelon', vi: ['Dưa hấu'], wiki: 'Watermelon', group: 'fruit' },
   // Forage and cover crops
   { eco: 'Medicago sativa', en: 'Alfalfa', enAliases: ['lucerne'], vi: ['Cỏ linh lăng', 'cỏ alfalfa'], wiki: 'Alfalfa', group: 'cover' },
-  { eco: 'Trifolium repens', en: 'White clover', vi: ['Cỏ ba lá trắng'], wiki: 'Trifolium repens', group: 'cover' },
   { eco: 'Trifolium pratense', en: 'Red clover', vi: ['Cỏ ba lá đỏ'], wiki: 'Trifolium pratense', group: 'cover' },
   { eco: 'Vicia villosa ssp. villosa', en: 'Hairy vetch', enAliases: ['vetch'], vi: ['Đậu tằm lông'], wiki: 'Vicia villosa', group: 'cover' },
   { eco: 'Secale cereale', en: 'Cereal rye', enAliases: ['rye'], vi: ['Lúa mạch đen'], wiki: 'Rye', group: 'cover' },
   { eco: 'Crotalaria juncea', en: 'Sunn hemp', vi: ['Muồng sợi', 'lục lạc sợi'], wiki: 'Crotalaria juncea', group: 'cover' },
   { eco: 'Mucuna pruriens', en: 'Velvet bean', enAliases: ['mucuna'], vi: ['Đậu mèo', 'đậu ván lông'], wiki: 'Mucuna pruriens', group: 'cover' },
-  { eco: 'Stylosanthes guianensis var. guianensis', en: 'Stylo', enAliases: ['stylosanthes'], vi: ['Cỏ stylo', 'cỏ stylosanthes'], wiki: 'Stylosanthes guianensis', group: 'cover' },
-  { eco: 'Lablab purpureus', en: 'Lablab', enAliases: ['hyacinth bean'], vi: ['Đậu ván'], wiki: 'Lablab', group: 'cover' },
   { eco: 'Fagopyrum esculentum', en: 'Buckwheat', vi: ['Kiều mạch', 'tam giác mạch'], wiki: 'Buckwheat', group: 'cover' },
   { eco: 'Raphanus sativus', en: 'Radish', enAliases: ['daikon', 'tillage radish'], vi: ['Củ cải', 'củ cải trắng'], wiki: 'Radish', group: 'vegetable' },
   // Vegetables

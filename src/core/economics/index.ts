@@ -30,7 +30,7 @@ export function economicRegions(parcel: Pick<Parcel, 'centroid' | 'isUS' | 'plac
 }
 
 /** Country of each reference region. */
-const REGION_ISO3: Record<EconRegion, Iso3> = { VN: 'VNM', US: 'USA', 'US-HEARTLAND': 'USA', 'US-WEST': 'USA' };
+export const REGION_ISO3: Record<EconRegion, Iso3> = { VN: 'VNM', US: 'USA', 'US-HEARTLAND': 'USA', 'US-WEST': 'USA' };
 
 /** Country whose reference records are the parcel's own; null outside the countries of the reference table. */
 export function economicCountry(parcel: Pick<Parcel, 'centroid' | 'isUS' | 'place'>): Iso3 | null {

@@ -23,7 +23,7 @@ import { COMMONNESS, LEVEL, WINDOW, commonnessFor, latestMean, levelFor, rankOf,
 import { DEFAULT_NATIONAL_FILE, nationalSourcesUsed, readNational, resolveCropCountryRow } from './national';
 import { readSpamHarvestedArea, type SpamRegion } from './spam';
 import { taxonKey } from './taxa';
-import { urbanCandidate } from './urban';
+import { urbanCandidateRow } from './urban';
 import { buildXlsx, countCells, type Sheet } from './xlsx';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -441,6 +441,12 @@ async function main() {
   });
 
   // ---------------------------------------------------------------------------------------------
+  // urban_candidates.csv: one row per crop of crops.csv, in its order. A file of its own because
+  // the market database mirrors crops.csv column for column.
+  // ---------------------------------------------------------------------------------------------
+  const urbanRows: Cell[][] = kept.map((k) => urbanCandidateRow(k.id, k.s));
+
+  // ---------------------------------------------------------------------------------------------
   // item_country.csv and items.csv
   // ---------------------------------------------------------------------------------------------
   const itemCountryRows: Cell[][] = [];
@@ -720,7 +726,7 @@ async function main() {
     ['name_en_source_fao_definition', count(kept, (k) => names.get(k.id)![1] === 'fao-definition')],
     ['name_en_source_faostat_item', count(kept, (k) => names.get(k.id)![1] === 'faostat-item')],
     ['crops_with_name_vi', count(kept, (k) => (k.curated?.name_vi ?? '').length > 0)],
-    ['urban_candidates', count(kept, (k) => urbanCandidate(k.s).candidate)],
+    ['urban_candidates', count(urbanRows, (r) => r[cols('urban_candidates').indexOf('urban_candidate')] === 'yes')],
     ['faostat_crop_items', cropItems.length],
     ['faostat_items_single', count(cropItems, (i) => xw.itemClass.get(i.code)!.class === 'single')],
     ['faostat_items_group', count(cropItems, (i) => xw.itemClass.get(i.code)!.class === 'group')],
@@ -768,6 +774,7 @@ async function main() {
   // ---------------------------------------------------------------------------------------------
   const tables: { name: string; columns: string[]; rows: Cell[][] }[] = [
     { name: 'crops', columns: cols('crops'), rows: cropRows },
+    { name: 'urban_candidates', columns: cols('urban_candidates'), rows: urbanRows },
     { name: 'crop_country', columns: cols('crop_country'), rows: cropCountryRows },
     { name: 'item_country', columns: cols('item_country'), rows: itemCountryRows },
     { name: 'country_crops', columns: cols('country_crops'), rows: countryRows },
@@ -794,6 +801,7 @@ async function main() {
     ['Date', `Sources accessed ${accessed}. FAOSTAT years ${minYear}-${qcl.maxYear} (mean of the latest ${WINDOW.years} years with data); MapSPAM circa 2020.`],
     ['Principle', 'Every value is copied or computed from a named source by a documented rule. Nothing was typed in from memory; an unknown is an empty cell.'],
     ['Sheet crops', `${kept.length} crops kept out of ${species.length} EcoCrop species: requirements (EcoCrop), FAOSTAT item, match, MapSPAM crop, evidence, commonness.`],
+    ['Sheet urban_candidates', 'One row per crop of the sheet crops: whether the EcoCrop rule of scripts/crops/atlas/urban.ts selects it as an urban / container candidate, and the clause that matched.'],
     ['Sheet crop_country', `One row per crop and country for crops with their own FAOSTAT item (match = exact): area, production, share, rank, level; level = unknown for crops that are part of a group item. The ${count(cropCountryRows, (r) => r[levelIdx] === 'absent')} rows with level = absent are in crop_country.csv only.`],
     ['Sheet item_country', 'FAOSTAT quantities per item and country, including group items (n.e.c., several genera), whose area must not be read as one species.'],
     ['Sheet country_crops', 'One row per country: what is grown there, ordered by harvested area.'],

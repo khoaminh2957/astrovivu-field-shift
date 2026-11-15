@@ -4,6 +4,8 @@ registerStrings(
   'urban',
   {
     title: 'Urban grower',
+    backToField: 'Back to field',
+    useFieldLocation: 'Use this field’s location',
     lead: 'What will grow on your balcony, rooftop or windowsill, from the climate where you live and the light you get.',
     spot: 'Your spot',
     where: 'Where you grow',
@@ -118,6 +120,8 @@ registerStrings(
   },
   {
     title: 'Trồng rau đô thị',
+    backToField: 'Về thửa ruộng',
+    useFieldLocation: 'Dùng vị trí thửa ruộng này',
     lead: 'Cây gì sẽ hợp với ban công, sân thượng hay bậu cửa sổ của bạn, theo khí hậu nơi bạn sống và lượng nắng bạn có.',
     spot: 'Chỗ trồng của bạn',
     where: 'Nơi bạn trồng',

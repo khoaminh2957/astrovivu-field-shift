@@ -8,25 +8,26 @@ Motion is on by default, even on a machine with "reduce motion" switched on (`do
 
 Farmers deciding next season's rotation face shifting heat, rain and water. NASA sees all of it, but on grids of 10 m to 50 km and with delays from hours to months. Astrovivu puts every reading on one field and one timeline, draws it inside the field where imagery allows, tells you how far each number can be trusted at field scale, lets the farmer overrule the satellite with what they measured, and ends in a decision: at least three rotation strategies, the current one included, each with why, evidence, benefits, gaps and risks that need local review. It works anywhere on Earth, in English or Vietnamese, with no account and no key.
 
-## Walk-through (three to four minutes)
+## Walk-through (about three minutes)
+
+The rail is the path: **(1) Field**, the field as it is; **(2) Rotation**, with three tabs (Farm, Compare, Plan); **(3) Dossier**. Urban and Ask stand apart under a rule. Every step has its own address (`?sample=<id>&phase=locked|advisory&view=farm|compare|plan|dossier`), so a step can be opened directly and the browser's Back button walks back through them.
 
 | Time | Click / link | Say | Award it serves |
 |---|---|---|---|
-| 0:00 | Open `/`. Let the globe turn for two seconds, then click to start. | "The whole planet. Any point resolves through live NASA and partner APIs; four fields are cached for this demo." | Art & Technology |
-| 0:15 | In the field list, open "Add field": show both "Address and area" and "Select on the map" (Sentinel-2 boundary detection). Then open the map's layer menu and switch on SMAP root-zone moisture, then GPM IMERG rain. | "A farmer types a village and a size, or clicks inside a field on the map to trace its Sentinel-2 outline. These overlays are NASA GIBS, dated to the timeline. SMAP is a 9 km pixel, IMERG 10 km; a field is 150 m across." | Best Use of Data |
-| 0:35 | Open the Đắk Lắk demo field (or `/?sample=daklak-coffee`). | "One continuous flight from orbit to a 2.0 ha robusta block on basalt soil." | Art & Technology |
-| 0:50 | Status tab: point at the score, the three charts and "what changed". | "One sentence per chart, and dated events: dry spells, heat, a score swing, each saying how far the pixel is from the field." | Galactic Impact |
-| 1:05 | Data tab: the eight cards, each showing the field coloured by its metric. Open Vegetation, then Soil moisture. | "Vegetation is Sentinel-2 at 10 m, real cloud-free frames, never filled. Soil moisture is ERA5-Land, modelled: no key-free SMAP point series exists, and the Confidence Badge says low at field scale, and why." | Best Use of Data, Best Mission Concept |
-| 1:30 | Drag the timeline through the dry season (January to April). | "The field picture, the overlay, every card and the score move together. The last weeks show as pending where a source has not published yet: latency, shown, not hidden." | Best Use of Data, Art & Technology |
-| 1:50 | Field report tab: relative NDVI zones and the frames used. | "Where the field does better or worse than its own average, from a year of real frames. Relative zones, not a yield map." | Best Use of Data |
-| 2:05 | Soil and practice tab: change irrigation from supplemental to rainfed, then back. Point at the ledger. | "The demo starts from an assumed farm profile. The farmer's input wins, and the ledger shows what each correction did to the score." | Best Mission Concept |
-| 2:25 | Rail: Rotation (`/?sample=daklak-coffee&phase=advisory`, then `/?sample=cantho-rice&phase=advisory`). Change the first priority from profit to water; on the Mekong paddy, click the third rice block on the calendar and swap it to mung bean. | "Current practice pinned first against soil-health, water-saver, income and resilience cards, laid over the field's 20-year ERA5 rain and temperature. Swap any season on the calendar to test your own crop and re-score live: trade-offs, clickable evidence, information gaps and risks needing local review all update." | Galactic Impact, Best Mission Concept |
-| 2:55 | Ask: "Is my soil too acid for soybean?" Then switch to Vietnamese (or `&lang=vi`) and ask "Đất của tôi có quá chua cho đậu nành không?" | "Answers come from the field's own data and FAO EcoCrop, with citations, in the browser, without a key. Same tool, in the farmer's language." | Galactic Impact |
-| 3:15 | `/?sample=iowa-corn-soy`, then `/?sample=nevada-alfalfa`. | "Iowa: SSURGO soils and eight years of the Cropland Data Layer give the real corn-soy rotation. Nevada: every millimetre is pumped. At SSURGO pH 8.8 no annual break crop reaches 20/100 without a soil test, so the renewal strategies propose 4- and 3-year stands with fallow rest years and send pH to a local lab test." | Best Use of Data, Best Mission Concept |
-| 3:35 | `/?phase=urban`. | "Urban Grower brings the same climate and PAR data to a balcony, with illustrated light/space tiles, FAO EcoCrop plant photos and month-by-month sowing strips." | Galactic Impact |
-| 3:50 | Close on the field. | "It supports the farmer's judgement. It does not replace it." | |
+| 0:00 | Open `/`. Let the globe turn for two seconds, then open the Mekong demo field (`/?sample=cantho-rice&lang=vi`). | "The whole planet, any point through live NASA and partner APIs. One continuous flight from orbit to a 1.4 ha paddy." | Art & Technology |
+| 0:20 | (1) Field, Overview: the outlook, the three numbers, the weather today and the forecast warnings, then drag the timeline under the map through the dry season. | "One sentence, three numbers, today's weather and what the forecast warns of. The field picture, the overlay and the score move with the timeline; weeks a source has not published yet show as pending." | Best Use of Data |
+| 0:50 | (1) Field, Data: open Vegetation, then Soil moisture. | "Vegetation is Sentinel-2 at 10 m, real cloud-free frames. Soil moisture is ERA5-Land, modelled: the Confidence Badge says low at field scale, and why." | Best Use of Data, Best Mission Concept |
+| 1:10 | (1) Field, Soil and practice: change the pH or the irrigation, point at the ledger. | "The farmer's own value wins over the satellite, and the ledger shows what each correction did." | Best Mission Concept |
+| 1:25 | Press "(2) Compare rotations" at the foot of the panel. The Farm tab: press a character's bubble, then play the year by month. | "The field as a farm, today by default. Satellite, Seed and Rice each sum up the weather, the soil and the crop in a sentence; the ! opens the readings behind it. Play rewinds a year and steps forward by month." | Galactic Impact, Art & Technology |
+| 1:55 | Open the rotation picker on the stage and pick the income rotation. | "Its crops grow through the same year of weather, labelled Simulation." | Best Mission Concept |
+| 2:05 | Compare tab: the current practice against four strategies; change the first priority to water; swap a season on the calendar; open an evidence chip, then close it. | "Current practice first. Why, evidence, benefits, information gaps and risks for local review, for the strategy chosen. Swap a season to test your own crop. Evidence opens the reading it rests on, without leaving the page." | Galactic Impact, Best Mission Concept |
+| 2:35 | Ask, in Vietnamese: "Đất của tôi có quá chua cho đậu nành không?" | "Answers from the field's own data and FAO EcoCrop, with citations, in the farmer's language." | Galactic Impact |
+| 2:50 | (3) Dossier. | "How the answer was reached, in six steps, on one sheet that prints." | Best Mission Concept |
+| 3:00 | Close: "It supports the farmer's judgement. It does not replace it." | | |
 
-Narrow screens: below 1100 px the map is on top, the panel scrolls under it and the tabs move to a bottom bar; the same steps apply.
+If there is time: `/?sample=iowa-corn-soy` (SSURGO and the Cropland Data Layer give the real corn-soy rotation) and `/?phase=urban` (the same climate and light data on a balcony).
+
+Narrow screens: below 1100 px the map is on top, the panel scrolls under it and the rail becomes a bottom bar with the same steps.
 
 ## Fallback if the network is slow
 

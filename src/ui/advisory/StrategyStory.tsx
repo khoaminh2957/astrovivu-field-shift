@@ -1,17 +1,16 @@
 /**
  * The five lists the challenge asks of every strategy, for the selected one only: why it is
  * suggested, the evidence, the benefits, and (flagged for local review) the information gaps and
- * the risks. Evidence that comes from a telemetry branch opens that branch on the field.
+ * the risks. Evidence that comes from a telemetry branch opens that branch in a sheet over this page,
+ * so the reader checks the numbers and comes back to the comparison where it was.
  */
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { ArrowUpRight, CircleHelp, Database, Lightbulb, Sprout, TriangleAlert } from 'lucide-react';
 import type { BranchId, EvidenceItem, RotationStrategy } from '@/contracts';
 import { pick } from '@/contracts';
 import { useLang, useT } from '@/i18n';
-import { useMission } from '@/state/mission';
-import { useMissionUi } from '@/ui/chrome/uiState';
-import { BranchIcon, cn } from '@/ui/design';
-import { useSelectBranch } from '@/ui/field/MetricCards';
+import { BranchIcon, Sheet, cn } from '@/ui/design';
+import { CardDetail } from '@/ui/field/CardDetail';
 import { LocalReviewTag, TextList, sourceName } from './shared';
 
 export function StrategyStory({ strategy }: { strategy: RotationStrategy }) {
@@ -69,18 +68,14 @@ function Block({ icon, title, sub, flagged, children }: { icon: ReactNode; title
 function Evidence({ items }: { items: EvidenceItem[] }) {
   const t = useT();
   const lang = useLang();
-  const select = useSelectBranch();
-  const setPhase = useMission((s) => s.setPhase);
+  const [branch, setBranch] = useState<BranchId | null>(null);
   if (!items.length) return <p className="t-caption">{t('advisory.noEvidence')}</p>;
 
-  const open = (branch: BranchId) => {
-    select(branch);
-    useMissionUi.getState().setFieldTab('data');
-    setPhase('locked');
-  };
+  const open = (b: BranchId) => setBranch(b);
   const chip = 'flex min-w-0 flex-col gap-0.5 rounded-sm border border-line-1 bg-surface-0 px-2.5 py-2 text-left';
 
   return (
+    <>
     <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
       {items.map((e, i) => {
         const body = (
@@ -108,5 +103,9 @@ function Evidence({ items }: { items: EvidenceItem[] }) {
         );
       })}
     </ul>
+    <Sheet open={branch != null} onOpenChange={(o) => !o && setBranch(null)} modal width="min(560px, 100vw)" title={branch ? t(`advisory.branch.${branch}`) : ''}>
+      {branch && <CardDetail branch={branch} onBack={() => setBranch(null)} backLabel={t('advisory.story.backToCompare')} />}
+    </Sheet>
+    </>
   );
 }

@@ -240,3 +240,34 @@ Cuối đợt 5, cho ba người trong nhóm không làm giao diện dùng thử
 5. Hỏi trợ lý một câu về cây đang trồng.
 
 Kết quả ghi vào tài liệu này; chỗ nào hai trong ba người vấp thì sửa trước khi nộp.
+
+## 6. Bố cục ruộng và luồng Field, Rotation, Urban
+
+Kiểm tra cục bộ ngày 15/11/2026 trên trình duyệt. Vùng ngang tính từ mép bảng ruộng đến phần chừa 64 px bên phải cho cụm công cụ.
+
+| Khung | Bề rộng trước theo issue #86 | Vùng ngang sau | Kiểm tra tâm theo khung camera |
+|---|---:|---:|---|
+| 1440 × 900 | 492 px | 728 px (50,6%) | Nevada và ranh tự chọn ở Cai Lậy lệch khoảng 2 px mỗi trục hoặc ít hơn khi đã ổn định |
+| 1280 × 720 | 392 px | 640 px (50%) | Ranh mẫu Cần Thơ lệch dưới 1 px mỗi trục khi đã ổn định |
+| 426 × 690 | Tấm dưới | Không tràn ngang | Mẫu Cần Thơ mở thẳng ở giữa vùng trống, lệch dưới 2 px theo chiều dọc |
+
+- Hai lượt rà từ tọa độ Cai Lậy gồm mở ranh, đọc các thẻ, nhập pH 6,5, mở luân canh và hỏi trợ lý. Trợ lý trả lời có nguồn bằng tiếng Anh và tiếng Việt. Đã kiểm tra việc chuyển qua Urban, dùng vị trí thửa, mở hướng dẫn cây và quay lại Field. Rotation giữ tab lịch và phương án cải tạo đất sau khi đi qua Urban.
+- Chuyển trang, đổi tab, mở bảng và phản hồi nút dùng hiệu ứng ngắn. Giảm chuyển động được kiểm với `?motion=reduced`, chuyển trang có thời lượng 0. Bảng nhịp riêng của năm chuyến chuyển camera [chờ Bảo duyệt](https://github.com/quocbao271207/astrovivu-field-shift/issues/87#issuecomment-6889713952).
+- Vị trí danh sách thửa [đang chờ chốt](https://github.com/quocbao271207/astrovivu-field-shift/issues/86#issuecomment-6889713727) cùng với [nội dung từng bước](https://github.com/quocbao271207/astrovivu-field-shift/issues/84). Hai đoạn quay chính thức của #88 còn mở.
+- Đo đúng lúc camera đáp và sau 2 giây: Nevada từ nút thử mẫu và điểm ruộng trên bản đồ ở 1440 × 900 có tâm (1044, 450) đúng tâm khung, cùng zoom 15,1474. Ranh tự chọn ở 426 × 690 có tâm (185, 183) so với đích (185, 181,5), giữ nguyên tâm và zoom 16,4802. Link Nevada với giảm chuyển động ở 426 × 690 có tâm (185, 181,5) ngay khung đầu và giữ nguyên sau 2 giây.
+
+### Home và thời tiết
+
+Home hiển thị thửa đang mở, diện tích, khu vực, các số liệu thời tiết mới nhất và lối vào Thửa ruộng, Thời tiết, Luân canh, Đô thị. Chỉ nút A đưa về màn đầu. Trang Thời tiết dùng dữ liệu của thửa đang mở, gồm nhiệt cao/thấp, mưa, gió, dự báo theo ngày, lịch sử 7 ngày và rủi ro có trong nguồn. Giá trị thiếu hiển thị dấu gạch, còn số liệu cũ, đã lưu hoặc mô phỏng có nhãn.
+
+Thanh điều hướng rộng 60 px trên desktop và cao 54 px trên điện thoại. Đã thử từ thửa Nevada ở 1440 × 900 (EN) và Cần Thơ ở 426 × 690 (VI), gồm Home giữ thửa, chuyển hai tab thời tiết và A trở về màn tìm thửa ban đầu. [Năm điểm rà luồng đã gửi ở #88](https://github.com/quocbao271207/astrovivu-field-shift/issues/88#issuecomment-6890112672).
+
+### U12. Năm cải tiến từ lượt rà luồng người mới (#88, 15/11)
+
+| Mục | Vấn đề | Cách sửa đã cài | Kiểm tra (`1440 × 900` EN & `426 × 690` VI) |
+|---|---|---|---|
+| 1. Nhận ranh (`SelectOnMap.tsx`, `FindField.tsx`) | Khi đang đọc ảnh Sentinel-2 (`detecting`), người dùng không có lối tắt để tự chấm 4 góc hoặc nhập diện tích ngay tại điểm vừa bấm. | Hiện nút **Tự chấm 4 góc trên bản đồ** và **Nhập địa chỉ và diện tích** ngay trong trạng thái `detecting`; giữ tọa độ vừa bấm (`lastPickAt`) để đặt sẵn ô vuông ranh khi chuyển sang nhập diện tích. | Chuyển được bằng 1 thao tác ngay lúc đang tải và giữ nguyên điểm vừa chọn trên bản đồ. |
+| 2. Nhãn thời điểm cảnh báo ở Tổng quan (`OverviewTab.tsx`) | Khi thửa có cả cảnh báo rủi ro và danh sách biến động gần ngày xem, người đọc khó phân biệt cảnh báo đang diễn ra tại ngày xem với cảnh báo dự báo sắp tới. | Thêm nhãn ngắn **Cảnh báo tại ngày xem** / **Cảnh báo dự báo** (`field.risk.active` / `field.risk.upcoming`) và tiêu đề phụ **Điều gì đã thay đổi** (`field.changed`) tách biệt danh sách biến động. | Đọc rõ dòng nào áp dụng cho ngày đang xem và dòng nào là dự báo ở cả tiếng Anh và tiếng Việt. |
+| 3. Trả tiêu điểm khi đóng trợ lý (`src/ui/ask/index.tsx`) | Đóng trợ lý bằng `Escape` hoặc nút `X` từng làm tiêu điểm rơi về `document.body`. | Lưu phần tử kích hoạt trong `triggerRef` khi mở và trả tiêu điểm (`focus({ preventScroll: true })`) khi đóng. | Mở bằng bàn phím, đóng bằng `Escape` hoặc nút đóng, tiêu điểm quay về nút `Hỏi / Ask`. |
+| 4. Giữ lựa chọn ở trang Nông trại / Luân canh (`src/ui/chrome/index.tsx`) | Chuyển sang trang khác (như Đô thị hoặc Thời tiết) rồi quay lại làm mất phương án và thẻ đang xem của cùng thửa. | Giữ `AdvisoryPanel` đã khởi tạo theo `parcelId` (`hidden={!advisory}`) khi chuyển qua các trang trong cùng phiên của thửa. | Chọn phương án và thẻ lịch mùa vụ, sang Đô thị rồi quay lại, lựa chọn còn nguyên. |
+| 5. Dùng vị trí thửa ở trang Đô thị (`src/ui/urban/index.tsx`) | Đang mở một thửa ruộng nhưng sang trang Đô thị phải tìm lại địa điểm từ đầu. | Thêm nút **Dùng vị trí thửa ruộng** (`urban.useFieldLocation`) lấy `parcel.centroid` và giữ trạng thái trang Đô thị (`visitedUrban`) trong phiên. | Bấm 1 lần để nạp khí hậu từ vị trí thửa đang mở; đổi mức nắng, chuyển trang rồi quay lại vẫn giữ nguyên. |

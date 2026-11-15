@@ -1,26 +1,28 @@
 /**
- * The crop-rotation screen. A strip of the strategies (the current practice first) stays at the top
- * while the page scrolls. Under it, two columns on a wide screen: on the left the season calendar of
- * the chosen strategy over the field's own climate and its trade-offs against the current practice;
- * on the right the five lists that explain it (why, evidence, benefits, gaps, risks). The year plan
- * and the action advisories follow, each one line until opened.
- * Everything is read from the mission store; the engine lives in src/core/advisory.
+ * Steps (2) and (3) of the path. (2) Rotation has three tabs: the farm stage (the field drawn as a
+ * farm, the characters, the strategies played through the year), the comparison (every strategy
+ * against the current practice on one page: calendar and trade-offs on the left, why, evidence,
+ * benefits, gaps and risks on the right, the priorities at its head) and the plan of the year.
+ * (3) Dossier shows how the answer was reached, on one sheet. The tab shown is `advisoryView` in
+ * the UI store, so the rail and the address can name it.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { ClipboardList, Compass, Info, MapPinned, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ClipboardList, Compass, Info, MapPinned, MessageCircleQuestion, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import type { Advisory, AdvisoryReport, FarmerPriority, ModelInput } from '@/contracts';
 import { pick } from '@/contracts';
 import { type CustomRotationSpec, annualPlan, evaluateCustomRotation, slotCropChoices, swapRotationSeason } from '@/core/advisory';
 import { getCrop } from '@/core/crops';
 import { useLang, useT } from '@/i18n';
 import { toModelInput, useMission } from '@/state/mission';
+import { type AdvisoryView, useMissionUi } from '@/ui/chrome/uiState';
+import { Dossier } from '@/ui/farm/Dossier';
 import { FarmView } from '@/ui/farm/FarmView';
-import { Button, EmptyState, Panel, Skeleton, SkeletonText, StatusGlyph, cn } from '@/ui/design';
+import { Button, EmptyState, Panel, Skeleton, SkeletonText, StatusGlyph, TabPanel, Tabs, cn } from '@/ui/design';
 import { AdvisoryBody, CropSuiteView, IrrigationView, PhView, SowingView } from './ActionPlans';
 import { AnnualPlanView } from './AnnualPlanView';
 import { climateOf } from './climate';
 import { useFixture } from './fixture';
-import { type CurrencyCode, fmtDate, fmtNum, monthLong } from './format';
+import { type CurrencyCode, fmtDate, fmtNum, fmtSigned, money, monthLong } from './format';
 import { bestStrategyId, defaultSelection, orderStrategies } from './metrics';
 import { SeasonCalendar } from './SeasonCalendar';
 import { CurrencySwitch, FixtureTag, Fold, LocalReviewTag, SectionHead, SupportLine } from './shared';
@@ -30,6 +32,8 @@ import { TradeOffs } from './TradeOffs';
 import './strings';
 
 const PRIORITIES: FarmerPriority[] = ['profit', 'yield', 'water', 'soil', 'risk', 'cost'];
+/** The tabs of step (2). The dossier is step (3): same page, no tab strip. */
+const PAGES: AdvisoryView[] = ['farm', 'compare', 'plan'];
 
 export function AdvisoryPanel() {
   const t = useT();
@@ -45,7 +49,11 @@ export function AdvisoryPanel() {
   const countryTable = useMission((s) => s.countryTable);
   const today = useMission((s) => s.telemetry?.window.today ?? s.timeline.end);
   const setPhase = useMission((s) => s.setPhase);
+  const setAskOpen = useMission((s) => s.setAskOpen);
   const [currency, setCurrency] = useState<CurrencyCode>(groundTruth.currency ?? (lang === 'vi' ? 'VND' : 'USD'));
+  const page = useMissionUi((s) => s.advisoryView);
+  const setPage = useMissionUi((s) => s.setAdvisoryView);
+  const dossier = page === 'dossier';
 
   const fixture = useFixture(import.meta.env.DEV ? () => import('./__fixtures__/advisory').then((m) => m.advisoryFixture) : null);
   const report: AdvisoryReport | null = fixture ? fixture(priorities) : live;
@@ -62,22 +70,29 @@ export function AdvisoryPanel() {
   };
 
   return (
-    <main aria-labelledby="adv-title" className="absolute inset-0 overflow-x-hidden overflow-y-auto bg-surface-0">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pt-5 pb-20 compact:gap-4 compact:px-4 compact:pt-4 narrow:px-3">
-        <header className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h1 id="adv-title" className="text-xl leading-7 font-semibold text-ink-1">
-                {t('advisory.title')}
+    <main aria-labelledby="adv-title" className="rotation-workspace" data-rotation-page={parcel && !loading ? page : undefined}>
+        <header className="rotation-inner rotation-header">
+          {parcel && (
+            <button type="button" className="rotation-back" onClick={() => (dossier ? setPage('compare') : setPhase('locked'))}>
+              <ArrowLeft size={16} aria-hidden />{t(dossier ? 'advisory.workspace.backRotation' : 'advisory.workspace.back')}
+            </button>
+          )}
+          <div className="rotation-header-row">
+            <div>
+              <h1 id="adv-title">
+                <span className="rotation-step-num" aria-hidden>{dossier ? 3 : 2}</span>
+                {t(dossier ? 'advisory.workspace.dossierTitle' : 'advisory.title')}
               </h1>
-              {parcel && <span className="text-base text-ink-2">{parcel.name}</span>}
-              {crop && <span className="text-base text-ink-3">· {lang === 'vi' && crop.names.vi ? crop.names.vi : crop.names.en}</span>}
-              {report && <span className="t-meta">{t('advisory.generated', { date: fmtDate(report.generatedAt, lang) })}</span>}
+              <p>{[parcel?.name, crop && (lang === 'vi' && crop.names.vi ? crop.names.vi : crop.names.en), report && t('advisory.generated', { date: fmtDate(report.generatedAt, lang) })].filter(Boolean).join(' · ')}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+            <CurrencySwitch value={currency} onChange={setCurrency} />
+              <button className="rotation-action" type="button" onClick={() => setAskOpen(true)}>
+                <MessageCircleQuestion size={17} aria-hidden />{t('advisory.workspace.ask')}
+              </button>
               {fixture && <FixtureTag />}
             </div>
-            <CurrencySwitch value={currency} onChange={setCurrency} />
           </div>
-          <PriorityPicker value={priorities} onToggle={togglePriority} />
         </header>
 
         {!parcel ? (
@@ -94,21 +109,25 @@ export function AdvisoryPanel() {
         ) : loading ? (
           <LoadingLayout />
         ) : (
-          <Body
-            key={parcel.id}
-            report={report}
-            modelInput={modelInput}
-            currency={currency}
-            priorities={priorities}
-            today={today}
-            sowingMonth={groundTruth.sowingDate ? Number(groundTruth.sowingDate.slice(5, 7)) : null}
-          />
+          <Tabs<AdvisoryView> className="rotation-tabs" value={page} onValueChange={setPage} ariaLabel={t('advisory.title')} tabs={PAGES.map((value) => ({ value, label: t(`advisory.workspace.${value}`) }))}>
+            <Body
+              key={parcel.id}
+              report={report}
+              modelInput={modelInput}
+              currency={currency}
+              priorities={priorities}
+              onTogglePriority={togglePriority}
+              page={page}
+              onPage={setPage}
+              today={today}
+              sowingMonth={groundTruth.sowingDate ? Number(groundTruth.sowingDate.slice(5, 7)) : null}
+            />
+          </Tabs>
         )}
 
-        <footer className="border-t border-line-1 pt-4">
+        <footer className="rotation-inner rotation-footer">
           <SupportLine />
         </footer>
-      </div>
     </main>
   );
 }
@@ -176,11 +195,14 @@ interface BodyProps {
   modelInput: ModelInput | null;
   currency: CurrencyCode;
   priorities: FarmerPriority[];
+  onTogglePriority: (p: FarmerPriority) => void;
+  page: AdvisoryView;
+  onPage: (page: AdvisoryView) => void;
   today: string;
   sowingMonth: number | null;
 }
 
-function Body({ report, modelInput, currency, priorities, today, sowingMonth }: BodyProps) {
+function Body({ report, modelInput, currency, priorities, onTogglePriority, page, onPage, today, sowingMonth }: BodyProps) {
   const t = useT();
   const lang = useLang();
   const setPhase = useMission((s) => s.setPhase);
@@ -189,13 +211,14 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
   // Only what the farmer picked is remembered; until then the page follows the ranking.
   const [picked, setPicked] = useState<string | null>(null);
   const [customSpec, setCustomSpec] = useState<CustomRotationSpec | null>(null);
+  const [editingPriorities, setEditingPriorities] = useState(false);
   const rotations = useMemo(() => {
     const base = report?.rotations ?? [];
     if (!customSpec || !modelInput || !base.length) return orderStrategies(base);
     return orderStrategies(evaluateCustomRotation(modelInput, base, customSpec));
   }, [report, customSpec, modelInput]);
   const advisories = report?.advisories ?? [];
-  const nothing = !report || (!rotations.length && !advisories.length && !report.irrigation && !report.ph && !report.sowing?.length && !report.annualPlan);
+  const nothing = !report || (!rotations.length && !advisories.length && !report.irrigation && !report?.ph && !report?.sowing?.length && !report.annualPlan);
 
   const selected = rotations.find((r) => r.id === picked) ?? rotations.find((r) => r.id === defaultSelection(rotations)) ?? null;
   const getChoices = useCallback(
@@ -217,7 +240,7 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
     [selected, modelInput, report],
   );
 
-  if (nothing) {
+  if (nothing && page !== 'farm') {
     return (
       <EmptyState
         icon={<Compass />}
@@ -229,6 +252,19 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
   }
 
   const current = rotations.find((r) => r.kind === 'current') ?? null;
+  const scoreGap = current && selected && selected.id !== current.id ? Math.round(selected.score) - Math.round(current.score) : null;
+  let glance = t(current ? 'advisory.workspace.baselineSummary' : 'advisory.noCurrent');
+  if (selected && current && selected.id !== current.id) {
+    const water = selected.metrics.waterUseMm - current.metrics.waterUseMm;
+    const margin = selected.metrics.marginUsdPerHaYr - current.metrics.marginUsdPerHaYr;
+    const cover = selected.metrics.groundCoverPct - current.metrics.groundCoverPct;
+    const amount = money(Math.abs(margin), currency, lang, { compact: true });
+    glance = [
+      t(water < 0 ? 'advisory.workspace.waterLess' : water > 0 ? 'advisory.workspace.waterMore' : 'advisory.workspace.waterSame', { n: fmtNum(Math.abs(water), lang) }),
+      t(margin < 0 ? 'advisory.workspace.marginLess' : margin > 0 ? 'advisory.workspace.marginMore' : 'advisory.workspace.marginSame', { amount: `${amount.value} ${amount.unit}/ha` }),
+      t(cover < 0 ? 'advisory.workspace.coverLess' : cover > 0 ? 'advisory.workspace.coverMore' : 'advisory.workspace.coverSame', { n: fmtNum(Math.abs(cover), lang) }),
+    ].join(' ');
+  }
   const planStrategy = activePlan ? rotations.find((r) => r.id === activePlan.strategyId) : undefined;
   const usesReference = rotations.some((r) => r.economics?.seasons?.some((s) => s.usesReferenceValues));
   const byKind = (k: string) => [...advisories].filter((a) => a.kind === k).sort((a, b) => a.priority - b.priority)[0];
@@ -244,8 +280,9 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
     if (picked === 'custom') setPicked(null);
   };
 
-  const irrigation = report.irrigation;
-  const bestSowing = report.sowing?.length ? report.sowing.reduce((x, w) => (w.score > x.score ? w : x)) : null;
+  const bestId = bestStrategyId(rotations);
+  const irrigation = report?.irrigation;
+  const bestSowing = report?.sowing?.length ? report?.sowing.reduce((x, w) => (w.score > x.score ? w : x)) : null;
   // The engine writes scores and reliabilities as 0..1 or 0..100; the sowing view reads both, and so does this line.
   const pct = (v: number) => (v <= 1 ? v * 100 : v);
   // What a closed advisory says of itself: the engine's own sentence when there is one, else the plan in a line.
@@ -263,93 +300,121 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
 
   return (
     <>
-      {/* The farm first: the field as it is on the date shown, and trials of what could change. The comparison of rotations follows. */}
-      <FarmView />
-      {selected ? (
-        // Stays under the page's top edge while the rest scrolls: another strategy is one press away from anywhere.
-        <section aria-labelledby="adv-rot" className="sticky top-0 z-10 -mx-6 -mt-3 flex flex-col gap-1 border-b border-line-1 bg-surface-0 px-6 pt-2 pb-2 compact:-mx-4 compact:px-4 narrow:-mx-3 narrow:px-3">
-          {/* A phone gives the strip a fifth of its height at most: the heading is kept for screen readers only there. */}
-          <div className="flex flex-wrap items-baseline gap-x-3 narrow:sr-only">
-            <h2 id="adv-rot" className="t-heading">
-              {t('advisory.compareTitle')}
-            </h2>
-            <p className="t-caption min-w-0 truncate">{t('advisory.compareSub', { n: rotations.length })}</p>
+      {/* The plan is for the strategy chosen in the comparison: the row says which, and the priorities behind it. */}
+      <div className="rotation-context" hidden={page !== 'plan'}>
+        <div className="rotation-inner rotation-context-row">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>{t('advisory.workspace.selected')}</span>
+            <strong>{selectedName || '—'}</strong>
+            {scoreGap != null && <span className="rotation-badge">{fmtSigned(scoreGap, lang)} {t('advisory.card.vsCurrent')}</span>}
           </div>
-          <StrategyCards rotations={rotations} current={current} bestId={bestStrategyId(rotations)} selectedId={selected.id} onSelect={setPicked} />
-        </section>
-      ) : (
-        <EmptyState layout="block" icon={<Compass />} title={t('advisory.empty.noRotations')} body={t('advisory.empty.noRotationsBody')} />
-      )}
-
-      {selected && (
-        // Left: when it grows and what it trades. Right: why, on what evidence, and what is still unknown.
-        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 compact:gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-          <div className="flex min-w-0 flex-col gap-6 compact:gap-4">
-            {!current && <p className="text-sm text-watch">{t('advisory.noCurrent')}</p>}
-            <section aria-labelledby="adv-cal">
-              <SectionHead
-                id="adv-cal"
-                title={t('advisory.cal.title')}
-                sub={selected.id === current?.id || !current ? t('advisory.cal.subAlone', { name: selectedName }) : t('advisory.cal.sub', { name: selectedName })}
-                actions={
-                  customSpec && (
-                    <Button variant="secondary" size="sm" icon={<RotateCcw size={14} strokeWidth={1.75} aria-hidden />} onClick={resetCustom}>
-                      {t('advisory.custom.reset')}
-                    </Button>
-                  )
-                }
-              />
-              <Panel pad="none">
-                <div className="p-4 narrow:p-2.5">
-                  <SeasonCalendar
-                    current={current}
-                    selected={selected}
-                    climate={climate}
-                    currency={currency}
-                    getChoices={modelInput ? getChoices : undefined}
-                    onSwap={modelInput ? handleSwap : undefined}
-                  />
-                </div>
-              </Panel>
-            </section>
-
-            <section aria-labelledby="adv-trade">
-              <SectionHead id="adv-trade" title={t('advisory.trade.title')} sub={t('advisory.trade.sub')} />
-              <Panel>
-                <TradeOffs rotations={rotations} current={current} selected={selected} priorities={priorities} currency={currency} usesReference={usesReference} />
-              </Panel>
-              {usesReference && (
-                <p className="t-caption mt-2 flex items-start gap-1.5">
-                  <Info size={14} strokeWidth={1.5} aria-hidden className="mt-px shrink-0" />
-                  {t('advisory.refNote')}
-                </p>
-              )}
-            </section>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>{t('advisory.workspace.priorities')}</span>
+            {priorities.map((p, i) => <strong key={p}>{i + 1}. {t(`advisory.prio.${p}`)}</strong>)}
+            <button type="button" className="rotation-action" aria-expanded={editingPriorities} onClick={() => setEditingPriorities(!editingPriorities)}>
+              <SlidersHorizontal size={16} aria-hidden />{t('advisory.workspace.edit')}
+            </button>
           </div>
-
-          <section aria-labelledby="adv-story">
-            <SectionHead
-              id="adv-story"
-              title={t('advisory.story.title', { name: selectedName })}
-              sub={t('advisory.story.sub')}
-              actions={
-                reviewCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 text-sm text-watch">
-                    <StatusGlyph status="watch" />
-                    {t('advisory.reviewCount', { n: reviewCount })}
-                  </span>
-                )
-              }
-            />
-            <Panel>
-              <StrategyStory strategy={selected} />
-            </Panel>
-          </section>
         </div>
-      )}
+        {editingPriorities && <div className="workspace-reveal rotation-inner pb-3"><PriorityPicker value={priorities} onToggle={onTogglePriority} /></div>}
+      </div>
 
-      {/* The year plan and the action advisories are closed until asked for: the comparison above is the page's subject. */}
-      <section aria-labelledby="adv-more" className="flex flex-col gap-2">
+      {/* Until the grower picks a rotation the stage shows the field as it is: the current practice, not a simulation. */}
+      <TabPanel value="farm" className="rotation-farm">
+        <FarmView rotations={rotations} current={current} bestId={bestId} selected={picked ? selected : (current ?? selected)} onSelect={setPicked} report={report} onAnalysis={() => onPage('compare')} onDossier={() => onPage('dossier')} />
+      </TabPanel>
+
+      <TabPanel value="compare" className="rotation-inner rotation-page">
+        {selected ? (
+          <div className="flex flex-col gap-6 compact:gap-4">
+            <section aria-labelledby="adv-rot" className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+                <div className="min-w-0">
+                  <h2 id="adv-rot" className="workspace-section-title">{t('advisory.compareTitle')}</h2>
+                  <p className="t-caption">{t('advisory.workspace.choose')}</p>
+                </div>
+                <PriorityPicker value={priorities} onToggle={onTogglePriority} />
+              </div>
+              <div>
+                <StrategyCards rotations={rotations} current={current} bestId={bestId} selectedId={selected.id} onSelect={setPicked} />
+              </div>
+              <p className="rotation-glance-line">
+                <strong>{selectedName}</strong>
+                {scoreGap != null && <span className="rotation-badge">{fmtSigned(scoreGap, lang)} {t('advisory.card.vsCurrent')}</span>}
+                <span>{glance}</span>
+              </p>
+            </section>
+            {/* Left: when it grows and what it trades. Right: why, on what evidence, and what is still unknown. */}
+            <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 compact:gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+              <div className="flex min-w-0 flex-col gap-6 compact:gap-4">
+                {!current && <p className="text-sm text-watch">{t('advisory.noCurrent')}</p>}
+                <section aria-labelledby="adv-cal">
+                  <SectionHead
+                    id="adv-cal"
+                    title={t('advisory.cal.title')}
+                    sub={selected.id === current?.id || !current ? t('advisory.cal.subAlone', { name: selectedName }) : t('advisory.cal.sub', { name: selectedName })}
+                    actions={
+                      customSpec && (
+                        <Button variant="secondary" size="sm" icon={<RotateCcw size={14} strokeWidth={1.75} aria-hidden />} onClick={resetCustom}>
+                          {t('advisory.custom.reset')}
+                        </Button>
+                      )
+                    }
+                  />
+                  <Panel pad="none">
+                    <div className="p-4 narrow:p-2.5">
+                      <SeasonCalendar
+                        current={current}
+                        selected={selected}
+                        climate={climate}
+                        currency={currency}
+                        getChoices={modelInput ? getChoices : undefined}
+                        onSwap={modelInput ? handleSwap : undefined}
+                      />
+                    </div>
+                  </Panel>
+                </section>
+                <section aria-labelledby="adv-trade">
+                  <SectionHead id="adv-trade" title={t('advisory.trade.title')} sub={t('advisory.trade.sub')} />
+                  <Panel>
+                    <TradeOffs rotations={rotations} current={current} selected={selected} priorities={priorities} currency={currency} usesReference={usesReference} />
+                  </Panel>
+                  {usesReference && (
+                    <p className="t-caption mt-2 flex items-start gap-1.5">
+                      <Info size={14} strokeWidth={1.5} aria-hidden className="mt-px shrink-0" />
+                      {t('advisory.refNote')}
+                    </p>
+                  )}
+                </section>
+              </div>
+              <section aria-labelledby="adv-story">
+                <SectionHead
+                  id="adv-story"
+                  title={t('advisory.story.title', { name: selectedName })}
+                  sub={t('advisory.story.sub')}
+                  actions={
+                    reviewCount > 0 && (
+                      <span className="inline-flex items-center gap-1.5 text-sm text-watch">
+                        <StatusGlyph status="watch" />
+                        {t('advisory.reviewCount', { n: reviewCount })}
+                      </span>
+                    )
+                  }
+                />
+                <Panel>
+                  <StrategyStory strategy={selected} />
+                </Panel>
+              </section>
+            </div>
+            <NextLinks onPlan={() => onPage('plan')} onDossier={() => onPage('dossier')} />
+          </div>
+        ) : (
+          <EmptyState layout="block" icon={<Compass />} title={t('advisory.empty.noRotations')} body={t('advisory.empty.noRotationsBody')} />
+        )}
+      </TabPanel>
+
+      <TabPanel value="plan" className="rotation-inner rotation-page">
+        <section aria-labelledby="adv-more" className="flex flex-col gap-2">
         <SectionHead id="adv-more" title={t('advisory.moreTitle')} sub={t('advisory.moreSub')} />
         <Fold
           title={planStrategy ? t('advisory.plan.titleFor', { name: pick(planStrategy.name, lang) }) : t('advisory.plan.title')}
@@ -378,26 +443,26 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
           sub={said(
             sowAdv,
             bestSowing
-              ? t('advisory.sow.best', { month: monthLong(bestSowing.month, lang), score: fmtNum(report.sowing!.every((w) => w.score <= 1) ? bestSowing.score * 100 : bestSowing.score, lang), rel: bestSowing.reliability == null ? '--' : fmtNum(pct(bestSowing.reliability), lang) })
+              ? t('advisory.sow.best', { month: monthLong(bestSowing.month, lang), score: fmtNum(report?.sowing!.every((w) => w.score <= 1) ? bestSowing.score * 100 : bestSowing.score, lang), rel: bestSowing.reliability == null ? '--' : fmtNum(pct(bestSowing.reliability), lang) })
               : t('advisory.empty.noSowing'),
           )}
           marks={marks(sowAdv)}
           tone={tone(sowAdv)}
         >
-          {report.sowing?.length ? <SowingView windows={report.sowing} chosenMonth={sowingMonth} /> : <EmptyState layout="inline" title={t('advisory.empty.noSowing')} body={t('advisory.empty.noSowingBody')} />}
-          {report.cropSuite && <Divider />}
-          {report.cropSuite && <CropSuiteView summary={report.cropSuite} />}
+          {report?.sowing?.length ? <SowingView windows={report?.sowing} chosenMonth={sowingMonth} /> : <EmptyState layout="inline" title={t('advisory.empty.noSowing')} body={t('advisory.empty.noSowingBody')} />}
+          {report?.cropSuite && <Divider />}
+          {report?.cropSuite && <CropSuiteView summary={report?.cropSuite} />}
           {sowAdv && <Divider />}
           {sowAdv && <AdvisoryBody adv={sowAdv} currency={currency} showTitle />}
         </Fold>
 
         <Fold
           title={t('advisory.ph.title')}
-          sub={said(phAdv, report.ph ? `${t('advisory.ph.scaleSummary', { from: fmtNum(report.ph.current, lang, 1), to: fmtNum(report.ph.target, lang, 1) })} · ${t(`advisory.ph.${report.ph.amendment}`)}` : t('advisory.empty.noPh'))}
+          sub={said(phAdv, report?.ph ? `${t('advisory.ph.scaleSummary', { from: fmtNum(report?.ph.current, lang, 1), to: fmtNum(report?.ph.target, lang, 1) })} · ${t(`advisory.ph.${report?.ph.amendment}`)}` : t('advisory.empty.noPh'))}
           marks={marks(phAdv)}
           tone={tone(phAdv)}
         >
-          {report.ph ? <PhView plan={report.ph} /> : <EmptyState layout="inline" title={t('advisory.empty.noPh')} body={t('advisory.empty.noPhBody')} />}
+          {report?.ph ? <PhView plan={report?.ph} /> : <EmptyState layout="inline" title={t('advisory.empty.noPh')} body={t('advisory.empty.noPhBody')} />}
           {phAdv && <Divider />}
           {phAdv && <AdvisoryBody adv={phAdv} currency={currency} showTitle />}
         </Fold>
@@ -407,8 +472,35 @@ function Body({ report, modelInput, currency, priorities, today, sowingMonth }: 
             <AdvisoryBody adv={adv} currency={currency} hideSummary />
           </Fold>
         ))}
-      </section>
+        </section>
+        <NextLinks onDossier={() => onPage('dossier')} />
+      </TabPanel>
+
+      <TabPanel value="dossier" className="rotation-inner rotation-page">
+        <Dossier report={report} rotations={rotations} current={current} selected={selected} bestId={bestId} currency={currency} />
+      </TabPanel>
     </>
+  );
+}
+
+/** The way on at the foot of a tab: the plan of the year, then step (3). */
+function NextLinks({ onPlan, onDossier }: { onPlan?: () => void; onDossier: () => void }) {
+  const t = useT();
+  return (
+    <nav aria-label={t('advisory.workspace.next')} className="rotation-next">
+      {onPlan && (
+        <Button variant="secondary" size="lg" iconRight={<ArrowRight />} onClick={onPlan}>
+          {t('advisory.workspace.toPlan')}
+        </Button>
+      )}
+      <button type="button" className="workspace-next-button" onClick={onDossier}>
+        <span aria-hidden className="workspace-next-num">
+          3
+        </span>
+        {t('advisory.workspace.toDossier')}
+        <ArrowRight size={17} aria-hidden />
+      </button>
+    </nav>
   );
 }
 

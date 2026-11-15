@@ -103,6 +103,13 @@ add(T, 'curated', 'yes when the crop is in our curated list of 73.', 'yes nếu 
 add(T, 'urban_candidate', 'yes when the crop qualifies as an urban/container candidate by the EcoCrop rule (scripts/crops/atlas/urban.ts); empty otherwise.', 'yes nếu cây đạt điều kiện ứng viên trồng chậu/đô thị theo quy tắc EcoCrop (scripts/crops/atlas/urban.ts); để trống nếu không.', '', `${ECO}; ${BUILD}`, 'urbanCandidate(s) in scripts/crops/atlas/urban.ts');
 add(T, 'urban_candidate_rule', 'Clause(s) of the urban candidate rule that matched: short-cycle, perennial-aromatic-herb, or both separated by ";".', 'Vế của quy tắc ứng viên đô thị đã khớp: short-cycle (chu kỳ ngắn), perennial-aromatic-herb (cây thơm lâu năm), hoặc cả hai cách nhau bởi ";".', '', BUILD, 'urbanCandidate(s).rule');
 
+// ------------------------------------------------------------------------------------------------ urban_candidates
+// Not columns of crops: the market database mirrors crops.csv column for column (scripts/market/atlas.ts).
+const UC = 'urban_candidates';
+add(UC, 'crop_id', 'Crop (see crops.csv). One row per crop of crops.csv, in the same order.', 'Cây trồng (xem crops.csv). Mỗi cây trong crops.csv một dòng, cùng thứ tự.', '', BUILD, 'join key');
+add(UC, 'urban_candidate', 'yes when the crop qualifies as an urban/container candidate by the EcoCrop rule (scripts/crops/atlas/urban.ts); empty otherwise.', 'yes nếu cây đạt điều kiện ứng viên trồng chậu/đô thị theo quy tắc EcoCrop (scripts/crops/atlas/urban.ts); để trống nếu không.', '', `${ECO}; ${BUILD}`, 'urbanCandidate(s) in scripts/crops/atlas/urban.ts');
+add(UC, 'urban_candidate_rule', 'Clause(s) of the urban candidate rule that matched: short-cycle, perennial-aromatic-herb, or both separated by ";".', 'Vế của quy tắc ứng viên đô thị đã khớp: short-cycle (chu kỳ ngắn), perennial-aromatic-herb (cây thơm lâu năm), hoặc cả hai cách nhau bởi ";".', '', BUILD, 'urbanCandidate(s).rule');
+
 // ------------------------------------------------------------------------------------------------ crop_country / item_country
 const quantities = (table: string, unitOf: string) => {
   add(table, 'area_ha', `Harvested area of ${unitOf}.`, `Diện tích thu hoạch của ${unitOf === 'the crop' ? 'cây' : 'mặt hàng'}.`, 'ha', FAO, 'mean of the latest 3 years with data within the last 10 years of the file');
