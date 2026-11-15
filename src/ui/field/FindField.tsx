@@ -277,9 +277,18 @@ export function FindField({ floating = false }: { floating?: boolean }) {
   const canSubmit = !!parseLatLon(q) || !!(chosen && chosen.label === q) || !!hits?.length;
 
   const switchWay = (v: 'address' | 'map') => {
+    const pickedAt = sel.lastPickAt;
     cancelDraw();
-    setChosen(null);
     setWay(v);
+    if (v === 'address' && pickedAt) {
+      const hit: PlaceHit = { label: sel.place?.label ?? `${fmtNum(pickedAt[1], 5)}, ${fmtNum(pickedAt[0], 5)}`, location: pickedAt, country: sel.place?.country, admin1: sel.place?.admin1 };
+      put(hit);
+      if (!sel.place) {
+        void reverseGeocode(pickedAt, lang).then((p) => p && setChosen((c) => (c && c.location === pickedAt ? { ...c, label: p.label, country: p.country, admin1: p.admin1 } : c)));
+      }
+    } else {
+      setChosen(null);
+    }
   };
   const leave = () => {
     cancelDraw();
@@ -340,7 +349,13 @@ export function FindField({ floating = false }: { floating?: boolean }) {
       />
       {way === 'map' ? (
         <>
-          <SelectOnMapStatus control={sel} />
+          <SelectOnMapStatus
+            control={sel}
+            onAddress={() => {
+              setExpanded(true);
+              switchWay('address');
+            }}
+          />
           {draft?.closed && <LockForm place={sel.place} defaultName={defaultFieldName(t, sel.place)} />}
         </>
       ) : (
