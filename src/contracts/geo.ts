@@ -17,7 +17,10 @@ export type DrawMode = 'quad' | 'coords' | 'gps';
 export interface PlaceInfo {
   label: string;
   country?: string;
+  /** ISO 3166-1 alpha-2 in capitals ("VN"), as the geocoder returns it. */
   countryCode?: string;
+  /** ISO 3166-1 alpha-3 in capitals ("VNM"): the key of the country tables (`Iso3` in ./country). Absent until the place is resolved. */
+  iso3?: string;
   admin1?: string;
 }
 

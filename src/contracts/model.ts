@@ -1,4 +1,5 @@
 import type { I18nText, ISODate } from './common';
+import type { CountryCrops } from './country';
 import type { DrainageClass, TextureClass } from './crop';
 import type { Parcel } from './geo';
 import type { BranchId, FieldTelemetry } from './telemetry';
@@ -76,6 +77,12 @@ export interface ModelInput {
   groundTruth: GroundTruth;
   priorities: FarmerPriority[];
   today: ISODate;
+  /**
+   * What the country of the parcel grows and what crops yield, sell for and cost there. Absent
+   * when the country is unknown or its table is not loaded: the model then works from climate
+   * and soil alone, as it did before this field existed.
+   */
+  country?: CountryCrops;
 }
 
 // ---------------------------------------------------------------------------------------------
