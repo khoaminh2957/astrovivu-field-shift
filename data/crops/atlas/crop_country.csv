@@ -17426,7 +17426,7 @@ capsicum-annuum,USA,United States of America,,national,yes,18413,599649,32.567,2
 capsicum-annuum,UZB,Uzbekistan,401,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 capsicum-annuum,VCT,Saint Vincent and the Grenadines,401,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 capsicum-annuum,VEN,Venezuela (Bolivarian Republic of),401,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
-capsicum-annuum,VNM,Viet Nam,401,group,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Ớt (Capsicum annuum) được trồng phổ biến khắp Việt Nam nhưng Niên giám NSO gộp trong nhóm rau, đậu và cây gia vị hàng năm (Biểu 187-188), còn Báo cáo thị trường Rau quả 2025 chỉ công bố kim ngạch xuất khẩu ớt mà không tách diện tích thu hoạch toàn quốc riêng khỏi nhóm ớt và hồ tiêu."
+capsicum-annuum,VNM,Viet Nam,401,group,no,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Ớt (Capsicum annuum) được trồng phổ biến khắp Việt Nam nhưng Niên giám NSO gộp trong nhóm rau, đậu và cây gia vị hàng năm (Biểu 187-188), còn Báo cáo thị trường Rau quả 2025 chỉ công bố kim ngạch xuất khẩu ớt mà không tách diện tích thu hoạch toàn quốc riêng khỏi nhóm ớt và hồ tiêu."
 capsicum-annuum,VUT,Vanuatu,401,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 capsicum-annuum,WSM,Samoa,401,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 capsicum-annuum,YEM,Yemen,401,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -26136,11 +26136,11 @@ coriandrum-sativum,TZA,United Republic of Tanzania,711,group,yes,,,,,,,,unknown,
 coriandrum-sativum,UGA,Uganda,711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 coriandrum-sativum,UKR,Ukraine,711,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 coriandrum-sativum,URY,Uruguay,711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-coriandrum-sativum,USA,United States of America,711,group,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)","https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf",2026-11-15,"Ngò rí / rau mùi (Coriander / Cilantro) không được tách mục riêng trong USDA NASS Vegetables 2025 Summary maupun 2022 Census of Agriculture Table 36 (được gộp trong mục Herbs, fresh cut: 14.377 acres và Other vegetables)."
+coriandrum-sativum,USA,United States of America,711,group,no,,,,,,,,unknown,FAOSTAT QCL,"https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf",2026-11-15,"Ngò rí / rau mùi (Coriander / Cilantro) không được tách mục riêng trong USDA NASS Vegetables 2025 Summary maupun 2022 Census of Agriculture Table 36 (được gộp trong mục Herbs, fresh cut: 14.377 acres và Other vegetables)."
 coriandrum-sativum,UZB,Uzbekistan,711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 coriandrum-sativum,VCT,Saint Vincent and the Grenadines,711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 coriandrum-sativum,VEN,Venezuela (Bolivarian Republic of),711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-coriandrum-sativum,VNM,Viet Nam,711,group,yes,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Ngò rí / rau mùi (Coriandrum sativum) được trồng phổ biến làm rau thơm ở Việt Nam nhưng Niên giám NSO gộp chung trong nhóm rau các loại và cây gia vị hàng năm (Biểu 187-188), không thống kê diện tích riêng từng loài."
+coriandrum-sativum,VNM,Viet Nam,711,group,yes,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Ngò rí / rau mùi (Coriandrum sativum) được trồng phổ biến làm rau thơm ở Việt Nam nhưng Niên giám NSO gộp chung trong nhóm rau các loại và cây gia vị hàng năm (Biểu 187-188), không thống kê diện tích riêng từng loài."
 coriandrum-sativum,VUT,Vanuatu,711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 coriandrum-sativum,WSM,Samoa,711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 coriandrum-sativum,YEM,Yemen,711,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -26730,11 +26730,11 @@ crotalaria-juncea,TZA,United Republic of Tanzania,782,group,no,,,,,,,,unknown,FA
 crotalaria-juncea,UGA,Uganda,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 crotalaria-juncea,UKR,Ukraine,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 crotalaria-juncea,URY,Uruguay,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-crotalaria-juncea,USA,United States of America,782,group,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 2 (U.S. State-Level Data)","https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_2_US_State_Level/st99_2_026_026.pdf",2026-11-15,"Lục lạc sợi (Sunn hemp, Crotalaria juncea) được dùng làm cây phủ đất mùa hè nhưng USDA NASS 2022 Census of Agriculture chỉ thống kê tổng diện tích cây phủ đất (Cover crops), không tách diện tích riêng cho lục lạc sợi."
+crotalaria-juncea,USA,United States of America,782,group,no,,,,,,,,unknown,FAOSTAT QCL,"https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_2_US_State_Level/st99_2_026_026.pdf",2026-11-15,"Lục lạc sợi (Sunn hemp, Crotalaria juncea) được dùng làm cây phủ đất mùa hè nhưng USDA NASS 2022 Census of Agriculture chỉ thống kê tổng diện tích cây phủ đất (Cover crops), không tách diện tích riêng cho lục lạc sợi."
 crotalaria-juncea,UZB,Uzbekistan,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 crotalaria-juncea,VCT,Saint Vincent and the Grenadines,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 crotalaria-juncea,VEN,Venezuela (Bolivarian Republic of),782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-crotalaria-juncea,VNM,Viet Nam,782,group,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Lục lạc sợi (Crotalaria juncea) chỉ dùng làm cây phân xanh cải tạo đất ở quy mô nhỏ, không được thống kê trong Niên giám Thống kê Việt Nam (Biểu 187-188)."
+crotalaria-juncea,VNM,Viet Nam,782,group,no,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Lục lạc sợi (Crotalaria juncea) chỉ dùng làm cây phân xanh cải tạo đất ở quy mô nhỏ, không được thống kê trong Niên giám Thống kê Việt Nam (Biểu 187-188)."
 crotalaria-juncea,VUT,Vanuatu,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 crotalaria-juncea,WSM,Samoa,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 crotalaria-juncea,YEM,Yemen,782,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -28120,7 +28120,7 @@ cucurbita-moschata,USA,United States of America,,national,yes,42613,956626,22.44
 cucurbita-moschata,UZB,Uzbekistan,394,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 cucurbita-moschata,VCT,Saint Vincent and the Grenadines,394,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 cucurbita-moschata,VEN,Venezuela (Bolivarian Republic of),394,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
-cucurbita-moschata,VNM,Viet Nam,394,group,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Bí đỏ (Cucurbita moschata) được trồng phổ biến ở Việt Nam nhưng Niên giám NSO và Báo cáo Rau quả 2025 gộp chung trong tổng 1.148.000 ha rau đậu các loại (Biểu 188), không tách dòng diện tích riêng."
+cucurbita-moschata,VNM,Viet Nam,394,group,no,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Bí đỏ (Cucurbita moschata) được trồng phổ biến ở Việt Nam nhưng Niên giám NSO và Báo cáo Rau quả 2025 gộp chung trong tổng 1.148.000 ha rau đậu các loại (Biểu 188), không tách dòng diện tích riêng."
 cucurbita-moschata,VUT,Vanuatu,394,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 cucurbita-moschata,WSM,Samoa,394,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 cucurbita-moschata,YEM,Yemen,394,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -32672,7 +32672,7 @@ durio-zibethinus,TZA,United Republic of Tanzania,603,group,yes,,,,,,,,unknown,FA
 durio-zibethinus,UGA,Uganda,603,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 durio-zibethinus,UKR,Ukraine,603,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 durio-zibethinus,URY,Uruguay,603,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-durio-zibethinus,USA,United States of America,603,group,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)","https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_037_037.pdf",2026-11-15,Sầu riêng (Durio zibethinus) là cây ăn quả nhiệt đới hầu như không trồng thương mại tại lục địa Mỹ và không có dòng thống kê riêng trong USDA NASS Noncitrus Fruits and Nuts Summary hay 2022 Census of Agriculture Table 37.
+durio-zibethinus,USA,United States of America,603,group,no,,,,,,,,unknown,FAOSTAT QCL,"https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_037_037.pdf",2026-11-15,Sầu riêng (Durio zibethinus) là cây ăn quả nhiệt đới hầu như không trồng thương mại tại lục địa Mỹ và không có dòng thống kê riêng trong USDA NASS Noncitrus Fruits and Nuts Summary hay 2022 Census of Agriculture Table 37.
 durio-zibethinus,UZB,Uzbekistan,603,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 durio-zibethinus,VCT,Saint Vincent and the Grenadines,603,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 durio-zibethinus,VEN,Venezuela (Bolivarian Republic of),603,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -40202,7 +40202,7 @@ lactuca-sativa-var-capitata,USA,United States of America,,national,yes,45163,173
 lactuca-sativa-var-capitata,UZB,Uzbekistan,372,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 lactuca-sativa-var-capitata,VCT,Saint Vincent and the Grenadines,372,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 lactuca-sativa-var-capitata,VEN,Venezuela (Bolivarian Republic of),372,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
-lactuca-sativa-var-capitata,VNM,Viet Nam,372,group,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Xà lách (Lactuca sativa var. capitata) được trồng thương mại tại Lâm Đồng và các vùng rau ngoại thành nhưng Niên giám NSO gộp chung trong nhóm rau các loại (Biểu 188), không công bố diện tích riêng toàn quốc."
+lactuca-sativa-var-capitata,VNM,Viet Nam,372,group,no,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Xà lách (Lactuca sativa var. capitata) được trồng thương mại tại Lâm Đồng và các vùng rau ngoại thành nhưng Niên giám NSO gộp chung trong nhóm rau các loại (Biểu 188), không công bố diện tích riêng toàn quốc."
 lactuca-sativa-var-capitata,VUT,Vanuatu,372,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 lactuca-sativa-var-capitata,WSM,Samoa,372,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 lactuca-sativa-var-capitata,YEM,Yemen,372,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -45352,7 +45352,7 @@ mentha-spicata-var-crispa,USA,United States of America,,national,yes,4690,730,0.
 mentha-spicata-var-crispa,UZB,Uzbekistan,748,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 mentha-spicata-var-crispa,VCT,Saint Vincent and the Grenadines,748,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 mentha-spicata-var-crispa,VEN,Venezuela (Bolivarian Republic of),748,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-mentha-spicata-var-crispa,VNM,Viet Nam,748,group,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Húng lủi (Mentha spicata var. crispa) là cây rau thơm trồng nhỏ lẻ và xen canh; Niên giám NSO gộp trong nhóm rau và cây gia vị hàng năm (Biểu 187-188), không có số liệu diện tích riêng."
+mentha-spicata-var-crispa,VNM,Viet Nam,748,group,no,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Húng lủi (Mentha spicata var. crispa) là cây rau thơm trồng nhỏ lẻ và xen canh; Niên giám NSO gộp trong nhóm rau và cây gia vị hàng năm (Biểu 187-188), không có số liệu diện tích riêng."
 mentha-spicata-var-crispa,VUT,Vanuatu,748,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 mentha-spicata-var-crispa,WSM,Samoa,748,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 mentha-spicata-var-crispa,YEM,Yemen,748,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -51098,11 +51098,11 @@ perilla-frutescens,TZA,United Republic of Tanzania,339,group,yes,,,,,,,,unknown,
 perilla-frutescens,UGA,Uganda,339,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 perilla-frutescens,UKR,Ukraine,339,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 perilla-frutescens,URY,Uruguay,339,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-perilla-frutescens,USA,United States of America,339,group,no,,,,,,,,unknown,"USDA NASS 2022 Census of Agriculture, Vol. 1, Ch. 1 (U.S. National Level Data)","https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf",2026-11-15,"Tía tô (Perilla frutescens) không có mục thống kê riêng trong báo cáo quốc gia của USDA NASS hay 2022 Census of Agriculture (gộp chung trong Herbs, fresh cut hoặc Other vegetables)."
+perilla-frutescens,USA,United States of America,339,group,no,,,,,,,,unknown,FAOSTAT QCL,"https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf",2026-11-15,"Tía tô (Perilla frutescens) không có mục thống kê riêng trong báo cáo quốc gia của USDA NASS hay 2022 Census of Agriculture (gộp chung trong Herbs, fresh cut hoặc Other vegetables)."
 perilla-frutescens,UZB,Uzbekistan,339,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 perilla-frutescens,VCT,Saint Vincent and the Grenadines,339,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 perilla-frutescens,VEN,Venezuela (Bolivarian Republic of),339,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
-perilla-frutescens,VNM,Viet Nam,339,group,no,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Tía tô (Perilla frutescens) được trồng phổ biến làm rau gia vị và dược liệu tại Việt Nam nhưng Niên giám NSO gộp trong nhóm cây hàng năm khác (Biểu 187), không tách dòng diện tích riêng."
+perilla-frutescens,VNM,Viet Nam,339,group,no,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Tía tô (Perilla frutescens) được trồng phổ biến làm rau gia vị và dược liệu tại Việt Nam nhưng Niên giám NSO gộp trong nhóm cây hàng năm khác (Biểu 187), không tách dòng diện tích riêng."
 perilla-frutescens,VUT,Vanuatu,339,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 perilla-frutescens,WSM,Samoa,339,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 perilla-frutescens,YEM,Yemen,339,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -53478,7 +53478,7 @@ phaseolus-vulgaris,USA,United States of America,,national,yes,540100,1222430,2.2
 phaseolus-vulgaris,UZB,Uzbekistan,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 phaseolus-vulgaris,VCT,Saint Vincent and the Grenadines,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 phaseolus-vulgaris,VEN,Venezuela (Bolivarian Republic of),176,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
-phaseolus-vulgaris,VNM,Viet Nam,176,group,yes,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Đậu cô ve (Phaseolus vulgaris) được trồng phổ biến lấy quả tươi và hạt ở Việt Nam nhưng Niên giám NSO gộp chung trong nhóm rau đậu các loại (Biểu 187-188), không tách diện tích riêng khỏi các loài đậu khác."
+phaseolus-vulgaris,VNM,Viet Nam,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Đậu cô ve (Phaseolus vulgaris) được trồng phổ biến lấy quả tươi và hạt ở Việt Nam nhưng Niên giám NSO gộp chung trong nhóm rau đậu các loại (Biểu 187-188), không tách diện tích riêng khỏi các loài đậu khác."
 phaseolus-vulgaris,VUT,Vanuatu,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 phaseolus-vulgaris,WSM,Samoa,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 phaseolus-vulgaris,YEM,Yemen,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -57834,7 +57834,7 @@ raphanus-sativus,USA,United States of America,,national,yes,9894,,,2022,2022,0.0
 raphanus-sativus,UZB,Uzbekistan,463,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 raphanus-sativus,VCT,Saint Vincent and the Grenadines,463,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 raphanus-sativus,VEN,Venezuela (Bolivarian Republic of),463,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
-raphanus-sativus,VNM,Viet Nam,463,group,yes,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Củ cải trắng (Raphanus sativus) được trồng phổ biến vụ đông-xuân tại Việt Nam nhưng Niên giám NSO gộp chung trong nhóm rau các loại (Biểu 188; FAOSTAT gộp vào hàng 463 Other vegetables n.e.c.), không tách diện tích riêng."
+raphanus-sativus,VNM,Viet Nam,463,group,yes,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Củ cải trắng (Raphanus sativus) được trồng phổ biến vụ đông-xuân tại Việt Nam nhưng Niên giám NSO gộp chung trong nhóm rau các loại (Biểu 188; FAOSTAT gộp vào hàng 463 Other vegetables n.e.c.), không tách diện tích riêng."
 raphanus-sativus,VUT,Vanuatu,463,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 raphanus-sativus,WSM,Samoa,463,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 raphanus-sativus,YEM,Yemen,463,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
@@ -69524,11 +69524,11 @@ vigna-radiata,TZA,United Republic of Tanzania,176,group,yes,,,,,,,,unknown,FAOST
 vigna-radiata,UGA,Uganda,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 vigna-radiata,UKR,Ukraine,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
 vigna-radiata,URY,Uruguay,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
-vigna-radiata,USA,United States of America,176,group,yes,,,,,,,,unknown,USDA NASS Crop Production 2025 Summary (ISSN 1057-7823),https://release.nass.usda.gov/reports/cropan26.txt,2026-11-15,"Đậu xanh (Mung bean, Vigna radiata) có trồng quy mô nhỏ tại Oklahoma và California nhưng USDA NASS Crop Production Summary (tr. 71-80) và 2022 Census of Agriculture không tách lớp thương mại Mung bean riêng (gộp trong mục Other dry edible beans)."
+vigna-radiata,USA,United States of America,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,https://release.nass.usda.gov/reports/cropan26.txt,2026-11-15,"Đậu xanh (Mung bean, Vigna radiata) có trồng quy mô nhỏ tại Oklahoma và California nhưng USDA NASS Crop Production Summary (tr. 71-80) và 2022 Census of Agriculture không tách lớp thương mại Mung bean riêng (gộp trong mục Other dry edible beans)."
 vigna-radiata,UZB,Uzbekistan,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 vigna-radiata,VCT,Saint Vincent and the Grenadines,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 vigna-radiata,VEN,Venezuela (Bolivarian Republic of),176,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,
-vigna-radiata,VNM,Viet Nam,176,group,yes,,,,,,,,unknown,Niên giám Thống kê Việt Nam 2025 (Cục Thống kê),https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Đậu xanh (Vigna radiata) được trồng phổ biến ở Việt Nam nhưng Niên giám NSO gộp chung các loại đậu ăn hạt trong nhóm rau đậu các loại (Biểu 187-188; FAOSTAT gộp vào hàng 211 Other pulses n.e.c.), không tách dòng diện tích riêng toàn quốc."
+vigna-radiata,VNM,Viet Nam,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf,2026-11-15,"Đậu xanh (Vigna radiata) được trồng phổ biến ở Việt Nam nhưng Niên giám NSO gộp chung các loại đậu ăn hạt trong nhóm rau đậu các loại (Biểu 187-188; FAOSTAT gộp vào hàng 211 Other pulses n.e.c.), không tách dòng diện tích riêng toàn quốc."
 vigna-radiata,VUT,Vanuatu,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 vigna-radiata,WSM,Samoa,176,group,no,,,,,,,,unknown,FAOSTAT QCL,,,
 vigna-radiata,YEM,Yemen,176,group,yes,,,,,,,,unknown,FAOSTAT QCL,,,

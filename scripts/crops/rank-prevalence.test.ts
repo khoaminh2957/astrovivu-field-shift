@@ -16,12 +16,12 @@ describe('the crop table of a country, from the atlas', () => {
     expect(vnm.prevalence['oryza-sativa'].years?.[1]).toBeGreaterThanOrEqual(2022);
   });
 
-  it('leaves quantities out where the atlas has none', () => {
-    expect(vnm.prevalence['durio-zibethinus']).toMatchObject({ level: 'unknown', match: 'group' });
-    expect(vnm.prevalence['durio-zibethinus'].sharePct).toBeUndefined();
-    // No FAOSTAT item names the crop: the atlas has no row, so the table has no record.
-    expect(vnm.prevalence['basella-alba']).toBeUndefined();
-    expect(prevalenceStatus(vnm.prevalence['basella-alba'])).toBe('unknown');
+  it('leaves quantities out where the atlas has none, and supplies national figures where T4 added them', () => {
+    expect(vnm.prevalence['raphanus-sativus']).toMatchObject({ level: 'unknown', match: 'group' });
+    expect(vnm.prevalence['raphanus-sativus'].sharePct).toBeUndefined();
+    expect(vnm.prevalence['durio-zibethinus']).toMatchObject({ level: 'common', match: 'national' });
+    expect(vnm.prevalence['amaranthus-tricolor']).toMatchObject({ level: 'unknown', match: 'national' });
+    expect(prevalenceStatus(vnm.prevalence['amaranthus-tricolor'])).toBe('unknown');
   });
 
   it('refuses a code that is not an atlas country', () => {
@@ -34,10 +34,10 @@ describe('the ranking with the atlas table of the country', () => {
     await loadFullCatalog(async () => JSON.parse(readFileSync('public/data/crops/ecocrop.json', 'utf8')));
   });
 
-  it('keeps durian in the main list in Đắk Lắk: a crop of a group item is unknown, not absent', () => {
+  it('keeps durian in the main list in Đắk Lắk: national statistics supply its level in Viet Nam', () => {
     const lists = rankCropLists({ ...inputFor('daklak-coffee'), country: countryCropsFromAtlas('VNM') });
     const durian = lists.main.find((r) => r.cropId === 'durio-zibethinus');
-    expect(durian?.prevalence?.status).toBe('unknown');
+    expect(durian?.prevalence?.status).toBe('grown');
     expect(durian?.compatibility).toBeGreaterThan(0.6);
   });
 

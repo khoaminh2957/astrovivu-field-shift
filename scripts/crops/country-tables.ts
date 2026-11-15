@@ -37,13 +37,13 @@ export function iso2ByIso3(text: string): Map<string, string> {
 
 /** The rows of one country in the form the app loads. Throws on a row the compact form cannot hold. */
 export function countryTable(iso3: string, rows: Record<string, string>[]): CountryTableFile {
-  const source = rows[0].source;
+  const source = rows.find((r) => r.match !== 'national')?.source ?? rows[0].source;
   const file: CountryTableFile = { iso3, country: rows[0].country, source, prevalence: {}, absent: [], group: { reported: [], unreported: [] } };
   for (const r of rows) {
     const level = r.level as PrevalenceLevel;
     const match = r.match as PrevalenceMatch;
     const reported = r.item_reported === 'yes';
-    if (GROWN.includes(level)) {
+    if (GROWN.includes(level) || match === 'national' || r.source !== source) {
       const from = num(r.year_from);
       const to = num(r.year_to);
       const record: CropPrevalence = {

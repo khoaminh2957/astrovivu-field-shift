@@ -245,7 +245,7 @@ export function resolveCropCountryRow(input: CropCountryInput): ResolvedCropCoun
           null,
           null,
           'unknown',
-          national.source || FAOSTAT_SOURCE,
+          FAOSTAT_SOURCE,
           national.url,
           national.accessed,
           national.note,
