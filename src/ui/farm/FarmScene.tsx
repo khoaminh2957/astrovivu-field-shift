@@ -222,7 +222,7 @@ function Plants({ crop, beat, near, patches }: { crop: FarmCrop; beat: string; n
   const cut = crop.harvested == null ? 0 : Math.round(crop.harvested * SPOTS.length);
   return (
     // Keyed by the step shown, so that the plants rise into each new stage instead of switching.
-    <g key={beat} data-farm={near ? 'plants-near' : 'plants'} data-look={crop.look} data-growth={crop.growth.toFixed(2)}>
+    <g key={beat} data-farm={near ? 'plants-near' : 'plants'} data-look={crop.look} data-growth={crop.growth.toFixed(2)} data-patches={patches?.date}>
       {SPOTS.filter((p) => p.y >= WALK_Y === near).map((p) => (
         <g key={p.i} transform={`translate(${p.x.toFixed(1)} ${p.y}) scale(${(p.s * PLANT_SIZE).toFixed(3)})`}>
           {p.i < cut ? (
