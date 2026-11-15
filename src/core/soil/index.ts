@@ -9,3 +9,4 @@ export * from './aluminium';
 export * from './salinity';
 export * from './answer';
 
+export * from './organicMatter';

@@ -24,8 +24,8 @@ function SoilNeeds() {
   const rate = plan.rateTHa ? `${fmtNum(plan.rateTHa[0], 1)}-${fmtNum(plan.rateTHa[1], 1)} t/ha` : null;
   return (
     <section className="flex flex-col gap-1 rounded-sm bg-surface-2 px-4 py-3">
-      <h4 className="text-sm font-medium text-ink-1">{t('field.soil.needs')}</h4>
-      <p className="text-sm text-ink-1">
+      <h4 className="workspace-card-title">{t('field.soil.needs')}</h4>
+      <p className="workspace-copy text-ink-1">
         {t('field.soil.ph', { from: fmtNum(plan.current, 1), to: fmtNum(plan.target, 1), what: t(`advisory.ph.${plan.amendment}`).toLowerCase() })}
         {rate ? ` ${t('field.soil.rate', { r: rate })}` : ` ${t('advisory.ph.noRate')}.`}
       </p>

@@ -8,7 +8,8 @@
  */
 import type { FieldTelemetry, ISODate, ModelInput, ScoreTimeline } from '@/contracts';
 import { addDays, diffDays } from '@/lib/time';
-import { type FarmScene, type SkyKind, farmSceneAt, weatherAt } from './index';
+import { getCrop } from '@/core/crops';
+import { type FarmScene, type SkyKind, farmSceneAt, harvestedShare, weatherAt } from './index';
 
 export type FarmStep = 'month' | 'quarter';
 
@@ -130,12 +131,24 @@ export function periodScore(score: ScoreTimeline, period: FarmPeriod): number | 
 }
 
 /**
- * The field at the end of a period, under the sky of the whole period: the crop and the soil are
- * those of the period's last day, the weather figures are the period's (mean temperatures, total rain).
+ * The day a period is drawn on: the middle of a harvest that falls inside it (a month or a quarter
+ * would otherwise skip a harvest that is over by its last day), else the period's last day.
+ */
+export function periodDay(input: ModelInput, score: ScoreTimeline, period: FarmPeriod): ISODate {
+  const crop = getCrop(input.cropId);
+  if (!crop || crop.lifeSpan === 'perennial') return period.to;
+  const cut: ISODate[] = [];
+  for (let d = period.from; d <= period.to; d = addDays(d, 1)) if (harvestedShare(score, d) != null) cut.push(d);
+  return cut.length ? cut[Math.floor((cut.length - 1) / 2)] : period.to;
+}
+
+/**
+ * The field on the period's day (`periodDay`), under the sky of the whole period: the crop and the
+ * soil are those of that day, the weather figures are the period's (mean temperatures, total rain).
  */
 export function farmSceneOfPeriod(input: ModelInput, score: ScoreTimeline, period: FarmPeriod): { scene: FarmScene; summary: FarmPeriodSummary } {
   const summary = periodWeather(input.telemetry, period);
-  const scene = farmSceneAt(input, score, period.to);
+  const scene = farmSceneAt(input, score, periodDay(input, score, period));
   return {
     summary,
     scene: {

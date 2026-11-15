@@ -26,7 +26,7 @@ export const EXTRACT_COLUMNS = ['crop_id', 'iso3', 'item_code', 'item', 'year', 
 export const PRICE_ELEMENT = '5532';
 const ANNUAL = '7021';
 /** M49 codes as FAOSTAT writes them in `Area Code (M49)`, without the leading apostrophe. */
-const M49: Record<string, string> = { VNM: '704', USA: '840' };
+const M49: Record<string, string> = { VNM: '704', USA: '840', IND: '356', BRA: '076' };
 /** The URL as economics.csv writes it in its `url` column. */
 export const SOURCE_FILE = `${FAOSTAT_BULK}/${FAOSTAT.prices.file}`;
 

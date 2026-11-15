@@ -6,7 +6,7 @@ import { getCrop } from '@/core/crops';
 import { computeScoreTimeline } from '@/core/scoring';
 import { getSampleParcel } from '@/data/samples';
 import { addDays, diffDays } from '@/lib/time';
-import { bareRun, cropLook, farmNotes, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodScore, periodSky, periodWeather, runOn, seasonMonths, seasonRuns, weatherAt } from './index';
+import { HARVEST_DAYS, bareRun, cropLook, farmNotes, farmPeriods, farmSceneAt, farmSceneOfPeriod, periodDay, periodScore, periodSky, periodWeather, runOn, seasonMonths, seasonRuns, weatherAt } from './index';
 
 function demo(id: string): ModelInput {
   const parcel = getSampleParcel(id)!;
@@ -66,11 +66,13 @@ describe('the year in months and quarters', () => {
     expect(before).toMatchObject({ kind: 'unknown', rainMm: null, tMaxMeanC: null, daysRead: 0 });
   });
 
-  it('shows the field of the last day of the period under the sky of the whole period', () => {
+  it('shows the field of the period day (a harvest inside it, else its last day) under the sky of the whole period', () => {
     const score = computeScoreTimeline(input);
     for (const p of farmPeriods(win, 'quarter')) {
       const { scene, summary } = farmSceneOfPeriod(input, score, p);
-      const day = farmSceneAt(input, score, p.to);
+      const on = periodDay(input, score, p);
+      expect(on >= p.from && on <= p.to).toBe(true);
+      const day = farmSceneAt(input, score, on);
       expect(scene.crop).toEqual(day.crop);
       expect(scene.soil).toEqual(day.soil);
       expect(scene.weather.kind).toBe(summary.kind);
@@ -86,6 +88,42 @@ describe('the year in months and quarters', () => {
     const growth = farmPeriods(maize.telemetry.window, 'month').map((p) => farmSceneOfPeriod(maize, score, p).scene.crop.growth);
     expect(Math.min(...growth)).toBe(0);
     expect(Math.max(...growth)).toBe(1);
+  });
+
+  it('shows each harvest of the year, in months and in quarters, even when it is over by the last day', () => {
+    // Maize in Iowa: the harvest stage runs in early September, so 31 August and 30 September both miss it.
+    const maize = demo('iowa-corn-soy');
+    const ms = computeScoreTimeline(maize);
+    const harvestDays = ms.snapshots.filter((s) => s.stage?.id === 'harvest').map((s) => s.t);
+    expect(harvestDays.length).toBeGreaterThan(0);
+    for (const step of ['month', 'quarter'] as const) {
+      const cut = farmPeriods(maize.telemetry.window, step).filter((p) => farmSceneOfPeriod(maize, ms, p).scene.crop.harvested != null);
+      expect(cut, step).toHaveLength(1);
+      expect(cut[0].from <= harvestDays[0] && harvestDays[0] <= cut[0].to).toBe(true);
+    }
+    // Rice in Can Tho, three crops a year back to back with no harvest stage: the end of each late season is the harvest.
+    const rice = demo('cantho-rice');
+    const rs = computeScoreTimeline(rice);
+    const ends = rs.snapshots.filter((s, i) => s.stage?.id === 'late-season' && rs.snapshots[i + 1]?.stage?.id === 'initial').map((s) => s.t);
+    expect(ends.length).toBe(3);
+    const months = farmPeriods(rice.telemetry.window, 'month').filter((p) => farmSceneOfPeriod(rice, rs, p).scene.crop.harvested != null);
+    expect(months.map((p) => p.id)).toEqual(ends.map((t) => t.slice(0, 7)));
+    for (const end of ends) {
+      // Cut from the first to the last of the late season's final HARVEST_DAYS, then gone on the next sowing.
+      expect(farmSceneAt(rice, rs, addDays(end, -HARVEST_DAYS)).crop.harvested).toBeNull();
+      expect(farmSceneAt(rice, rs, addDays(end, -HARVEST_DAYS + 1)).crop.harvested).toBeCloseTo(1 / HARVEST_DAYS);
+      expect(farmSceneAt(rice, rs, end).crop.harvested).toBe(1);
+      expect(farmSceneAt(rice, rs, addDays(end, 1)).crop.harvested).toBeNull();
+    }
+  });
+
+  it('sends no harvester to a perennial, nor to a late season that does not end inside the window', () => {
+    const coffee = demo('daklak-coffee');
+    const cs = computeScoreTimeline(coffee);
+    for (const p of farmPeriods(coffee.telemetry.window, 'month')) expect(farmSceneOfPeriod(coffee, cs, p).scene.crop.harvested).toBeNull();
+    const alfalfa = demo('nevada-alfalfa');
+    const as = computeScoreTimeline(alfalfa);
+    for (const p of farmPeriods(alfalfa.telemetry.window, 'month')) expect(farmSceneOfPeriod(alfalfa, as, p).scene.crop.harvested).toBeNull();
   });
 });
 

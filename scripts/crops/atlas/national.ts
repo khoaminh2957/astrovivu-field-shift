@@ -222,6 +222,20 @@ export const NATIONAL_SOURCES: readonly NationalSource[] = [
   census('table37', 'Volume_1,_Chapter_1_US', 'st99_1_037_037.pdf', 'Chapter 1 (U.S. National Level Data), Table 37: Specified Fruits and Nuts'),
   census('table26', 'Volume_1,_Chapter_2_US_State_Level', 'st99_2_026_026.pdf', 'Chapter 2 (U.S. State-Level Data), Table 26: Field Seeds, Grass Seeds, Forage, Hay, and Silage'),
   census('table27', 'Volume_1,_Chapter_2_US_State_Level', 'st99_2_027_027.pdf', 'Chapter 2 (U.S. State-Level Data), Table 27: Other Crops'),
+  {
+    id: 'national-ind-moafw-hort-2022',
+    url: 'https://agriwelfare.gov.in/en/StatHortEst',
+    title: 'Horticultural Statistics at a Glance & DES Agricultural Statistics at a Glance 2022 (2021-22 Final Estimates)',
+    publisher: 'Ministry of Agriculture & Farmers Welfare (MoAFW, Government of India) / Directorate of Economics and Statistics (DES)',
+    licence: 'Government of India Open Data License (GODL-India) / Open Government Data Platform India; public citation with attribution',
+  },
+  {
+    id: 'national-bra-ibge-pam-5457',
+    url: 'https://sidra.ibge.gov.br/tabela/5457',
+    title: 'Produção Agrícola Municipal (PAM) 2022, SIDRA Tabela 5457 (Área plantada, área colhida, quantidade produzida e rendimento médio das lavouras temporárias e permanentes)',
+    publisher: 'Instituto Brasileiro de Geografia e Estatística (IBGE)',
+    licence: 'Open statistical database of IBGE (Brazilian Federal Government open data policy; free reuse with source attribution)',
+  },
 ];
 
 /** A publication of `NATIONAL_SOURCES` with what the national rows took from it. */

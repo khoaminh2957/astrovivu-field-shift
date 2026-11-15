@@ -15,7 +15,7 @@ The scene is an illustration of readings the app already has. It adds no data an
 | Plants: kind | `cropLook(CropProfile)`: thirteen silhouettes, section 5 | bare soil |
 | Plants: height, ripeness | `ScoreSnapshot.stage` of the day (`id`, `progress`) | bare soil |
 | Plants: colour | the latest `ndvi` that is not stale for its cadence | a neutral grey-green |
-| Cut rows and the harvester | days since the crop entered its `harvest` stage, over the 14 days that stage lasts in the scorer | no harvester |
+| Cut rows and the harvester | days since the crop entered its `harvest` stage, over the 14 days that stage lasts in the scorer; for an annual whose late season runs straight into the next sowing, fallow or dormancy (rice cropped back to back has no `harvest` stage), the last 14 days of the late season, because the late season ends at harvest (FAO-56, Allen et al. 1998, ch. 6). A perennial gets no harvester. A drawing rule, not an observation of machines | no harvester |
 | The seeder | stage `pre-sowing`, or the first 6 % of the cycle | no seeder |
 | Soil colour, cracks, puddles, canal width | `sm_root` against the 10th to 90th percentile of its baseline for the time of year; without a baseline, the 20th to 80th percentile of the year shown | neutral soil colour |
 | Paddy water | rice in the first part of its cycle; thinner when the root zone reads dry | none |
@@ -56,7 +56,7 @@ The stage opens on **today**. Play rewinds a year and steps forward; a step can 
 
 - `farmPeriods(window, step)` gives the twelve calendar months ending with today's (clipped to the telemetry window, the last one partial), or the same months three at a time, the last quarter ending today.
 - `periodWeather` sums a period from its days: total rain, wet days, days of heavy rain, hot days, frost nights, mean daily high and low. Nothing is added to the record.
-- `farmSceneOfPeriod` draws the field of the **last day** of the period (crop stage, soil) under the sky of the **whole** period.
+- `farmSceneOfPeriod` draws the field of the period's day (`periodDay`: the middle of a harvest inside the period, otherwise its **last day**) under the sky of the **whole** period. Without that, a month or a quarter would skip a harvest that is over by its last day: the maize harvest in Iowa (3 to 16 September) falls between 31 August and 30 September.
 - **The sky of a period is a drawing rule** (`periodSky`), on the share of the days read: heavy rain when at least two days and 7 % of the days had it; rain from 40 % wet days; frost from 15 %; hot from 30 %; overcast from 50 %; clear otherwise. Rain first, as for a day.
 
 Playback holds 2.4 s on a month and 3.4 s on a quarter. Plants rise into each new stage (a CSS animation keyed on the step); under `prefers-reduced-motion` the steps still change, without motion.
@@ -120,7 +120,7 @@ A trial is the same year of telemetry with one thing changed (`runTrial`). The p
 ## 7. Limits
 
 - One field per scene. A multi-year rotation is shown for its first year only.
-- A period shows the crop of its last day: a crop sown and cut inside one quarter is seen only in the monthly steps.
+- A period shows the crop of its last day, or of the middle of its harvest: a crop sown and cut inside one quarter is seen at its harvest in the quarterly steps, not growing.
 - The harvester and the seeder follow the scorer's calendar, not an observation of machines.
 - The soil picture uses the root-zone moisture of a ~9 km reanalysis cell (ERA5-Land): it says how the season compares with other years, not where water stands in the field.
 - A trial of a soil amendment cannot show the months the amendment needs.
@@ -128,4 +128,4 @@ A trial is the same year of telemetry with one thing changed (`runTrial`). The p
 
 ## 8. Tests
 
-`npx vitest run src/core/farm`: the sky against each threshold; the record against the forecast; plant kinds; a year of the maize field; trials leave the grower's entries alone (`farm.test.ts`); the twelve months and four quarters, a period summed from its days, the sky rule of a period, the field of the last day under the sky of the period, a rotation's crop in its months, bare ground, the notes in two languages without jargon, no reading instead of a guess (`stage.test.ts`).
+`npx vitest run src/core/farm`: the sky against each threshold; the record against the forecast; plant kinds; a year of the maize field; trials leave the grower's entries alone (`farm.test.ts`); the twelve months and four quarters, a period summed from its days, the sky rule of a period, the field of the period day under the sky of the period, each harvest of the maize and rice fields in months and quarters, no harvester for a perennial, a rotation's crop in its months, bare ground, the notes in two languages without jargon, no reading instead of a guess (`stage.test.ts`).

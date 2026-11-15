@@ -66,7 +66,6 @@ const ROTATE_RESUME_MS = 3500;
 const ROTATE_RAMP_MS = 1400;
 /** 3D terrain is switched on below orbit only: from space relief is sub-pixel and costs a texture cache. */
 const TERRAIN_ON_ZOOM = 9.5;
-const TERRAIN_OFF_ZOOM = 8.6;
 const LOCK_PITCH = 54;
 /** Share of the free area (between the HUD columns, top bar and timeline) the parcel may span. */
 const LOCK_FILL = 0.5;
@@ -1087,7 +1086,7 @@ export class GlobeEngine {
     const want =
       this.state.layers.base.terrain &&
       this.view !== 'hero' &&
-      (this.terrainOn || this.view === 'parcel' || targetZoom >= (this.terrainOn ? TERRAIN_OFF_ZOOM : TERRAIN_ON_ZOOM));
+      (this.terrainOn || this.view === 'parcel' || targetZoom >= TERRAIN_ON_ZOOM);
     if (want === this.terrainOn) return;
     this.terrainOn = want;
     this.map.setTerrain(want ? { source: SOURCE.dem, exaggeration: TERRAIN_EXAGGERATION } : null);
