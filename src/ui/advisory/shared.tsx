@@ -1,4 +1,4 @@
-/** Small building blocks shared by the advisory, tracking and urban screens. */
+/** Small building blocks shared by the advisory and urban screens. */
 import { type ReactNode, useId, useState } from 'react';
 import { ChevronDown, Info } from 'lucide-react';
 import type { BranchId, EvidenceItem, I18nText } from '@/contracts';

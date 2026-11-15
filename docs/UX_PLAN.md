@@ -181,7 +181,11 @@ Thửa Iowa: 2.240 px. Thửa Nevada (bảy mục lời khuyên): 2.412 px, tứ
 
 **Thay đổi (đề xuất).** Bỏ trang riêng. Giữ một nhật ký ngắn trong thẻ "Đất và canh tác": mỗi dòng là một việc đã làm (gieo, bón vôi, thu hoạch, số đo đất mới). Các dòng này là dữ liệu thật của người trồng và được mô hình dùng: ngày gieo, năng suất vụ trước, pH đo lại.
 
-**Cần Bảo chốt:** giữ nhật ký ngắn như trên, hay bỏ hẳn.
+**Đã chốt (Bảo, 15/11): bỏ hẳn.** Lý do: ngày gieo, năng suất vụ trước và pH đều đã nhập được ở "Đất và canh tác" sau đợt 2, nên một nhật ký ngắn chỉ là chỗ thứ hai để nhập cùng những thứ đó.
+
+**Đã làm (15/11).** Xoá trang (`src/ui/tracking`) và phần sinh lịch sử giả lập (`src/core/tracking`); bỏ mục Ghi chép trên thanh trái và thanh dưới của màn hình hẹp (còn bốn mục); bỏ trạng thái `tracking` trong store. Đường dẫn cũ `?phase=tracking` giờ mở thẳng thửa ruộng. Các kiểu dữ liệu trong `src/contracts/experience.ts` giữ nguyên vì hợp đồng không được xoá.
+
+**Mất theo trang.** Biểu đồ NDVI qua các năm (dữ liệu MODIS thật) và các ghi chép người dùng đã gõ trước đó: chúng vẫn nằm trong bộ nhớ trình duyệt (`astrovivu.journal.*`) nhưng không còn chỗ nào hiện ra.
 
 **Xong khi.** Thanh điều hướng không còn mục Ghi chép; không còn dữ liệu mô phỏng nào hiện ra mà không có nhãn.
 
@@ -201,7 +205,7 @@ Thửa Iowa: 2.240 px. Thửa Nevada (bảy mục lời khuyên): 2.412 px, tứ
 | 1 (đang làm) | U1, U2, U3 | không |
 | 2 (xong 15/11) | U5, U6 | khối "Đất cần gì" chờ chẩn đoán đất của Duy |
 | 1 (đang làm, thêm vào) | U4, U7 | đã chốt |
-| 4 (U8 xong 15/11) | U8, U9 | U9 chờ Bảo chốt |
+| 4 (xong 15/11) | U8, U9 | không |
 | 5 | U10 và dùng thử | mascot của Uyên |
 
 ## 5. Cách kiểm

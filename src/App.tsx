@@ -4,8 +4,8 @@
  * they cover through `setInsets`, so the camera frames the parcel in the free part.
  *
  * Wide (1100 px and up): rail 56 px | list panel 280 px | map (search, tools, timeline strip) with
- * the field panel (580 px) floating over its right side once a field is locked. Advisory, Tracking
- * and Urban take everything right of the rail.
+ * the field panel (580 px) floating over its right side once a field is locked. Advisory and Urban
+ * take everything right of the rail.
  * Narrow: map in the top 45 %, a scrolling sheet under it, timeline pinned above a tab bar.
  * `#/styleguide` and `#/globe-lab` are isolated benches for the design system and the map.
  */

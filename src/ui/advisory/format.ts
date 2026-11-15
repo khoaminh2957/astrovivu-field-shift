@@ -1,5 +1,5 @@
 /**
- * Number, money and date formatting shared by the advisory, tracking and urban screens.
+ * Number, money and date formatting shared by the advisory and urban screens.
  * Missing values render as `--`, never as zero (DESIGN.md, Typography).
  */
 import type { ISODate, Lang } from '@/contracts';

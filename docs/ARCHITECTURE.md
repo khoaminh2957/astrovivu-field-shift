@@ -27,7 +27,7 @@ Design rules every tier follows:
 | 4 | Master Timeline Scrubber (one year) driving parcel overlay, all eight branches and the score in sync, with automatic commentary | 4 |
 | 5 | Ground-Truth Override: pH, irrigation, crop/variety, sowing date; everything recalculates | 4 |
 | 6 | Advisory engine: three or more rotation strategies including the current one, irrigation schedule, pH amendment, sowing-window shift | 5 |
-| 7 | Long-term tracking: season journal, year-over-year comparison, annual financial plan (demo history is simulated and labelled) | 6 |
+| 7 | Removed on 2026-11-15 (`docs/UX_PLAN.md`, U9): the long-term tracking page showed simulated history and its journal fed nothing into the model. The annual financial plan lives on the rotation page | - |
 | 8 | Urban Grower Companion: location, microclimate, preferences, plant picks, care calendar | side mission |
 | 9 | Crop-knowledge assistant (RAG) answering questions about crops and about the locked field | all |
 
@@ -135,7 +135,7 @@ Primary source first, then fallbacks in order. The adapter that actually deliver
 | `crop.ts` | `CropProfile` and its requirement, water, economics, rotation and urban facets |
 | `model.ts` | `GroundTruth`, `ModelInput`, `FactorScore`, `ScoreSnapshot`, `ScoreTimeline`, `SowingWindow`, `WhatIfResult`, `CropSuiteSummary` (second suitability method, docs/SCORING.md section 9) |
 | `advisory.ts` | economics (`SeasonEconomics`, `AnnualPlan`), `Advisory`, `RotationStrategy`, `IrrigationPlan`, `PhPlan`, `AdvisoryReport`, `Insight` |
-| `experience.ts` | map layers, `ScreenAnchor`, tracking, urban companion, RAG (`AskRequest`, `AskResult`) |
+| `experience.ts` | map layers, `ScreenAnchor`, tracking (types kept, no longer produced), urban companion, RAG (`AskRequest`, `AskResult`) |
 
 Invariants:
 
@@ -151,7 +151,7 @@ Changes to contracts are additive only (new optional fields, new types). Renames
 
 ```
 hero --click--> explore --lock parcel--> locked <--> advisory
-                    ^                      |  ^----> tracking
+                    ^                      |
                     +----- change field ---+
 urban  (side mission, reachable from any state)
 ```
@@ -159,7 +159,7 @@ urban  (side mission, reachable from any state)
 `src/state/mission.ts` (Zustand) is the only runtime coupling between layers:
 
 - **Globe** reads `phase`, `parcel`, `draft`, `drawMode`, `layers`, `timeline.cursor`, `telemetry`, `focusBranch`; writes `anchor`, `draft`, and calls `lockParcel`.
-- **HUD and panels** read `telemetry`, `branchStatus`, `score`, `insights`, `advisory`, `tracking`, `anchor`, `timeline`; call the actions.
+- **HUD and panels** read `telemetry`, `branchStatus`, `score`, `insights`, `advisory`, `anchor`, `timeline`; call the actions.
 - **Model tiers** are invoked only by the store (`recompute`).
 
 Sequence after a parcel is locked:
@@ -182,7 +182,6 @@ Mount points (each folder exports the component from its `index.tsx`; `src/App.t
 | `TimelineScrubber` | `src/ui/timeline` | locked |
 | `GroundTruthPanel` | `src/ui/override` | locked |
 | `AdvisoryPanel` | `src/ui/advisory` | advisory |
-| `TrackingView` | `src/ui/tracking` | tracking |
 | `UrbanCompanion` | `src/ui/urban` | urban |
 | `AskPanel` | `src/ui/ask` | all but hero |
 | `StyleGuide` | `src/ui/design` | `#/styleguide` |

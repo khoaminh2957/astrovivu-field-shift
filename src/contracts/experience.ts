@@ -39,7 +39,8 @@ export interface ScreenAnchor {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Long-term tracking (State 6). Demo fields ship simulated history, always flagged as such.
+// Long-term tracking (State 6). The page and its engine were removed on 2026-11-15 (docs/UX_PLAN.md, U9);
+// the types stay because contracts are never removed.
 // ---------------------------------------------------------------------------------------------
 
 export interface JournalEntry {

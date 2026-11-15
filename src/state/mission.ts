@@ -29,18 +29,16 @@ import type {
   ScoreTimeline,
   SampleParcel,
   ScreenAnchor,
-  TrackingData,
   ViewInsets,
 } from '@/contracts';
 import { BRANCHES } from '@/contracts';
 import { buildAdvisoryReport, buildInsights } from '@/core/advisory';
 import { computeScoreTimeline } from '@/core/scoring';
-import { buildTracking } from '@/core/tracking';
 import { getSampleParcel, loadFieldRasters, loadTelemetry } from '@/data';
 import { addDays, clampDate, todayISO } from '@/lib/time';
 
-/** hero -> explore -> locked (HUD + timeline) -> advisory | tracking; urban is a side mission. */
-export type Phase = 'hero' | 'explore' | 'locked' | 'advisory' | 'tracking' | 'urban';
+/** hero -> explore -> locked (field panel + timeline) -> advisory; urban is a side mission. */
+export type Phase = 'hero' | 'explore' | 'locked' | 'advisory' | 'urban';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface TimelineState {
@@ -77,7 +75,6 @@ export interface MissionState {
   score: ScoreTimeline | null;
   insights: Insight[];
   advisory: AdvisoryReport | null;
-  tracking: TrackingData | null;
 
   layers: LayerState;
   /** Parcel footprint in screen space, written by the globe on every camera move. */
@@ -185,7 +182,6 @@ export const useMission = create<MissionState>()((set, get) => ({
   score: null,
   insights: [],
   advisory: null,
-  tracking: null,
 
   layers: { base: { satellite: true, terrain: true, labels: false }, overlay: 'none', overlayOpacity: 0.7, parcelMetric: 'ndvi', stretch: 'field' },
   anchor: null,
@@ -201,10 +197,6 @@ export const useMission = create<MissionState>()((set, get) => ({
   setPhase: (phase) => {
     if (phase !== 'locked') get().pause();
     set({ phase });
-    if (phase === 'tracking' && !get().tracking) {
-      const input = toModelInput(get());
-      if (input) set({ tracking: buildTracking(input) });
-    }
   },
 
   enterExplore: () => set({ phase: 'explore' }),
@@ -233,7 +225,6 @@ export const useMission = create<MissionState>()((set, get) => ({
       score: null,
       insights: [],
       advisory: null,
-      tracking: null,
       rasters: [],
       rasterStatus: 'loading',
       focusBranch: null,
@@ -299,7 +290,6 @@ export const useMission = create<MissionState>()((set, get) => ({
       score: null,
       insights: [],
       advisory: null,
-      tracking: null,
       anchor: null,
       rasters: [],
       rasterStatus: 'idle',
@@ -335,7 +325,7 @@ export const useMission = create<MissionState>()((set, get) => ({
     if (!input) return;
     const score = computeScoreTimeline(input);
     set({ score });
-    // Insights, advisory and tracking are slower (the advisory's first call is 70-150 ms) and
+    // Insights and the advisory are slower (the advisory's first call is 70-150 ms) and
     // nothing needs them in the first frame of the fly-in: build them in idle time. The newest
     // call wins; a call for a parcel that is no longer locked is dropped.
     const ticket = ++derivedTicket;
@@ -345,7 +335,6 @@ export const useMission = create<MissionState>()((set, get) => ({
       set({
         insights: buildInsights(input, score),
         advisory: buildAdvisoryReport(input, score),
-        tracking: get().phase === 'tracking' ? buildTracking(input) : null,
       });
     });
   },
@@ -394,7 +383,7 @@ export const useMission = create<MissionState>()((set, get) => ({
 /**
  * Deep links for demos and for agents testing one state in isolation:
  *   ?sample=daklak-coffee            lock a demo field
- *   &phase=advisory|tracking|locked  jump to a state after locking
+ *   &phase=advisory|locked           jump to a state after locking
  *   &crop=glycine-max  &lang=vi      override crop / language
  *   ?phase=explore | ?phase=urban    states that need no parcel
  */
@@ -409,7 +398,8 @@ export function bootFromQuery(search: string): void {
     void store.lockSample(sample).then(() => {
       const crop = q.get('crop');
       if (crop) useMission.getState().setCrop(crop);
-      if (phase && phase !== 'hero' && phase !== 'explore') useMission.getState().setPhase(phase);
+      // Anything else (an old link to a page that no longer exists) stays on the field.
+      if (phase === 'advisory' || phase === 'urban') useMission.getState().setPhase(phase);
     });
   } else if (phase === 'explore' || phase === 'urban') {
     store.setPhase(phase);

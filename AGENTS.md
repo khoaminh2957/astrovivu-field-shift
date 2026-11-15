@@ -25,11 +25,11 @@ Edit only the paths you own. If you need something outside them, describe the ch
 | Architect / orchestrator | `src/contracts/**`, `src/state/**`, `src/lib/**`, `src/i18n/index.ts`, `src/main.tsx`, root config, `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/SYSTEM_INSTRUCTIONS.md` |
 | 2a Data ingestion | `src/data/**` (not `samples.ts` geometry), `scripts/cache-samples.ts`, `scripts/data/**`, `public/data/samples/**`, `docs/DATA_SOURCES.md` |
 | 2b Scoring & economics | `src/core/crops/**`, `src/core/scoring/**`, `src/core/economics/**`, `scripts/build-crop-catalog.ts`, `scripts/crops/**`, `public/data/crops/**`, `data/crops/**`, `docs/SCORING.md`, `docs/ECONOMICS.md` |
-| 2c Advisory, insights, tracking, urban logic | `src/core/advisory/**`, `src/core/tracking/**`, `src/core/urban/**`, `docs/ADVISORY.md` |
+| 2c Advisory, insights, urban logic | `src/core/advisory/**`, `src/core/urban/**`, `docs/ADVISORY.md` |
 | 3 Globe | `src/globe/**`, vertex geometry in `src/data/samples.ts`, `docs/GLOBE.md` |
 | Design Director | `src/ui/design/**`, `src/styles/**`, `public/fonts/**`, `docs/DESIGN.md` |
 | 4a Mission UI | `src/App.tsx`, `src/ui/chrome/**`, `src/ui/hero/**`, `src/ui/dock/**`, `src/ui/hud/**`, `src/ui/timeline/**`, `src/ui/override/**` |
-| 4b Advisory, tracking, urban, assistant UI | `src/ui/advisory/**`, `src/ui/tracking/**`, `src/ui/urban/**`, `src/ui/ask/**` |
+| 4b Advisory, urban, assistant UI | `src/ui/advisory/**`, `src/ui/urban/**`, `src/ui/ask/**` |
 | 5 Docs & QA | `README.md`, `docs/DEMO_SCRIPT.md`, `docs/JUDGING.md` |
 | 6 Crop-knowledge RAG | `src/rag/**`, `server/**`, `scripts/rag/**`, `public/rag/**`, `data/rag/**`, `docs/RAG.md` |
 | 7 Market data & database | `supabase/**`, `scripts/market/**`, `data/market/**`, `docs/DATABASE.md` |
@@ -58,7 +58,7 @@ Contracts (`src/contracts/**`) may be extended additively (new optional fields, 
 - Database (optional): `npm run db:start` runs a local Supabase with Docker, API on port 54321 and Postgres on 54322; `npm run db:test` checks migrations and policies. See `docs/DATABASE.md`. Nothing in the app needs it to start.
 - Today is 2026-11-14. The telemetry window is the 365 days ending today.
 - Dev server ports: orchestrator 5173, globe 5181, mission UI 5182, advisory UI 5183, design 5184, API server 8787.
-- Deep links: `?sample=<id>&phase=locked|advisory|tracking&crop=<id>&lang=vi`, `?phase=explore`, `?phase=urban`, `#/styleguide`, `#/globe-lab`.
+- Deep links: `?sample=<id>&phase=locked|advisory&crop=<id>&lang=vi`, `?phase=explore`, `?phase=urban`, `#/styleguide`, `#/globe-lab`.
 - Browser tools, if you have them: open your own tab, pass its `tabId` on every call, never navigate, select, resize or close a tab you did not open.
 
 ## Final report

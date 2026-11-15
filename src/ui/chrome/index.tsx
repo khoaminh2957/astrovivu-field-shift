@@ -11,7 +11,7 @@
  * place the camera flies to, in what is left.
  */
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
-import { CalendarCheck, ChevronLeft, ChevronRight, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lightbulb, Map as MapIcon, MessageCircleQuestion, Sprout } from 'lucide-react';
 import type { Lang } from '@/contracts';
 import { BRANCHES } from '@/contracts';
 import { DEMO_FIELD } from '@/data';
@@ -25,7 +25,6 @@ import { StatusTag, Tooltip, cn } from '@/ui/design';
 import { FieldPanel } from '@/ui/field/FieldPanel';
 import { FieldList, FindField } from '@/ui/field/FindField';
 import { TimelineScrubber } from '@/ui/timeline';
-import { TrackingView } from '@/ui/tracking';
 import { UrbanCompanion } from '@/ui/urban';
 import { Finder } from './Finder';
 import { goHome } from './finderActions';
@@ -35,11 +34,10 @@ import { WeatherChip } from './Weather';
 import { ADD_CARD, useMissionUi, useNarrow } from './uiState';
 import './strings';
 
-type NavId = 'field' | 'advisory' | 'tracking' | 'urban' | 'ask';
+type NavId = 'field' | 'advisory' | 'urban' | 'ask';
 const NAV: { id: NavId; icon: ReactNode; key: string }[] = [
   { id: 'field', icon: <MapIcon />, key: 'nav.field' },
   { id: 'advisory', icon: <Lightbulb />, key: 'nav.advisory' },
-  { id: 'tracking', icon: <CalendarCheck />, key: 'nav.tracking' },
   { id: 'urban', icon: <Sprout />, key: 'nav.urban' },
   { id: 'ask', icon: <MessageCircleQuestion />, key: 'nav.ask' },
 ];
@@ -52,7 +50,7 @@ function useNav() {
   const setAskOpen = useMission((s) => s.setAskOpen);
   const active = (id: NavId): boolean =>
     id === 'ask' ? askOpen : id === 'field' ? phase === 'explore' || phase === 'locked' : phase === (id as Phase);
-  const disabled = (id: NavId): boolean => (id === 'advisory' || id === 'tracking') && !hasParcel;
+  const disabled = (id: NavId): boolean => id === 'advisory' && !hasParcel;
   const go = (id: NavId) => {
     if (disabled(id)) return;
     if (id === 'ask') return setAskOpen(!askOpen);
@@ -149,7 +147,7 @@ function TabBar() {
   const t = useT();
   const { active, disabled, go } = useNav();
   return (
-    <nav aria-label={t('chrome.nav.label')} className="absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-5 border-t border-line-1 bg-surface-0 safe-bottom">
+    <nav aria-label={t('chrome.nav.label')} className="absolute inset-x-0 bottom-0 z-(--z-chrome) grid h-(--tabbar-h) grid-cols-4 border-t border-line-1 bg-surface-0 safe-bottom">
       {NAV.map((n) => (
         <button
           key={n.id}
@@ -395,7 +393,7 @@ export function Shell() {
       }),
     [],
   );
-  const view = phase === 'advisory' ? <AdvisoryPanel /> : phase === 'tracking' ? <TrackingView /> : phase === 'urban' ? <UrbanCompanion /> : null;
+  const view = phase === 'advisory' ? <AdvisoryPanel /> : phase === 'urban' ? <UrbanCompanion /> : null;
   return (
     <>
       {finding && <Finder />}

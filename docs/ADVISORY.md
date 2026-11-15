@@ -1,6 +1,6 @@
 # Advisory engine (Tier 5, rule-based core)
 
-Code: `src/core/advisory` (insights, rotations, custom season swaps, actions), `src/core/tracking`, `src/core/urban`. All functions are pure functions of `ModelInput`. `buildAdvisoryReport` and the rotation search are memoised on the telemetry object plus the value of crop, ground truth, priorities, parcel and date. Tests: `src/core/advisory/advisory.test.ts`, `seasonDetail.test.ts` and `customRotation.test.ts` load the four real demo samples.
+Code: `src/core/advisory` (insights, rotations, custom season swaps, actions), `src/core/urban`. All functions are pure functions of `ModelInput`. `buildAdvisoryReport` and the rotation search are memoised on the telemetry object plus the value of crop, ground truth, priorities, parcel and date. Tests: `src/core/advisory/advisory.test.ts`, `seasonDetail.test.ts` and `customRotation.test.ts` load the four real demo samples.
 
 ## 1. Insights (Anomaly Markers)
 
@@ -72,11 +72,7 @@ Limits: normals hide year-to-year spread (the calendar's rain strip shows the 10
 - Second opinion: `AdvisoryReport.cropSuite` carries the CropSuite result for the selected crop (`assessCropSuite`, docs/SCORING.md section 9), shown under the sowing window. It is informative only: no advisory, score or ranking is derived from it.
 - Annual plan: first year of the best-scoring strategy from the current month; costs 30 % before sowing, 50 % in season, 20 % at harvest; revenue at harvest (forage across warm months; perennials at sowing month + cycle).
 
-## 4. Tracking (demo fields only)
-
-Past 5 seasons follow the current rotation or CDL history; yield = reference yield × 0.9 × min(temperature fit, water fit) of that year's real monthly climate × deterministic ±6 % noise. Rain per season is the real climate value. Soil tests (two, simulated) are derived from the soil facts with typical interpretation bands (Mehlich-3 K/Mg, DTPA Cu/Fe/Mn/Zn). NDVI of earlier years is the real current curve scaled by the year's fit. Everything invented is `simulated: true`; alerts are the real insights. A user's parcel gets alerts only.
-
-## 5. Urban
+## 4. Urban
 
 Curated crops with `urban.suitable`; windowsill and balcony require container crops (windowsill excludes climbers, fruit, difficulty 3). Sowing months are those whose first months fit the crop's temperature window >= 0.6 (frost below the kill temperature excluded). Score = temperature fit now/next month and length of season × light match × preference match × difficulty.
 

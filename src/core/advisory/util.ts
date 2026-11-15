@@ -1,4 +1,4 @@
-/** Small pure helpers shared by the advisory, tracking and urban engines. */
+/** Small pure helpers shared by the advisory and urban engines. */
 import type { BaselinePoint, BranchId, CropProfile, FieldTelemetry, I18nText, ModelInput, Series, StaticFact } from '@/contracts';
 import { tx } from '@/contracts';
 import { getCrop } from '@/core/crops';

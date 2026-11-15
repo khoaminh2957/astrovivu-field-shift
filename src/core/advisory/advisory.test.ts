@@ -4,7 +4,6 @@ import type { FieldTelemetry, ModelInput, UrbanClimate } from '@/contracts';
 import { buildAdvisoryReport, buildInsights } from '@/core/advisory';
 import { climateNormals } from '@/core/advisory/util';
 import { computeScoreTimeline } from '@/core/scoring';
-import { buildTracking } from '@/core/tracking';
 import { recommendUrban } from '@/core/urban';
 import { getSampleParcel } from '@/data/samples';
 
@@ -48,18 +47,6 @@ describe.each(IDS)('advisory on real sample %s', (id) => {
       for (const a of r.advisories) expect(a.caveats.length + a.evidence.length).toBeGreaterThan(0);
     });
   }
-  it('tracking is simulated for the demo field and empty for an own parcel', () => {
-    const input = inputFor(id);
-    const tr = buildTracking(input);
-    expect(tr.simulated).toBe(true);
-    expect(tr.seasons.length).toBeGreaterThan(0);
-    expect(tr.seasons.every((s) => s.simulated)).toBe(true);
-    expect(tr.soilTests.every((s) => s.simulated && s.values.length === 12)).toBe(true);
-    const own = buildTracking({ ...input, parcel: { ...input.parcel, source: 'coords' as const } });
-    expect(own.simulated).toBe(false);
-    expect(own.seasons).toHaveLength(0);
-    expect(own.soilTests).toHaveLength(0);
-  });
 });
 
 function urbanClimate(id: string): UrbanClimate {

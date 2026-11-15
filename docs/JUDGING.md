@@ -52,5 +52,5 @@ Where Astrovivu answers each part of the *Field Shift: Adapting Farms with NASA 
 - Scoring weights, gates and advisory thresholds are documented judgement, not calibrated against yields or field data.
 - Reference economics cover part of the curated crops; Vietnamese costs are press figures; reference prices drive the income strategy.
 - Đắk Lắk (2.0 ha) and An Giang (`cantho-rice`, 1.4 ha) outlines are real parcels detected from Sentinel-2 NDVI (`detectFieldBoundary`), though the crops grown on them are assumed rather than verified on the ground; Iowa and Nevada were traced on Esri imagery.
-- Demo tracking history is simulated and labelled; demo fields start from an assumed farm profile.
+- Demo fields start from an assumed farm profile.
 - No testing with farmers.

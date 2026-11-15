@@ -32,18 +32,16 @@ The app opens on a rotating globe (`src/ui/hero`) and then shows a light working
 | Timeline | A one-year strip drives the field picture, the NASA overlay date, every card and the score together; the latency gap shows as pending and the forecast as forecast. | `src/ui/timeline` |
 | Ground truth tab | Measured pH and soil values, irrigation, crop, sowing date, current rotation, yield, price, cost. Everything recalculates; a calibration ledger shows each override's effect on the season score. | `src/ui/override` |
 | Rotation (rail) | Strategy cards with `Current practice` pinned first as the baseline, a 12-month season calendar over the field's 20-year ERA5 rain and temperature normals (click any season block on the selected strategy to swap its crop and re-score a custom rotation live), a dumbbell trade-off chart against current, the five required lists (why, clickable branch evidence, benefits, gaps, risks), the annual cash-flow plan on the same month axis, and irrigation, pH and sowing advisories. | `src/ui/advisory`, `src/core/advisory` |
-| Notes (rail) | Long-term tracking: past seasons, journal, soil tests, alerts, year-over-year NDVI, plan versus actual. Demo-field history is simulated and labelled. | `src/ui/tracking`, `src/core/tracking` |
 | Urban (rail) | Urban Grower Companion for balcony, windowsill and rooftop growers: illustrated space and sun-hour tiles, a 12-month local temperature, rain and PAR strip, and plant cards with linked FAO EcoCrop photographs, sowing-month strip and care sheets (showing the next open sowing month when none fit now). | `src/ui/urban`, `src/core/urban` |
 | Ask | The crop-knowledge assistant answers crop questions and questions about the locked field, with citations. | `src/ui/ask`, `src/rag`, `server/` |
 
 ### The advisory engine
 
-Rule-based and pure (`src/core/advisory`, `src/core/tracking`, `src/core/urban`; `docs/ADVISORY.md`; tests in `src/core/advisory/advisory.test.ts`, `seasonDetail.test.ts` and `customRotation.test.ts` on the four real demo samples).
+Rule-based and pure (`src/core/advisory`, `src/core/urban`; `docs/ADVISORY.md`; tests in `src/core/advisory/advisory.test.ts`, `seasonDetail.test.ts` and `customRotation.test.ts` on the four real demo samples).
 
 - **Insights** pinned to timeline dates: persistent departures of NDVI, root-zone moisture and surface temperature from their day-of-year baselines (z-scores held 14-24 days), 30-day rainfall against normal, dry spells, heat and frost against the crop's EcoCrop limits, growth-stage changes, score swings, forecast events, and a weather-based pest and disease pressure index that is labelled as needing scouting, never a diagnosis, with no products named.
 - **Rotation strategies**: the current rotation (from the farmer's entry, else the Cropland Data Layer history, else the selected crop repeated) against soil-health, water-saver, income and resilience strategies, plus an interactive `custom` strategy whenever the farmer swaps a crop in any season slot on the calendar. Tree perennials get an inter-row legume cover, a companion tree, a partial conversion or a mix; multi-year forage/sugarcane stands renew with break crops or clean fallow rest years when soil chemistry rules out other families (Nevada pH 8.8). Every season carries its own suitability, water need against normal rain, expected yield, margin, N credit and bilingual reason; each strategy carries five generated lists: why, evidence, benefits, gaps, risks (always including local extension review). Priority weights are 0.5 plus 3 / 2 / 1 for the farmer's first, second and third priority.
 - **Actions**: an FAO-56 irrigation schedule over the year and the forecast; a pH plan (lime or sulfur per pH unit by texture, always flagged to need a lab test); a sowing-window shift; drainage, organic-matter and erosion advisories; an annual cash plan for the first year of the best strategy.
-- **Tracking**: five past seasons for demo fields, driven by the real yearly climate with simulated yields and soil tests, all flagged `simulated: true`; alerts are the real insights. A user's own field gets alerts only.
 - **Urban**: curated container-friendly crops matched on temperature window, light and preferences.
 
 Limits (`docs/ADVISORY.md`): not verified against field data; thresholds are rules of thumb; reference prices drive the income strategy (for example potato in Iowa) and markets are not modelled; lime rates are typical extension rules of thumb; the first report takes 70-150 ms, repeat calls are memoised.
@@ -269,7 +267,6 @@ Scripts (`package.json`):
 | `/?sample=iowa-corn-soy` | Corn-soybean, Story County, Iowa (29.3 ha): US layers (SSURGO, Cropland Data Layer) |
 | `/?sample=nevada-alfalfa` | Irrigated alfalfa pivot, Diamond Valley, Nevada (48.9 ha): income with less groundwater |
 | `/?sample=daklak-coffee&phase=advisory&crop=glycine-max&lang=vi` | Advisory for soybean on the Đắk Lắk field, in Vietnamese |
-| `/?sample=<id>&phase=tracking` | Long-term tracking (Notes) for a demo field |
 | `/?phase=explore`, `/?phase=urban` | Find a field; Urban Grower Companion |
 | `?motion=reduced` | Motion is on by default, even when the system asks for reduced motion; this turns rotation off and makes flights cuts |
 | `#/styleguide`, `#/globe-lab` | Design system; globe performance bench |
@@ -281,10 +278,10 @@ src/
   contracts/     typed interfaces between tiers (single source of truth)
   state/         mission store and state machine, deep links (mission.ts)
   data/          adapters, fallbacks, caching, harmonisation, field rasters (rasters/), boundary detection (boundary/), demo fields (samples.ts)
-  core/          pure logic: crops, scoring, economics, zones, advisory, tracking, urban
+  core/          pure logic: crops, scoring, economics, zones, advisory, urban
   globe/         MapLibre globe, terrain, NASA overlays, field picture, map tools, parcel drawing
   ui/            hero, chrome (shell, map tools, layers), field (find, status, report, data cards),
-                 timeline, override, advisory, tracking, urban, ask, design
+                 timeline, override, advisory, urban, ask, design
   rag/           crop-knowledge retrieval and extractive answers
   i18n/          English and Vietnamese strings
 server/          optional Hono API server (generative answers)
@@ -303,7 +300,6 @@ docs/            architecture, data sources, scoring, economics, RAG, globe, des
 - **Economics are partial.** Reference economics are complete for only part of the 73 curated crops; no Vietnamese cost per hectare was found for sesame, mung bean, cassava, pepper, arabica, cashew, tea, mango, banana, durian and others, so no margin is shown without the farmer's cost. All Vietnamese costs are press figures from single farms or demonstrations; soybean's is derived (`docs/ECONOMICS.md` §3). Price risk is not modelled.
 - **Demo-field boundaries**: Iowa (29.3 ha) and Nevada (48.9 ha pivot) were traced on Esri imagery (edges good to roughly 5-10 m); Đắk Lắk (2.0 ha) and An Giang (`cantho-rice`, 1.4 ha) are real field polygons detected from Sentinel-2 NDVI (`detectFieldBoundary`), though the crops on those two Vietnamese fields are assumed rather than verified on the ground (`docs/GLOBE.md` §6).
 - **Demo fields start from an assumed farm profile** (irrigation, rotation), labelled and editable.
-- **Tracking history for demo fields is simulated** and labelled as such; a user's own parcel gets alerts only.
 - **Advisory engine**: rules of thumb, not verified against field data; reference prices drive the income strategy; lime rates are typical extension figures that a soil test must confirm. The real SSURGO pH 8.8 at the Nevada pivot makes alfalfa score low although it has grown there every year since 2019 (`docs/ADVISORY.md`, `docs/SCORING.md`).
 - **Within-field pictures and boundary detection** depend on cloud-free Sentinel-2 / Landsat dates (An Giang 6-12 and Đắk Lắk 9-13 clear frames over the year); adjacent plots worked on identical schedules with no visible bund can merge during `detectFieldBoundary` and require dragging corners before locking; NDMI is a canopy and surface moisture index, not soil moisture; relative zones are not a yield map.
 - **Generative assistant mode is untested against a live model.** The extractive mode is tested. The retrieval eval is small and self-written.
