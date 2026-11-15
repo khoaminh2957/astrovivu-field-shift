@@ -4,6 +4,7 @@
  */
 import type { AdvisoryReport, Insight, ModelInput, ScoreTimeline } from '@/contracts';
 import { assessCropSuite, scanSowingWindows } from '@/core/scoring';
+import { buildSoilPlan, diagnoseSoil } from '@/core/soil';
 import { advisories, annualPlan, irrigationPlan, phPlan } from './actions';
 import { computeInsights } from './insights';
 import { buildRotations } from './rotation';
@@ -32,12 +33,15 @@ export function buildAdvisoryReport(input: ModelInput, score: ScoreTimeline): Ad
   const ph = phPlan(input);
   const best = [...rotations].sort((a, b) => b.score - a.score)[0];
   const cropSuite = input.cropId ? assessCropSuite(input, input.cropId)?.cropSuite : undefined;
+  const soilDiag = diagnoseSoil(input);
+  const soilPlan = buildSoilPlan(soilDiag, input);
   const report: AdvisoryReport = {
     generatedAt: input.today,
     cropId: input.cropId,
     priorities: input.priorities,
     advisories: advisories(input, score, irrigation, ph, rotations),
     rotations,
+    soilPlan,
     ...(irrigation ? { irrigation } : {}),
     ...(input.cropId ? { sowing: scanSowingWindows(input) } : {}),
     ...(cropSuite ? { cropSuite } : {}),
