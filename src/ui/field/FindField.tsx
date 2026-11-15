@@ -89,7 +89,7 @@ function useDemoRows(): SampleParcel[] {
   return open ? [DEMO_FIELD, open] : [DEMO_FIELD];
 }
 
-function Demos({ rows, sort }: { rows: SampleParcel[]; sort: SortBy }) {
+function Demos({ rows, sort, onOpenField }: { rows: SampleParcel[]; sort: SortBy; onOpenField?: () => void }) {
   const t = useT();
   const lang = useLang();
   const lockSample = useMission((s) => s.lockSample);
@@ -111,7 +111,10 @@ function Demos({ rows, sort }: { rows: SampleParcel[]; sort: SortBy }) {
               tag={t('field.demo.tag')}
               sub={[fmtArea(p.areaHa), placeLine(p.place)].filter(Boolean).join(' · ')}
               label={t('field.demo.open', { name: p.name })}
-              onOpen={() => void lockSample(p.id)}
+              onOpen={() => {
+                if (!onOpenField || p.id !== current) void lockSample(p.id);
+                onOpenField?.();
+              }}
             />
           </li>
         ))}
@@ -422,7 +425,7 @@ export function FindField({ floating = false }: { floating?: boolean }) {
 }
 
 /** The list panel: title, total and sort, your field, the demo field, then the two cards. */
-export function FieldList() {
+export function FieldList({ onOpenField }: { onOpenField?: () => void }) {
   const t = useT();
   const parcel = useMission((s) => s.parcel);
   const setPhase = useMission((s) => s.setPhase);
@@ -464,11 +467,15 @@ export function FieldList() {
             current={ownOpen}
             sub={[fmtArea(own.areaHa), placeLine(own.place)].filter(Boolean).join(' · ')}
             label={own.name}
-            onOpen={() => (ownOpen ? setPhase('locked') : void lockParcel(own))}
+            onOpen={() => {
+              if (ownOpen) setPhase('locked');
+              else void lockParcel(own);
+              onOpenField?.();
+            }}
           />
         </section>
       )}
-      <Demos rows={demos} sort={sort} />
+      <Demos rows={demos} sort={sort} onOpenField={onOpenField} />
       <div className="mx-3 flex min-h-56 flex-1 flex-col items-center justify-center gap-2 rounded-sm bg-surface-2 p-4 text-center">
         <SquarePlus size={24} strokeWidth={1.5} aria-hidden className="mb-2 text-ink-1" />
         <h3 className="text-md leading-[19px] font-medium text-ink-1">{t('field.add.title')}</h3>

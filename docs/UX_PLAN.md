@@ -240,3 +240,24 @@ Cuối đợt 5, cho ba người trong nhóm không làm giao diện dùng thử
 5. Hỏi trợ lý một câu về cây đang trồng.
 
 Kết quả ghi vào tài liệu này; chỗ nào hai trong ba người vấp thì sửa trước khi nộp.
+
+## 6. Bố cục ruộng và luồng Field, Rotation, Urban
+
+Kiểm tra cục bộ ngày 15/11/2026 trên trình duyệt. Vùng ngang tính từ mép bảng ruộng đến phần chừa 64 px bên phải cho cụm công cụ.
+
+| Khung | Bề rộng trước theo issue #86 | Vùng ngang sau | Kiểm tra tâm theo khung camera |
+|---|---:|---:|---|
+| 1440 × 900 | 492 px | 728 px (50,6%) | Nevada và ranh tự chọn ở Cai Lậy lệch khoảng 2 px mỗi trục hoặc ít hơn khi đã ổn định |
+| 1280 × 720 | 392 px | 640 px (50%) | Ranh mẫu Cần Thơ lệch dưới 1 px mỗi trục khi đã ổn định |
+| 426 × 690 | Tấm dưới | Không tràn ngang | Mẫu Cần Thơ mở thẳng ở giữa vùng trống, lệch dưới 2 px theo chiều dọc |
+
+- Hai lượt rà từ tọa độ Cai Lậy gồm mở ranh, đọc các thẻ, nhập pH 6,5, mở luân canh và hỏi trợ lý. Trợ lý trả lời có nguồn bằng tiếng Anh và tiếng Việt. Đã kiểm tra việc chuyển qua Urban, dùng vị trí thửa, mở hướng dẫn cây và quay lại Field. Rotation giữ tab lịch và phương án cải tạo đất sau khi đi qua Urban.
+- Chuyển trang, đổi tab, mở bảng và phản hồi nút dùng hiệu ứng ngắn. Giảm chuyển động được kiểm với `?motion=reduced`, chuyển trang có thời lượng 0. Bảng nhịp riêng của năm chuyến chuyển camera [chờ Bảo duyệt](https://github.com/quocbao271207/astrovivu-field-shift/issues/87#issuecomment-6889713952).
+- Vị trí danh sách thửa [đang chờ chốt](https://github.com/quocbao271207/astrovivu-field-shift/issues/86#issuecomment-6889713727) cùng với [nội dung từng bước](https://github.com/quocbao271207/astrovivu-field-shift/issues/84). Hai đoạn quay chính thức của #88 còn mở.
+- Đo đúng lúc camera đáp và sau 2 giây: Nevada từ nút thử mẫu và điểm ruộng trên bản đồ ở 1440 × 900 có tâm (1044, 450) đúng tâm khung, cùng zoom 15,1474. Ranh tự chọn ở 426 × 690 có tâm (185, 183) so với đích (185, 181,5), giữ nguyên tâm và zoom 16,4802. Link Nevada với giảm chuyển động ở 426 × 690 có tâm (185, 181,5) ngay khung đầu và giữ nguyên sau 2 giây.
+
+### Home và thời tiết
+
+Home hiển thị thửa đang mở, diện tích, khu vực, các số liệu thời tiết mới nhất và lối vào Thửa ruộng, Thời tiết, Luân canh, Đô thị. Chỉ nút A đưa về màn đầu. Trang Thời tiết dùng dữ liệu của thửa đang mở, gồm nhiệt cao/thấp, mưa, gió, dự báo theo ngày, lịch sử 7 ngày và rủi ro có trong nguồn. Giá trị thiếu hiển thị dấu gạch, còn số liệu cũ, đã lưu hoặc mô phỏng có nhãn.
+
+Thanh điều hướng rộng 60 px trên desktop và cao 54 px trên điện thoại. Đã thử từ thửa Nevada ở 1440 × 900 (EN) và Cần Thơ ở 426 × 690 (VI), gồm Home giữ thửa, chuyển hai tab thời tiết và A trở về màn tìm thửa ban đầu. [Năm điểm rà luồng đã gửi ở #88](https://github.com/quocbao271207/astrovivu-field-shift/issues/88#issuecomment-6890112672).

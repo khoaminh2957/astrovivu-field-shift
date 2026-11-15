@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { LngLat } from '@/contracts';
+import type { LngLat, ViewInsets } from '@/contracts';
 import { useT } from '@/i18n';
-import { useMission } from '@/state/mission';
+import { type MissionState, useMission } from '@/state/mission';
 import { GlobeEngine, getActiveGlobe, type MotionPref } from './engine';
 import { setGlobeStatus } from './status';
 
@@ -53,13 +53,14 @@ function NoWebGL() {
 export interface GlobeCanvasProps {
   /** Overrides the motion preference (the bench uses it); defaults to `?motion=` or the system setting. */
   motion?: MotionPref;
+  readViewInsets?: (state: MissionState) => ViewInsets;
 }
 
 /**
  * Full-bleed map canvas. Mount it once, behind everything else. It renders exactly once: all
  * map work happens in `GlobeEngine`, outside React.
  */
-export function GlobeCanvas({ motion }: GlobeCanvasProps) {
+export function GlobeCanvas({ motion, readViewInsets }: GlobeCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<GlobeEngine | null>(null);
   const initialMotion = useRef(motion);
@@ -70,7 +71,7 @@ export function GlobeCanvas({ motion }: GlobeCanvasProps) {
     if (!host) return;
     let engine: GlobeEngine | null = null;
     try {
-      engine = new GlobeEngine(host, { motion: initialMotion.current ?? motionFromQuery() });
+      engine = new GlobeEngine(host, { motion: initialMotion.current ?? motionFromQuery(), readViewInsets });
       engineRef.current = engine;
       setFailed(false);
     } catch (err) {
@@ -83,7 +84,7 @@ export function GlobeCanvas({ motion }: GlobeCanvasProps) {
       engine?.destroy();
       engineRef.current = null;
     };
-  }, []);
+  }, [readViewInsets]);
 
   // The engine is built once; a changed preference is applied to it, not a reason to rebuild.
   useEffect(() => {

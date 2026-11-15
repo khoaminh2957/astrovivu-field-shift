@@ -3,13 +3,14 @@
  * plus an extractive answer in the browser, or a generative one when the API server offers it.
  * With a locked field the question carries a FieldContext so the answer can use the field's data.
  */
-import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, ChevronDown, MessageCircleQuestion, X } from 'lucide-react';
 import type { AskResult, FieldContext, Lang } from '@/contracts';
 import { useT } from '@/i18n';
 import { ask, buildFieldContext, suggestQuestions, warmUp } from '@/rag';
 import { useMission } from '@/state/mission';
 import { Button, ConfidenceBars, IconButton, ScrollArea, SkeletonText, Tag, cn, confidenceLevel } from '@/ui/design';
+import { useMissionUi } from '@/ui/chrome/uiState';
 import { AnswerText, SourceDetail } from './Answer';
 import './strings';
 
@@ -39,25 +40,28 @@ function useFieldContext(enabled: boolean): FieldContext | undefined {
 
 export function AskPanel() {
   const phase = useMission((s) => s.phase);
+  const workspacePage = useMissionUi((s) => s.workspacePage);
   const open = useMission((s) => s.askOpen);
   const setOpen = useMission((s) => s.setAskOpen);
   const lang = useMission((s) => s.lang);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const wasOpen = useRef(open);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const visible = open && phase !== 'hero';
 
   useEffect(() => {
-    if (open) warmUp();
-    // Return focus to the launcher when the panel closes.
-    if (wasOpen.current && !open) triggerRef.current?.focus();
-    wasOpen.current = open;
-  }, [open]);
-
-  if (phase === 'hero') return null;
-  const locked = phase === 'locked';
+    if (visible) warmUp();
+  }, [visible]);
+  useLayoutEffect(() => {
+    if (visible) {
+      triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    } else {
+      if (document.activeElement === document.body) triggerRef.current?.focus({ preventScroll: true });
+      triggerRef.current = null;
+    }
+  }, [visible]);
 
   // The launcher is the Ask entry in the rail or the tab bar.
-  if (!open) return null;
-  return <AskSheet lang={lang} locked={locked} onClose={() => setOpen(false)} />;
+  if (!visible) return null;
+  return <AskSheet lang={lang} locked={phase === 'locked' && !workspacePage} onClose={() => setOpen(false)} />;
 }
 
 function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onClose: () => void }) {
@@ -112,10 +116,10 @@ function AskSheet({ lang, locked, onClose }: { lang: Lang; locked: boolean; onCl
         if (e.key === 'Escape') onClose();
       }}
       className={cn(
-        'plate-raised fixed z-(--z-assistant) flex flex-col',
+        'workspace-theme workspace-reveal plate-raised fixed z-(--z-assistant) flex flex-col',
         'top-2 right-2 bottom-2 w-[400px] rounded-lg',
-        locked && 'right-[calc(var(--right-w)+16px)] bottom-[calc(var(--strip-h)+20px)]',
         'narrow:inset-x-0 narrow:top-auto narrow:right-0 narrow:bottom-(--tabbar-h) narrow:h-[80dvh] narrow:w-full narrow:rounded-none',
+        locked && 'workspace-field-assistant',
       )}
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-line-1 px-(--panel-pad) py-2">

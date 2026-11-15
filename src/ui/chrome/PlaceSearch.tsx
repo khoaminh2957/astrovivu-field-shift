@@ -60,10 +60,11 @@ export interface PlaceSearchProps {
   compact?: boolean;
   /** Told when the list opens or closes, so the host can hide what it would cover. */
   onOpenChange?: (open: boolean) => void;
+  onOpenField?: () => void;
   className?: string;
 }
 
-export function PlaceSearch({ look, compact, onOpenChange, className }: PlaceSearchProps) {
+export function PlaceSearch({ look, compact, onOpenChange, onOpenField, className }: PlaceSearchProps) {
   const t = useT();
   const lang = useLang();
   const hero = useMission((s) => s.phase === 'hero');
@@ -128,6 +129,7 @@ export function PlaceSearch({ look, compact, onOpenChange, className }: PlaceSea
       setSettled(null);
       if (row.kind === 'own') openOwnField();
       else openDemoField();
+      onOpenField?.();
       return;
     }
     setQ(row.title);
