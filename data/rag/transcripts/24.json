@@ -4,25 +4,130 @@
  "field": "nevada-alfalfa",
  "question": "Can I grow rice on this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:51:22.628Z",
+ "askedAt": "2026-11-15T09:52:19.838Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
- "requests": 2,
- "inputTokens": 19569,
- "outputTokens": 411,
- "ms": 3425,
+ "requests": 3,
+ "inputTokens": 30675,
+ "outputTokens": 937,
+ "ms": 5379,
  "calls": [
   {
    "cite": "S7",
-   "name": "fieldSuitability",
+   "name": "cropFigures",
    "input": {
-    "crop": "Oryza sativa"
+    "crop": "rice"
    },
    "output": {
     "cite": "S7",
+    "ok": true,
+    "crop": "Rice (Oryza sativa)",
+    "rows": [
+     {
+      "key": "temp",
+      "line": "Mean temperature during growth: optimal 20-30 °C, tolerated 10-36 °C."
+     },
+     {
+      "key": "rain",
+      "line": "Annual rainfall: optimal 1500-2000 mm, tolerated 1000-4000 mm."
+     },
+     {
+      "key": "ph",
+      "line": "Soil pH: optimal 5.5-7, tolerated 4.5-9."
+     },
+     {
+      "key": "texture",
+      "line": "Soil texture: optimal wide."
+     },
+     {
+      "key": "drainage",
+      "line": "Drainage: optimal poorly (saturated >50% of year)."
+     },
+     {
+      "key": "depth",
+      "line": "Soil depth: optimal medium (50-150 cm); tolerated shallow (20-50 cm)."
+     },
+     {
+      "key": "fertility",
+      "line": "Soil fertility: optimal high; tolerated moderate."
+     },
+     {
+      "key": "salinity",
+      "line": "Salinity: optimal low (<4 dS/m)."
+     },
+     {
+      "key": "light",
+      "line": "Light: optimal very bright; tolerated cloudy skies to very bright."
+     },
+     {
+      "key": "cycle",
+      "line": "Growing period: 80-180 days."
+     },
+     {
+      "key": "alt",
+      "line": "Maximum tolerated altitude: 2500 m."
+     },
+     {
+      "key": "lat",
+      "line": "Tolerated latitude: 36° to 55°."
+     },
+     {
+      "key": "photo",
+      "line": "Photoperiod: neutral day (12-14 hours)."
+     },
+     {
+      "key": "climate",
+      "line": "Climate zones: tropical wet & dry (Aw), tropical wet (Ar), subtropical humid (Cf), subtropical dry summer (Cs), subtropical dry winter (Cw)."
+     },
+     {
+      "key": "uses",
+      "line": "Main uses: food & beverage; material; fuels."
+     },
+     {
+      "key": "countries",
+      "line": "Countries reporting production: 116."
+     },
+     {
+      "key": "worldAreaHa",
+      "line": "Harvested area in the world: 168,793,303 ha, of the FAOSTAT item Rice."
+     }
+    ],
+    "rowCount": 17,
+    "sources": [
+     {
+      "name": "FAO EcoCrop database, record 1574",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=1574",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
+     },
+     {
+      "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
+      "licence": "CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)",
+      "year": "2021-2024",
+      "url": "https://www.fao.org/faostat/en/#data/QCL",
+      "accessed": "2026-11-15"
+     }
+    ],
+    "caveats": [
+     "The world figures are those of the FAOSTAT item Rice, tied to 3 crops.",
+     "EcoCrop gives one envelope per species, not per variety, and has no year of publication for a single record."
+    ]
+   },
+   "isError": false,
+   "ms": 2
+  },
+  {
+   "cite": "S8",
+   "name": "fieldSuitability",
+   "input": {
+    "crop": "rice"
+   },
+   "output": {
+    "cite": "S8",
     "ok": true,
     "crop": "Rice (Oryza sativa)",
     "field": "Diamond Valley alfalfa pivot",
@@ -163,10 +268,11 @@
       "year": "2026"
      },
      {
-      "name": "FAO EcoCrop database, 2,568 species",
+      "name": "FAO EcoCrop database, record 1574",
       "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
       "year": "n.d.",
-      "url": "data/ecocrop/README.md"
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=1574",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      }
     ],
     "caveats": [
@@ -174,28 +280,28 @@
     ]
    },
    "isError": false,
-   "ms": 7
+   "ms": 6
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Growing rice on this field has a low overall suitability score of 13 out of 100, primarily limited by soil pH and drainage conditions. \n\nThe soil pH is 8.8 (SSURGO soil survey, dominant component of the map unit), which is well above the optimal range of 5.5 to 7 for rice (FAO EcoCrop). Additionally, the field has well-drained soil (SSURGO), whereas rice optimally requires poorly drained, saturated conditions where water is held on the surface for much of the growing season [S1][S2]. \n\nThe climate in Nevada provides only about 63 mm of rain and stored soil water during the growing window (ERA5 reanalysis, 25 km pixel, 2006–2025), falling far short of the optimal 1500 mm to 2000 mm annual rainfall requirement [S1]. While temperature scores reasonably well at an actual 18.7 °C compared to an optimal 20 °C to 30 °C [S1], bridging the massive water deficit through irrigation and managing the high alkalinity would present severe agronomic hurdles.\n\nConsider conducting a soil test to confirm local pH levels before planning alternative crops that tolerate alkaline soils.",
+ "answer": "Growing rice on this field is poorly suited, with a suitability score of 13 out of 100 [S1]. The primary limitations are the soil pH and drainage conditions [S1]. \n\nRice prefers an optimal soil pH of 5.5 to 7 [S2], whereas the field's soil pH is 8.8 according to the SSURGO soil survey [S1]. Additionally, rice thrives in poorly drained soils that remain saturated for more than 50% of the year [S2], but this parcel is classified as well drained [S1]. Furthermore, the regional climate has a mean annual rainfall of 288 mm (ERA5 reanalysis (ECMWF), daily aggregates, 25 km pixel, modelled, 2006-2025), which is far below rice's optimal annual rainfall requirement of 1500 to 2000 mm [S2].\n\nWould you like to explore alternative crops that better match the current soil and climate conditions of your field?",
  "citations": [
   {
    "n": 1,
+   "chunkId": "table:field-suitability:nevada-alfalfa:oryza-sativa",
+   "title": "How Rice (Oryza sativa) suits the field",
+   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, record 1574",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  },
+  {
+   "n": 2,
    "chunkId": "eco:oryza-sativa:facts",
    "title": "Rice (Oryza sativa): ecological requirements",
    "source": "FAO EcoCrop",
    "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
-  },
-  {
-   "n": 2,
-   "chunkId": "wiki-en:rice:04",
-   "title": "Rice: Agronomy / Growing",
-   "source": "Wikipedia (en): Rice",
-   "license": "CC BY-SA 4.0"
   }
  ]
 }

@@ -3,16 +3,16 @@
  "lang": "vi",
  "question": "Ở Việt Nam người ta trồng những cây gì nhiều nhất?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:49:40.531Z",
+ "askedAt": "2026-11-15T09:50:44.003Z",
  "intent": "general",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 11186,
- "outputTokens": 556,
- "ms": 3619,
+ "inputTokens": 11166,
+ "outputTokens": 765,
+ "ms": 3495,
  "calls": [
   {
    "cite": "S7",
@@ -145,14 +145,14 @@
     ]
    },
    "isError": false,
-   "ms": 9
+   "ms": 10
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Theo số liệu thống kê (FAOSTAT, 2022-2024), những cây trồng có diện tích thu hoạch lớn nhất ở Việt Nam gồm:\n\n- Lúa (Rice): 7.089.041 ha, chiếm 52,49% diện tích thu hoạch [S1].\n- Ngô (Maize): 875.899 ha, chiếm 6,49% diện tích thu hoạch [S1].\n- Cao su (Natural rubber): 728.509 ha, chiếm 5,39% diện tích thu hoạch [S1].\n- Cà phê (Coffee, green): 667.148 ha, chiếm 4,94% diện tích thu hoạch [S1].\n- Sắn (Cassava): 519.296 ha, chiếm 3,85% diện tích thu hoạch [S1].\n\nBạn có muốn tìm hiểu chi tiết về điều kiện sinh trưởng hoặc kỹ thuật canh tác của một trong các loại cây trồng này không?",
+ "answer": "Ở Việt Nam, các loại cây trồng có diện tích lớn nhất theo số liệu thống kê bao gồm lúa, ngô, cao su, cà phê và sắn [S1].\n\n- Lúa có diện tích lớn nhất với khoảng 7.089.041 ha, chiếm hơn một nửa tổng diện tích canh tác [S1].\n- Ngô đạt khoảng 875.899 ha [S1].\n- Cao su đạt khoảng 728.509 ha [S1].\n- Cà phê đạt khoảng 667.148 ha [S1].\n- Sắn đạt khoảng 519.296 ha [S1].\n\nBạn có muốn tìm hiểu thêm về phân bố vùng trồng của riêng loại cây nào trong số này không?",
  "citations": [
   {
    "n": 1,

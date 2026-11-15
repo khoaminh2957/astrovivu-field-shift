@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "What would a season of quinoa earn on this field?",
  "expect": "no-data",
- "askedAt": "2026-11-15T08:51:36.361Z",
+ "askedAt": "2026-11-15T09:52:34.879Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 17863,
- "outputTokens": 632,
- "ms": 4083,
+ "inputTokens": 18064,
+ "outputTokens": 673,
+ "ms": 4271,
  "calls": [
   {
    "name": "priceAndMargin",
@@ -28,24 +28,17 @@
     "field": "Central Highlands robusta block"
    },
    "isError": false,
-   "ms": 1
+   "ms": 0
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "No reference price or cost was collected for this crop, so the potential earnings of a season of quinoa on this field cannot be calculated here. \n\nQuinoa (Chenopodium quinoa) is an annual herb that thrives in optimal mean temperatures of 14 to 18 °C and an annual rainfall of 500 to 1000 mm, with a growing period of 90 to 240 days [S1]. Average seed yields are about 400 to 900 kg/ha, though yields up to 2 to 3 t/ha can be obtained [S2]. \n\nTo find out what quinoa might earn, check current local market prices and consult the local agricultural extension office for trial yields in the Central Highlands.",
+ "answer": "Economic data and reference prices for quinoa are not available for this field, so its earnings cannot be calculated. \n\nThe application has no local price or cost records for quinoa on your parcel in Đắk Lắk. While general reference literature reports average seed yields of 400-900 kg/ha with potential yields up to 2-3 t/ha [S1], financial returns depend heavily on local market prices and input costs that are not currently stored in the system.\n\nAsk your local extension office for current market prices and trial data for quinoa in your region.",
  "citations": [
   {
    "n": 1,
-   "chunkId": "eco:chenopodium-quinoa:facts",
-   "title": "Quinoa (Chenopodium quinoa): ecological requirements",
-   "source": "FAO EcoCrop",
-   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
-  },
-  {
-   "n": 2,
    "chunkId": "eco:chenopodium-quinoa:notes-0",
    "title": "Quinoa (Chenopodium quinoa): description, uses, growing period, further information",
    "source": "FAO EcoCrop",

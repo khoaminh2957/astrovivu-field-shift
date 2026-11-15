@@ -3,22 +3,23 @@
  "lang": "vi",
  "question": "Tỉnh Đắk Lắk trồng cây gì nhiều nhất?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:49:45.653Z",
+ "askedAt": "2026-11-15T09:50:49.001Z",
  "intent": "general",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 9821,
- "outputTokens": 574,
- "ms": 3437,
+ "inputTokens": 9447,
+ "outputTokens": 682,
+ "ms": 3129,
  "calls": [
   {
    "cite": "S7",
    "name": "cropsInPlace",
    "input": {
     "country": "Viet Nam",
+    "limit": 5,
     "region": "Dak Lak"
    },
    "output": {
@@ -79,100 +80,10 @@
       "crops": [
        "Cà phê vối (Coffea canephora)"
       ]
-     },
-     {
-      "name": "Other Vegetables",
-      "areaHa": 15357,
-      "sharePct": 3.97,
-      "rank": 6,
-      "residual": true,
-      "crops": []
-     },
-     {
-      "name": "Temperate Fruit",
-      "areaHa": 9465,
-      "sharePct": 2.45,
-      "rank": 7,
-      "residual": true,
-      "crops": []
-     },
-     {
-      "name": "Other Tropical Fruit",
-      "areaHa": 8051,
-      "sharePct": 2.08,
-      "rank": 8,
-      "residual": true,
-      "crops": []
-     },
-     {
-      "name": "Citrus",
-      "areaHa": 7169,
-      "sharePct": 1.85,
-      "rank": 9,
-      "residual": true,
-      "crops": []
-     },
-     {
-      "name": "Rest Of Crops",
-      "areaHa": 6688,
-      "sharePct": 1.73,
-      "rank": 10,
-      "residual": true,
-      "crops": []
-     },
-     {
-      "name": "Sugarcane",
-      "areaHa": 6173,
-      "sharePct": 1.6,
-      "rank": 11,
-      "residual": false,
-      "crops": [
-       "Mía (Saccharum officinarum)"
-      ]
-     },
-     {
-      "name": "Sweet Potato",
-      "areaHa": 6163,
-      "sharePct": 1.59,
-      "rank": 12,
-      "residual": false,
-      "crops": [
-       "Khoai lang (Ipomoea batatas)"
-      ]
-     },
-     {
-      "name": "Bean",
-      "areaHa": 4832,
-      "sharePct": 1.25,
-      "rank": 13,
-      "residual": false,
-      "crops": []
-     },
-     {
-      "name": "Groundnut",
-      "areaHa": 3376,
-      "sharePct": 0.87,
-      "rank": 14,
-      "residual": false,
-      "crops": [
-       "Đậu phộng (Arachis hypogaea)"
-      ]
-     },
-     {
-      "name": "Tea",
-      "areaHa": 2645,
-      "sharePct": 0.68,
-      "rank": 15,
-      "residual": false,
-      "crops": [
-       "Chè (Camellia sinensis)",
-       "Camellia sinensis var. assamica",
-       "Camellia sinensis var. sinensis"
-      ]
      }
     ],
     "rowCount": 24,
-    "rowsShown": 15,
+    "rowsShown": 5,
     "facts": {
      "region": "Dak Lak",
      "country": "Viet Nam"
@@ -199,7 +110,7 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "Theo ước tính diện tích thu hoạch của MapSPAM 2020 cho tỉnh Đắk Lắk, cây trồng có diện tích lớn nhất là lúa với 100.041 ha (chiếm 25,88% diện tích) [S1].\n\nĐứng thứ hai là ngô với 85.873 ha (22,22%), tiếp theo là cao su với 60.017 ha (15,53%), sắn với 39.571 ha (10,24%) và cà phê vối với 23.871 ha (6,18%) [S1]. Các số liệu này dựa trên ước tính phân bổ thống kê lưới ô năm 2020 của MapSPAM [S1].",
+ "answer": "Theo ước tính phân bổ diện tích thu hoạch của MapSPAM năm 2020 (lưới ô, SPAM 2020 V2r2), các cây trồng có diện tích lớn nhất tại tỉnh Đắk Lắk gồm lúa (chiếm khoảng 25,88% với diện tích 100.041 ha), ngô (chiếm khoảng 22,22% với 85.873 ha), cao su (chiếm khoảng 15,53% với 60.017 ha), sắn (chiếm khoảng 10,24% với 39.571 ha) và cà phê vối (chiếm khoảng 6,18% với 23.871 ha) [S1]. \n\nLưu ý rằng đây là số liệu ước tính từ mô hình phân bổ không gian chứ không phải số liệu điều tra trực tiếp của tỉnh, và mô hình chỉ bao gồm một số nhóm cây nhất định [S1]. Hiện tại không có thửa đất nào được khóa trong hệ thống [S1].",
  "citations": [
   {
    "n": 1,

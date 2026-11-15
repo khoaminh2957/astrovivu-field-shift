@@ -3,7 +3,7 @@
  "lang": "en",
  "question": "Where is coffee grown, and how much does Viet Nam grow?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:50:41.836Z",
+ "askedAt": "2026-11-15T09:51:43.595Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
@@ -11,14 +11,14 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 4260,
- "outputTokens": 1347,
- "ms": 4036,
+ "outputTokens": 1061,
+ "ms": 3417,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Robusta coffee is reported by 79 countries to FAOSTAT, with a world harvested area of 12,353,073 ha as a mean of each country's latest three years with data within 2021-2024 [S1]. The largest harvested areas are in Brazil with 1,905,536 ha, Indonesia with 1,267,388 ha, Colombia with 840,479 ha, Ethiopia with 833,661 ha, and Uganda with 832,866 ha (means of 2022-2024) [S1].\n\nViet Nam has 667,148 ha harvested (mean of 2022-2024), making it the 7th largest grower [S1]. Viet Nam is also the world's largest exporter of robusta coffee, accounting for over 40% of the total production [S2]. These FAOSTAT figures are for the item Coffee, green, which is tied to 4 crops rather than just one [S1].\n\nWould you like to check the ecological requirements for growing robusta coffee on a specific parcel of land?",
+ "answer": "Robusta coffee is grown across 79 countries reporting to FAOSTAT, with a total world harvested area of 12,353,073 ha [S1]. The largest harvested areas are in Brazil (1,905,536 ha), Indonesia (1,267,388 ha), Colombia (840,479 ha), Ethiopia (833,661 ha), and Uganda (832,866 ha), based on means from 2022 to 2024 [S1]. \n\nViet Nam has a harvested area of 667,148 ha (mean of 2022-2024), representing the 7th largest harvested area in these statistics [S1]. Viet Nam is the world's largest exporter of robusta coffee, accounting for over 40% of total production [S2].\n\nWould you like to check the ecological requirements for growing robusta coffee on a specific piece of land?",
  "citations": [
   {
    "n": 1,

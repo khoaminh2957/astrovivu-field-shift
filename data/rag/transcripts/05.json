@@ -3,7 +3,7 @@
  "lang": "vi",
  "question": "So sánh yêu cầu của cà phê vối và hồ tiêu.",
  "expect": "answer",
- "askedAt": "2026-11-15T08:49:54.269Z",
+ "askedAt": "2026-11-15T09:50:57.164Z",
  "intent": "compare",
  "mode": "generative",
  "fallback": null,
@@ -11,14 +11,14 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 4666,
- "outputTokens": 1410,
- "ms": 3705,
+ "outputTokens": 1007,
+ "ms": 3362,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Cà phê vối và hồ tiêu đều là cây trồng lâu năm ở vùng nhiệt đới với yêu cầu về độ phì đất cao và độ mặn thấp, nhưng chúng có các ngưỡng sinh thái khác nhau [S1], [S2].\n\nVề nhiệt độ trung bình, cà phê vối phát triển tốt nhất ở mức 20-30 °C [S1], trong khi hồ tiêu ưa nhiệt độ cao hơn ở mức 22-35 °C [S2].\n\nVề lượng mưa năm, cà phê vối cần khoảng 1700-3000 mm [S1], còn hồ tiêu đòi hỏi lượng mưa lớn hơn từ 2500 đến 4000 mm [S2].\n\nVề đặc tính đất, cà phê vối thích hợp với độ pH từ 5-6.3 [S1] và độ sâu tầng đất trung bình 50-150 cm [S1]. Trong khi đó, hồ tiêu ưa đất có độ pH từ 6-7 [S2] và tầng đất rất sâu trên 150 cm [S2].\n\nBạn có muốn kiểm tra điều kiện đất và khí hậu cụ thể của một khu vực nào đó không?",
+ "answer": "Cà phê vối và hồ tiêu đều là cây lâu năm vùng nhiệt đới có yêu cầu sinh thái khắt khe, trong đó hồ tiêu đòi hỏi lượng mưa và độ sâu tầng đất lớn hơn so với cà phê vối.\n\nVề nhiệt độ, cà phê vối yêu cầu nhiệt độ trung bình từ 20 đến 30 °C và chịu được từ 12 đến 36 °C [S1], trong khi hồ tiêu ưa nhiệt độ từ 22 đến 35 °C và chịu được từ 10 đến 40 °C [S2]. Về lượng mưa năm, cà phê vối cần từ 1700 đến 3000 mm [S1], còn hồ tiêu cần lượng mưa nhiều hơn, từ 2500 đến 4000 mm [S2].\n\nVề đất trồng, độ pH tối ưu cho cà phê vối là từ 5 đến 6.3 [S1] và cho hồ tiêu là từ 6 đến 7 [S2]. Cả hai loài đều ưa đất thoát nước tốt và độ phì đất cao [S1][S2], nhưng cà phê vối ưa độ sâu tầng đất trung bình từ 50 đến 150 cm [S1], trong khi hồ tiêu đòi hỏi tầng đất sâu trên 150 cm [S2].\n\nBạn có muốn biết thêm chi tiết về yêu cầu của một loại cây trồng cụ thể nào khác không?",
  "citations": [
   {
    "n": 1,

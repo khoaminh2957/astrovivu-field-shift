@@ -3,7 +3,7 @@
  "lang": "vi",
  "question": "Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?",
  "expect": "declined",
- "askedAt": "2026-11-15T08:50:40.329Z",
+ "askedAt": "2026-11-15T09:51:42.082Z",
  "intent": "off-topic",
  "mode": "extractive",
  "fallback": "declined by the router",
@@ -12,7 +12,7 @@
  "requests": 0,
  "inputTokens": 0,
  "outputTokens": 0,
- "ms": 6,
+ "ms": 9,
  "calls": [],
  "numberGuard": {
   "passed": true,

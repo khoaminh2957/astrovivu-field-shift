@@ -4,21 +4,246 @@
  "field": "cantho-rice",
  "question": "Đất ruộng tôi có bị mặn không?",
  "expect": "no-data",
- "askedAt": "2026-11-15T08:50:23.525Z",
+ "askedAt": "2026-11-15T09:51:23.448Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
- "requests": 1,
- "inputTokens": 8630,
- "outputTokens": 533,
- "ms": 2415,
- "calls": [],
+ "requests": 2,
+ "inputTokens": 19550,
+ "outputTokens": 1128,
+ "ms": 4899,
+ "calls": [
+  {
+   "cite": "S7",
+   "name": "soilPlan",
+   "input": {},
+   "output": {
+    "cite": "S7",
+    "ok": true,
+    "field": "Mekong Delta paddy",
+    "rows": [
+     {
+      "ph": {
+       "current": 6.1,
+       "target": 6.1,
+       "amendment": "none",
+       "rateTHa": null,
+       "basis": "pH 6.1 nằm trong khoảng 5.5-7 mà Lúa ưa thích: không cần cải tạo.",
+       "caveats": [
+        "Chỉ mang tính tham khảo: cần phân tích đất (pH và pH đệm) tại phòng thí nghiệm trước khi mua chất cải tạo.",
+        "pH hiện tại là ước tính từ bản đồ (SoilGrids 2.0 (0-30 cm)), không phải đo trên thửa ruộng này."
+       ]
+      },
+      "diagnosis": [
+       {
+        "key": "ph",
+        "label": "Độ phản ứng của đất (pH)",
+        "currentValue": 6.1,
+        "sourceId": "soilgrids",
+        "uncertainty": [
+         4.2,
+         8.2
+        ],
+        "targetRange": {
+         "optLo": 5.5,
+         "optHi": 7,
+         "absLo": 4.5,
+         "absHi": 9
+        },
+        "status": "uncertain",
+        "deficit": 0,
+        "note": "pH ước tính là 6.1, nhưng khoảng của ước tính [4.2, 8.2] vắt qua các ngưỡng của Lúa (tối ưu 5.5-7, chịu được 4.5-9). Cần đo pH tại ruộng.",
+        "isLimiting": false
+       },
+       {
+        "key": "texture",
+        "label": "Thành phần cơ giới đất",
+        "currentValue": "silty clay loam",
+        "sourceId": "soilgrids",
+        "targetRange": {
+         "optLo": "heavy, medium, light",
+         "absLo": "heavy, medium, light"
+        },
+        "status": "optimal",
+        "note": "Thành phần cơ giới (nặng (nhiều sét), thịt pha sét và limon) thuộc nhóm Lúa phát triển tốt nhất (nặng (nhiều sét), thịt trung bình, nhẹ (nhiều cát)).",
+        "isLimiting": false
+       },
+       {
+        "key": "drainage",
+        "label": "Khả năng thoát nước",
+        "currentValue": null,
+        "status": "no_data",
+        "note": "Chưa có dữ liệu phân loại cấp thoát nước cho thửa này (thường thấy ngoài vùng phủ SSURGO).",
+        "isLimiting": false
+       },
+       {
+        "key": "depth",
+        "label": "Độ sâu tầng đất",
+        "currentValue": null,
+        "unit": "cm",
+        "status": "no_data",
+        "note": "Chưa có số liệu độ sâu tầng đất cho thửa này.",
+        "isLimiting": false
+       },
+       {
+        "key": "salinity",
+        "label": "Độ dẫn điện / độ mặn (EC)",
+        "currentValue": null,
+        "unit": "dS/m",
+        "status": "no_data",
+        "note": "Chưa có dữ liệu độ dẫn điện (SoilGrids không đo EC; cần kiểm tra tại chỗ hoặc SSURGO).",
+        "isLimiting": false
+       },
+       {
+        "key": "organic_matter",
+        "label": "Chất hữu cơ trong đất",
+        "currentValue": 5.7,
+        "unit": "%",
+        "sourceId": "soilgrids",
+        "status": "reading_only",
+        "note": "Chất hữu cơ 5.7% (cacbon hữu cơ 33.3 g/kg x 1,724). Danh mục cây trồng không có yêu cầu cho chỉ tiêu này nên chỉ liệt kê số đo, không đánh giá.",
+        "isLimiting": false
+       },
+       {
+        "key": "cec",
+        "label": "Dung tích trao đổi cation (CEC)",
+        "currentValue": 22.7,
+        "unit": "cmol(+)/kg",
+        "sourceId": "soilgrids",
+        "uncertainty": [
+         2.3,
+         51.8
+        ],
+        "status": "reading_only",
+        "note": "CEC 22.7 cmol(+)/kg. Danh mục cây trồng không có yêu cầu cho chỉ tiêu này nên chỉ liệt kê số đo, không đánh giá.",
+        "isLimiting": false
+       },
+       {
+        "key": "awc",
+        "label": "Khả năng giữ nước hữu dụng (AWC)",
+        "currentValue": null,
+        "unit": "mm/m",
+        "status": "no_data",
+        "note": "Chưa có số liệu khả năng giữ nước hữu dụng cho thửa này: không suy ra từ nhóm đất.",
+        "isLimiting": false
+       },
+       {
+        "key": "nitrogen",
+        "label": "Đạm tổng số (N)",
+        "currentValue": 2.76,
+        "unit": "g/kg",
+        "sourceId": "soilgrids",
+        "uncertainty": [
+         0.26,
+         11.84
+        ],
+        "status": "reading_only",
+        "note": "Đạm tổng số 2.76 g/kg. Danh mục cây trồng không có yêu cầu cho chỉ tiêu này nên chỉ liệt kê số đo, không đánh giá.",
+        "isLimiting": false
+       }
+      ],
+      "plan": {
+       "items": [
+        {
+         "metric": "drainage",
+         "status": "no_data",
+         "title": "Cần đo trước: Khả năng thoát nước",
+         "action": "Sau một trận mưa lớn, ghi lại nước đọng trên ruộng trong bao lâu; đào một hố và tìm các lớp đất xám hoặc loang lổ cho thấy nơi nước ứ đọng. Không bón chất cải tạo cho chỉ tiêu này khi chưa có kết quả.",
+         "rateRange": null,
+         "timing": "Trước khi làm đất và gieo trồng",
+         "verification": "So kết quả với yêu cầu của cây và nhập vào cho thửa ruộng này.",
+         "evidence": [
+          {
+           "label": "Lý do",
+           "value": "Chưa có số đo cho chỉ tiêu này nên không đề xuất chất cải tạo hay liều lượng nào."
+          }
+         ],
+         "caveats": [
+          "Vệ tinh và bản đồ đất không có số đo này cho thửa ruộng; cần kiểm tra tại chỗ."
+         ],
+         "needsLocalReview": true
+        },
+        {
+         "metric": "depth",
+         "status": "no_data",
+         "title": "Cần đo trước: Độ sâu tầng đất",
+         "action": "Đào hố hoặc khoan đến tầng đá, tầng cứng hay mực nước ngầm, rồi đo độ sâu rễ có thể xuống tới. Không bón chất cải tạo cho chỉ tiêu này khi chưa có kết quả.",
+         "rateRange": null,
+         "timing": "Trước khi làm đất và gieo trồng",
+         "verification": "So kết quả với yêu cầu của cây và nhập vào cho thửa ruộng này.",
+         "evidence": [
+          {
+           "label": "Lý do",
+           "value": "Chưa có số đo cho chỉ tiêu này nên không đề xuất chất cải tạo hay liều lượng nào."
+          }
+         ],
+         "caveats": [
+          "Vệ tinh và bản đồ đất không có số đo này cho thửa ruộng; cần kiểm tra tại chỗ."
+         ],
+         "needsLocalReview": true
+        },
+        {
+         "metric": "salinity",
+         "status": "no_data",
+         "title": "Cần đo trước: Độ dẫn điện / độ mặn (EC)",
+         "action": "Gửi mẫu đất hỗn hợp (tầng 0-20 cm) đến phòng phân tích để đo độ dẫn điện của dịch chiết bão hòa (ECe). Không bón chất cải tạo cho chỉ tiêu này khi chưa có kết quả.",
+         "rateRange": null,
+         "timing": "Trước khi làm đất và gieo trồng",
+         "verification": "So kết quả với yêu cầu của cây và nhập vào cho thửa ruộng này.",
+         "evidence": [
+          {
+           "label": "Lý do",
+           "value": "Chưa có số đo cho chỉ tiêu này nên không đề xuất chất cải tạo hay liều lượng nào."
+          }
+         ],
+         "caveats": [
+          "Vệ tinh và bản đồ đất không có số đo này cho thửa ruộng; cần kiểm tra tại chỗ."
+         ],
+         "needsLocalReview": true
+        }
+       ],
+       "summary": "0 biện pháp cải tạo đất và 3 chỉ tiêu cần đo trước. Xem trước: Độ phản ứng của đất (pH).",
+       "mostLimitingFactor": "ph"
+      }
+     }
+    ],
+    "rowCount": 1,
+    "sources": [
+     {
+      "name": "Astrovivu soil diagnosis and plan (docs/SOIL.md), computed from the readings of the field on 2026-11-14",
+      "licence": "MIT (project code); the readings keep the licences of their sources",
+      "year": "2026"
+     },
+     {
+      "name": "FAO EcoCrop database, record 1574",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=1574",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
+     }
+    ],
+    "caveats": [
+     "Liều lượng là khoảng tham khảo, cần phân tích đất ở phòng thí nghiệm và hướng dẫn địa phương xác nhận. Chỉ tiêu nào thửa ruộng chưa có số đo thì có bước đo trước và không có liều; docs/SOIL.md ghi nguồn của từng ngưỡng và liệt kê những gì đã bỏ vì không có nguồn."
+    ]
+   },
+   "isError": false,
+   "ms": 1
+  }
+ ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Hiện tại, dữ liệu từ hệ thống không có số đo độ mặn cụ thể cho thửa ruộng của bạn (n/a dS/m). \n\nCách rẻ nhất để biết chính xác độ mặn của đất là mang mẫu đất đi phân tích tại phòng thí nghiệm hoặc liên hệ với trạm khuyến nông địa phương để được hướng dẫn đo đạc thực tế.",
- "citations": []
+ "answer": "Hiện tại chưa có dữ liệu đo độ mặn hay độ dẫn điện (EC) cho thửa ruộng Mekong Delta paddy, vì bản đồ đất SoilGrids không cung cấp chỉ tiêu này [S1]. \n\nDo đó, hệ thống chưa đủ cơ sở để xác định đất ruộng của bạn có bị mặn hay không [S1]. \n\nBạn nên gửi mẫu đất hỗn hợp ở tầng 0-20 cm đến phòng phân tích để đo độ dẫn điện của dịch chiết bão hòa trước khi làm đất và gieo trồng [S1].",
+ "citations": [
+  {
+   "n": 1,
+   "chunkId": "table:soil-plan:cantho-rice",
+   "title": "Kế hoạch cải tạo đất cho thửa ruộng",
+   "source": "Astrovivu soil diagnosis and plan (docs/SOIL.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, record 1574",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  }
+ ]
 }

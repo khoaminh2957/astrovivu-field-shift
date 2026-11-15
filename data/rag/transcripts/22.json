@@ -4,22 +4,22 @@
  "field": "iowa-corn-soy",
  "question": "How well does soybean suit this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:51:14.116Z",
+ "askedAt": "2026-11-15T09:52:09.916Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 19376,
- "outputTokens": 332,
- "ms": 2862,
+ "inputTokens": 19553,
+ "outputTokens": 656,
+ "ms": 3749,
  "calls": [
   {
    "cite": "S7",
    "name": "fieldSuitability",
    "input": {
-    "crop": "soybean"
+    "crop": "Soybean"
    },
    "output": {
     "cite": "S7",
@@ -172,10 +172,11 @@
       "year": "2026"
      },
      {
-      "name": "FAO EcoCrop database, 2,568 species",
+      "name": "FAO EcoCrop database, record 1150",
       "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
       "year": "n.d.",
-      "url": "data/ecocrop/README.md"
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=1150",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      }
     ],
     "caveats": [
@@ -183,21 +184,21 @@
     ]
    },
    "isError": false,
-   "ms": 7
+   "ms": 8
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Soybean suits this field well, earning an overall suitability score of 92/100 and remaining reliable in 14 of 20 analysed years. \n\nThe field offers ideal conditions for most factors, scoring 100/100 on soil pH at 6.2 (SSURGO soil survey, dominant component of the map unit), medium soil texture, well-drained conditions, zero salinity, high fertility, and gentle slope. Water over the 4-month growing window totals 604 mm (ERA5 reanalysis, daily aggregates, 25 km pixel), which meets the crop's optimal moisture needs.\n\nThe limiting factor is temperature, scoring 92/100 because the worst month in the growing window averages 19.2 °C (ERA5 reanalysis, daily aggregates, 25 km pixel), slightly below the optimal range of 20-33 °C [S1]. \n\nCheck local extension guidance for soybean cyst nematode and other regional pests before planting.",
+ "answer": "Soybean suits this field well, earning an overall suitability score of 92 out of 100 [S1]. It is judged reliable in 14 of 20 analysed years [S1]. \n\nThe primary limiting factor is temperature in the growing window, where the worst month averages 19.2 °C against an optimal range of 20 to 33 °C [S1]. Other factors align very favorably with the crop's needs: total water over the growing window is 604 mm (comprising 414 mm of rain and 190 mm of stored soil water, meeting the optimal 600 to 1500 mm range), soil pH is 6.2 (within the 5.5 to 6.5 optimal range), and soil texture is medium [S1]. Sowing is modeled for month 6 [S1].\n\nWould you like to explore soybean rotation options for this parcel?",
  "citations": [
   {
    "n": 1,
-   "chunkId": "eco:glycine-max:facts",
-   "title": "Soybean (Glycine max): ecological requirements",
-   "source": "FAO EcoCrop",
-   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+   "chunkId": "table:field-suitability:iowa-corn-soy:glycine-max",
+   "title": "How Soybean (Glycine max) suits the field",
+   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, record 1150",
+   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
   }
  ]
 }

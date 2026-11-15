@@ -3,22 +3,22 @@
  "lang": "en",
  "question": "What are the main crops of the United States by harvested area?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:50:47.376Z",
+ "askedAt": "2026-11-15T09:51:48.516Z",
  "intent": "term",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 12056,
- "outputTokens": 497,
- "ms": 3418,
+ "inputTokens": 12140,
+ "outputTokens": 570,
+ "ms": 3187,
  "calls": [
   {
    "cite": "S7",
    "name": "cropsInPlace",
    "input": {
-    "country": "USA"
+    "country": "United States"
    },
    "output": {
     "cite": "S7",
@@ -37,7 +37,11 @@
       ]
      },
      {
-      "name": "Maize (corn)",
+      "name": "Maize (corn) + Green corn (maize)",
+      "items": [
+       "Maize (corn)",
+       "Green corn (maize)"
+      ],
       "areaHa": 33613081,
       "productionT": 373999542,
       "sharePct": 34.011,
@@ -180,7 +184,11 @@
       ]
      },
      {
-      "name": "Peas, dry",
+      "name": "Peas, dry + Peas, green",
+      "items": [
+       "Peas, dry",
+       "Peas, green"
+      ],
       "areaHa": 418207,
       "productionT": 992133,
       "sharePct": 0.423,
@@ -317,6 +325,7 @@
      "98 more crops are counted inside group items the country reports (\"Other vegetables\" and the like): they may be grown, and have no figure of their own.",
      "13 rows name a source: they are figures of national statistics, of one year, where the others are FAOSTAT's means of three years. The atlas ranks them together.",
      "For 14 more crops the national statistics were read and have no figure: that does not say they are not grown.",
+     "A figure given with two items or more is their sum: the atlas adds up the items of a crop that a country reports, and adds tonnes of different products when it does (maize grain and green corn).",
      "A crop the statistics report none of is not thereby a crop that is not grown: a country that does not itemise a crop reads the same way."
     ]
    },
@@ -328,7 +337,7 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "The main crops of the United States by harvested area are soybeans and maize, which together cover over two-thirds of the country's harvested crop land [S1]. \n\n- Soya beans: 34,330,527 hectares (34.7% of the harvested area) [S1]\n- Maize (corn): 33,613,081 hectares (34.0% of the harvested area) [S1]\n- Wheat: 15,004,017 hectares (15.2% of the harvested area) [S1]\n- Alfalfa: 5,939,230 hectares (6.0% of the harvested area) [S1]\n- Seed cotton, unginned: 3,052,090 hectares (3.1% of the harvested area) [S1]\n\nWould you like to know the main crops for a specific US state?",
+ "answer": "The main crops of the United States by harvested area are soybeans and maize [S1]. \n\n- Soya beans: 34,330,527 hectares (34.7% of harvested area) [S1]\n- Maize (corn) and green corn: 33,613,081 hectares (34.0% of harvested area) [S1]\n- Wheat: 15,004,017 hectares (15.2% of harvested area) [S1]\n- Alfalfa: 5,939,230 hectares (6.0% of harvested area) [S1]\n- Seed cotton, unginned: 3,052,090 hectares (3.1% of harvested area) [S1]\n\nWould you like to explore the harvested area for any specific region or state within the United States?",
  "citations": [
   {
    "n": 1,

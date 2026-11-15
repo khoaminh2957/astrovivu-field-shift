@@ -234,16 +234,16 @@ At its own default Flash-Lite answered the rotation question without calling `ro
 | Answered by the router without the model | 5: four declined (price forecast, pesticide product and dose, photo diagnosis, legal), one about a dropped species |
 | Generated answers given | 25 of 25 |
 | Number check | 25 of 25 answers held only numbers of their sources |
-| Function calls | 16, none failed; 41 requests to the model; two calls returned "no data" (durian in Thailand: counted inside a group item; quinoa: no reference price) and the answer said so |
-| Tokens | 314,646 in, 19,471 out |
-| Time per answer | median 3.4 s, longest 6.2 s |
+| Function calls | 18, none failed; 43 requests to the model; two calls returned "no data" (durian in Thailand: counted inside a group item; quinoa: no reference price) and the answer said so |
+| Tokens | 340,935 in, 16,654 out |
+| Time per answer | median 3.2 s, longest 5.7 s |
 
-This is the sixth run of the same 30 questions. The code changed between the first four runs as they showed what was wrong; the fifth followed the corrections to the sheets on where a crop is grown, the sixth the figures of national statistics in the atlas (the question about durian in Viet Nam, which had no figure before, is now answered with the 178,800 ha of the national report). In the last three runs every answer passed. In the first three the number check dropped two, one and one answers: a harvested area with two digits transposed (671,148 ha for 667,148), a sum of two shares the model made ("over 99 %", twice), and a score turned into a percentage (which is why scores now go out of 100). The first run also showed two questions the router did not decline ("Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "Is it legal to lease farmland to a foreign company?"); the model declined both by itself, the rules were then widened, and both questions are in the eval set.
+This is the seventh run of the same 30 questions. The code changed between the first four runs as they showed what was wrong; the fifth followed the corrections to the sheets on where a crop is grown, the sixth the figures of national statistics in the atlas (the question about durian in Viet Nam, which had no figure before, is now answered with the 178,800 ha of the national report), the seventh the corrections to the lookups (the soil plan is the soil module's: "Is my field salty?" on the Cần Thơ field is now answered from it). In the last four runs every answer passed. In the first three the number check dropped two, one and one answers: a harvested area with two digits transposed (671,148 ha for 667,148), a sum of two shares the model made ("over 99 %", twice), and a score turned into a percentage (which is why scores now go out of 100). The first run also showed two questions the router did not decline ("Nên phun thuốc gì và liều bao nhiêu cho bệnh đạo ôn?", "Is it legal to lease farmland to a foreign company?"); the model declined both by itself, the rules were then widened, and both questions are in the eval set.
 
-What the runs show that no check catches (the first is in the recorded transcripts, the others were seen in earlier runs):
+What the runs show that no check catches (the first two are in the recorded transcripts, the others were seen in earlier runs):
 
 - **A looser reading of the days asked about.** "Is there frost next week?" (12) is answered with the warning of the week after as well, each with its dates. The rule-based answer keeps to the days asked about.
-- **A caveat left out.** The figures for coffee are those of the FAOSTAT item "Coffee, green", which four coffee crops share. The recorded answer (16) says so; in two earlier runs the answer gave them as robusta's, or as coffee's, without it.
+- **A caveat left out.** The figures for coffee are those of the FAOSTAT item "Coffee, green", which four coffee crops share, and the passage the model read says so. The recorded answer (16) gives them as robusta's without it; one earlier run said it, two did not.
 - **A citation of the wrong source.** In an earlier run the model cited the EcoCrop sheet for figures it had taken from the suitability score, so the list of sources named EcoCrop where the number came from the model's score.
 - **A wrong function, or none.** At the model's own thinking level (see the trial above), not at the level the run used.
 

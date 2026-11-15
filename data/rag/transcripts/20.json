@@ -3,7 +3,7 @@
  "lang": "en",
  "question": "What conditions does quinoa need?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:51:02.808Z",
+ "askedAt": "2026-11-15T09:52:01.358Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
@@ -11,19 +11,26 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 4561,
- "outputTokens": 530,
- "ms": 2154,
+ "outputTokens": 572,
+ "ms": 2313,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Quinoa thrives in mean temperatures of 14 to 18 °C during growth, though it can tolerate temperatures from 2 to 35 °C [S1]. Its optimal annual rainfall is between 500 and 1000 mm, with a tolerance range from 250 to 2600 mm [S1]. \n\nThe crop prefers a soil pH between 5.5 and 8 and can tolerate a range of 4.5 to 9.5 [S1]. It does best in well-drained soils with heavy, medium, or light texture, moderate fertility, and medium depth of 50 to 150 cm [S1]. Quinoa also prefers low salinity under 4 dS/m and very bright to clear skies [S1]. Its growing period lasts between 90 and 240 days [S1].",
+ "answer": "Quinoa thrives in mean temperatures between 14 and 18 °C, though it can tolerate a wider range from 2 to 35 °C [S1]. It requires very bright conditions to clear skies and an annual rainfall of 500 to 1000 mm, while tolerating between 250 and 2600 mm [S1]. \n\nFor soil, quinoa prefers a pH between 5.5 and 8 (tolerating 4.5 to 9.5) and moderate fertility, with heavy, medium, or light textures and good drainage [S1]. It also does best with low salinity under 4 dS/m [S1]. Depending on the ecotype and variety, its growing period lasts between 90 and 240 days [S1][S2].",
  "citations": [
   {
    "n": 1,
    "chunkId": "eco:chenopodium-quinoa:facts",
    "title": "Quinoa (Chenopodium quinoa): ecological requirements",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
+  },
+  {
+   "n": 2,
+   "chunkId": "eco:chenopodium-quinoa:notes-0",
+   "title": "Quinoa (Chenopodium quinoa): description, uses, growing period, further information",
    "source": "FAO EcoCrop",
    "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
   }

@@ -3,7 +3,7 @@
  "lang": "vi",
  "question": "Việt Nam có trồng sầu riêng không, diện tích bao nhiêu?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:49:50.594Z",
+ "askedAt": "2026-11-15T09:50:53.634Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
@@ -11,14 +11,14 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 4374,
- "outputTokens": 453,
- "ms": 2173,
+ "outputTokens": 527,
+ "ms": 2026,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Việt Nam có trồng sầu riêng [S1]. Theo thống kê quốc gia năm 2024, diện tích thu hoạch sầu riêng của cả nước là 178.800 ha và sản lượng đạt 1.470.000 tấn [S1].",
+ "answer": "Việt Nam có trồng sầu riêng với diện tích thu hoạch đạt 178.800 ha và sản lượng là 1.470.000 tấn vào năm 2024 theo thống kê quốc gia [S1]. Tổ chức FAOSTAT không có số liệu riêng cho sầu riêng vì loại cây này được tính gộp chung trong nhóm Other tropical fruits, n.e.c. [S1].\n\nBạn có muốn tìm hiểu thêm về các yêu cầu về khí hậu và đất đai khi trồng sầu riêng hay không?",
  "citations": [
   {
    "n": 1,

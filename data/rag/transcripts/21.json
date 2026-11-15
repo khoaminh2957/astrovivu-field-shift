@@ -4,16 +4,16 @@
  "field": "iowa-corn-soy",
  "question": "Which rotation would you suggest for this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:51:06.481Z",
+ "askedAt": "2026-11-15T09:52:05.197Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 21992,
- "outputTokens": 1641,
- "ms": 6107,
+ "inputTokens": 22156,
+ "outputTokens": 368,
+ "ms": 3191,
  "calls": [
   {
    "cite": "S7",
@@ -558,7 +558,8 @@
       "name": "FAO EcoCrop database, 2,568 species",
       "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
       "year": "n.d.",
-      "url": "data/ecocrop/README.md"
+      "url": "https://gaez.fao.org/pages/ecocrop",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      }
     ],
     "caveats": [
@@ -566,14 +567,14 @@
     ]
    },
    "isError": false,
-   "ms": 181
+   "ms": 28
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "For your Story County corn-soybean field in Iowa, United States, we can compare three rotation strategies: your current practice, a soil-health rotation, and an income rotation [S1].\n\n- Current practice (Maize and Soybean): This familiar system is the reference every alternative is compared with, achieving 72/100 suitability and an expected reference margin of 407 USD/ha a year [S1]. Benefits include no need for new equipment and existing nitrogen supply from legumes [S1]. Missing information includes a direct on-farm soil test and local price data [S1]. Risks include adjusting sowing dates to the local frost calendar [S1].\n- Soil-health rotation: Suggested to keep maize as the main cash crop while filling gaps with legumes that protect the soil and break pest cycles [S1]. Evidence shows an 85/100 suitability score, a reference margin of 631 USD/ha a year, and about 93 mm less water use [S1]. Gaps and risks require local extension confirmation for sowing months and frost adjustments, as well as a physical soil test [S1].\n- Income rotation: Suggested for achieving a higher reference margin of 613 USD/ha a year, a lower risk score of 24, and a higher soil-health index of 45 [S1]. Evidence includes 114 mm less water use than current practices [S1]. Missing information includes local market statistics for common bean, and risks require checking local seed supply and market demand before switching [S1].\n\nWould you like to check local seed availability and market buyers for common bean?",
+ "answer": "For your Story County corn-soybean field in Iowa, several rotation strategies can be compared against your current practice:\n\n- **Current practice (Maize and Soybean):** This familiar two-year rotation suits the field well (72/100 suitability) and uses about 654 mm of water per year, with legumes supplying roughly 20 kg N/ha annually [S1].\n- **Soil-health rotation (Maize and Soybean):** Keeps maize as the main crop while optimizing soybean timing. It reduces annual crop water use by about 93 mm and increases the reference margin by about 224 USD/ha a year [S1].\n- **Income rotation (Maize, Common bean, and Canola):** A two-year sequence structured for higher returns. It lowers overall risk, raises the soil-health index to 45, and increases the reference margin by about 206 USD/ha a year, though local seed and market availability for common bean and canola need checking [S1].\n- **Resilience rotation (Maize, Common bean, and Potato):** A three-year strategy across multiple plant families that reduces risk to 23 and increases the reference margin significantly, but requires local review for potato and bean varieties and markets [S1].\n\nWould you like to explore the input requirements or soil management steps for one of these options?",
  "citations": [
   {
    "n": 1,

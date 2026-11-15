@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "Đất của tôi có cần bón vôi không?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:50:06.728Z",
+ "askedAt": "2026-11-15T09:51:09.285Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 17585,
- "outputTokens": 934,
- "ms": 3870,
+ "inputTokens": 19008,
+ "outputTokens": 257,
+ "ms": 2923,
  "calls": [
   {
    "cite": "S7",
@@ -25,44 +25,218 @@
     "field": "Central Highlands robusta block",
     "rows": [
      {
-      "current": 5.7,
-      "target": 5.7,
-      "amendment": "none",
-      "rateTHa": null,
-      "basis": "pH 5.7 nằm trong khoảng 5-6.3 mà Cà phê vối ưa thích: không cần cải tạo.",
-      "caveats": [
-       "Chỉ mang tính tham khảo: cần phân tích đất (pH và pH đệm) tại phòng thí nghiệm trước khi mua chất cải tạo.",
-       "pH hiện tại là ước tính từ bản đồ (SoilGrids 2.0 (0-30 cm)), không phải đo trên thửa ruộng này."
-      ]
+      "ph": {
+       "current": 5.7,
+       "target": 5.7,
+       "amendment": "none",
+       "rateTHa": null,
+       "basis": "pH 5.7 nằm trong khoảng 5-6.3 mà Cà phê vối ưa thích: không cần cải tạo.",
+       "caveats": [
+        "Chỉ mang tính tham khảo: cần phân tích đất (pH và pH đệm) tại phòng thí nghiệm trước khi mua chất cải tạo.",
+        "pH hiện tại là ước tính từ bản đồ (SoilGrids 2.0 (0-30 cm)), không phải đo trên thửa ruộng này."
+       ]
+      },
+      "diagnosis": [
+       {
+        "key": "ph",
+        "label": "Độ phản ứng của đất (pH)",
+        "currentValue": 5.7,
+        "sourceId": "soilgrids",
+        "uncertainty": [
+         4.3,
+         7.4
+        ],
+        "targetRange": {
+         "optLo": 5,
+         "optHi": 6.3,
+         "absLo": 4,
+         "absHi": 8
+        },
+        "status": "uncertain",
+        "deficit": 0,
+        "note": "pH ước tính là 5.7, nhưng khoảng của ước tính [4.3, 7.4] vắt qua các ngưỡng của Cà phê vối (tối ưu 5-6.3, chịu được 4-8). Cần đo pH tại ruộng.",
+        "isLimiting": false
+       },
+       {
+        "key": "texture",
+        "label": "Thành phần cơ giới đất",
+        "currentValue": "clay loam",
+        "sourceId": "soilgrids",
+        "targetRange": {
+         "optLo": "heavy, medium",
+         "absLo": "heavy, medium, light"
+        },
+        "status": "optimal",
+        "note": "Thành phần cơ giới (nặng (nhiều sét), thịt pha sét) thuộc nhóm Cà phê vối phát triển tốt nhất (nặng (nhiều sét), thịt trung bình).",
+        "isLimiting": false
+       },
+       {
+        "key": "drainage",
+        "label": "Khả năng thoát nước",
+        "currentValue": null,
+        "status": "no_data",
+        "note": "Chưa có dữ liệu phân loại cấp thoát nước cho thửa này (thường thấy ngoài vùng phủ SSURGO).",
+        "isLimiting": false
+       },
+       {
+        "key": "depth",
+        "label": "Độ sâu tầng đất",
+        "currentValue": null,
+        "unit": "cm",
+        "status": "no_data",
+        "note": "Chưa có số liệu độ sâu tầng đất cho thửa này.",
+        "isLimiting": false
+       },
+       {
+        "key": "salinity",
+        "label": "Độ dẫn điện / độ mặn (EC)",
+        "currentValue": null,
+        "unit": "dS/m",
+        "status": "no_data",
+        "note": "Chưa có dữ liệu độ dẫn điện (SoilGrids không đo EC; cần kiểm tra tại chỗ hoặc SSURGO).",
+        "isLimiting": false
+       },
+       {
+        "key": "organic_matter",
+        "label": "Chất hữu cơ trong đất",
+        "currentValue": 3.3,
+        "unit": "%",
+        "sourceId": "soilgrids",
+        "status": "reading_only",
+        "note": "Chất hữu cơ 3.3% (cacbon hữu cơ 19.4 g/kg x 1,724). Danh mục cây trồng không có yêu cầu cho chỉ tiêu này nên chỉ liệt kê số đo, không đánh giá.",
+        "isLimiting": false
+       },
+       {
+        "key": "cec",
+        "label": "Dung tích trao đổi cation (CEC)",
+        "currentValue": 16.9,
+        "unit": "cmol(+)/kg",
+        "sourceId": "soilgrids",
+        "uncertainty": [
+         2.1,
+         40.8
+        ],
+        "status": "reading_only",
+        "note": "CEC 16.9 cmol(+)/kg. Danh mục cây trồng không có yêu cầu cho chỉ tiêu này nên chỉ liệt kê số đo, không đánh giá.",
+        "isLimiting": false
+       },
+       {
+        "key": "awc",
+        "label": "Khả năng giữ nước hữu dụng (AWC)",
+        "currentValue": null,
+        "unit": "mm/m",
+        "status": "no_data",
+        "note": "Chưa có số liệu khả năng giữ nước hữu dụng cho thửa này: không suy ra từ nhóm đất.",
+        "isLimiting": false
+       },
+       {
+        "key": "nitrogen",
+        "label": "Đạm tổng số (N)",
+        "currentValue": 1.72,
+        "unit": "g/kg",
+        "sourceId": "soilgrids",
+        "uncertainty": [
+         0.37,
+         3.85
+        ],
+        "status": "reading_only",
+        "note": "Đạm tổng số 1.72 g/kg. Danh mục cây trồng không có yêu cầu cho chỉ tiêu này nên chỉ liệt kê số đo, không đánh giá.",
+        "isLimiting": false
+       }
+      ],
+      "plan": {
+       "items": [
+        {
+         "metric": "drainage",
+         "status": "no_data",
+         "title": "Cần đo trước: Khả năng thoát nước",
+         "action": "Sau một trận mưa lớn, ghi lại nước đọng trên ruộng trong bao lâu; đào một hố và tìm các lớp đất xám hoặc loang lổ cho thấy nơi nước ứ đọng. Không bón chất cải tạo cho chỉ tiêu này khi chưa có kết quả.",
+         "rateRange": null,
+         "timing": "Trước khi làm đất và gieo trồng",
+         "verification": "So kết quả với yêu cầu của cây và nhập vào cho thửa ruộng này.",
+         "evidence": [
+          {
+           "label": "Lý do",
+           "value": "Chưa có số đo cho chỉ tiêu này nên không đề xuất chất cải tạo hay liều lượng nào."
+          }
+         ],
+         "caveats": [
+          "Vệ tinh và bản đồ đất không có số đo này cho thửa ruộng; cần kiểm tra tại chỗ."
+         ],
+         "needsLocalReview": true
+        },
+        {
+         "metric": "depth",
+         "status": "no_data",
+         "title": "Cần đo trước: Độ sâu tầng đất",
+         "action": "Đào hố hoặc khoan đến tầng đá, tầng cứng hay mực nước ngầm, rồi đo độ sâu rễ có thể xuống tới. Không bón chất cải tạo cho chỉ tiêu này khi chưa có kết quả.",
+         "rateRange": null,
+         "timing": "Trước khi làm đất và gieo trồng",
+         "verification": "So kết quả với yêu cầu của cây và nhập vào cho thửa ruộng này.",
+         "evidence": [
+          {
+           "label": "Lý do",
+           "value": "Chưa có số đo cho chỉ tiêu này nên không đề xuất chất cải tạo hay liều lượng nào."
+          }
+         ],
+         "caveats": [
+          "Vệ tinh và bản đồ đất không có số đo này cho thửa ruộng; cần kiểm tra tại chỗ."
+         ],
+         "needsLocalReview": true
+        },
+        {
+         "metric": "salinity",
+         "status": "no_data",
+         "title": "Cần đo trước: Độ dẫn điện / độ mặn (EC)",
+         "action": "Gửi mẫu đất hỗn hợp (tầng 0-20 cm) đến phòng phân tích để đo độ dẫn điện của dịch chiết bão hòa (ECe). Không bón chất cải tạo cho chỉ tiêu này khi chưa có kết quả.",
+         "rateRange": null,
+         "timing": "Trước khi làm đất và gieo trồng",
+         "verification": "So kết quả với yêu cầu của cây và nhập vào cho thửa ruộng này.",
+         "evidence": [
+          {
+           "label": "Lý do",
+           "value": "Chưa có số đo cho chỉ tiêu này nên không đề xuất chất cải tạo hay liều lượng nào."
+          }
+         ],
+         "caveats": [
+          "Vệ tinh và bản đồ đất không có số đo này cho thửa ruộng; cần kiểm tra tại chỗ."
+         ],
+         "needsLocalReview": true
+        }
+       ],
+       "summary": "0 biện pháp cải tạo đất và 3 chỉ tiêu cần đo trước. Xem trước: Độ phản ứng của đất (pH).",
+       "mostLimitingFactor": "ph"
+      }
      }
     ],
     "rowCount": 1,
     "sources": [
      {
-      "name": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14",
+      "name": "Astrovivu soil diagnosis and plan (docs/SOIL.md), computed from the readings of the field on 2026-11-14",
       "licence": "MIT (project code); the readings keep the licences of their sources",
       "year": "2026"
      },
      {
-      "name": "FAO EcoCrop database, 2,568 species",
+      "name": "FAO EcoCrop database, record 750",
       "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
       "year": "n.d.",
-      "url": "data/ecocrop/README.md"
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=750",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      }
     ],
     "caveats": [
-     "Đây mới chỉ là phần pH: chất hữu cơ, dinh dưỡng, độ mặn và độ chặt của đất chưa có trong kế hoạch."
+     "Liều lượng là khoảng tham khảo, cần phân tích đất ở phòng thí nghiệm và hướng dẫn địa phương xác nhận. Chỉ tiêu nào thửa ruộng chưa có số đo thì có bước đo trước và không có liều; docs/SOIL.md ghi nguồn của từng ngưỡng và liệt kê những gì đã bỏ vì không có nguồn."
     ]
    },
    "isError": false,
-   "ms": 1
+   "ms": 4
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "pH đất của thửa ruộng hiện được ước tính là 5,7 (SoilGrids 2.0 (0-30 cm), điểm ảnh 250 m) [S1]. Mức pH này nằm trong khoảng 5 đến 6,3 mà cây cà phê vối ưa thích [S2].\n\nDo đó, hiện tại không cần bón vôi cho đất [S2]. Giá trị này là ước tính từ mô hình cho khu vực xung quanh chứ không phải đo trực tiếp tại thửa ruộng, và việc bón vôi nông nghiệp làm tăng pH chậm trong nhiều tháng [S3][S2].\n\nHãy lấy mẫu đất để kiểm tra pH thực tế và độ pH đệm tại phòng thí nghiệm địa phương trước khi quyết định mua chất cải tạo [S3][S2].",
+ "answer": "Dựa trên dữ liệu mô hình SoilGrids 2.0 (0-30 cm, độ phân giải 250 m), pH hiện tại của đất là 5,7 [S1]. Giá trị này nằm trong khoảng tối ưu từ 5 đến 6,3 mà cây cà phê vối ưa thích, do đó hệ thống không đề xuất bón vôi ở thời điểm này.\n\nTuy nhiên, đây là ước tính mô hình cho vùng lân cận chứ không phải kết quả đo trực tiếp trên thửa ruộng của bạn [S1]. Khoảng dự đoán của mô hình dao động từ 4,3 đến 7,4, vì vậy bạn nên lấy mẫu đất gửi phòng thí nghiệm để kiểm tra lại pH thực tế và xác định độ chua trước khi quyết định bón vôi [S2][S3]. Vôi nông nghiệp giúp nâng pH chậm trong nhiều tháng và lượng bón phụ thuộc vào thành phần cơ giới cũng như khả năng đệm của đất [S2][S3].\n\nBước tiếp theo: Lấy mẫu đất hỗn hợp tại ruộng và gửi tới trung tâm phân tích nông nghiệp địa phương để đo chính xác độ pH và nhu cầu vôi.",
  "citations": [
   {
    "n": 1,
@@ -73,16 +247,16 @@
   },
   {
    "n": 2,
-   "chunkId": "table:soil-plan:daklak-coffee",
-   "title": "Kế hoạch pH cho thửa ruộng",
-   "source": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
-   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
-  },
-  {
-   "n": 3,
    "chunkId": "gloss-vi:soil-ph",
    "title": "pH đất và độ chua",
    "source": "Thuật ngữ Astrovivu",
+   "license": "CC BY 4.0 (Astrovivu team)"
+  },
+  {
+   "n": 3,
+   "chunkId": "gloss-en:soil-ph",
+   "title": "Soil pH and acidity",
+   "source": "Astrovivu glossary",
    "license": "CC BY 4.0 (Astrovivu team)"
   }
  ]

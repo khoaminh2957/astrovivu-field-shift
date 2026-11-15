@@ -4,23 +4,21 @@
  "field": "iowa-corn-soy",
  "question": "What is the reference price and margin for maize here?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:51:18.509Z",
+ "askedAt": "2026-11-15T09:52:15.190Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18944,
- "outputTokens": 218,
- "ms": 2592,
+ "inputTokens": 19215,
+ "outputTokens": 377,
+ "ms": 3119,
  "calls": [
   {
    "cite": "S7",
    "name": "priceAndMargin",
-   "input": {
-    "crop": "maize"
-   },
+   "input": {},
    "output": {
     "cite": "S7",
     "ok": true,
@@ -77,18 +75,18 @@
      }
     ],
     "caveats": [
-     "Source quality: yield official, price official, cost budget. Reference values, not this grower's figures, and not a forecast."
+     "Source quality: yield official (a statistics agency); price official (a statistics agency); cost budget (a university enterprise budget). Reference values, not this grower's figures, and not a forecast."
     ]
    },
    "isError": false,
-   "ms": 18
+   "ms": 12
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "The reference price for maize in this region (US-HEARTLAND, Iowa 2026) is 161.4 USD per tonne, based on USDA NASS marketing-year price figures [S1].\n\nThe reference yield is 13.18 tonnes per hectare, giving an expected revenue of 62,222 USD, estimated costs of 34,954 USD, and a margin of 27,268 USD for the 29.25 hectare parcel [S1]. These figures rely on reference regional yields, prices, and budgets rather than the grower's own records [S1].\n\nAsk local extension agents for your specific costs and contracts to verify these margins.",
+ "answer": "The reference price for maize in the US-Heartland region (Iowa) is 161.4 USD per tonne, based on USDA NASS 2025 marketing-year price figures [S1].\n\nFor this 29.25-hectare parcel, using a reference yield of 13.18 t/ha (based on Iowa 2025 USDA NASS figures at 100% expected yield) and a total cost of 34,954 USD (based on Iowa State University Extension 2026 enterprise budgets), the estimated revenue is 62,222 USD and the margin is 27,268 USD [S1]. \n\nThese are reference values from official statistics and university budgets, not the grower's own figures [S1].\n\n- Next step: Review your local farm records to compare these reference costs and prices with your actual figures.",
  "citations": [
   {
    "n": 1,

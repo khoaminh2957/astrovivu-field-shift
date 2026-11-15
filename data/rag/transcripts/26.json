@@ -4,16 +4,16 @@
  "field": "nevada-alfalfa",
  "question": "Should I lime this field?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:51:30.810Z",
+ "askedAt": "2026-11-15T09:52:29.869Z",
  "intent": "field-fact",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18410,
- "outputTokens": 673,
- "ms": 4022,
+ "inputTokens": 19745,
+ "outputTokens": 653,
+ "ms": 3484,
  "calls": [
   {
    "cite": "S7",
@@ -25,34 +25,198 @@
     "field": "Diamond Valley alfalfa pivot",
     "rows": [
      {
-      "current": 8.8,
-      "target": 7.9,
-      "amendment": "sulfur",
-      "rateTHa": null,
-      "basis": "Alfalfa grows best at pH 6.5-8.2. No rate is given: it cannot be estimated responsibly without a lab test.",
-      "caveats": [
-       "Indicative only: confirm with a laboratory soil test (pH and buffer pH) before buying any amendment.",
-       "The current pH is a map estimate (SSURGO soil survey (dominant component of the map unit)), not a measurement on this field.",
-       "At pH 8.8 the soil is probably calcareous (free lime): lowering pH is slow and rarely economic. Prefer tolerant crops and acidifying fertilisers; a carbonate test is needed."
-      ]
+      "ph": {
+       "current": 8.8,
+       "target": 7.9,
+       "amendment": "sulfur",
+       "rateTHa": null,
+       "basis": "Alfalfa grows best at pH 6.5-8.2. No rate is given: it cannot be estimated responsibly without a lab test.",
+       "caveats": [
+        "Indicative only: confirm with a laboratory soil test (pH and buffer pH) before buying any amendment.",
+        "The current pH is a map estimate (SSURGO soil survey (dominant component of the map unit)), not a measurement on this field.",
+        "At pH 8.8 the soil is probably calcareous (free lime): lowering pH is slow and rarely economic. Prefer tolerant crops and acidifying fertilisers; a carbonate test is needed."
+       ]
+      },
+      "diagnosis": [
+       {
+        "key": "ph",
+        "label": "Soil reaction (pH)",
+        "currentValue": 8.8,
+        "sourceId": "ssurgo",
+        "uncertainty": null,
+        "targetRange": {
+         "optLo": 6.5,
+         "optHi": 8.2,
+         "absLo": 4.3,
+         "absHi": 9.2
+        },
+        "status": "tolerable",
+        "deficit": 0.6,
+        "note": "pH 8.8 is tolerable (4.3-9.2) but outside optimal (6.5-8.2).",
+        "isLimiting": true
+       },
+       {
+        "key": "texture",
+        "label": "Soil texture",
+        "currentValue": "sandy loam",
+        "sourceId": "ssurgo",
+        "targetRange": {
+         "optLo": "medium, light",
+         "absLo": "medium, light"
+        },
+        "status": "optimal",
+        "note": "Texture (light (sandy), sandy loam) is one Alfalfa grows best in (medium (loamy), light (sandy)).",
+        "isLimiting": false
+       },
+       {
+        "key": "drainage",
+        "label": "Soil drainage",
+        "currentValue": "Well drained",
+        "sourceId": "ssurgo",
+        "targetRange": {
+         "optLo": "well",
+         "absLo": "well, excessive"
+        },
+        "status": "optimal",
+        "note": "The soil is well drained, which is what Alfalfa grows best in (well drained).",
+        "isLimiting": false
+       },
+       {
+        "key": "depth",
+        "label": "Soil depth",
+        "currentValue": null,
+        "unit": "cm",
+        "status": "no_data",
+        "note": "No soil depth is held for this parcel.",
+        "isLimiting": false
+       },
+       {
+        "key": "salinity",
+        "label": "Electrical conductivity / salinity",
+        "currentValue": 1,
+        "unit": "dS/m",
+        "sourceId": "ssurgo",
+        "targetRange": {
+         "optHi": 2,
+         "absHi": 4.5
+        },
+        "status": "optimal",
+        "deficit": 0,
+        "note": "EC 1 dS/m does not exceed 2 dS/m, the level at which the yield of Alfalfa begins to fall.",
+        "isLimiting": false
+       },
+       {
+        "key": "organic_matter",
+        "label": "Soil organic matter",
+        "currentValue": 1.5,
+        "unit": "%",
+        "sourceId": "ssurgo",
+        "status": "reading_only",
+        "note": "Organic matter 1.5%. The crop catalogue holds no requirement for this reading, so it is listed without a verdict.",
+        "isLimiting": false
+       },
+       {
+        "key": "cec",
+        "label": "Cation exchange capacity (CEC)",
+        "currentValue": 9,
+        "unit": "cmol(+)/kg",
+        "sourceId": "ssurgo",
+        "uncertainty": null,
+        "status": "reading_only",
+        "note": "CEC 9 cmol(+)/kg. The crop catalogue holds no requirement for this reading, so it is listed without a verdict.",
+        "isLimiting": false
+       },
+       {
+        "key": "awc",
+        "label": "Available water capacity (AWC)",
+        "currentValue": 120,
+        "unit": "mm/m",
+        "sourceId": "ssurgo",
+        "status": "reading_only",
+        "note": "Available water capacity 120 mm of water per metre of soil. The crop catalogue holds no requirement for this reading, so it is listed without a verdict.",
+        "isLimiting": false
+       },
+       {
+        "key": "nitrogen",
+        "label": "Total nitrogen",
+        "currentValue": 1.52,
+        "unit": "g/kg",
+        "sourceId": "soilgrids",
+        "uncertainty": [
+         0.38,
+         4
+        ],
+        "status": "reading_only",
+        "note": "Total nitrogen 1.52 g/kg. The crop catalogue holds no requirement for this reading, so it is listed without a verdict.",
+        "isLimiting": false
+       }
+      ],
+      "plan": {
+       "items": [
+        {
+         "metric": "ph",
+         "status": "tolerable",
+         "title": "Lower soil pH (elemental sulfur)",
+         "action": "pH 8.8 is above what the crop grows best in (target 7.9), but no sulfur rate is given: it cannot be estimated without a laboratory test.",
+         "rateRange": null,
+         "timing": "Well before planting: sulfur acts slowly",
+         "verification": "Measure soil pH again once the amendment has reacted, and before any further application.",
+         "evidence": [
+          {
+           "label": "Basis of the rate",
+           "value": "Alfalfa grows best at pH 6.5-8.2. No rate is given: it cannot be estimated responsibly without a lab test."
+          }
+         ],
+         "caveats": [
+          "Indicative only: confirm with a laboratory soil test (pH and buffer pH) before buying any amendment.",
+          "The current pH is a map estimate (SSURGO soil survey (dominant component of the map unit)), not a measurement on this field.",
+          "At pH 8.8 the soil is probably calcareous (free lime): lowering pH is slow and rarely economic. Prefer tolerant crops and acidifying fertilisers; a carbonate test is needed.",
+          "The rate is indicative: on-site verification with a laboratory soil test is required before buying any amendment."
+         ],
+         "needsLocalReview": true
+        },
+        {
+         "metric": "depth",
+         "status": "no_data",
+         "title": "Measure first: Soil depth",
+         "action": "Dig a pit or use an auger down to rock, hardpan or the water table, and measure the depth roots can reach. Do not apply an amendment for this factor before the result is in.",
+         "rateRange": null,
+         "timing": "Before land preparation and sowing",
+         "verification": "Set the result against what the crop needs and enter it for this field.",
+         "evidence": [
+          {
+           "label": "Why",
+           "value": "No reading is held for this factor, so no amendment and no rate is proposed."
+          }
+         ],
+         "caveats": [
+          "Satellite and soil-map layers do not carry this reading for the field; on-site verification is required."
+         ],
+         "needsLocalReview": true
+        }
+       ],
+       "summary": "1 soil step to take and 1 reading to measure first. Look first at: Soil reaction (pH).",
+       "mostLimitingFactor": "ph"
+      }
      }
     ],
     "rowCount": 1,
     "sources": [
      {
-      "name": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14",
+      "name": "Astrovivu soil diagnosis and plan (docs/SOIL.md), computed from the readings of the field on 2026-11-14",
       "licence": "MIT (project code); the readings keep the licences of their sources",
       "year": "2026"
      },
      {
-      "name": "FAO EcoCrop database, 2,568 species",
+      "name": "FAO EcoCrop database, record 1428",
       "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
       "year": "n.d.",
-      "url": "data/ecocrop/README.md"
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=1428",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      }
     ],
     "caveats": [
-     "This is the pH part only: organic matter, nutrients, salinity and compaction are not planned for yet."
+     "Rates are indicative ranges that a laboratory soil test and local guidance must confirm. A factor the field has no reading of gets a step to measure it, and no rate; docs/SOIL.md gives the source of every threshold and lists what was left out for lack of one."
     ]
    },
    "isError": false,
@@ -63,7 +227,7 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "No, you should not lime this field. Agricultural lime raises soil pH [S1], but your soil is already alkaline with a pH of 8.8 (SSURGO soil survey) [S2], which exceeds the ideal range of 6.5 to 8.2 for alfalfa (medicago-sativa) [S2]. Adding lime would increase the alkalinity further.\n\nAt a pH of 8.8, the soil is likely calcareous [S2]. Lowering the pH is slow and rarely economic, so a carbonate test and a laboratory soil test are needed before attempting any amendment [S2]. If an adjustment is ever considered, elements like agricultural sulfur rather than lime would be used to lower the pH [S2], though preferring tolerant management or acidifying fertilisers is more practical [S2].\n\nWould you like to take a soil sample for a local laboratory test to confirm the exact pH and buffer capacity of your parcel [S2]?",
+ "answer": "No, you should not lime this field. Liming is used to raise soil pH in acidic soils [S1], but the soil pH on this parcel is 8.8 (SSURGO soil survey (dominant component of the map unit)), which is already alkaline and above the optimal range of 6.5 to 8.2 for alfalfa. \n\nAt this pH level, adding lime would make the soil even more alkaline. In fact, soils with a pH of 8.8 are often calcareous, meaning lowering the pH is difficult and rarely economic. \n\nConfirm the soil pH with a laboratory soil test before applying any soil amendments.",
  "citations": [
   {
    "n": 1,
@@ -71,13 +235,6 @@
    "title": "Soil pH and acidity",
    "source": "Astrovivu glossary",
    "license": "CC BY 4.0 (Astrovivu team)"
-  },
-  {
-   "n": 2,
-   "chunkId": "table:soil-plan:nevada-alfalfa",
-   "title": "pH plan for the field",
-   "source": "Astrovivu pH plan (docs/ADVISORY.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
-   "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
   }
  ]
 }

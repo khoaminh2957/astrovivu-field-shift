@@ -4,16 +4,16 @@
  "field": "cantho-rice",
  "question": "Giá lúa tham chiếu và lãi một vụ ở ruộng tôi khoảng bao nhiêu?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:50:19.864Z",
+ "askedAt": "2026-11-15T09:51:19.649Z",
  "intent": "field",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 18836,
- "outputTokens": 302,
- "ms": 2133,
+ "inputTokens": 19044,
+ "outputTokens": 343,
+ "ms": 2277,
  "calls": [
   {
    "cite": "S7",
@@ -75,18 +75,18 @@
      }
     ],
     "caveats": [
-     "Chất lượng nguồn: năng suất official, giá press, chi phí press. Đây là giá trị tham chiếu, không phải số của người trồng, và không phải dự báo."
+     "Chất lượng nguồn: năng suất chính thức (cơ quan thống kê); giá báo chí (bài báo dẫn một nông hộ hay mô hình trình diễn); chi phí báo chí (bài báo dẫn một nông hộ hay mô hình trình diễn). Đây là giá trị tham chiếu, không phải số của người trồng, và không phải dự báo."
     ]
    },
    "isError": false,
-   "ms": 16
+   "ms": 15
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Năng suất tham chiếu cho lúa (Oryza sativa) tại Việt Nam là 6,15 tấn/ha [S1]. Giá tham chiếu là 228,5 USD/tấn, dựa trên giá lúa thương lái mua tại An Giang tháng 4/2026 [S1]. \n\nTrên diện tích 1,35 ha của ruộng, doanh thu dự kiến cho một vụ là 1.897 USD, với tổng chi phí ước tính khoảng 1.170 USD [S1].\n\nLãi ròng cho một vụ trên toàn bộ diện tích ruộng khoảng 727 USD, với khoảng dao động từ 639 USD đến 727 USD [S1]. Các số liệu này dựa trên giá trị tham chiếu và không phải số liệu thực tế của riêng bạn hay là dự báo [S1].\n\nBạn có muốn đối chiếu chi phí thực tế của mình để tính lại mức lãi này chính xác hơn không?",
+ "answer": "Theo dữ liệu tham chiếu kinh tế khu vực Việt Nam (2026), giá lúa thu mua (giá lúa tươi tại ruộng) là 228.5 USD/tấn (tương đương mức giá thương lái mua tại An Giang theo báo Nhân Dân tháng 4/2026) [S1]. \n\nVới diện tích 1.35 ha của ruộng và năng suất tham chiếu 6.15 tấn/ha, tổng doanh thu ước tính là 1,897 USD, chi phí khoảng 1,170 USD và lãi ròng một vụ khoảng 727 USD (khoảng từ 639 USD đến 727 USD tùy theo biến động sản lượng) [S1]. \n\nĐây là các giá trị tham chiếu dựa trên số liệu thống kê và báo chí địa phương, không phải số liệu hạch toán thực tế của riêng bạn và không phải dự báo [S1]. Bạn nên đối chiếu với chi phí thực tế tại nông hộ của mình.",
  "citations": [
   {
    "n": 1,

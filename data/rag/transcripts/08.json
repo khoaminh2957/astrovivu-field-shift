@@ -4,16 +4,16 @@
  "field": "daklak-coffee",
  "question": "Trồng sầu riêng ở thửa này được không?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:50:12.126Z",
+ "askedAt": "2026-11-15T09:51:13.735Z",
  "intent": "rotation",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 19266,
- "outputTokens": 1980,
- "ms": 6204,
+ "inputTokens": 19518,
+ "outputTokens": 886,
+ "ms": 4385,
  "calls": [
   {
    "cite": "S7",
@@ -165,10 +165,11 @@
       "year": "2026"
      },
      {
-      "name": "FAO EcoCrop database, 2,568 species",
+      "name": "FAO EcoCrop database, record 963",
       "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
       "year": "n.d.",
-      "url": "data/ecocrop/README.md"
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=963",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      }
     ],
     "caveats": [
@@ -176,21 +177,28 @@
     ]
    },
    "isError": false,
-   "ms": 13
+   "ms": 12
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Trồng sầu riêng (Durio zibethinus) ở thửa này đạt mức độ thích hợp 86/100 theo mô hình đánh giá của Astrovivu dựa trên dữ liệu ngày 14-11-2026 [S1]. Cây sầu riêng có thể thích nghi tốt với điều kiện khí hậu và đất đai tại đây trong cả 19 năm được phân tích [S1].\n\nYếu tố giới hạn chính là thành phần cơ giới đất nặng (đất sét pha thịt theo SoilGrids 2.0 (0-30 cm), điểm 70/100), trong khi cây chuộng đất trung bình hoặc nhẹ [S1]. Nhiệt độ trung bình trong vụ đạt 21.3 °C (ERA5 reanalysis (ECMWF), điểm 93/100, so với mức tối ưu 22-40 °C) và lượng nước trong vụ đạt 1500 mm (ERA5 reanalysis (ECMWF), điểm 100/100, nằm trong khoảng tối ưu 1500-2500 mm) [S1].\n\npH đất đạt 5.7 (SoilGrids 2.0 (0-30 cm), điểm 100/100, nằm trong khoảng tối ưu 5-6.5) và độ dốc đạt 7.7 ° (SRTM GL1 30 m point elevations, điểm 100/100) [S1]. Tuy nhiên, dữ liệu hiện chưa có thông tin chi tiết về khả năng thoát nước và độ sâu tầng đất [S1].\n\nBước tiếp theo: Nên kiểm tra thực tế khả năng thoát nước của đất nặng tại thửa ruộng trước khi tiến hành trồng sầu riêng [S1].",
+ "answer": "Sầu riêng (Durio zibethinus) phù hợp khá tốt với điều kiện tại thửa ruộng này với điểm số 86/100 [S1]. Các yếu tố về nước (1500 mm), pH đất (5.7) và độ dốc (7.7°) đều đạt điểm tối đa [S1]. Nhiệt độ trung bình đạt 21.3 °C, gần ngưỡng tối ưu của cây (22-40 °C) [S2][S1].\n\nYếu tố giới hạn chính là thành phần cơ giới đất (đất nặng, trong khi cây chuộng đất trung bình hoặc nhẹ) với điểm thành phần là 70/100 [S1]. Ngoài ra, cần kiểm tra thêm độ sâu tầng đất và khả năng thoát nước thực tế trên mặt bằng vì đây là những yếu tố chưa có số liệu đo đạc chi tiết [S1].\n\nTrước khi quyết định chuyển đổi, bạn nên kiểm tra kỹ khả năng thoát nước của đất nặng tại địa phương để tránh ngập úng rễ trong mùa mưa.",
  "citations": [
   {
    "n": 1,
    "chunkId": "table:field-suitability:daklak-coffee:durio-zibethinus",
    "title": "Mức phù hợp của Sầu riêng (Durio zibethinus) với thửa ruộng",
-   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, 2,568 species",
+   "source": "Astrovivu suitability score (docs/SCORING.md), computed from the readings of the field on 2026-11-14, 2026; FAO EcoCrop database, record 963",
    "license": "MIT (project code); the readings keep the licences of their sources; Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)"
+  },
+  {
+   "n": 2,
+   "chunkId": "eco:durio-zibethinus:facts-vi",
+   "title": "Sầu riêng (Durio zibethinus): yêu cầu sinh thái",
+   "source": "FAO EcoCrop",
+   "license": "FAO EcoCrop data, © FAO; used with attribution for non-commercial purposes"
   }
  ]
 }

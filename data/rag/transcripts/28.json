@@ -3,16 +3,16 @@
  "lang": "en",
  "question": "How much durian does Thailand grow?",
  "expect": "no-data",
- "askedAt": "2026-11-15T08:51:41.951Z",
+ "askedAt": "2026-11-15T09:52:40.657Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 9511,
- "outputTokens": 285,
- "ms": 2885,
+ "inputTokens": 9506,
+ "outputTokens": 196,
+ "ms": 2567,
  "calls": [
   {
    "name": "whereGrown",
@@ -27,13 +27,13 @@
     "crop": "Durian (Durio zibethinus)"
    },
    "isError": false,
-   "ms": 3
+   "ms": 6
   }
  ],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "FAOSTAT counts durian inside the item Other tropical fruits, n.e.c., with 30 other crops of the atlas: FAOSTAT has no figure for it alone, in any country.",
+ "answer": "FAOSTAT counts durian inside the group of other tropical fruits, and therefore has no separate national figure for durian production in Thailand.",
  "citations": []
 }

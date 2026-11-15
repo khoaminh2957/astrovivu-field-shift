@@ -3,7 +3,7 @@
  "lang": "vi",
  "question": "Việt Nam trồng bao nhiêu lúa, và những nước nào trồng lúa nhiều nhất?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:49:35.621Z",
+ "askedAt": "2026-11-15T09:50:39.762Z",
  "intent": "ideal",
  "mode": "generative",
  "fallback": null,
@@ -11,14 +11,14 @@
  "model": "gemini-3.5-flash-lite",
  "requests": 1,
  "inputTokens": 4462,
- "outputTokens": 1240,
- "ms": 3372,
+ "outputTokens": 710,
+ "ms": 2710,
  "calls": [],
  "numberGuard": {
   "passed": true,
   "unsupported": []
  },
- "answer": "Việt Nam có diện tích thu hoạch lúa trung bình trong giai đoạn 2022–2024 là 7.089.041 ha, đứng thứ 6 trên thế giới [S1].\n\nNhững quốc gia có diện tích thu hoạch lúa lớn nhất thế giới tính theo trung bình 2022–2024 là:\n\n- India: 48.106.122 ha [S1]\n- China, mainland: 29.135.333 ha [S1]\n- Bangladesh: 11.562.454 ha [S1]\n- Thailand: 11.209.677 ha [S1]\n- Indonesia: 10.237.504 ha [S1]\n\nTrên toàn thế giới có 116 nước báo cáo sản xuất lúa với FAOSTAT, với tổng diện tích thu hoạch đạt 168.793.303 ha [S1].",
+ "answer": "Việt Nam có diện tích thu hoạch lúa trung bình năm (2022-2024) là 7.089.041 ha, xếp thứ 6 trên thế giới [S1]. \n\nCác quốc gia có diện tích thu hoạch lúa lớn nhất thế giới tính theo trung bình năm 2022-2024 gồm có:\n\n- Ấn Độ: 48.106.122 ha [S1]\n- Trung Quốc đại lục: 29.135.333 ha [S1]\n- Bangladesh: 11.562.454 ha [S1]\n- Thái Lan: 11.209.677 ha [S1]\n- Indonesia: 10.237.504 ha [S1]\n\nToàn thế giới có 116 nước báo cáo sản xuất lúa với FAOSTAT, với tổng diện tích thu hoạch là 168.793.303 ha [S1].",
  "citations": [
   {
    "n": 1,

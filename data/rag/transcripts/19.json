@@ -3,16 +3,16 @@
  "lang": "en",
  "question": "Compare maize and soybean: what does each need?",
  "expect": "answer",
- "askedAt": "2026-11-15T08:50:56.594Z",
+ "askedAt": "2026-11-15T09:51:56.719Z",
  "intent": "compare",
  "mode": "generative",
  "fallback": null,
  "provider": "gemini",
  "model": "gemini-3.5-flash-lite",
  "requests": 2,
- "inputTokens": 10924,
- "outputTokens": 1145,
- "ms": 4710,
+ "inputTokens": 11173,
+ "outputTokens": 647,
+ "ms": 3136,
  "calls": [
   {
    "cite": "S7",
@@ -94,8 +94,8 @@
      },
      {
       "key": "worldAreaHa",
-      "a": "Harvested area in the world: 209749146 ha.",
-      "b": "Harvested area in the world: 138641874 ha."
+      "a": "Harvested area in the world: 209,749,146 ha, the sum over the countries of the FAOSTAT items Maize (corn), Green corn (maize) each reports.",
+      "b": "Harvested area in the world: 138,641,874 ha, of the FAOSTAT item Soya beans."
      },
      {
       "key": "texture",
@@ -121,10 +121,11 @@
     "rowCount": 18,
     "sources": [
      {
-      "name": "FAO EcoCrop database, 2,568 species",
+      "name": "FAO EcoCrop database, record 2175",
       "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
       "year": "n.d.",
-      "url": "data/ecocrop/README.md"
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=2175",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      },
      {
       "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
@@ -132,6 +133,13 @@
       "year": "2015-2024",
       "url": "https://www.fao.org/faostat/en/#data/QCL",
       "accessed": "2026-11-15"
+     },
+     {
+      "name": "FAO EcoCrop database, record 1150",
+      "licence": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md)",
+      "year": "n.d.",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/cropView?id=1150",
+      "note": "EcoCrop gives no year of publication for a record. The file has been in the repository since 2026-11-14 (data/ecocrop); the day it was downloaded was not recorded."
      },
      {
       "name": "FAOSTAT, Crops and livestock products (QCL), bulk download, normalized",
@@ -154,13 +162,13 @@
   "passed": true,
   "unsupported": []
  },
- "answer": "Maize and soybean share similar broad climatic and soil requirements while differing in specific optimal ranges [S1]. For temperature, maize has an optimal mean temperature of 18-33 °C and tolerates 10-47 °C, whereas soybean prefers an optimal temperature of 20-33 °C and tolerates 10-38 °C [S1].\n\nRegarding water, maize requires an annual rainfall of 600-1200 mm with a tolerance of 400-1800 mm, while soybean needs an optimal 600-1500 mm and tolerates 450-1800 mm [S1]. Both crops thrive best in soils with high fertility and a medium depth of 50-150 cm [S1].\n\nFor soil pH, maize performs best at 5-7 and tolerates 4.5-8.5, while soybean prefers a narrower range of 5.5-6.5 and tolerates 4.5-8.4 [S1]. Soybean additionally specifies an optimal medium organic soil texture and well-drained conditions [S1].",
+ "answer": "Maize and soybean share similar temperature and rainfall requirements, but differ in their soil pH ranges and growth cycles [S1]. Both crops thrive with mean temperatures between 20 °C and 33 °C and need optimal annual rainfall starting around 600 mm [S1]. \n\nMaize prefers a soil pH of 5 to 7 and tolerates a broader range from 4.5 to 8.5, while soybean prefers a narrower pH window of 5.5 to 6.5 with a tolerance between 4.5 and 8.4 [S1]. Both crops need medium soil depth, high soil fertility, and low salinity below 4 dS/m [S1]. \n\n- Maize growing period: 65-365 days [S1]\n- Soybean growing period: 75-180 days [S1]\n\nAre you planning to grow these crops on a specific parcel of land?",
  "citations": [
   {
    "n": 1,
    "chunkId": "table:compare:zea-mays:glycine-max",
    "title": "Maize (Zea mays) and Soybean (Glycine max) side by side",
-   "source": "FAO EcoCrop database, 2,568 species; FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2015-2024; FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2019-2024",
+   "source": "FAO EcoCrop database, record 2175; FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2015-2024; FAO EcoCrop database, record 1150; FAOSTAT, Crops and livestock products (QCL), bulk download, normalized, 2019-2024",
    "license": "Property of FAO; used with attribution for a non-commercial project (data/ecocrop/README.md); CC BY 4.0 (FAO Statistical Database Terms of Use, https://www.fao.org/contact-us/terms/db-terms-of-use/en/)"
   }
  ]
