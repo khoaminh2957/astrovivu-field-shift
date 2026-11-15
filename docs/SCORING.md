@@ -264,3 +264,123 @@ Rice grown in two or more seasons a year (28 units): CropSuite finds two or more
 - 2015 statistics against a 2001-2020 climate.
 - Rebuilding the set calls public services (Nominatim, ORNL DAAC, NASA POWER, NOAA PSL, SoilGrids) and takes about 90 minutes; responses are cached under `.cache/`.
 
+## 11. Ranking baseline, before country prevalence (K1)
+
+Code: `scripts/crops/rank-baseline.ts`, `scripts/crops/rank-baseline.test.ts`. Result: `data/crops/rank-baseline.json`. Re-run: `npx tsx scripts/crops/rank-baseline.ts` (prints the tables below).
+
+`rankCrops` orders the 73 curated crops by climate and soil at the field alone. It knows nothing about which crops the country grows. This section records what it returns today, so that the changes planned in `docs/PLAN.md` (prevalence in the ranking, K3; the tie-break, K4; the evaluation against prevalence, K5) can be compared with it. Taken on 15 November 2026, commit `c11874c`, with the telemetry of the demo caches (day 2026-11-14) and the practice each demo field opens with.
+
+Beside each crop stands what the crop atlas (`data/crops/atlas/crop_country.csv`, `docs/CROP_DATA.md` section 7) says about it in the field's country: `major`, `common`, `minor` or `present` when FAOSTAT reports it, `absent` when FAOSTAT covers the country and reports nothing, `unknown` when the crop is counted inside a group item, and `no-item` when no FAOSTAT item names the crop at all. The ranking did not use this column.
+
+### 11.1 Summary
+
+| Field | Country | Ranked | At compatibility 100 | Tied for first | Field's own crop | Top 15: grown | absent | unknown (group) | no FAOSTAT item |
+|---|---|---:|---:|---:|---|---:|---:|---:|---:|
+| Central Highlands robusta block | VNM | 73 | 1 | 1 | Robusta coffee: rank 1 | 5 | 3 | 3 | 4 |
+| Mekong Delta paddy | VNM | 73 | 13 | 13 | Rice: rank 7 | 7 | 3 | 0 | 5 |
+| Story County corn-soybean field | USA | 73 | 8 | 4 | Maize: rank 9 | 11 | 0 | 2 | 2 |
+| Diamond Valley alfalfa pivot | USA | 73 | 0 | 1 | Alfalfa: rank 2 | 7 | 2 | 1 | 5 |
+
+"Tied for first" counts the crops that share the highest rank score; among them the order is alphabetical by crop id (`out.sort(...)` in `rankCrops`).
+
+### 11.2 What the baseline shows
+
+- **Ties decide the order.** On the Mekong Delta paddy field 13 crops reach the full score, and rice, which covers 52.5 % of Viet Nam's harvested area, comes seventh because its id starts with "o". Okra, amaranth greens, chickpea and robusta coffee stand before it. In Iowa four crops tie for first (onion, cabbage, coriander, potato); maize is ninth and soybean fifteenth, each on about 34 % of the country's harvested area.
+- **Crops the country does not report are proposed.** Three of the first 15 in Đắk Lắk (okra, sorghum, pigeon pea) and three in An Giang (okra, chickpea, sorghum) are `absent` for Viet Nam.
+- **For a third to a half of the list the atlas cannot say.** `unknown` or `no-item`: 7 of 15 in Đắk Lắk, 5 in An Giang, 4 in Iowa, 6 in Nevada. A prevalence gate that drops only `absent` leaves these in; one that keeps only reported crops removes forage and cover crops such as alfalfa and sesbania, which FAOSTAT's crop statistics do not carry.
+- **A score of 0 is still listed.** On the Nevada pivot (soil pH 8.8) four crops score above 0. Places 5 to 15 are crops at 0, in alphabetical order.
+- **The field's own crop is not found by the ranking alone** on two of the four fields: rice is seventh, maize ninth. Robusta coffee is first in Đắk Lắk and alfalfa second in Nevada.
+
+`absent` is a statement about FAOSTAT, not about the fields of a country. Viet Nam has no okra series in FAOSTAT, so the atlas reads okra as absent there; whether farmers grow it is what the national statistics of task T4 are meant to answer. K3 has to treat `absent` with that in mind.
+
+### 11.3 The first 15 crops per field
+
+Compatibility, reliability and rank score are on 0-100. Rank score = compatibility x (0.5 + 0.5 x reliability).
+
+**Central Highlands robusta block** (`daklak-coffee`, VNM)
+
+| # | Crop | Compatibility | Reliability | Rank score | Best sowing | Limiting factor | Atlas match | In the country | Share of harvested area |
+|---:|---|---:|---:|---:|---|---|---|---|---:|
+| 1 | Robusta coffee (`coffea-canephora`) | 100 | 100 | 100 | Feb | none | exact | common | 4.9 % |
+| 2 | Okra (`abelmoschus-esculentus`) | 95.2 | 100 | 95.2 | Oct | slope | exact | absent |  |
+| 3 | Amaranth greens (`amaranthus-tricolor`) | 95.2 | 100 | 95.2 | Jun | slope | none | no-item |  |
+| 4 | Sweet potato (`ipomoea-batatas`) | 95.2 | 100 | 95.2 | Mar | slope | exact | common | 0.6 % |
+| 5 | Sorghum (`sorghum-bicolor`) | 95.2 | 100 | 95.2 | Mar | slope | exact | absent |  |
+| 6 | Yardlong bean (`vigna-unguiculata-ssp-sesquipedalis`) | 95.2 | 100 | 95.2 | Jul | slope | none | no-item |  |
+| 7 | Cashew (`anacardium-occidentale`) | 91.8 | 100 | 91.8 | Jan | texture | exact | common | 2.1 % |
+| 8 | Mint (`mentha-spicata-var-crispa`) | 91.8 | 100 | 91.8 | May | texture | group | unknown |  |
+| 9 | Groundnut (`arachis-hypogaea`) | 88.7 | 100 | 88.7 | Apr | texture | exact | common | 1.1 % |
+| 10 | Mustard greens (`brassica-juncea`) | 88.7 | 100 | 88.7 | May | texture | none | no-item |  |
+| 11 | Pak choi (`brassica-rapa-pak-choi`) | 88.7 | 100 | 88.7 | Jun | texture | none | no-item |  |
+| 12 | Pigeon pea (`cajanus-cajan`) | 88.7 | 100 | 88.7 | Feb | texture | exact | absent |  |
+| 13 | Coriander (`coriandrum-sativum`) | 88.7 | 100 | 88.7 | May | texture | group | unknown |  |
+| 14 | Pumpkin (`cucurbita-moschata`) | 88.7 | 100 | 88.7 | Mar | texture | group | unknown |  |
+| 15 | Soybean (`glycine-max`) | 88.7 | 100 | 88.7 | Apr | texture | exact | minor | 0.2 % |
+
+**Mekong Delta paddy** (`cantho-rice`, VNM)
+
+| # | Crop | Compatibility | Reliability | Rank score | Best sowing | Limiting factor | Atlas match | In the country | Share of harvested area |
+|---:|---|---:|---:|---:|---|---|---|---|---:|
+| 1 | Okra (`abelmoschus-esculentus`) | 100 | 100 | 100 | Jan | none | exact | absent |  |
+| 2 | Amaranth greens (`amaranthus-tricolor`) | 100 | 100 | 100 | Jan | none | none | no-item |  |
+| 3 | Chickpea (`cicer-arietinum`) | 100 | 100 | 100 | Jan | none | exact | absent |  |
+| 4 | Robusta coffee (`coffea-canephora`) | 100 | 100 | 100 | Jan | none | exact | common | 4.9 % |
+| 5 | Water spinach (`ipomoea-aquatica`) | 100 | 100 | 100 | Jan | none | none | no-item |  |
+| 6 | Sweet potato (`ipomoea-batatas`) | 100 | 100 | 100 | Jun | none | exact | common | 0.6 % |
+| 7 | Rice (`oryza-sativa`) | 100 | 100 | 100 | Jan | none | exact | major | 52.5 % |
+| 8 | Black pepper (`piper-nigrum`) | 100 | 100 | 100 | Jan | none | exact | common | 0.8 % |
+| 9 | Sugarcane (`saccharum-officinarum`) | 100 | 100 | 100 | Jan | none | exact | common | 1.3 % |
+| 10 | Sesbania (`sesbania-rostrata`) | 100 | 100 | 100 | Jan | none | none | no-item |  |
+| 11 | Sorghum (`sorghum-bicolor`) | 100 | 100 | 100 | Jan | none | exact | absent |  |
+| 12 | Sudangrass (`sorghum-x-drummondii`) | 100 | 100 | 100 | Jan | none | none | no-item |  |
+| 13 | Yardlong bean (`vigna-unguiculata-ssp-sesquipedalis`) | 100 | 100 | 100 | Jan | none | none | no-item |  |
+| 14 | Cashew (`anacardium-occidentale`) | 91.8 | 100 | 91.8 | Jan | texture | exact | common | 2.1 % |
+| 15 | Groundnut (`arachis-hypogaea`) | 91.8 | 100 | 91.8 | Jan | texture | exact | common | 1.1 % |
+
+**Story County corn-soybean field** (`iowa-corn-soy`, USA)
+
+| # | Crop | Compatibility | Reliability | Rank score | Best sowing | Limiting factor | Atlas match | In the country | Share of harvested area |
+|---:|---|---:|---:|---:|---|---|---|---|---:|
+| 1 | Onion (`allium-cepa`) | 100 | 95 | 97.5 | May | none | exact | minor | 0.055 % |
+| 2 | Cabbage (`brassica-oleracea-var-capitata`) | 100 | 95 | 97.5 | May | none | exact | minor | 0.021 % |
+| 3 | Coriander (`coriandrum-sativum`) | 100 | 95 | 97.5 | May | none | group | unknown |  |
+| 4 | Potato (`solanum-tuberosum`) | 100 | 95 | 97.5 | May | none | exact | minor | 0.4 % |
+| 5 | Watermelon (`citrullus-lanatus`) | 98.2 | 95 | 95.8 | Jun | water | exact | minor | 0.043 % |
+| 6 | Buckwheat (`fagopyrum-esculentum`) | 100 | 85 | 92.5 | Jun | none | exact | minor | 0.082 % |
+| 7 | Sunflower (`helianthus-annuus`) | 100 | 80 | 90 | Jun | none | exact | minor | 0.5 % |
+| 8 | Marigold (`tagetes-erecta`) | 100 | 80 | 90 | Jun | none | none | no-item |  |
+| 9 | Maize (`zea-mays`) | 100 | 80 | 90 | Jun | none | exact | major | 34.0 % |
+| 10 | Common bean (`phaseolus-vulgaris`) | 90 | 85 | 83.3 | Jul | photoperiod | group | unknown |  |
+| 11 | Mustard greens (`brassica-juncea`) | 99.5 | 65 | 82.1 | May | water | none | no-item |  |
+| 12 | Tomato (`lycopersicon-esculentum`) | 93.5 | 75 | 81.8 | Jun | temperature | exact | minor | 0.1 % |
+| 13 | Canola (`brassica-napus`) | 83 | 95 | 80.9 | May | ph | exact | common | 1.0 % |
+| 14 | Sorghum (`sorghum-bicolor`) | 79.7 | 100 | 79.7 | Jun | temperature | exact | common | 2.2 % |
+| 15 | Soybean (`glycine-max`) | 91.6 | 70 | 77.9 | Jun | temperature | exact | major | 34.7 % |
+
+**Diamond Valley alfalfa pivot** (`nevada-alfalfa`, USA)
+
+| # | Crop | Compatibility | Reliability | Rank score | Best sowing | Limiting factor | Atlas match | In the country | Share of harvested area |
+|---:|---|---:|---:|---:|---|---|---|---|---:|
+| 1 | Chickpea (`cicer-arietinum`) | 66.4 | 100 | 66.4 | Jun | ph | exact | minor | 0.2 % |
+| 2 | Alfalfa (`medicago-sativa`) | 52.9 | 100 | 52.9 | Jun | ph | none | no-item |  |
+| 3 | Common bean (`phaseolus-vulgaris`) | 27.7 | 100 | 27.7 | Jul | ph | group | unknown |  |
+| 4 | Rice (`oryza-sativa`) | 12.9 | 100 | 12.9 | Jun | ph | exact | common | 1.1 % |
+| 5 | Okra (`abelmoschus-esculentus`) | 0 | 100 | 0 | Jul | ph | exact | minor | 0.001 % |
+| 6 | Onion (`allium-cepa`) | 0 | 100 | 0 | May | ph | exact | minor | 0.055 % |
+| 7 | Spring onion (`allium-fistulosum`) | 0 | 100 | 0 | Jun | ph | exact | absent |  |
+| 8 | Amaranth greens (`amaranthus-tricolor`) | 0 | 100 | 0 | Jun | ph | none | no-item |  |
+| 9 | Cashew (`anacardium-occidentale`) | 0 | 0 | 0 | Apr | ph | exact | absent |  |
+| 10 | Groundnut (`arachis-hypogaea`) | 0 | 90 | 0 | Jun | ph | exact | common | 0.6 % |
+| 11 | Pinto peanut (`arachis-pintoi`) | 0 | 0 | 0 | May | temperature | none | no-item |  |
+| 12 | Oats (`avena-sativa`) | 0 | 25 | 0 | Jun | ph | exact | minor | 0.4 % |
+| 13 | Malabar spinach (`basella-alba`) | 0 | 100 | 0 | Jul | ph | none | no-item |  |
+| 14 | Mustard greens (`brassica-juncea`) | 0 | 100 | 0 | Jun | ph | none | no-item |  |
+| 15 | Canola (`brassica-napus`) | 0 | 100 | 0 | Jun | ph | exact | common | 1.0 % |
+
+### 11.4 Limits
+
+- The curated list only (73 crops); the 1,990 species of the full catalogue are not ranked by `rankCrops`.
+- One day of telemetry and the default practice of each demo field; another irrigation setting changes the order.
+- The atlas level is per country, three-year mean of FAOSTAT production data up to 2024. Regions inside a country (`region_crops.csv`, MapSPAM 2020) are not used here: coffee is `common` for Viet Nam as a whole, which says nothing about the Mekong Delta.
+- The two country codes of the demo fields are written in the script (`VN` to `VNM`, `US` to `USA`); the app's own conversion is part of K2.
+
