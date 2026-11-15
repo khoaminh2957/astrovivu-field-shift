@@ -121,6 +121,63 @@ export function factLines(f: CropFacts, lang: Lang): { key: string; line: string
   return L;
 }
 
+/** A whole number with thousands separators: 7,089,041 in English, 7.089.041 in Vietnamese. */
+export function groupDigits(v: number, lang: Lang): string {
+  return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, lang === 'vi' ? '.' : ',');
+}
+
+const VI_COMMONNESS: Record<string, string> = { global: 'toàn cầu', widespread: 'rộng rãi', regional: 'theo vùng', local: 'cục bộ' };
+// Country names are FAOSTAT's. The two countries the app has reference figures for are given their Vietnamese name.
+const VI_COUNTRY: Record<string, string> = { VNM: 'Việt Nam', USA: 'Hoa Kỳ' };
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`;
+
+/**
+ * Where a crop is grown, as sentences: the countries that report it and the largest harvested
+ * areas when FAOSTAT has an item for the crop, and what is missing when it has not. Used by the
+ * index build (the `:where` passage) and at answer time, so the wording a user reads is the
+ * passage that is cited. Every number is a column of the crop atlas.
+ */
+export function whereLines(f: CropFacts, lang: Lang): string[] {
+  const w = f.prevalence;
+  if (!w) return [];
+  const vi = lang === 'vi';
+  const name = cropLabel(f, lang);
+  const country = (c: { iso3: string; name: string }) => (vi ? (VI_COUNTRY[c.iso3] ?? c.name) : c.name);
+  if (w.match === 'none')
+    return [vi ? `Thống kê cây trồng của FAOSTAT không có mặt hàng nào cho ${name}, nên không có số liệu theo nước.` : `FAOSTAT's crop statistics have no item for ${name}, so there are no figures by country.`];
+  if (w.match === 'group') {
+    const others = (w.sharedBy ?? 1) - 1;
+    return [
+      vi
+        ? `FAOSTAT không có số liệu riêng cho ${name}: cây này được tính gộp trong mặt hàng ${w.faostatItem ?? 'gộp'}${others > 0 ? `, cùng ${others} cây khác của atlas` : ''}. Vì vậy không nêu được diện tích ở nước nào.`
+        : `FAOSTAT has no figures for ${name} alone: it is counted inside the item ${w.faostatItem ?? 'of a group'}${others > 0 ? `, with ${others} other crops of the atlas` : ''}. No area can be given for any country.`,
+    ];
+  }
+  const out: string[] = [];
+  const years = w.years ? (vi ? ` (trung bình ${w.years})` : ` (mean of ${w.years})`) : '';
+  if (w.countries != null && w.worldAreaHa != null)
+    out.push(
+      vi
+        ? `${name}: ${w.countries} nước báo cáo sản xuất với FAOSTAT, diện tích thu hoạch toàn thế giới ${groupDigits(w.worldAreaHa, 'vi')} ha${years}.`
+        : `${name}: ${w.countries} countries report production to FAOSTAT, with ${groupDigits(w.worldAreaHa, 'en')} ha harvested in the world${years}.`,
+    );
+  if (w.commonness) out.push(vi ? `Atlas cây trồng xếp mức phổ biến: ${VI_COMMONNESS[w.commonness] ?? w.commonness}.` : `The crop atlas classes it as ${w.commonness}.`);
+  if (w.top?.length) out.push(`${vi ? 'Diện tích thu hoạch lớn nhất' : 'Largest harvested areas'}: ${w.top.map((c) => `${country(c)} ${groupDigits(c.areaHa, lang)} ha`).join('; ')}.`);
+  for (const c of w.also ?? []) out.push(vi ? `${country(c)}: ${groupDigits(c.areaHa, 'vi')} ha, lớn thứ ${c.rank}.` : `${country(c)}: ${groupDigits(c.areaHa, 'en')} ha, the ${ordinal(c.rank)} largest.`);
+  if ((w.sharedBy ?? 1) > 1)
+    out.push(
+      vi
+        ? `Đây là số liệu của mặt hàng FAOSTAT ${w.faostatItem}, mặt hàng mà atlas gắn với ${w.sharedBy} cây; không phải số riêng của một cây.`
+        : `These are the figures of the FAOSTAT item ${w.faostatItem}, which the atlas ties to ${w.sharedBy} crops; they are not for one crop alone.`,
+    );
+  return out;
+}
+
+export function renderWhere(f: CropFacts, lang: Lang): string {
+  const tail = lang === 'vi' ? ' Nguồn: FAOSTAT (QCL), qua atlas cây trồng của Astrovivu.' : ' Source: FAOSTAT (QCL), through the Astrovivu crop atlas.';
+  return `${whereLines(f, lang).join(' ')}${tail}`;
+}
+
 export function renderFactSheet(f: CropFacts, lang: Lang): string {
   const vi = lang === 'vi';
   const kind = [f.lifeForm, f.lifeSpan].filter(Boolean).map((s) => (vi ? viTerm(s!) : s));
@@ -129,6 +186,9 @@ export function renderFactSheet(f: CropFacts, lang: Lang): string {
     : `${cropLabel(f, 'en')}${f.family ? `, family ${f.family}` : ''}${kind.length ? `; ${kind.join(', ')}` : ''}${f.category ? `; category ${f.category}` : ''}.`;
   const names = f.names.length ? (vi ? ` Tên thường gọi khác: ${f.names.slice(0, 6).join(', ')}.` : ` Other common names: ${f.names.slice(0, 6).join(', ')}.`) : '';
   const lines = factLines(f, lang).map((l) => l.line);
+  // A crop the atlas keeps that EcoCrop has no record of: say so, and do not name EcoCrop as the source of nothing.
+  if (f.ecocropId == null)
+    return `${head}${names} ${vi ? 'FAO EcoCrop không có bản ghi nào về cây này, nên ở đây không có ngưỡng nhiệt độ, lượng mưa hay đất. Cây được giữ vì có trong danh mục cây đã biên soạn của Astrovivu.' : 'FAO EcoCrop has no record of this crop, so no temperature, rainfall or soil thresholds are known here. It is kept because it is in the catalogue of crops curated for Astrovivu.'}`;
   const tail = vi
     ? ' Nguồn: FAO EcoCrop. Ngưỡng tối ưu là điều kiện cây phát triển tốt nhất; ngưỡng chịu được là giới hạn cây còn sống.'
     : ' Source: FAO EcoCrop. Optimal is where the crop grows best; tolerated is the limit beyond which it fails.';

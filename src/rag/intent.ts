@@ -7,9 +7,10 @@ import { fold } from './text';
 /**
  * `field` compares the parcel with what a crop needs; `field-fact` reports a reading of the parcel
  * itself (its value, where it comes from and how far it can be trusted), a month of its climate or
- * the risks in its forecast.
+ * the risks in its forecast. `dropped` is a question about a species the crop atlas does not keep:
+ * it is set by the query analysis (`analyze`), which knows the names, not by the rules below.
  */
-export type Intent = 'field' | 'field-fact' | 'score-change' | 'compare' | 'term' | 'rotation' | 'care' | 'ideal' | 'general' | 'off-topic';
+export type Intent = 'field' | 'field-fact' | 'score-change' | 'compare' | 'term' | 'rotation' | 'care' | 'ideal' | 'general' | 'off-topic' | 'dropped';
 
 /** Requirement or reading the question focuses on, if any. */
 export type Focus =

@@ -4,13 +4,52 @@ import type { AliasTable } from './aliases';
 /** EcoCrop-style window with possibly missing ends: [absMin, optMin, optMax, absMax]. */
 export type Range4 = [absMin: number | null, optMin: number | null, optMax: number | null, absMax: number | null];
 
+/** One country in the list of where a crop is grown. */
+export interface CropCountry {
+  /** ISO 3166-1 alpha-3. */
+  iso3: string;
+  /** As FAOSTAT names the country. */
+  name: string;
+  /** Harvested area in hectares, mean of the years of `CropWhere.years`. */
+  areaHa: number;
+  /** `major`, `common` or `minor` in that country (docs/CROP_DATA.md, section 7). */
+  level: string;
+  /** Place among the countries that report an area of the crop, 1 = largest. */
+  rank: number;
+}
+
+/**
+ * What the crop atlas knows about where a crop is grown (data/crops/atlas, FAOSTAT QCL).
+ * `exact`: a FAOSTAT item is the crop, or names only its genus; the figures are that item's.
+ * `group`: FAOSTAT counts the crop inside an item of several crops; no figure is the crop's own.
+ * `none`: no FAOSTAT crop item covers it.
+ */
+export interface CropWhere {
+  match: 'exact' | 'group' | 'none';
+  faostatItem?: string;
+  /** Crops of the atlas tied to the same FAOSTAT item; above 1 the figures are shared. */
+  sharedBy?: number;
+  /** Countries that report production. */
+  countries?: number;
+  worldAreaHa?: number;
+  /** The atlas's word for how widely the crop is grown: global, widespread, regional, local. */
+  commonness?: string;
+  /** Years the figures are means of: "2021-2024". */
+  years?: string;
+  /** The five countries with the largest harvested area. */
+  top?: CropCountry[];
+  /** Viet Nam and the United States when they report the crop and are not among the five. */
+  also?: CropCountry[];
+}
+
 /** Structured requirements of one species, cleaned from FAO EcoCrop (see scripts/rag/ecocrop.ts). */
 export interface CropFacts {
   id: string;
   sci: string;
-  ecocropId: number;
+  /** Absent for a crop the atlas keeps that EcoCrop has no record of. */
+  ecocropId?: number;
   family?: string;
-  /** Curated English / Vietnamese display names (curated crops only). */
+  /** English / Vietnamese display names: the curated ones, else the names of the crop atlas. */
   en?: string;
   vi?: string;
   /** A few common names as published by EcoCrop, for display. */
@@ -43,6 +82,19 @@ export interface CropFacts {
   curated: boolean;
   /** What the build changed while cleaning this row (wrong-scale values dropped, zero cycles). */
   cleaning?: string[];
+  /** Where the crop is grown, from the crop atlas. */
+  prevalence?: CropWhere;
+}
+
+/**
+ * EcoCrop species the crop atlas does not keep (data/crops/atlas/dropped.csv), so that a question
+ * about one is answered with "not in the data, and why" instead of with a look-alike.
+ */
+export interface DroppedTable {
+  /** Folded name -> ids of the species it names. */
+  aliases: Record<string, string[]>;
+  /** id -> scientific name and the reason: `n` no FAOSTAT crop item names it; `g` named only in a group item and not described as cultivated. */
+  species: Record<string, [sci: string, reason: 'n' | 'g']>;
 }
 
 /** Serialised MiniSearch index (`MiniSearch.toJSON()`), kept opaque here. */
@@ -61,6 +113,8 @@ export interface RagBundle {
   crops: CropFacts[];
   aliases: AliasTable;
   index: SerializedIndex;
+  /** In the `full` bundle only. */
+  dropped?: DroppedTable;
 }
 
 /** Stored fields kept inside the MiniSearch index (used for boosting and filtering). */
@@ -71,7 +125,8 @@ export interface StoredFields {
   tags: string;
 }
 
-export type ChunkKind = 'facts' | 'narrative' | 'wiki' | 'glossary' | 'concept';
+/** `where`: the sheet on where a crop is grown (crop atlas), beside its `facts` sheet of requirements. */
+export type ChunkKind = 'facts' | 'where' | 'narrative' | 'wiki' | 'glossary' | 'concept';
 
 /** Indexed document shape. */
 export interface IndexDoc {

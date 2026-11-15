@@ -58,6 +58,67 @@ describe('extractive answers', () => {
     expect(r.citations).toEqual([]);
   });
 
+  it('says that a species the atlas dropped is not in the data, and why, without a number', async () => {
+    // Aibika (Abelmoschus manihot) is in dropped.csv: no FAOSTAT crop item names it.
+    const vi = await answerExtractive(store, { query: 'aibika trồng thế nào?', lang: 'vi' });
+    expect(vi.retrieval.analysis.intent).toBe('dropped');
+    expect(vi.retrieval.analysis.dropped).toEqual([{ id: 'abelmoschus-manihot', sci: 'Abelmoschus manihot', reason: 'no-item', alias: 'aibika', start: 0, end: 1 }]);
+    expect(vi.answer).toMatch(/^Abelmoschus manihot \("aibika"\) không có trong dữ liệu cây trồng của Astrovivu\./);
+    expect(vi.answer).toContain('không mặt hàng cây trồng nào của FAOSTAT gọi tên nó');
+    expect(vi.answer).not.toMatch(/\d/);
+    expect(vi.citations).toEqual([]);
+    const en = await answerExtractive(store, { query: 'How do I grow aibika?', lang: 'en' });
+    expect(en.answer).toMatch(/^Abelmoschus manihot \("aibika"\) is not in Astrovivu's crop data\./);
+    expect(en.answer).toContain('no FAOSTAT crop item names it');
+    expect(en.answer).not.toMatch(/\d/);
+    // By its scientific name as well, and then the name is not repeated in brackets. "Manihot" alone
+    // is cassava, a kept crop; inside the longer name it is not.
+    const sci = await answerExtractive(store, { query: 'What does Abelmoschus manihot need?', lang: 'en' });
+    expect(sci.retrieval.analysis.cropIds).toEqual([]);
+    expect(sci.answer).toMatch(/^Abelmoschus manihot is not in Astrovivu's crop data\./);
+    expect((await answerExtractive(store, { query: 'What does manihot need?', lang: 'en' })).retrieval.analysis.cropIds).toEqual(['manihot-esculenta']);
+    // "Bush cabbage" is a name of aibika, not a cabbage.
+    expect((await answerExtractive(store, { query: 'How do I grow bush cabbage?', lang: 'en' })).retrieval.analysis.intent).toBe('dropped');
+  });
+
+  it('gives the other reason for a species named only inside a FAOSTAT group', async () => {
+    // Chervil (Anthriscus cerefolium): FAOSTAT counts it in "Other vegetables, fresh n.e.c.", and EcoCrop does not describe it as cultivated.
+    const r = await answerExtractive(store, { query: 'What conditions does Anthriscus cerefolium need?', lang: 'en' });
+    expect(r.retrieval.analysis.dropped?.[0]).toMatchObject({ id: 'anthriscus-cerefolium', reason: 'group-only' });
+    expect(r.answer).toContain('FAOSTAT counts it only inside an item that groups several crops');
+    expect(r.answer).not.toMatch(/\d/);
+  });
+
+  it('does the same for the four crops that left the curated list, under the names they had', async () => {
+    for (const [query, lang, sci] of [
+      ['Is macadamia suitable for acid soil?', 'en', 'Macadamia integrifolia'],
+      ['Đậu ván cần điều kiện gì?', 'vi', 'Lablab purpureus'],
+      ['What can I rotate with white clover?', 'en', 'Trifolium repens'],
+      ['Cỏ stylo trồng thế nào?', 'vi', 'Stylosanthes guianensis var. guianensis'],
+    ] as const) {
+      const r = await answerExtractive(store, { query, lang });
+      expect(r.retrieval.analysis.intent, query).toBe('dropped');
+      expect(r.answer.startsWith(sci), query).toBe(true);
+      expect(r.answer, query).not.toMatch(/\d/);
+    }
+  });
+
+  it('leaves a kept crop, a term and a field question alone', async () => {
+    // Okra is the kept relative of aibika; "bush" and "cabbage" are words of aibika's other names.
+    expect((await answerExtractive(store, { query: 'What does okra need?', lang: 'en' })).retrieval.analysis).toMatchObject({ intent: 'ideal', cropIds: ['abelmoschus-esculentus'] });
+    expect((await answerExtractive(store, { query: 'What conditions does cabbage need?', lang: 'en' })).retrieval.analysis.intent).toBe('ideal');
+    expect((await answerExtractive(store, { query: 'What is NDVI?', lang: 'en' })).retrieval.analysis.intent).toBe('term');
+    expect((await answerExtractive(store, { query: 'What is the pH of my soil?', lang: 'en', context: FIXTURE_CONTEXT })).retrieval.analysis.intent).toBe('field-fact');
+  });
+
+  it('answers for the crop EcoCrop has no record of with what is known, not with a quote about something else', async () => {
+    const r = await answerExtractive(store, { query: 'Cúc vạn thọ cần điều kiện gì?', lang: 'vi' });
+    expect(r.retrieval.analysis.cropIds).toEqual(['tagetes-erecta']);
+    expect(r.answer).toMatch(/^FAO EcoCrop không có bản ghi nào về cúc vạn thọ \(Tagetes erecta\)/);
+    expect(r.citations.map((c) => c.chunkId)).toEqual(['eco:tagetes-erecta:facts']);
+    expect(r.citations[0].source).toBe('Astrovivu crop atlas');
+  });
+
   it('reaches a non-curated EcoCrop species through the lazy full index', async () => {
     const r = await answerExtractive(store, { query: 'Does quinoa tolerate salinity?', lang: 'en' });
     expect(store.hasFull).toBe(true);
