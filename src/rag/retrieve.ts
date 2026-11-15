@@ -73,6 +73,8 @@ const KIND_BOOST: Record<Intent, Partial<Record<ChunkKind, number>>> = {
   ideal: { facts: 1.8, narrative: 1.2, wiki: 1.0, glossary: 0.6, concept: 0.6 },
   compare: { facts: 2.0, narrative: 1.1, glossary: 0.5, concept: 0.5 },
   field: { facts: 1.6, glossary: 1.2, narrative: 1.0, concept: 0.9 },
+  // A reading of the parcel is explained by the glossary entry on the reading and on its source.
+  'field-fact': { glossary: 2.0, concept: 1.3, facts: 0.5, narrative: 0.6 },
   'score-change': { glossary: 2.0, concept: 1.2, facts: 0.8 },
   term: { glossary: 2.2, concept: 1.5, facts: 0.4, narrative: 0.5, wiki: 0.7 },
   rotation: { concept: 1.5, glossary: 1.5, wiki: 1.3, facts: 0.9 },
@@ -151,7 +153,7 @@ export function search(store: KnowledgeStore, a: Analysis, topK = 6, perDoc = 2,
     }
   }
   // Term intents: pin the glossary entry in the query language.
-  if (o.pin && (a.intent === 'term' || a.intent === 'score-change')) {
+  if (o.pin && (a.intent === 'term' || a.intent === 'score-change' || a.intent === 'field-fact')) {
     const ids = a.intent === 'score-change' ? ['productivity-score', ...a.termIds] : a.termIds;
     for (const t of ids.slice(0, 2)) push(store.chunks.get(`gloss-${a.lang}:${t}`) ?? store.chunks.get(`gloss-${a.lang}:${t}:0`), top * 1.01);
   }

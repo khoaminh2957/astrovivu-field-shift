@@ -94,13 +94,37 @@ export function buildFieldContext(input: FieldContextInput): FieldContext {
       if (at.stale) extra.push(`stale: ${at.ageDays} days old`);
       facts[key] = `${fmt(at.sample.v)} ${s.unit}`.trim() + ` (${srcLabel(src, s.sourceId)}, ${at.sample.t}${extra.length ? `; ${extra.join('; ')}` : ''})`;
     }
-    const rain = series.find((x) => x.key === 'rain');
-    if (rain) {
-      const src = srcLabel(sources[rain.sourceId], rain.sourceId);
-      for (const days of [30, 90]) {
+    // The observed series first; where it stops short of the cursor (CHIRPS is published weeks
+    // late), the reanalysis series, named as such in the fact.
+    const rainSeries = ['rain', 'rain_era5'].map((key) => series.find((x) => x.key === key)).filter((x): x is Series => x != null);
+    for (const days of [30, 90]) {
+      for (const rain of rainSeries) {
         const w = sumWindow(rain, cursor, days);
-        if (w.n >= days * 0.7) facts[`rain_${days}d`] = `${fmt(w.total)} mm over the ${days} days to ${cursor} (${src})`;
+        if (w.n < days * 0.7) continue;
+        facts[`rain_${days}d`] = `${fmt(w.total)} mm over the ${days} days to ${cursor} (${srcLabel(sources[rain.sourceId], rain.sourceId)})`;
+        break;
       }
+    }
+    // What the forecast holds from the cursor on: the coldest night, the hottest day, the rain.
+    const ahead = (key: string) => {
+      const s = series.find((x) => x.key === key);
+      const days = (s?.samples ?? []).filter((x): x is { t: ISODate; v: number } => x.t >= cursor && x.v != null);
+      return s && days.length ? { days, src: `${srcLabel(sources[s.sourceId], s.sourceId)}, ${days[0].t} to ${days[days.length - 1].t}` } : null;
+    };
+    const fcMin = ahead('fc_tmin');
+    if (fcMin) {
+      const low = fcMin.days.reduce((a, b) => (b.v < a.v ? b : a));
+      facts.forecast_tmin = `${fmt(low.v)} °C lowest forecast minimum, on ${low.t} (${fcMin.src})`;
+    }
+    const fcMax = ahead('fc_tmax');
+    if (fcMax) {
+      const high = fcMax.days.reduce((a, b) => (b.v > a.v ? b : a));
+      facts.forecast_tmax = `${fmt(high.v)} °C highest forecast maximum, on ${high.t} (${fcMax.src})`;
+    }
+    const fcRain = ahead('fc_rain');
+    if (fcRain) {
+      const wettest = fcRain.days.reduce((a, b) => (b.v > a.v ? b : a));
+      facts.forecast_rain = `${fmt(fcRain.days.reduce((a, b) => a + b.v, 0))} mm forecast over ${fcRain.days.length} days, wettest day ${fmt(wettest.v)} mm on ${wettest.t} (${fcRain.src})`;
     }
     for (const b of Object.values(telemetry.branches)) {
       for (const f of b.facts) {

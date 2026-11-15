@@ -23,6 +23,11 @@ const EXCLUDE = [
   'lua chon', 'me tay', 'bo re', 'mia mai', 'ke hoach', 'thong ke', 'thiet ke', 'ke tiep', 'ke ca', 'tra loi', 'kiem tra',
   'dieu tra', 'nghe nong', 'nghe nghiep', 'dau tien', 'dau vu', 'bat dau', 'ban dau', 'dau ra', 'dau vao', 'cai thien', 'cai tao',
   'chuoi thoi gian', 'ngo ngang', 'bap be', 'sang som',
+  // "đạm" (nitrogen) folds to "dam", which EcoCrop lists as a name of the greater yam.
+  'dam',
+  // "tôi" (I, my) typed without accents is "toi", the folded form of "tỏi" (garlic).
+  'cua toi', 'ruong toi', 'vuon toi', 'dat toi', 'ray toi', 'nha toi', 'cho toi', 'giup toi', 'toi co', 'toi nen', 'toi muon', 'toi can',
+  'toi dang', 'toi se', 'toi da', 'toi trong', 'toi bon', 'toi tuoi', 'toi hoi', 'toi thay',
 ];
 
 const hasDiacritics = (s: string) => /[̀-ͯ]/.test(s.normalize('NFD')) || /[đĐ]/.test(s);

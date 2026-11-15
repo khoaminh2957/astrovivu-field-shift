@@ -1,6 +1,6 @@
 # Crop-knowledge assistant (RAG)
 
-The Ask panel answers two kinds of question, in English and Vietnamese, with citations: questions about crops (ideal conditions, comparisons, rotation partners, care) and questions about the locked field ("is my soil too acid for soybean?", "why did the score drop in March?", "what does root-zone moisture mean here?"). It also explains the scientific terms the challenge names (evapotranspiration, soil-moisture anomaly, NDVI, frost risk, water balance) and how satellite data differs from ground measurements.
+The Ask panel answers three kinds of question, in English and Vietnamese, with citations: questions about crops (ideal conditions, comparisons, rotation partners, care), questions about the locked field against a crop ("is my soil too acid for soybean?", "why did the score drop in March?", "what does root-zone moisture mean here?"), and questions about the readings of the field itself ("what is the pH of my soil and where does the number come from?", "which month is the wettest here?", "will there be frost next week?"). What it answers and what it declines is listed under [Scope](#scope). It also explains the scientific terms the challenge names (evapotranspiration, soil-moisture anomaly, NDVI, frost risk, water balance) and how satellite data differs from ground measurements.
 
 It works as a static site with no key: retrieval and a grounded extractive answer run in the browser. A language model is an optional upgrade through the local API server.
 
@@ -17,6 +17,36 @@ It works as a static site with no key: retrieval and a grounded extractive answe
 Details, revision ids and the sources considered and rejected: `data/rag/ATTRIBUTION.md`; counts: `data/rag/manifest.json`. The curated crop list (staples, pulses, oilseeds, roots, Central Highlands perennials such as coffee, pepper, durian, avocado, macadamia, cover crops, vegetables, herbs) is `scripts/rag/curated.ts`.
 
 EcoCrop cleaning (docs/DATA_SOURCES.md §5): temperatures beyond ±60 °C and latitudes beyond 90° are dropped as wrong-scale, a growing cycle of 0 is missing, pH outside 0-14 is dropped; 693 rows had something cleaned and each fact record lists what in `cleaning`. Crop ids are slugs of the EcoCrop scientific name (`coffea-canephora`, `lycopersicon-esculentum` for tomato, `vicia-villosa-ssp-villosa` for hairy vetch).
+
+## Scope
+
+What can be asked, where the answer comes from, and what the assistant says when it has no answer. Code: `src/rag/intent.ts` (routing), `src/rag/fieldFacts.ts` (readings of the field), `src/rag/fieldAnswer.ts` and `src/rag/compose.ts` (answers). Each group has questions in `data/rag/eval.json` (column "Eval group"; see Evaluation).
+
+| Group | Example | Answered from | Status | Eval group |
+|---|---|---|---|---|
+| What a crop needs; two crops side by side; care; rotation partners | "What conditions does soybean need?" | FAO EcoCrop fact sheets, Wikipedia extracts, glossary | answered | crops and terms |
+| A term or a method | "What is NDVI?" | glossary, Wikipedia | answered; with a field locked, the field's own reading is added | crops and terms |
+| The field against a crop | "Is my soil too acid for soybean?" | field facts against the crop's EcoCrop window (`suitability.ts`) | answered for pH, temperature, rain, texture, drainage, frost and altitude. A reading EcoCrop sets no threshold on (slope, organic matter, CEC, nitrogen, bulk density) is given without a verdict | crops and terms, contrast |
+| Why the score moved | "Why did the score drop in March?" | the monthly `score_YYYY-MM` facts | answered | crops and terms |
+| **Soil of the field** | "What is the pH of my soil?", "Is my soil salty?", "How much organic matter?" | the soil facts: `ph`, `om_pct` or `soc_gkg`, `cec_cmolkg`, `nitrogen_gkg`, `bulk_density`, `usda_texture`, `texture_class`, `clay_pct`, `sand_pct`, `silt_pct`, `drainage_class`, `depth_cm`, `ec_dsm` | answered: the value, its source, the size of one value of the source, the 5-95 % range, and whether it is the grower's own number. Salinity, drainage class and depth to a layer that stops roots come from the United States soil survey (SSURGO) only: elsewhere the answer is "no value for this field", with that reason and the cheapest way to measure it | soil |
+| **Terrain** | "How steep is my field?", "How high is it?" | `slope_deg`, `relief_m`, `aspect_label`, `elevation_m` (SRTM) | answered. Erosion: the slope is given and the answer says the app has no erosion estimate | terrain |
+| **Climate of the field by month** | "Which month is the wettest?", "the coldest?", "How much rain in the last 30 days?" | `climate_monthly_rain`, `climate_monthly_t` (means of the climate history), `rain_30d`, `rain_90d` | answered: the highest and the lowest month and all twelve values. Needs three years of climate history; without it the answer says so | climate |
+| **Risks ahead** | "Will there be frost next week?", "Is a heat wave coming?" | the `risk_<kind>_<date>` facts (frost, heat, heavy rain, dry spell, wind) and `forecast_tmin`, `forecast_tmax`, `forecast_rain` | answered within the forecast (16 days): the warnings in the days asked about, or "no warning" with the forecast number and the rule the app warns by. Without a forecast the answer says so and gives the last reading | risk |
+| **Source and reliability of a number** | "Which satellite does the NDVI come from?", "How old is it?", "Can I trust it?" | the fact itself: source, size of one value, observed, modelled, derived or forecast, date, age in days, 5-95 % range, comparison with the normal for the day | answered for every reading above and for the daily series (NDVI, EVI, land surface temperature, soil moisture, evapotranspiration, air temperature, humidity, PAR, wind). A pixel larger than the field is said to mix in the surroundings | source |
+| A reading that is not recognised | "Is there much zinc in my field?" | | not answered: the assistant says it did not recognise the reading and lists the readings the field has. It does not answer about another reading | contrast |
+| Low or high? | "Is my organic matter low or high?" | | the value only. No threshold with a source exists yet except through a crop's EcoCrop window; the soil diagnosis is issue C10 | soil |
+| What to apply | "My soil is acid, what should I apply for soybean?" | the pH check | what the pH alone says about liming; no amounts and no other fertiliser (C10) | contrast |
+| Which crops a country grows, where a crop is grown, prices | "What is grown here?" | the crop atlas and the price database | not yet (C2, C3) | |
+
+Declined, whether or not a crop is named:
+
+| Question | The assistant says |
+|---|---|
+| Diagnosis of a pest or disease from a photo or a description | it cannot look at photos or diagnose; what it can give instead; take a sample or a photo to the local plant-protection office |
+| The price tomorrow, next month, "will it rise" | it does not forecast prices; the prices in the economics panel are published reference values with year and source |
+| Land rights, contracts, disputes | it gives no legal advice; the commune or district office and a lawyer |
+| Pesticide products and doses | it names neither; the local plant-protection office knows the registered options |
+| Finance, medicine, politics, sport (only when no crop is named) | it answers about crops, soil, water and the readings of the field |
 
 ## Pipeline
 
@@ -35,31 +65,50 @@ src/rag (browser and server)
 **Index.** MiniSearch (BM25) over `title` (boost 2), `names` (3: scientific + curated EN/VI names + EcoCrop common names), `tags` (1.5) and `text` (1). Prefix matching for terms of 5+ characters, fuzzy only for 7+, because short Vietnamese syllables are one edit apart from unrelated words. Text is indexed folded (lowercase, no diacritics, đ → d) so "dat chua" finds "đất chua".
 
 **Query analysis** (`src/rag/retrieve.ts`, `intent.ts`, `aliases.ts`):
-- Crop linking: longest-match n-grams against 1,660 curated-crop aliases and 15,318 aliases of the other EcoCrop species. Folding creates collisions ("lựa chọn" = choose looks like "lúa" = rice; "điều kiện" = conditions looks like "điều" = cashew; "vối" = robusta looks like "vôi" = lime), so short Vietnamese names must match with their diacritics when the query has any, and a list of common phrases is excluded. Generic words that are crop names somewhere in EcoCrop ("date", "lime") are dropped when they occur in 3+ prose chunks.
-- Intent routing (rules, both languages): ideal conditions, compare, field suitability, score change, explain a term, rotation, care, general, off-topic.
+- Crop linking: longest-match n-grams against 1,660 curated-crop aliases and 15,318 aliases of the other EcoCrop species. Folding creates collisions ("lựa chọn" = choose looks like "lúa" = rice; "điều kiện" = conditions looks like "điều" = cashew; "vối" = robusta looks like "vôi" = lime; "đạm" = nitrogen is "dam", a name EcoCrop lists for the greater yam; "tôi" = I typed without accents is "toi", garlic), so short Vietnamese names must match with their diacritics when the query has any, and a list of common words and phrases is excluded. Generic words that are crop names somewhere in EcoCrop ("date", "lime") are dropped when they occur in 3+ prose chunks.
+- Intent routing (rules, both languages): ideal conditions, compare, field suitability (`field`), a reading of the field (`field-fact`: a value, the wettest or hottest month, the forecast), score change, explain a term, rotation, care, general, off-topic (with the reason for declining). "My field" beside a reading asks for its value ("what is my soil pH"); "what does it mean" and "why" ask for an explanation; a crop in the question asks for the comparison with that crop. The focus of a question is one of eighteen readings or requirements; organic matter, CEC, nitrogen, bulk density, slope and soil depth were added for field questions.
 - Vietnamese→English expansion (e.g. "chua" → acid pH, "luân canh" → rotation) at half weight, so Vietnamese questions also reach English EcoCrop text.
 - Boosts: ×3 for chunks about the mentioned crop (×0.35 for other crops), by chunk kind per intent (fact sheets for requirement questions, glossary for term questions), ×1.3 same language; the crop's fact sheet (or the glossary entry) is pinned first; at most 2 chunks per document.
 
 **Extractive answers** (`src/rag/compose.ts`) follow docs/SYSTEM_INSTRUCTIONS.md by template: numbers come only from EcoCrop facts or `FieldContext`, each field number keeps its source, pixel and date, missing facts are named with the cheapest way to get them, quotes are one sentence each with `[S#]`, quotes about another crop are never used, and every answer ends with one next step. Field questions compare field facts with the crop's window deterministically (`src/rag/suitability.ts`): pH 5.6 against soybean's optimal 5.5-6.5 → "inside the optimal range", plus the caveat that a SoilGrids value is a 250 m model estimate. Score-change questions read the monthly `score_YYYY-MM` facts and the limiting factor. Each answer returns 2-3 follow-up questions.
 
-**FieldContext** (`buildFieldContext` in `src/rag/fieldContext.ts`, pure): latest value at the cursor of each key series (`sampleAt`, with stale flag and anomaly against the day-of-year baseline), 30/90-day rain sums, all static facts with their uncertainty, climate normals (annual and monthly) from `climateHistory`, ground-truth overrides ("measured by the farmer; satellite/model estimate was …"), score at the cursor, every factor, and one score per month. Each fact is a string that starts with the value, e.g. `sm_root: "0.21 m³/m³ (SMAP L4, 9 km pixel, modelled, 2026-11-08; 9% below normal …)"`.
+**Answers about the field itself** (`src/rag/fieldFacts.ts`, `src/rag/fieldAnswer.ts`). `parseFieldFact` reads a fact string back into value, unit, source, size of one value, provenance, date, age, 5-95 % range and the estimate a grower's number replaced; `lookupFieldFacts` picks the facts a focus or a glossary term asks for. The answer starts with the number as the fact prints it, then the source, then one sentence on how far to trust it (a model estimate for a 250 m cell; an observation of a pixel larger than the field; a forecast; the grower's own number), then the glossary sentence on that source with its citation. Class names (drainage, texture group, compass direction) and the comparison with the normal are given in the language of the answer; source names stay as published. A month question finds the highest and the lowest of the twelve monthly means. A forecast question lists the `risk_*` events of the days asked about; where there is none it gives the number that shows it (the lowest minimum, the highest maximum, the rain total of the forecast) and the rule the app warns by, which a test keeps in step with `src/data/harmonize/risk.ts`. Nothing is estimated: a reading the field does not have is named as missing, with the reason and the cheapest way to get it, and a reading that was not recognised is not replaced by another one.
+
+**FieldContext** (`buildFieldContext` in `src/rag/fieldContext.ts`, pure): latest value at the cursor of each key series (`sampleAt`, with stale flag and anomaly against the day-of-year baseline), 30/90-day rain sums (from the observed series, or from the reanalysis series where the observed one stops short of the cursor, as CHIRPS does by several weeks; the fact names the series used), what the forecast holds from the cursor on (`forecast_tmin`, `forecast_tmax`, `forecast_rain`), the risk events of the forecast, all static facts with their uncertainty, climate normals (annual and monthly) from `climateHistory`, ground-truth overrides ("measured by the farmer; satellite/model estimate was …"), score at the cursor, every factor, and one score per month. Each fact is a string that starts with the value, e.g. `sm_root: "0.21 m³/m³ (SMAP L4, 9 km pixel, modelled, 2026-11-08; 9% below normal …)"`.
 
 **Generative path** (`server/`, Hono on port 8787, `npm run server`). `GET /api/health` → `{ ok, generative }`; `POST /api/ask` validates the request (zod), retrieves with the same code, and sends Claude the "System prompt" section of docs/SYSTEM_INSTRUCTIONS.md (read at start-up) plus a data-handling rule, and a user turn with `FIELD CONTEXT` and `KNOWLEDGE` blocks (`src/rag/prompt.ts`). Retrieved text is wrapped in `<passage id="S1" …>` tags with `<`/`>` neutralised so a passage cannot close its wrapper, and with double quotes and line breaks neutralised in the tag's attributes (source name, licence) so a value cannot add attributes to the tag; the model is told that text inside the blocks is data. Cited ids are renumbered to first-use order and mapped back to citations. Any failure (no key, refusal, network) returns the extractive answer. The Claude call lives in `server/llm.ts` (`createLlm`, reusable for advisory narratives): `@anthropic-ai/sdk`, model from `ANTHROPIC_MODEL` (default `claude-opus-5-5`), `output_config.effort` from `ANTHROPIC_EFFORT` (default `low`), cached system prompt, server-side refusal fallback (`fallbacks: "default"`). The key is read from the environment or `.env` only and never logged. **The generative path has not been run against the live API** (no key was configured); request assembly, citation mapping and fallback are unit-tested with a fake model.
 
 ## Evaluation
 
-`data/rag/eval.json`: 56 hand-written questions (28 English, 28 Vietnamese, two without diacritics, 7 asked with a field context), each with the expected documents or crops. A retrieved chunk counts as relevant when its document or one of its crops is expected. `npx tsx scripts/rag/eval.ts` prints the table; `scripts/rag/eval.test.ts` fails if the full pipeline drops below recall@5 0.95 or MRR 0.90.
+`data/rag/eval.json`: 110 hand-written questions (52 English, 58 Vietnamese, three without diacritics, 55 asked with a field context). `npx tsx scripts/rag/eval.ts` prints the two tables below; `scripts/rag/eval.test.ts` guards them.
+
+**Retrieval** is scored on the 65 questions that state expected documents or crops (the other 45 are answered from the field's own readings, where nothing is retrieved). A retrieved chunk counts as relevant when its document or one of its crops is expected. The test fails if the full pipeline drops below recall@5 0.95 or MRR 0.90.
 
 | Variant | recall@5 (all / en / vi) | MRR (all / en / vi) |
 |---|---|---|
 | BM25 only (field boosts, no query analysis) | 0.97 / 0.97 / 0.97 | 0.86 / 0.94 / 0.78 |
 | + Vietnamese→English expansion | 0.97 / 1.00 / 0.94 | 0.86 / 0.93 / 0.80 |
-| + crop linking (alias boost, fact sheet pinned) | 1.00 / 1.00 / 1.00 | 0.98 / 1.00 / 0.97 |
-| Full pipeline (+ intent kind boost, language boost) | 1.00 / 1.00 / 1.00 | 0.98 / 1.00 / 0.97 |
+| + crop linking (alias boost, fact sheet pinned) | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 |
+| Full pipeline (+ intent kind boost, language boost) | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 |
 
-Intent routing: 56/56 on the questions that state an expected intent. Plain BM25 misses "Is my soil too acid for soybean?" (it ranks pH articles above soybean) and "Mè cần loại đất gì?" (one-syllable crop name); expansion alone trades one Vietnamese miss for another; crop linking fixes all of them.
+Plain BM25 misses "Is my soil too acid for soybean?" (it ranks pH articles above soybean) and "Mè cần loại đất gì?" (one-syllable crop name); expansion alone trades one Vietnamese miss for another; crop linking fixes all of them. Before 15 November 2026 the last two rows had an MRR of 0.98 (Vietnamese 0.97): "Cây che phủ nào giúp cố định đạm?" and "Cây nào giúp cố định đạm cho đất?" were linked to the greater yam through "đạm" and found their document second. With "đạm" excluded from crop linking both find it first.
 
-**Embeddings: not added.** The lexical pipeline leaves no measurable headroom on this set (recall@5 1.00, MRR 0.98), while a multilingual embedding model in the browser would add tens of megabytes (a small multilingual sentence encoder is roughly 30 MB quantised, plus about 2-9 MB of vectors for 6,108 chunks) to a first load of about 1 MB. Embeddings were therefore not installed or measured. Caveat: the eval was written by the same agent that built the retrieval and uses a lenient relevance rule; paraphrased questions that share no words with any crop name or glossary alias ("which plant fixes nitrogen and tolerates shade?") are where an embedding pass would help, and an optional lazy hybrid stage could be added behind the same `search` interface if real user questions show that gap.
+**Routing** is scored on the 104 questions that state an expected intent; the questions about the field also state the kind of question (value, month, forecast), the focus and, for a declined question, the reason. The test requires every question of the field groups to be routed as stated, and at least four questions per group in both languages.
+
+| Group (row of the scope table) | Questions (en / vi) | Routed as expected |
+|---|---|---|
+| crops and terms | 56 (28 / 28) | 56 |
+| soil | 12 (5 / 7) | 12 |
+| terrain | 6 (3 / 3) | 6 |
+| climate | 7 (3 / 4) | 7 |
+| risk | 7 (3 / 4) | 7 |
+| source | 6 (3 / 3) | 6 |
+| contrast (a value against a definition, a crop, an unknown reading) | 4 (1 / 3) | 4 |
+| declined | 6 (3 / 3) | 6 |
+
+The answers themselves are checked in `src/rag/fieldAnswer.test.ts`: on the fixture field and on the four demo fields (`scripts/rag/sample-context.ts` builds the context the app gives the assistant from the cached telemetry), every number in an answer about a reading has to be a number of that field's facts.
+
+**Embeddings: not added.** The lexical pipeline leaves no measurable headroom on this set (recall@5 1.00, MRR 1.00), while a multilingual embedding model in the browser would add tens of megabytes (a small multilingual sentence encoder is roughly 30 MB quantised, plus about 2-9 MB of vectors for 6,108 chunks) to a first load of about 1 MB. Embeddings were therefore not installed or measured. Caveat: the eval was written by the same agent that built the retrieval and uses a lenient relevance rule; paraphrased questions that share no words with any crop name or glossary alias ("which plant fixes nitrogen and tolerates shade?") are where an embedding pass would help, and an optional lazy hybrid stage could be added behind the same `search` interface if real user questions show that gap.
 
 ## Sizes
 
@@ -89,13 +138,18 @@ npm run rag:build -- --fetch   # also download missing Wikipedia snapshots
 npm run rag:build -- --refresh # re-download all Wikipedia snapshots
 npx tsx scripts/rag/eval.ts    # eval table
 npx tsx scripts/rag/demo.ts "Is my soil too acid for soybean?" en field   # print an answer (fixture field)
+npx tsx scripts/rag/demo.ts "Tuần tới có sương giá không?" vi iowa-corn-soy   # the same on a demo field's cached telemetry
 npx vitest run src/rag scripts/rag server
 ```
 
 ## Limits
 
 - Extractive answers are templates: they quote, they do not reason. Questions outside the routed intents get the best sentences from the top passages, which can be off target.
-- Field facts are written in English inside Vietnamese answers (source names, "below normal"), and English EcoCrop narrative is quoted in Vietnamese answers with a "(nguồn tiếng Anh)" note. Only the 74 curated crops have Vietnamese fact sheets and names.
+- In answers that compare the field with a crop, and in the line a term answer adds about the field, field facts are written in English inside Vietnamese answers (source names, "below normal"). Answers about a reading of the field word the value, the class names and the comparison with the normal in Vietnamese; source names stay as published. English EcoCrop narrative is quoted in Vietnamese answers with a "(nguồn tiếng Anh)" note. Only the 74 curated crops have Vietnamese fact sheets and names.
+- A reading of the field is given without saying whether it is low or high: the only thresholds with a source are the crop windows of EcoCrop (pH, temperature, rain, texture, drainage). Erosion is not estimated. What to apply is answered from the pH alone, without amounts.
+- A forecast question about "next week" lists the warnings of those days, but the supporting number (lowest minimum, highest maximum, rain total) is that of the whole forecast, because the context carries one summary of it. Flood, pest and disease warnings are read if the data layer raises them; today it raises frost, heat, heavy rain, dry spell and wind.
+- The Vietnamese wording of a risk is rebuilt from the numbers of the English text in the fact, by the five templates the data layer uses; a warning worded otherwise is quoted in English.
+- Routing is by rules: a question about a reading that names it in a way the rules do not know gets the list of readings the field has, not an answer.
 - EcoCrop rainfall is an annual figure and its temperature a growing-season mean; comparing them with annual climate normals is a coarse first check, not a season model (the scorer in `src/core` does that).
 - Rotation partners are rule-based (different family, legume after cereal and the reverse, low covers for perennials) and filtered by EcoCrop tolerances; they ignore markets, pests and water.
 - 16 of the 24 method articles have no Vietnamese Wikipedia page; the Vietnamese glossary covers those terms.

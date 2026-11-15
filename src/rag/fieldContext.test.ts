@@ -85,6 +85,33 @@ describe('buildFieldContext', () => {
     expect(ctx.facts.ph).toMatch(/^6.2 \(measured by the farmer; satellite\/model estimate was 5.6 \(SoilGrids/);
     expect(ctx.facts.irrigation).toMatch(/^supplemental/);
   });
+  it('sums the rain of the last 30 days from the observed series, and from the reanalysis where that stops short', () => {
+    const t = telemetry();
+    // The observed series of the fixture covers 12 February to 13 March.
+    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-03-13', cropId: null }).facts.rain_30d).toBe('30 mm over the 30 days to 2026-03-13 (GPM IMERG, 10 km pixel)');
+    // Six weeks later it has nothing for the window: no rain_30d without another series...
+    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-04-30', cropId: null }).facts.rain_30d).toBeUndefined();
+    // ...and the reanalysis series, named as a model, when there is one.
+    t.branches.rainfall.series.push({ key: 'rain_era5', branch: 'rainfall', label: { en: 'Rain (ERA5)', vi: 'Mưa (ERA5)' }, unit: 'mm/day', sourceId: 'era5', cadence: 'daily', samples: Array.from({ length: 30 }, (_, i) => ({ t: `2026-04-${String(1 + i).padStart(2, '0')}`, v: 2.5 })) });
+    t.sources.era5 = { id: 'era5', name: 'ERA5', agency: 'ECMWF', provenance: 'modelled', resolutionM: 25_000, cadenceDays: 1, latencyDays: 5, access: 'sample cache', url: '' };
+    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-04-30', cropId: null }).facts.rain_30d).toBe('75 mm over the 30 days to 2026-04-30 (ERA5, 25 km pixel, modelled)');
+    // The observed series still wins where it reaches the cursor.
+    expect(buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-03-13', cropId: null }).facts.rain_30d).toContain('GPM IMERG');
+  });
+  it('says what the forecast holds from the cursor on', () => {
+    const t = telemetry();
+    const days = ['2026-11-13', '2026-11-14', '2026-11-15', '2026-11-16'];
+    const fc = (key: string, unit: string, values: number[]) => ({ key, branch: 'risk' as const, label: { en: key, vi: key }, unit, sourceId: 'open-meteo-forecast', cadence: 'daily' as const, samples: days.map((d, i) => ({ t: d, v: values[i] })) });
+    // The day before the cursor has the lowest minimum and the most rain: it is not ahead, so it does not count.
+    t.branches.risk.series.push(fc('fc_tmin', '°C', [-4, 3.5, 1.2, 6]), fc('fc_tmax', '°C', [40, 18, 21.5, 20]), fc('fc_rain', 'mm/day', [90, 0, 12.5, 4]));
+    t.sources['open-meteo-forecast'] = { id: 'open-meteo-forecast', name: '16-day weather forecast', agency: 'Open-Meteo', provenance: 'forecast', resolutionM: 11_000, cadenceDays: 1, latencyDays: 0, access: 'REST', url: '' };
+    const facts = buildFieldContext({ parcel, telemetry: t, score: null, cursor: '2026-11-14', cropId: null }).facts;
+    expect(facts.forecast_tmin).toBe('1.2 °C lowest forecast minimum, on 2026-11-15 (16-day weather forecast, 11 km pixel, forecast, 2026-11-14 to 2026-11-16)');
+    expect(facts.forecast_tmax).toBe('21.5 °C highest forecast maximum, on 2026-11-15 (16-day weather forecast, 11 km pixel, forecast, 2026-11-14 to 2026-11-16)');
+    expect(facts.forecast_rain).toBe('16.5 mm forecast over 3 days, wettest day 12.5 mm on 2026-11-15 (16-day weather forecast, 11 km pixel, forecast, 2026-11-14 to 2026-11-16)');
+    // No forecast series, no forecast facts.
+    expect(buildFieldContext({ parcel, telemetry: telemetry(), score: null, cursor: '2026-11-14', cropId: null }).facts.forecast_tmin).toBeUndefined();
+  });
   it('works before telemetry has loaded', () => {
     const ctx = buildFieldContext({ parcel, telemetry: null, score: null, cursor: '2026-11-14', cropId: null });
     expect(ctx.facts).toEqual({ elevation_m: '602 m (parcel elevation)' });
