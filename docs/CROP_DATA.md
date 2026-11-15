@@ -11,7 +11,7 @@ The one principle: every value is copied or computed from a named source file by
 | File | Rows | Content |
 |---|---|---|
 | `crops.csv` | 387 | One row per kept crop: ids, names, EcoCrop description and requirements, FAOSTAT item, match, MapSPAM crop, evidence, commonness, world totals |
-| `crop_country.csv` | 72,666 | One row per crop and country: area, production, yield, share, rank, level (11,399 with quantities, 21,271 `absent`, 39,996 `unknown`) |
+| `crop_country.csv` | 72,706 | One row per crop and country: area, production, yield, share, rank, level, source, url, accessed, note (11,423 with quantities, 21,260 `absent`, 40,023 `unknown`, 61 `match = national`) |
 | `item_country.csv` | 9,358 | The same quantities per FAOSTAT item and country, group items included |
 | `country_crops.csv` | 198 | One row per country: what is grown there, largest first |
 | `region_crops.csv` | 50,967 | MapSPAM 2020 harvested area per country and first-level region, per SPAM crop |
@@ -20,8 +20,8 @@ The one principle: every value is copied or computed from a named source file by
 | `dropped.csv` | 2,182 | Every EcoCrop species that was not kept, with the reason |
 | `economics_template.csv` | 0 | Header only; yields, prices and costs are for the team to fill |
 | `sources.csv` | 22 | Source, URL, licence, access date, file, SHA-256, rows used |
-| `columns.csv` | 207 | Every column: meaning in English and Vietnamese, unit, source, rule |
-| `summary.csv` | 52 | The counts of the build |
+| `columns.csv` | 210 | Every column: meaning in English and Vietnamese, unit, source, rule |
+| `summary.csv` | 53 | The counts of the build |
 
 `.cache/atlas/astrovivu-crop-atlas.xlsx` (git-ignored, 5.9 MB, 1,419,230 cells) holds one sheet per table behind a README sheet, for upload to Google Sheets. It leaves out the `absent` rows of `crop_country` and keeps the 15 largest crops of each region in `region_crops`; the CSV files are complete. Values are plain: numbers are numeric cells, codes such as CPC `0113` are text, there are no formulas and no dates. Excel 16 opens it without repair (checked).
 
@@ -41,6 +41,7 @@ Access date of every download: 2026-11-15. Checksums and sizes are in `sources.c
 | MapSPAM 2020 V2r2 readme | The 46 crop codes and names, file layout | CC BY 4.0, IFPRI Dataverse Terms of Use |
 | MapSPAM 2020 V2r2, global harvested area, CSV (109 MB zip; 964,647 grid cells of `spam2020V2r2_global_H_TA.csv`) | Harvested area per 5-arc-minute cell with country and admin-1 names | CC BY 4.0 with citation and the notice below |
 | `data/crops/curated-crops.csv` | Our `crop_id`, `name_en`, `name_vi` for 73 crops | Project file |
+| `data/crops/national/prevalence.csv` | National statistical figures and notes for `VNM` and `USA` (76 rows: all 32 `group` + `none` curated crops in both countries, plus 12 `sai-absent`/`thieu` rows from T1 `#8`) | Official public statistics of Viet Nam (NSO, MARD) and the United States (USDA NASS, public domain, 17 U.S.C. § 105); see Section 7.1 |
 
 How three of them were obtained, since it was not straightforward:
 
@@ -139,10 +140,28 @@ All thresholds are in `scripts/crops/atlas/levels.ts`.
 
 - **Exact crops.** Area and production are the sums over the crop's own items that the country reports above zero; `faostat_item_code` lists them, largest first. Tonnes of different products are added when a crop has several items (maize grain and green corn). The yield is FAOSTAT's yield of the first item, not production divided by area. `share_of_country_harvested_area_pct` is the area over the area of all 157 crop items of the country; `rank_in_country` is 1 plus the number of other items with a larger area.
 - **Level.** `major` from 5 % of the country's harvested area, `common` from 0.5 %, `minor` below, `present` when production is reported without area, `absent` when FAOSTAT covers the country and none of the crop's items is above zero.
-- **Group crops.** `level = unknown` in every country; `item_reported` says whether the country reports the group item at all. The quantities are in `item_country.csv`, attached to the item.
+- **Group crops.** `level = unknown` in every country unless supplied by `data/crops/national/prevalence.csv`; `item_reported` says whether the country reports the group item at all. The quantities are in `item_country.csv`, attached to the item.
+- **National prevalence (`match = national`).** Read by `scripts/crops/atlas/national.ts` from `data/crops/national/prevalence.csv`. For `group` and `none` crops (and false-`absent` rows identified in T1 `#8`), a row with a national figure writes `match = national`, an empty `faostat_item_code`, `year_from = year_to = year`, `share_of_country_harvested_area_pct = (area_ha / total_harvested_area_ha) * 100` (**the numerator is the national `area_ha` and the denominator is FAOSTAT's `total_harvested_area_ha` of the country**), `level = levelFor(area_ha, share, production_t)`, and adds the crop to `cropsOfCountry` so `country_crops.csv` lists it. A row without a national figure leaves `area_ha` empty, keeps `level = unknown` (never inferred from a group item), and records the reason in `note`. A national row only replaces `unknown` or `absent`; it **never** overrides an `exact` row that already has an area in FAOSTAT.
 - **Shared items.** 30 single items belong to more than one crop (wheat to 3 Triticum rows, coffee to 4 Coffea species, cabbages to 6 Brassica rows). Each of those crops shows the item's full quantities; `item_shared_by_n_crops` in `crops.csv` says so, and `country_crops.crops_by_area` lists them after one arrow. FAOSTAT cannot split arabica from robusta; MapSPAM can.
 
 `country_crops.csv` gives, per country: the 15 largest items, the crop ids at each level, the items with their crops in order of area, the group items reported, and the kept crops that are members of those (`possible_crop_ids`).
+
+### 7.1 National prevalence sources and tables (`VNM` and `USA`, T4 `#9`)
+
+All 73 curated crops now have a row in `crop_country.csv` for both `VNM` and `USA`, with a level computed from a named source or `unknown` accompanied by a `note`.
+
+- **Denominator rule:** For every `match = national` row, `share_of_country_harvested_area_pct` divides the **national harvested area (`area_ha`, numerator)** by **FAOSTAT's `total_harvested_area_ha` for that country (denominator)**:
+  - `VNM`: denominator = `13,504,720 ha` (FAOSTAT 2022–2024 mean across 43 reported items)
+  - `USA`: denominator = `98,830,011 ha` (FAOSTAT 2022–2024 mean across 89 reported items)
+
+| Country | Source | Tables used & crops covered | URL & access date | Licence |
+|---|---|---|---|---|
+| `VNM` | Cục Thống kê (NSO, Bộ Tài chính), *Niên giám Thống kê Việt Nam năm 2025* (*Statistical Yearbook of Viet Nam 2025*, Nxb Thống kê, 07/2026) | **Biểu 220 & 221** (pp. 612–613, *Diện tích cho sản phẩm và sản lượng một số cây lâu năm chủ yếu*, năm 2024): `musa-acuminata` (`144,600 ha`, `2,997,900 t`, `1.071%` -> `common`), `mangifera-indica` (`96,500 ha`, `1,094,100 t`, `0.715%` -> `common`), `litchi-chinensis` (`51,900 ha`, `255,000 t`, `0.384%` -> `minor`). **Chương 6** (pp. 534, 540) & **Biểu 187–188** (pp. 558–559): documents why vegetables, pulses, annual spices and cover/forage crops (`1,148,000 ha` rau đậu các loại) have no species-level national table (`level = unknown` with `note`, including the 9 `sai-absent` crops from T1 `#8`: `abelmoschus-esculentus`, `allium-fistulosum`, `cucumis-sativus`, `fragaria-x-ananassa`, `lycopersicon-esculentum`, `pisum-sativum`, `solanum-melongena`, `vigna-unguiculata`, `zingiber-officinale`). | <https://www.nso.gov.vn/wp-content/uploads/2026/07/NG-TOAN-QUOC-2025-1.pdf> (accessed `2026-11-15`) | Official government statistical publication of Viet Nam (Law on Statistics No. 89/2015/QH13 and Law No. 01/2021/QH15; open for public citation with source attribution) |
+| `VNM` | Bộ Nông nghiệp và Môi trường (Cục Trồng trọt và Bảo vệ thực vật / IPSARD), *Báo cáo thường niên thị trường Rau quả 2025* | **Mục 1.2.1 & 1.2.2.(i)** (pp. 13, 15–17, *Sản xuất sầu riêng*, năm 2024): `durio-zibethinus` (`178,800 ha`, `1,470,000 t`, `1.324%` -> `common`). | <https://thitruongnongsan.gov.vn/images/2013/DANGNHAP/Bao%20cao%20thuong%20nien%20rau%20qua%202025.pdf> (accessed `2026-11-15`) | Official ministry/sector report of Viet Nam; public citation with attribution |
+| `VNM` | Trung tâm Khuyến nông Quốc gia (Bộ Nông nghiệp và Môi trường); Trung tâm Khuyến nông TP. Hồ Chí Minh; Văn phòng Điều phối NTM tỉnh Hà Tĩnh | Specialized production models for urban/leafy crops pooled in NSO's general vegetable category (năm 2024): `ipomoea-aquatica` (`508 ha`, `80,000 t` -> `minor`), `ocimum-basilicum` (`3 ha`, `75 t` -> `minor`), `basella-alba` (`1.2 ha`, `18 t` -> `minor`). | <https://khuyennongtphcm.vn/cam-nang-trong-rau-muon-nuoc-toan/>, <https://khuyennongvn.gov.vn/chuong-trinh-nganh-nong-nghiep/tai-co-cau-nganh-nong-nghiep/nghe-an-hieu-qua-mo-hinh-tham-canh-cay-hung-que-gan-voi-che-bien-tinh-dau-va-tieu-thu-san-pham-19592.html>, <https://nongthonmoi.hatinh.gov.vn/Tin-trong-nuoc/long-an-trong-mong-toi-tot-um-tum-nong-dan-o-day-khong-hai-la-ma-tuot-hat-dem-ban-200-000-dong-kg-110805.html> (accessed `2026-11-15`) | Official agricultural extension publications (`.gov.vn` / Khuyến nông); public citation with attribution |
+| `USA` | USDA National Agricultural Statistics Service (NASS), *Crop Production 2025 Summary* (January 2026, ISSN 1057-7823) | **Crop Area Planted and Harvested, Yield, and Production in Metric Units** (pp. 96–97, year 2025): `medicago-sativa` (*Hay, Alfalfa*: `5,939,230 ha`, `45,552,470 t`, `6.010%` -> `major`), `phaseolus-vulgaris` (*Beans, dry edible*: `540,100 ha`, `1,222,430 t`, `0.546%` -> `common`; commercial classes on pp. 71–80), `mentha-spicata-var-crispa` (*Spearmint oil*: `4,690 ha`, `730 t`, `0.005%` -> `minor`). | <https://release.nass.usda.gov/reports/cropan26.txt> (accessed `2026-11-15`) | Public domain of the United States federal government (17 U.S.C. § 105) |
+| `USA` | USDA NASS, *Vegetables 2025 Summary* (February 2026, ISSN 0884-6413) | **Area Planted and Harvested, Yield, Production, Price, and Value** (pp. 43, 55, 57, 59, 63, year 2025): `lactuca-sativa-var-capitata` (*Head lettuce*: `111,600 acres` = `45,163 ha`, `1,737,485 t`, `0.046%` -> `minor`), `cucurbita-moschata` (*Pumpkins* `68,100 acres` + *Squash* `37,200 acres` = `42,613 ha`, `956,626 t`, `0.043%` -> `minor`), `capsicum-annuum` (*Bell peppers* `32,300 acres` + *Chile peppers* `13,200 acres` = `18,413 ha`, `599,649 t`, `0.019%` -> `minor`). | <https://release.nass.usda.gov/reports/vegean26.txt> (accessed `2026-11-15`) | Public domain (17 U.S.C. § 105) |
+| `USA` | USDA NASS, *2022 Census of Agriculture*, Vol. 1, Ch. 1 (U.S. National Level Data) & Ch. 2 (U.S. State-Level Data), issued February 2024 | **Ch. 1, Table 36** (*Vegetables, Potatoes, and Melons Harvested for Sale*, pp. 30–35, year 2022): `raphanus-sativus` (*Radishes* `20,405 acres` + *Daikon* `4,044 acres` = `9,894 ha` -> `minor`), `brassica-rapa-pak-choi` (*Chinese cabbage: nappa, bokchoy, etc.*: `15,626 acres` = `6,324 ha` -> `minor`), `brassica-juncea` (*Mustard greens* `10,478 acres` + *Cabbage, mustard* `342 acres` = `4,379 ha` -> `minor`), `allium-fistulosum` (*Onions, green*: `6,018 acres` = `2,435 ha` -> `minor`, fixing `sai-absent` from T1 `#8`). **Ch. 1, Table 37** (*Specified Fruits and Nuts*, pp. 37, 39, bearing acreage, year 2022): `mangifera-indica` (*Mangoes*: `3,144 acres` = `1,272 ha` -> `minor`), `musa-acuminata` (*Bananas*: `1,230 acres` = `498 ha` -> `minor`). **Ch. 2, Table 26** (*Field Seeds, Grass Seeds, Forage, Hay, and Silage*, pp. 482–485, year 2022): `trifolium-pratense` (*Red clover seed*: `14,362 acres` = `5,812 ha`, `4,172 t` -> `minor`), `sorghum-x-drummondii` (*Sudangrass seed*: `10,838 acres` = `4,386 ha`, `7,344 t` -> `minor`), `trifolium-incarnatum` (*Crimson clover seed*: `8,509 acres` = `3,443 ha`, `3,414 t` -> `minor`), `vicia-villosa-ssp-villosa` (*Vetch seed*: `2,122 acres` = `859 ha`, `546 t` -> `minor`). **Ch. 2, Table 27** (*Other Crops*, p. 496, year 2022): `sesamum-indicum` (*Sesame*: `43,837 acres` = `17,740 ha`, `12,465 t` -> `minor`, fixing `sai-absent` from T1 `#8`). Also documents the 17 remaining tropical/specialty crops without a separate national row (`level = unknown` with `note`). | <https://www.nass.usda.gov/sites/default/files/publications/agcensus/2022/Full_Report/Volume_1,_Chapter_1_US/st99_1_036_036.pdf>, `st99_1_037_037.pdf`, `st99_2_026_026.pdf`, `st99_2_027_027.pdf` (accessed `2026-11-15`) | Public domain (17 U.S.C. § 105) |
 
 ## 8. Regions (MapSPAM 2020)
 
@@ -178,16 +197,16 @@ Top items by harvested area as the data gives them (mean 2022 to 2024):
 
 | Crop | Result |
 |---|---|
-| Durian | `group`, member of "Other tropical fruits, n.e.c." (603). Viet Nam: `unknown`, `item_reported = no`: FAOSTAT has no record of item 603 for Viet Nam, so the source neither shows nor excludes durian there |
+| Durian | `group`, member of "Other tropical fruits, n.e.c." (603). Viet Nam: `match = national`, 178,800 ha, 1,470,000 t (2024, MARD *Báo cáo thường niên thị trường Rau quả 2025*), 1.324 %, `common`; United States: `unknown` (with `note`) |
 | Aibika (*Abelmoschus manihot*) | dropped: no FAOSTAT crop item names it. It no longer inherits the countries of "other vegetables" |
 | Rice | exact; 116 countries; Viet Nam 7,089,041 ha, 6.09 t/ha, `major`; United States 1,064,067 ha, `common` |
 | Maize | exact (items 56 and 446); 172 countries; Viet Nam 875,899 ha, `major`; United States 33,613,081 ha, `major` |
 | Soybean | exact by common name; 104 countries; Viet Nam 30,237 ha, `minor`; United States 34,330,527 ha, `major` |
 | Robusta coffee | exact through the genus, item shared by 4 Coffea species; Viet Nam 667,148 ha, `common` (4.94 %); MapSPAM `rcof` |
 | Sweet potato | exact; 117 countries; Viet Nam 82,109 ha, `common`; United States 55,915 ha, `minor` |
-| Alfalfa | `curated-only`, no country rows: FAOSTAT's crop statistics have no forage items |
+| Alfalfa | `curated-only`; United States: `match = national`, 5,939,230 ha, 45,552,470 t (2025, USDA NASS *Crop Production 2025 Summary*), 6.01 %, `major`; Viet Nam: `unknown` (with `note`) |
 
-`npx vitest run scripts/crops/atlas`: 4 files, 46 tests pass. `npx tsc --noEmit`: no errors. A second run with `--offline` reproduces all 12 CSV files and the workbook byte for byte.
+`npx vitest run scripts/crops/atlas`: 5 files, 50 tests pass. `npx tsc --noEmit`: no errors. A second run with `--offline` reproduces all 12 CSV files and the workbook byte for byte.
 
 ## 10. Known gaps
 
@@ -220,6 +239,7 @@ Downloads are sequential, each with a timeout and at most 3 retries with backoff
 | `crosswalk.ts` | item classes, species matches, SPAM crosswalk |
 | `faostat.ts`, `spam.ts` | streaming readers of the two large tables |
 | `levels.ts` | thresholds, three-year mean, ranks |
+| `national.ts` | reader and merge rules for `data/crops/national/prevalence.csv` |
 | `columns.ts` | column dictionary (English and Vietnamese) |
 | `csv.ts`, `zip.ts`, `xlsx.ts` | file formats |
 

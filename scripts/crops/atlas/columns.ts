@@ -118,9 +118,12 @@ add(CC, 'crop_id', 'Crop (see crops.csv).', 'Cây trồng (xem crops.csv).', '',
 add(CC, 'iso3', 'ISO 3166-1 alpha-3 country code.', 'Mã quốc gia ISO 3166-1 alpha-3.', '', 'UN M49', 'FAOSTAT M49 code looked up in the UN M49 list');
 add(CC, 'country', 'Country name as FAOSTAT writes it.', 'Tên quốc gia theo FAOSTAT.', '', FAO, 'copied');
 add(CC, 'faostat_item_code', 'FAOSTAT item(s) the quantities come from, largest first, separated by ";".', 'Mã (các) mặt hàng FAOSTAT cho ra số liệu, lớn nhất đứng trước, cách nhau bằng ";".', '', FAO, 'items of the crop reported above zero in the country (all its items on an absent row; the group item on an unknown row)');
-add(CC, 'match', 'exact or group (see crops.csv).', 'exact hoặc group (xem crops.csv).', '', BUILD, 'copied from crops.csv');
+add(CC, 'match', 'exact, group or national (from national statistics; see crops.csv).', 'exact, group hoặc national (từ thống kê quốc gia; xem crops.csv).', '', BUILD, 'copied from crops.csv, or national when supplied by data/crops/national/prevalence.csv');
 add(CC, 'item_reported', 'yes when the country reports the item(s) above zero. For a group crop this is all the source says: the item is reported, the species is unknown.', 'yes nếu quốc gia có báo cáo (các) mặt hàng này với giá trị lớn hơn 0. Với cây thuộc mặt hàng gộp, đây là tất cả những gì nguồn cho biết: mặt hàng có báo cáo, còn loài thì không rõ.', '', FAO, 'area or production mean above zero');
 quantities(CC, 'the crop');
+add(CC, 'url', 'Link to the national statistical source (empty for FAOSTAT rows, which are in sources.csv).', 'Đường dẫn tới nguồn thống kê quốc gia (để trống với dòng FAOSTAT vì đã có trong sources.csv).', '', 'data/crops/national/prevalence.csv', 'copied');
+add(CC, 'accessed', 'Date the national source was read.', 'Ngày tra cứu nguồn quốc gia.', 'date', 'data/crops/national/prevalence.csv', 'copied');
+add(CC, 'note', 'Context from the national source, or why no species-level figure is available.', 'Ghi chú từ nguồn quốc gia, hoặc lý do chưa có số liệu riêng cho loài.', '', 'data/crops/national/prevalence.csv', 'copied');
 
 const IC = 'item_country';
 add(IC, 'faostat_item_code', 'FAOSTAT item code.', 'Mã mặt hàng FAOSTAT.', '', FAO, 'copied');

@@ -82,7 +82,7 @@ crop_country,crop_id,Crop (see crops.csv).,Cây trồng (xem crops.csv).,,build,
 crop_country,iso3,ISO 3166-1 alpha-3 country code.,Mã quốc gia ISO 3166-1 alpha-3.,,UN M49,FAOSTAT M49 code looked up in the UN M49 list
 crop_country,country,Country name as FAOSTAT writes it.,Tên quốc gia theo FAOSTAT.,,FAOSTAT QCL,copied
 crop_country,faostat_item_code,"FAOSTAT item(s) the quantities come from, largest first, separated by "";"".","Mã (các) mặt hàng FAOSTAT cho ra số liệu, lớn nhất đứng trước, cách nhau bằng "";"".",,FAOSTAT QCL,items of the crop reported above zero in the country (all its items on an absent row; the group item on an unknown row)
-crop_country,match,exact or group (see crops.csv).,exact hoặc group (xem crops.csv).,,build,copied from crops.csv
+crop_country,match,"exact, group or national (from national statistics; see crops.csv).","exact, group hoặc national (từ thống kê quốc gia; xem crops.csv).",,build,"copied from crops.csv, or national when supplied by data/crops/national/prevalence.csv"
 crop_country,item_reported,"yes when the country reports the item(s) above zero. For a group crop this is all the source says: the item is reported, the species is unknown.","yes nếu quốc gia có báo cáo (các) mặt hàng này với giá trị lớn hơn 0. Với cây thuộc mặt hàng gộp, đây là tất cả những gì nguồn cho biết: mặt hàng có báo cáo, còn loài thì không rõ.",,FAOSTAT QCL,area or production mean above zero
 crop_country,area_ha,Harvested area of the crop.,Diện tích thu hoạch của cây.,ha,FAOSTAT QCL,mean of the latest 3 years with data within the last 10 years of the file
 crop_country,production_t,Production of the crop.,Sản lượng của cây.,t,FAOSTAT QCL,mean of the latest 3 years with data within the last 10 years of the file
@@ -93,6 +93,9 @@ crop_country,share_of_country_harvested_area_pct,Share of the country's harveste
 crop_country,rank_in_country,Rank by harvested area among the crop items of the country (1 = largest).,Thứ hạng theo diện tích thu hoạch trong các mặt hàng cây trồng của quốc gia (1 = lớn nhất).,rank,FAOSTAT QCL,1 + number of other items with a larger area
 crop_country,level,major: at least 5 % of the country's harvested area. common: at least 0.5 %. minor: below. present: production without area. absent: FAOSTAT covers the country and reports nothing above zero. unknown: group item.,"major: từ 5 % diện tích thu hoạch của quốc gia. common: từ 0,5 %. minor: thấp hơn. present: có sản lượng nhưng không có diện tích. absent: FAOSTAT có số liệu quốc gia nhưng không ghi nhận cây này. unknown: thuộc mặt hàng gộp nên không xác định được.",,build,thresholds in scripts/crops/atlas/levels.ts
 crop_country,source,Source of the row.,Nguồn của dòng số liệu.,,build,constant
+crop_country,url,"Link to the national statistical source (empty for FAOSTAT rows, which are in sources.csv).",Đường dẫn tới nguồn thống kê quốc gia (để trống với dòng FAOSTAT vì đã có trong sources.csv).,,data/crops/national/prevalence.csv,copied
+crop_country,accessed,Date the national source was read.,Ngày tra cứu nguồn quốc gia.,date,data/crops/national/prevalence.csv,copied
+crop_country,note,"Context from the national source, or why no species-level figure is available.","Ghi chú từ nguồn quốc gia, hoặc lý do chưa có số liệu riêng cho loài.",,data/crops/national/prevalence.csv,copied
 item_country,faostat_item_code,FAOSTAT item code.,Mã mặt hàng FAOSTAT.,,FAOSTAT QCL,copied
 item_country,faostat_item,FAOSTAT item name.,Tên mặt hàng FAOSTAT.,,FAOSTAT QCL,copied
 item_country,cpc_code,CPC 2.1 (expanded) code.,Mã CPC 2.1 (mở rộng).,,FAOSTAT QCL,copied
