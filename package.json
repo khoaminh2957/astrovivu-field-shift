@@ -53,7 +53,7 @@
     "d3-shape": "^3.2.1",
     "hono": "^4.13.18",
     "idb-keyval": "^6.3.0",
-    "lucide-react": "^1.72.0",
+    "lucide-react": "^1.73.0",
     "maplibre-gl": "^6.18.0",
     "minisearch": "^7.2.0",
     "motion": "^14.14.0",
